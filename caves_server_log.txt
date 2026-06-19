@@ -1,0 +1,1718 @@
+[00:00:00]: 
+System Memory:
+	Memory Load: 48%
+	Available Physical Memory: 12506m/24300m
+	Available Page File: 14513m/28908m
+	Available Virtual Memory: 134213473m/134217727m
+	Available Extended Virtual Memory: 0m
+[00:00:00]: 
+Process Memory:
+	Peak Working Set Size: 34m
+	Working Set Size: 34m
+	Quota Peak Page Pool Usage: 233k
+	Quota Page Pool Usage: 230k
+	Quota Peak Non Paged Pool Usage:17k
+	Quota Non Paged Pool Usage: 15k
+	Page File Usage: 5m
+	Peak Page File Usage: 5m
+[00:00:00]: PersistRootStorage is now APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Caves/ 
+[00:00:00]: Starting Up
+[00:00:00]: Version: 736959
+[00:00:00]: Current time: Fri Jun 19 12:27:40 2026
+
+[00:00:00]: Don't Starve Together: 736959 WIN32
+[00:00:00]: Build Date: 4175
+[00:00:00]: Mode: 64-bit
+[00:00:00]: Parsing command line
+[00:00:00]: Command Line Arguments: -monitor_parent_process 4972 -persistent_storage_root APP:Klei/ -conf_dir DoNotStarveTogether -cluster Cluster_1 -ownernetid 76561198072883011 -ownerdir 112617283 -clouddir 112617283 -backup_log_count 25 -backup_log_period 0 -ugc_directory C:\\Program Files (x86)\\Steam\\steamapps\\workshop -shard Caves -secondary_log_prefix caves -sigprefix DST_Secondary -token *********************************************************************************** 
+[00:00:00]: Initializing distribution platform
+[00:00:00]: Initializing Minidump handler
+[00:00:00]: ....Done
+[00:00:00]: ....Done
+[00:00:00]: Fixing DPI
+[00:00:00]: ...Done
+[00:00:00]: THREAD - started 'GAClient' (15792)
+[00:00:00]: CurlRequestManager::ClientThread::Main()
+[00:00:00]: ProfileIndex:3.87
+[00:00:00]: Mounting file system databundles/klump.zip successful.
+[00:00:00]: Mounting file system databundles/shaders.zip successful.
+[00:00:00]: Mounting file system databundles/fonts.zip successful.
+[00:00:00]: Mounting file system databundles/anim_dynamic.zip successful.
+[00:00:00]: Mounting file system databundles/bigportraits.zip successful.
+[00:00:00]: Mounting file system databundles/images.zip successful.
+[00:00:00]: Mounting file system databundles/scripts.zip successful.
+[00:00:00]: [Steam] SteamGameServer_Init(10998, 27017)
+[00:00:00]: [Steam] SteamGameServer_Init success
+[00:00:00]: [Connect] PendingConnection::Reset(true)
+[00:00:00]: Platform: 1
+[00:00:00]: Network tick rate: U=15(2), D=0
+[00:00:00]: Network tick rate: U=15(2), D=0
+[00:00:00]: [Warning] Authorized application C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe is not setup in the firewall.
+[00:00:00]: Authorized application C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe is now enabled in the firewall.
+[00:00:00]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/blocklist.txt (Failure)
+[00:00:00]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/adminlist.txt (Failure)
+[00:00:00]: OnLoadUserIdList: APP:Klei//DoNotStarveTogether/112617283/client_save/whitelist.txt (Failure)
+[00:00:00]: Offline user ID: OU_76561198072883011
+[00:00:00]: THREAD - started 'StreamInput' (13628)
+[00:00:00]: HardwareStats:
+  OS                        
+    name                      Microsoft Windows 11 Home Single Language
+    version                   10.0.26200
+    platformSpecific          SP 0.0
+    architecture              64 bits
+  CPU                       
+    clockSpeed                1300
+    name                      12th Gen Intel(R) Core(TM) i5-1235U
+    manufacturer              GenuineIntel
+    numCores                  10
+    features                  SSE,SSE2,SSE3,SSSE3,SSE41,SSE42,AVX
+  RAM                       
+    megsOfRam                 24576
+  GPU                       
+    megsOfRam                 2047
+    videoModeDescription      1366 x 768 x 4294967296 cores
+    name                      Intel(R) Iris(R) Xe Graphics
+    driverVersion             32.0.101.7085
+    driverDate                20260303000000.000000-000
+    refreshRate               60
+
+[00:00:00]: cGame::InitializeOnMainThread
+[00:00:00]: Renderer initialize: Okay
+[00:00:00]: AnimManager initialize: Okay
+[00:00:00]: Buffers initialize: Okay
+[00:00:00]: cDontStarveGame::DoGameSpecificInitialize()
+[00:00:00]: GameSpecific initialize: Okay
+[00:00:00]: cGame::StartPlaying
+[00:00:00]: AppVersion::GetArchitecture() x64
+[00:00:00]: LOADING LUA
+[00:00:00]: DoLuaFile scripts/main.lua
+[00:00:00]: DoLuaFile loading buffer scripts/main.lua
+[00:00:02]:   taskgrouplist:	default	Together	
+[00:00:02]:   taskgrouplist:	classic	Classic	
+[00:00:02]:   taskgrouplist:	cave_default	Underground	
+[00:00:02]:   taskgrouplist:	lavaarena_taskset	The Forge	
+[00:00:02]:   taskgrouplist:	quagmire_taskset	The Gorge	
+[00:00:03]: Running main.lua
+	
+[00:00:03]: Could not load modindex	
+[00:00:03]: ModIndex: Beginning normal load sequence for dedicated server.
+	
+[00:00:03]: SUCCESS: Loaded modoverrides.lua	
+[00:00:03]: modoverrides.lua enabling WagstaffPlus	
+[00:00:03]: modoverrides.lua enabling workshop-3377689002	
+[00:00:03]: ModIndex:GetModsToLoad inserting moddir, 	WagstaffPlus	
+[00:00:03]: ModIndex:GetModsToLoad inserting forcedmoddir, 	workshop-3377689002	
+[00:00:03]: Could not load mod_config_data/modconfiguration_WagstaffPlus_CLIENT	
+[00:00:03]: Loading mod: WagstaffPlus (Wagstaff Standalone) Version:2.0.0	
+[00:00:03]: Could not load mod_config_data/modconfiguration_workshop-3377689002_CLIENT	
+[00:00:03]: Loading mod: workshop-3377689002 (Crash Never Mind) Version:26-5-27	
+[00:00:03]: applying configuration_options from modoverrides.lua to mod WagstaffPlus	
+[00:00:03]: Overriding mod WagstaffPlus's option mysterychance with value 0.03	
+[00:00:03]: Overriding mod WagstaffPlus's option flickerthreshold with value 0.75	
+[00:00:03]: Overriding mod WagstaffPlus's option debug with value true	
+[00:00:03]: Overriding mod WagstaffPlus's option enableblur with value true	
+[00:00:03]: Overriding mod WagstaffPlus's option weakstomachpain with value -3	
+[00:00:03]: Overriding mod WagstaffPlus's option gogglesrestricted with value false	
+[00:00:03]: Overriding mod WagstaffPlus's option telebrellaspelltype with value item	
+[00:00:03]: Overriding mod WagstaffPlus's option telebrellarandom with value true	
+[00:00:03]: Overriding mod WagstaffPlus's option preset with value NONE	
+[00:00:03]: Overriding mod WagstaffPlus's option mysterynilchance with value 0.4	
+[00:00:03]: Overriding mod WagstaffPlus's option language with value auto	
+[00:00:03]: Overriding mod WagstaffPlus's option mysterymidchance with value 0.7	
+[00:00:03]: applying configuration_options from modoverrides.lua to mod workshop-3377689002	
+[00:00:03]: Overriding mod workshop-3377689002's option emergency_save with value false	
+[00:00:03]: Overriding mod workshop-3377689002's option circuit_breaker with value true	
+[00:00:03]: Registering Mods:
+[00:00:03]:    Registering Mod workshop-3377689002
+[00:00:03]:    Registering Mod WagstaffPlus
+[00:00:03]: Mods registered.
+[00:00:03]: Mod: workshop-3377689002 (Crash Never Mind)	Loading modworldgenmain.lua	
+[00:00:03]: modimport: ../mods/workshop-3377689002/src/main	
+[00:00:03]: modimport: ../mods/workshop-3377689002/lib/modrequire	
+[00:00:03]: mod require file: lib/envlink.lua	
+[00:00:03]: mod require file: src/config.lua	
+[00:00:03]: mod require file: src/ui/infopop.lua	
+[00:00:03]: mod require file: src/utils.lua	
+[00:00:03]: mod require file: lib/persistence.lua	
+[00:00:03]: mod require file: src/datastorage/persistentmethod.lua	
+[00:00:03]: mod require file: src/tools/recordslot.lua	
+[00:00:03]: mod require file: src/tools/modconfighelper.lua	
+[00:00:03]: mod require file: src/tools/resethandler.lua	
+[00:00:03]: mod require file: src/save/helpers/recordsaveerror.lua	
+[00:00:03]: mod require file: src/save/rollback.lua	
+[00:00:03]: mod require file: lib/debugtools.lua	
+[00:00:03]: mod require file: lib/eventcosm.lua	
+[00:00:03]: mod require file: src/cr/crsm.lua	
+[00:00:03]: mod require file: src/save/save.lua	
+[00:00:03]: mod require file: src/analysis/geterrormod.lua	
+[00:00:03]: mod require file: src/analysis/geterrorprefab.lua	
+[00:00:03]: mod require file: src/analysis/stackanalysis.lua	
+[00:00:03]: mod require file: src/ui/announce.lua	
+[00:00:03]: mod require file: src/ui/chatqueuetweak.lua	
+[00:00:03]: mod require file: src/creatserver/eesm.lua	
+[00:00:03]: mod require file: src/tools/readlogfile.lua	
+[00:00:03]: mod require file: src/analysis/analysisforpop.lua	
+[00:00:03]: mod require file: src/tools/gamestatusrecord.lua	
+[00:00:03]: mod require file: src/datacenter.lua	
+[00:00:03]: mod require file: src/html/htmlloggen.lua	
+[00:00:03]: mod require file: lib/threadscheduler.lua	
+[00:00:03]: mod require file: src/tools/threadmanager.lua	
+[00:00:03]: mod require file: src/tools/crypto.lua	
+[00:00:03]: mod require file: src/html/htmllogmanager.lua	
+[00:00:03]: mod require file: src/cr/crsmmanager.lua	
+[00:00:03]: mod require file: src/cr/helpers/clientrdmrhandler.lua	
+[00:00:03]: mod require file: src/cr/helpers/clearcrashcounter.lua	
+[00:00:03]: mod require file: src/cr/helpers/cheaksaveerror.lua	
+[00:00:03]: mod require file: src/cr/helpers/clientfnchandler.lua	
+[00:00:03]: mod require file: src/cr/wrapped.lua	
+[00:00:03]: mod require file: src/creatserver/eesmmanager.lua	
+[00:00:03]: mod require file: src/creatserver/wrapped.lua	
+[00:00:03]: mod require file: src/ui/rejoinpop.lua	
+[00:00:03]: mod require file: src/ui/serverloadingpop.lua	
+[00:00:04]: mod require file: src/ui/pausescreenlogbutton.lua	
+[00:00:04]: mod require file: src/network/rejoindatasync.lua	
+[00:00:04]: Mod: workshop-3377689002 (Crash Never Mind)	Loading modmain.lua	
+[00:00:04]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modworldgenmain.lua	
+[00:00:04]: Mod: WagstaffPlus (Wagstaff Standalone)	  Mod had no modworldgenmain.lua. Skipping.	
+[00:00:04]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modmain.lua	
+[00:00:04]: [Wagstaff Debug] Debug mode ON. Log file: ../mods/WagstaffPlus//wagstaff_debug.log	
+[00:00:04]: [Wagstaff Debug] Debug mode is ON at mod load. Use c_wagstaff_debug() to toggle at runtime.	
+[00:00:04]: [Wagstaff Debug] Standalone Wagstaff Integration mod is loading!	
+[00:00:04]:     [Wagstaff Standalone]: Tropical support is set to: false	
+[00:00:04]: modimport: ../mods/WagstaffPlus/imports/william_tuning	
+[00:00:04]: modimport: ../mods/WagstaffPlus/imports/william_widgets	
+[00:00:04]: modimport: ../mods/WagstaffPlus/imports/william_acts	
+[00:00:04]: modimport: ../mods/WagstaffPlus/imports/william_states	
+[00:00:04]: modimport: ../mods/WagstaffPlus/imports/william_dispenser_tint	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/standalone_prefabs	
+[00:00:04]: [Wagstaff Debug] CreateSkillTree called	
+[00:00:04]: [Wagstaff Debug] BuildSkillsData loaded: true	
+[00:00:04]: [Wagstaff Debug] BuildSkillsData returned data: true	
+[00:00:04]: [Wagstaff Debug] Saving skill definitions to G.WagstaffSkillDefs, #skills: 33	
+[00:00:04]: [Wagstaff Debug] === INICIANDO CreateSkillTreeFor ===	
+[00:00:04]: [Wagstaff Debug] SkillTreeDefs antes: table	
+[00:00:04]: [Wagstaff Debug] SKILLS antes: table	
+[00:00:04]: [Wagstaff Debug] data.SKILLS count: tem items	
+[00:00:04]: [Wagstaff Debug] CreateSkillTreeFor succeeded	
+[00:00:04]: [Wagstaff Debug] === POS CreateSkillTreeFor ===	
+[00:00:04]: [Wagstaff Debug] SKILLS depois: table wagstaff exists? false	
+[00:00:04]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff: table	
+[00:00:04]: [Wagstaff Debug]   RPC_LOOKUP[ 1 ] = wagstaff_ballistic_parallel	
+[00:00:04]: [Wagstaff Debug]   RPC_LOOKUP[ 2 ] = wagstaff_buster_evolve	
+[00:00:04]: [Wagstaff Debug]   RPC_LOOKUP[ 3 ] = wagstaff_buster_parallel	
+[00:00:04]: [Wagstaff Debug]   RPC_LOOKUP[ 4 ] = wagstaff_celestial_possession	
+[00:00:04]: [Wagstaff Debug]   RPC_LOOKUP[ 5 ] = wagstaff_dispenser_mk2	
+[00:00:04]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count: 17 TOTAL_SKILLS_COUNT: 17	
+[00:00:04]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS existe!	
+[00:00:04]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!	
+[00:00:04]: [Wagstaff Standalone] Skill tree registered with 33 skills for wagstaff	
+[00:00:04]: [Wagstaff Debug] Set SkillTreeDefs.SKILLTREE_ORDERS.wagstaff	
+[00:00:04]: [Wagstaff Debug] Successfully created wagstaff skill tree	
+[00:00:04]: [Wagstaff Debug] Registering AddPrefabPostInit('world')	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_sounds	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_tuning	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_strings	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_postinits	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_stategraph	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_recipes	
+[00:00:04]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_shaders	
+[00:00:05]: Event data unavailable: lavaarena_event_server/lavaarena_achievement_quest_defs
+[00:00:12]: LOADING LUA SUCCESS
+[00:00:12]: Registering Client mod namespace "crash_recovery"
+[00:00:12]: Registering Shard mod namespace "crash_recovery"
+[00:00:12]: PlayerDeaths could not load morgue	
+[00:00:12]: PlayerHistory could not load player_history	
+[00:00:12]: ServerPreferences could not load server_preferences	
+[00:00:12]: ConsoleScreenSettings could not load consolescreen	
+[00:00:12]: bloom_enabled	true	
+[00:00:12]: OnFilesLoaded()	
+[00:00:12]: OnUpdatePurchaseStateComplete	
+[00:00:12]: Klump load on boot started.	
+[00:00:12]: Klump files loaded: 	0	
+[00:00:24]: Mod: workshop-3377689002 (Crash Never Mind)	Registering prefabs	
+[00:00:24]: Mod: workshop-3377689002 (Crash Never Mind)	  Registering default mod prefab	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	Registering prefabs	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff_none	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff_none	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/goggles	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesnormalhat	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesheathat	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesarmorhat	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesshoothat	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/fryfocals_charge	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    fryfocals_charge	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/thumper	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper_placer	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telipad	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    beacon	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad_placer	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telebrella	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella_glow	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/hiddendanger_fx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    hiddendanger_fx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    peculiar_marker_fx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    identified_marker_fx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/williamgadget	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamgadget	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_butler	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler2	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler3	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_builder	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_empty	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_buster	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster2	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster3	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_builder	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_empty	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_brute	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute2	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute3	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_gary	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_placer	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_builder	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_ballistic	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic3	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic2	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty_placer	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charge	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_chargeup	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge_hit	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charged_fx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamchargedfx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_mistake	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_mistake	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/bot_aura_v5	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_butler	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_buster	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_bouncer	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_battery	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_shadow	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/dispenser	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    dispenser	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    ehealfx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_bullet	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_bullet	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_rocket	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_rocket	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    eshockfx	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringenter	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_placer	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter_exit	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringexit	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit_placer	
+[00:00:25]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering default mod prefab	
+[00:00:27]: Could not preload undefined prefab (scrap)
+[00:00:27]: Could not preload undefined prefab (scrap)
+[00:00:31]: Could not preload undefined prefab (quagmire_telebrella)
+[00:00:31]: Could not preload undefined prefab (scrap)
+[00:00:31]: Could not preload undefined prefab (scrap)
+[00:00:32]: 	Load FE	
+[00:00:35]: 	Load FE: done	
+[00:00:35]: THREAD - started 'FilesExistAsyncThread' (4584)
+[00:00:35]: FilesExistAsyncThread started (0 files)...
+[00:00:35]: ... FilesExistAsyncThread complete
+[00:00:35]: Check for write access: TRUE
+[00:00:35]: Check for read access: TRUE
+[00:00:35]: Available disk space for save files: 118844 MB
+[00:00:35]: ModIndex: Load sequence finished successfully.	
+[00:00:35]: Reset() returning
+[00:00:35]: [IPC] Signal 'DST_Secondary_Kill' opened  #00000000000009CC
+[00:00:35]: [IPC] Registering handler for signal #00000000000009CC
+[00:00:35]: [IPC] Handle #00000000000009CC added to the Eventhandles
+[00:00:35]: [IPC] Signal 'DST_Secondary_ShutdownNoSave' opened  #0000000000000A58
+[00:00:35]: [IPC] Registering handler for signal #0000000000000A58
+[00:00:35]: [IPC] Handle #0000000000000A58 added to the Eventhandles
+[00:00:35]: [IPC] Signal 'DST_Secondary_Starting' opened  #0000000000000940
+[00:00:35]: [IPC] Sending signal... #0000000000000940
+[00:00:36]: [200] Account Communication Success (6)
+[00:00:36]: Cached userid (null) saved to APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Caves/save/cached_userid
+[00:00:36]: Received (KU_rSBqsLp5) from TokenPurpose
+[00:00:36]: Starting Dedicated Server Game	
+[00:00:36]: Network tick rate: U=15(2), D=0
+[00:00:36]: About to start a server with the following settings:
+[00:00:36]:   Dedicated: true
+[00:00:36]:   Online: true
+[00:00:36]:   Passworded: false
+[00:00:36]:   ServerPort: 10998
+[00:00:36]:   SteamAuthPort: 8767
+[00:00:36]:   SteamMasterServerPort: 27017
+[00:00:36]:   ClanID: false
+[00:00:36]:   ClanOnly: false
+[00:00:36]:   ClanAdmin: false
+[00:00:36]:   LanOnly: true
+[00:00:36]:   FriendsOnly: false
+[00:00:36]:   EnableAutosaver: true
+[00:00:36]:   EncodeUserPath: true
+[00:00:36]:   PVP: false
+[00:00:36]:   MaxPlayers: 6
+[00:00:36]:   GameMode: survival
+[00:00:36]:   OverridenDNS: 
+[00:00:36]:   PauseWhenEmpty: true
+[00:00:36]:   IdleTimeout: 1800s
+[00:00:36]:   VoteEnabled: false
+[00:00:36]:   InternetBroadcasting: true
+[00:00:36]: [Warning] Could not confirm port 10998 is open in the firewall. 
+[00:00:36]: [Shard] No shard id specified, generating a random one...
+[00:00:36]: Could not load mod_config_data/modconfiguration_WagstaffPlus	
+[00:00:36]: Could not load mod_config_data/modconfiguration_workshop-3377689002	
+[00:00:36]: Online Server Started on port: 10998
+[00:00:37]: SUCCESS: Loaded modoverrides.lua	
+[00:00:37]: Found a level data override file with these contents:	
+[00:00:37]: 	K: 	background_node_range	 V: 	table: 00000000191F2D00	
+[00:00:37]: 		K: 	1	 V: 	0	
+[00:00:37]: 		K: 	2	 V: 	1	
+[00:00:37]: 	K: 	desc	 V: 	Delve into the caves... together!	
+[00:00:37]: 	K: 	hideminimap	 V: 	false	
+[00:00:37]: 	K: 	id	 V: 	DST_CAVE	
+[00:00:37]: 	K: 	location	 V: 	cave	
+[00:00:37]: 	K: 	max_playlist_position	 V: 	999	
+[00:00:37]: 	K: 	min_playlist_position	 V: 	0	
+[00:00:37]: 	K: 	name	 V: 	The Caves	
+[00:00:37]: 	K: 	numrandom_set_pieces	 V: 	0	
+[00:00:37]: 	K: 	override_level_string	 V: 	false	
+[00:00:37]: 	K: 	overrides	 V: 	table: 00000000191F2DF0	
+[00:00:37]: 		K: 	acidrain_enabled	 V: 	always	
+[00:00:37]: 		K: 	atriumgate	 V: 	default	
+[00:00:37]: 		K: 	banana	 V: 	default	
+[00:00:37]: 		K: 	basicresource_regrowth	 V: 	none	
+[00:00:37]: 		K: 	bats	 V: 	default	
+[00:00:37]: 		K: 	bats_setting	 V: 	default	
+[00:00:37]: 		K: 	beefaloheat	 V: 	default	
+[00:00:37]: 		K: 	berrybush	 V: 	default	
+[00:00:37]: 		K: 	boons	 V: 	default	
+[00:00:37]: 		K: 	branching	 V: 	default	
+[00:00:37]: 		K: 	brightmarecreatures	 V: 	default	
+[00:00:37]: 		K: 	bunnymen	 V: 	default	
+[00:00:37]: 		K: 	bunnymen_setting	 V: 	default	
+[00:00:37]: 		K: 	cave_ponds	 V: 	default	
+[00:00:37]: 		K: 	cave_spiders	 V: 	default	
+[00:00:37]: 		K: 	cavelight	 V: 	default	
+[00:00:37]: 		K: 	chess	 V: 	default	
+[00:00:37]: 		K: 	chest_mimics	 V: 	default	
+[00:00:37]: 		K: 	crow_carnival	 V: 	default	
+[00:00:37]: 		K: 	darkness	 V: 	default	
+[00:00:37]: 		K: 	day	 V: 	default	
+[00:00:37]: 		K: 	daywalker	 V: 	default	
+[00:00:37]: 		K: 	dropeverythingondespawn	 V: 	default	
+[00:00:37]: 		K: 	dustmoths	 V: 	default	
+[00:00:37]: 		K: 	earthquakes	 V: 	default	
+[00:00:37]: 		K: 	evergreen_regrowth	 V: 	default	
+[00:00:37]: 		K: 	extrastartingitems	 V: 	default	
+[00:00:37]: 		K: 	fern	 V: 	default	
+[00:00:37]: 		K: 	fissure	 V: 	default	
+[00:00:37]: 		K: 	flint	 V: 	default	
+[00:00:37]: 		K: 	flower_cave	 V: 	default	
+[00:00:37]: 		K: 	flower_cave_regrowth	 V: 	default	
+[00:00:37]: 		K: 	fruitfly	 V: 	default	
+[00:00:37]: 		K: 	ghostenabled	 V: 	always	
+[00:00:37]: 		K: 	ghostsanitydrain	 V: 	always	
+[00:00:37]: 		K: 	grass	 V: 	default	
+[00:00:37]: 		K: 	grassgekkos	 V: 	default	
+[00:00:37]: 		K: 	hallowed_nights	 V: 	default	
+[00:00:37]: 		K: 	healthpenalty	 V: 	always	
+[00:00:37]: 		K: 	hunger	 V: 	default	
+[00:00:37]: 		K: 	itemmimics	 V: 	default	
+[00:00:37]: 		K: 	krampus	 V: 	default	
+[00:00:37]: 		K: 	layout_mode	 V: 	RestrictNodesByKey	
+[00:00:37]: 		K: 	lessdamagetaken	 V: 	none	
+[00:00:37]: 		K: 	lichen	 V: 	default	
+[00:00:37]: 		K: 	liefs	 V: 	default	
+[00:00:37]: 		K: 	lightflier_flower_regrowth	 V: 	default	
+[00:00:37]: 		K: 	lightfliers	 V: 	default	
+[00:00:37]: 		K: 	loop	 V: 	default	
+[00:00:37]: 		K: 	marshbush	 V: 	default	
+[00:00:37]: 		K: 	merms	 V: 	default	
+[00:00:37]: 		K: 	molebats	 V: 	default	
+[00:00:37]: 		K: 	moles_setting	 V: 	default	
+[00:00:37]: 		K: 	monkey	 V: 	default	
+[00:00:37]: 		K: 	monkey_setting	 V: 	default	
+[00:00:37]: 		K: 	moon_spider	 V: 	default	
+[00:00:37]: 		K: 	mushgnome	 V: 	default	
+[00:00:37]: 		K: 	mushroom	 V: 	default	
+[00:00:37]: 		K: 	mushtree	 V: 	default	
+[00:00:37]: 		K: 	mushtree_moon_regrowth	 V: 	default	
+[00:00:37]: 		K: 	mushtree_regrowth	 V: 	default	
+[00:00:37]: 		K: 	mutated_birds	 V: 	default	
+[00:00:37]: 		K: 	mutated_merm	 V: 	default	
+[00:00:37]: 		K: 	mutated_spiderqueen	 V: 	default	
+[00:00:37]: 		K: 	nightmarecreatures	 V: 	default	
+[00:00:37]: 		K: 	pigs_setting	 V: 	default	
+[00:00:37]: 		K: 	portalresurection	 V: 	none	
+[00:00:37]: 		K: 	prefabswaps_start	 V: 	default	
+[00:00:37]: 		K: 	reeds	 V: 	default	
+[00:00:37]: 		K: 	reeds_regrowth	 V: 	default	
+[00:00:37]: 		K: 	regrowth	 V: 	default	
+[00:00:37]: 		K: 	resettime	 V: 	default	
+[00:00:37]: 		K: 	rifts_enabled_cave	 V: 	default	
+[00:00:37]: 		K: 	rifts_frequency_cave	 V: 	default	
+[00:00:37]: 		K: 	roads	 V: 	never	
+[00:00:37]: 		K: 	rock	 V: 	default	
+[00:00:37]: 		K: 	rocky	 V: 	default	
+[00:00:37]: 		K: 	rocky_setting	 V: 	default	
+[00:00:37]: 		K: 	sapling	 V: 	default	
+[00:00:37]: 		K: 	season_start	 V: 	default	
+[00:00:37]: 		K: 	seasonalstartingitems	 V: 	default	
+[00:00:37]: 		K: 	shadowcreatures	 V: 	default	
+[00:00:37]: 		K: 	slurper	 V: 	default	
+[00:00:37]: 		K: 	slurtles	 V: 	default	
+[00:00:37]: 		K: 	slurtles_setting	 V: 	default	
+[00:00:37]: 		K: 	snurtles	 V: 	default	
+[00:00:37]: 		K: 	spawnmode	 V: 	fixed	
+[00:00:37]: 		K: 	spawnprotection	 V: 	default	
+[00:00:37]: 		K: 	specialevent	 V: 	default	
+[00:00:37]: 		K: 	spider_dropper	 V: 	default	
+[00:00:37]: 		K: 	spider_hider	 V: 	default	
+[00:00:37]: 		K: 	spider_spitter	 V: 	default	
+[00:00:37]: 		K: 	spider_warriors	 V: 	default	
+[00:00:37]: 		K: 	spiderqueen	 V: 	default	
+[00:00:37]: 		K: 	spiders	 V: 	default	
+[00:00:37]: 		K: 	spiders_setting	 V: 	default	
+[00:00:37]: 		K: 	start_location	 V: 	caves	
+[00:00:37]: 		K: 	task_set	 V: 	cave_default	
+[00:00:37]: 		K: 	temperaturedamage	 V: 	default	
+[00:00:37]: 		K: 	tentacles	 V: 	default	
+[00:00:37]: 		K: 	toadstool	 V: 	default	
+[00:00:37]: 		K: 	touchstone	 V: 	default	
+[00:00:37]: 		K: 	tree_rock	 V: 	default	
+[00:00:37]: 		K: 	tree_rock_regrowth	 V: 	default	
+[00:00:37]: 		K: 	trees	 V: 	default	
+[00:00:37]: 		K: 	twiggytrees_regrowth	 V: 	default	
+[00:00:37]: 		K: 	weather	 V: 	default	
+[00:00:37]: 		K: 	winters_feast	 V: 	default	
+[00:00:37]: 		K: 	world_size	 V: 	default	
+[00:00:37]: 		K: 	wormattacks	 V: 	default	
+[00:00:37]: 		K: 	wormattacks_boss	 V: 	default	
+[00:00:37]: 		K: 	wormhole_prefab	 V: 	tentacle_pillar	
+[00:00:37]: 		K: 	wormlights	 V: 	default	
+[00:00:37]: 		K: 	worms	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_beefalo	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_bunnyman	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_carrat	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_catcoon	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_dragonfly	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_gobbler	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_knight	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_pig	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_snake	 V: 	default	
+[00:00:37]: 		K: 	year_of_the_varg	 V: 	default	
+[00:00:37]: 	K: 	required_prefabs	 V: 	table: 00000000191F2FD0	
+[00:00:37]: 		K: 	1	 V: 	multiplayer_portal	
+[00:00:37]: 	K: 	settings_desc	 V: 	Delve into the caves... together!	
+[00:00:37]: 	K: 	settings_id	 V: 	DST_CAVE	
+[00:00:37]: 	K: 	settings_name	 V: 	The Caves	
+[00:00:37]: 	K: 	substitutes	 V: 	table: 00000000191F4240	
+[00:00:37]: 	K: 	version	 V: 	4	
+[00:00:37]: 	K: 	worldgen_desc	 V: 	Delve into the caves... together!	
+[00:00:37]: 	K: 	worldgen_id	 V: 	DST_CAVE	
+[00:00:37]: 	K: 	worldgen_name	 V: 	The Caves	
+[00:00:37]: Loaded and applied level data override from ../leveldataoverride.lua	
+[00:00:37]: Overwriting savedata with level data file.	
+[00:00:37]: Not applying world gen overrides.	
+[00:00:37]: Collecting garbage...
+[00:00:37]: lua_gc took 0.30 seconds
+[00:00:37]: ~ShardLuaProxy()
+[00:00:37]: ~cEventLeaderboardProxy()
+[00:00:37]: ~ItemServerLuaProxy()
+[00:00:37]: ~InventoryLuaProxy()
+[00:00:37]: ~NetworkLuaProxy()
+[00:00:37]: ~SimLuaProxy()
+[00:00:37]: lua_close took 0.43 seconds
+[00:00:38]: ReleaseAll
+[00:00:38]: ReleaseAll Finished
+[00:00:38]: cGame::StartPlaying
+[00:00:38]: AppVersion::GetArchitecture() x64
+[00:00:38]: LOADING LUA
+[00:00:38]: DoLuaFile scripts/main.lua
+[00:00:38]: DoLuaFile loading buffer scripts/main.lua
+[00:00:39]: AddPortMapping(10998, 10998, 192.168.0.112) failed with code 718 (ConflictInMappingEntry)
+[00:00:40]:   taskgrouplist:	default	Together	
+[00:00:40]:   taskgrouplist:	classic	Classic	
+[00:00:40]:   taskgrouplist:	cave_default	Underground	
+[00:00:40]:   taskgrouplist:	lavaarena_taskset	The Forge	
+[00:00:40]:   taskgrouplist:	quagmire_taskset	The Gorge	
+[00:00:40]: Running main.lua
+	
+[00:00:40]: loaded modindex	
+[00:00:41]: ModIndex: Beginning normal load sequence for dedicated server.
+	
+[00:00:41]: SUCCESS: Loaded modoverrides.lua	
+[00:00:41]: modoverrides.lua enabling WagstaffPlus	
+[00:00:41]: modoverrides.lua enabling workshop-3377689002	
+[00:00:41]: ModIndex:GetModsToLoad inserting moddir, 	WagstaffPlus	
+[00:00:41]: ModIndex:GetModsToLoad inserting forcedmoddir, 	workshop-3377689002	
+[00:00:41]: Could not load mod_config_data/modconfiguration_WagstaffPlus	
+[00:00:41]: Loading mod: WagstaffPlus (Wagstaff Standalone) Version:2.0.0	
+[00:00:41]: Could not load mod_config_data/modconfiguration_workshop-3377689002	
+[00:00:41]: Loading mod: workshop-3377689002 (Crash Never Mind) Version:26-5-27	
+[00:00:41]: applying configuration_options from modoverrides.lua to mod WagstaffPlus	
+[00:00:41]: Overriding mod WagstaffPlus's option mysterychance with value 0.03	
+[00:00:41]: Overriding mod WagstaffPlus's option flickerthreshold with value 0.75	
+[00:00:41]: Overriding mod WagstaffPlus's option debug with value true	
+[00:00:41]: Overriding mod WagstaffPlus's option enableblur with value true	
+[00:00:41]: Overriding mod WagstaffPlus's option weakstomachpain with value -3	
+[00:00:41]: Overriding mod WagstaffPlus's option gogglesrestricted with value false	
+[00:00:41]: Overriding mod WagstaffPlus's option telebrellaspelltype with value item	
+[00:00:41]: Overriding mod WagstaffPlus's option telebrellarandom with value true	
+[00:00:41]: Overriding mod WagstaffPlus's option preset with value NONE	
+[00:00:41]: Overriding mod WagstaffPlus's option mysterynilchance with value 0.4	
+[00:00:41]: Overriding mod WagstaffPlus's option language with value auto	
+[00:00:41]: Overriding mod WagstaffPlus's option mysterymidchance with value 0.7	
+[00:00:41]: applying configuration_options from modoverrides.lua to mod workshop-3377689002	
+[00:00:41]: Overriding mod workshop-3377689002's option emergency_save with value false	
+[00:00:41]: Overriding mod workshop-3377689002's option circuit_breaker with value true	
+[00:00:41]: Registering Mods:
+[00:00:41]:    Registering Mod workshop-3377689002
+[00:00:41]:    Registering Mod WagstaffPlus
+[00:00:41]: Mods registered.
+[00:00:41]: Mod: workshop-3377689002 (Crash Never Mind)	Loading modworldgenmain.lua	
+[00:00:41]: modimport: ../mods/workshop-3377689002/src/main	
+[00:00:41]: modimport: ../mods/workshop-3377689002/lib/modrequire	
+[00:00:41]: mod require file: lib/envlink.lua	
+[00:00:41]: mod require file: src/config.lua	
+[00:00:41]: mod require file: src/ui/infopop.lua	
+[00:00:41]: mod require file: src/utils.lua	
+[00:00:41]: mod require file: lib/persistence.lua	
+[00:00:41]: mod require file: src/datastorage/persistentmethod.lua	
+[00:00:41]: mod require file: src/tools/recordslot.lua	
+[00:00:41]: mod require file: src/tools/modconfighelper.lua	
+[00:00:41]: mod require file: src/tools/resethandler.lua	
+[00:00:41]: mod require file: src/save/helpers/recordsaveerror.lua	
+[00:00:41]: mod require file: src/save/rollback.lua	
+[00:00:41]: mod require file: lib/debugtools.lua	
+[00:00:41]: mod require file: lib/eventcosm.lua	
+[00:00:41]: mod require file: src/cr/crsm.lua	
+[00:00:41]: mod require file: src/save/save.lua	
+[00:00:41]: mod require file: src/analysis/geterrormod.lua	
+[00:00:41]: mod require file: src/analysis/geterrorprefab.lua	
+[00:00:41]: mod require file: src/analysis/stackanalysis.lua	
+[00:00:41]: mod require file: src/ui/announce.lua	
+[00:00:41]: mod require file: src/ui/chatqueuetweak.lua	
+[00:00:41]: mod require file: src/creatserver/eesm.lua	
+[00:00:41]: mod require file: src/tools/readlogfile.lua	
+[00:00:41]: mod require file: src/analysis/analysisforpop.lua	
+[00:00:41]: mod require file: src/tools/gamestatusrecord.lua	
+[00:00:41]: mod require file: src/datacenter.lua	
+[00:00:41]: mod require file: src/html/htmlloggen.lua	
+[00:00:41]: mod require file: lib/threadscheduler.lua	
+[00:00:41]: mod require file: src/tools/threadmanager.lua	
+[00:00:41]: mod require file: src/tools/crypto.lua	
+[00:00:41]: mod require file: src/html/htmllogmanager.lua	
+[00:00:41]: mod require file: src/cr/crsmmanager.lua	
+[00:00:41]: mod require file: src/cr/helpers/clientrdmrhandler.lua	
+[00:00:41]: mod require file: src/cr/helpers/clearcrashcounter.lua	
+[00:00:41]: mod require file: src/cr/helpers/cheaksaveerror.lua	
+[00:00:41]: mod require file: src/cr/helpers/clientfnchandler.lua	
+[00:00:41]: mod require file: src/cr/wrapped.lua	
+[00:00:41]: mod require file: src/creatserver/eesmmanager.lua	
+[00:00:41]: mod require file: src/creatserver/wrapped.lua	
+[00:00:41]: mod require file: src/ui/rejoinpop.lua	
+[00:00:41]: mod require file: src/ui/serverloadingpop.lua	
+[00:00:41]: mod require file: src/ui/pausescreenlogbutton.lua	
+[00:00:41]: mod require file: src/network/rejoindatasync.lua	
+[00:00:41]: Mod: workshop-3377689002 (Crash Never Mind)	Loading modmain.lua	
+[00:00:41]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modworldgenmain.lua	
+[00:00:41]: Mod: WagstaffPlus (Wagstaff Standalone)	  Mod had no modworldgenmain.lua. Skipping.	
+[00:00:41]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modmain.lua	
+[00:00:41]: [Wagstaff Debug] Debug mode ON. Log file: ../mods/WagstaffPlus//wagstaff_debug.log	
+[00:00:41]: [Wagstaff Debug] Debug mode is ON at mod load. Use c_wagstaff_debug() to toggle at runtime.	
+[00:00:41]: [Wagstaff Debug] Standalone Wagstaff Integration mod is loading!	
+[00:00:41]:     [Wagstaff Standalone]: Tropical support is set to: false	
+[00:00:41]: modimport: ../mods/WagstaffPlus/imports/william_tuning	
+[00:00:41]: modimport: ../mods/WagstaffPlus/imports/william_widgets	
+[00:00:41]: modimport: ../mods/WagstaffPlus/imports/william_acts	
+[00:00:41]: modimport: ../mods/WagstaffPlus/imports/william_states	
+[00:00:41]: modimport: ../mods/WagstaffPlus/imports/william_dispenser_tint	
+[00:00:41]: modimport: ../mods/WagstaffPlus/scripts/standalone_prefabs	
+[00:00:41]: [Wagstaff Debug] CreateSkillTree called	
+[00:00:42]: [Wagstaff Debug] BuildSkillsData loaded: true	
+[00:00:42]: [Wagstaff Debug] BuildSkillsData returned data: true	
+[00:00:42]: [Wagstaff Debug] Saving skill definitions to G.WagstaffSkillDefs, #skills: 33	
+[00:00:42]: [Wagstaff Debug] === INICIANDO CreateSkillTreeFor ===	
+[00:00:42]: [Wagstaff Debug] SkillTreeDefs antes: table	
+[00:00:42]: [Wagstaff Debug] SKILLS antes: table	
+[00:00:42]: [Wagstaff Debug] data.SKILLS count: tem items	
+[00:00:42]: [Wagstaff Debug] CreateSkillTreeFor succeeded	
+[00:00:42]: [Wagstaff Debug] === POS CreateSkillTreeFor ===	
+[00:00:42]: [Wagstaff Debug] SKILLS depois: table wagstaff exists? false	
+[00:00:42]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff: table	
+[00:00:42]: [Wagstaff Debug]   RPC_LOOKUP[ 1 ] = wagstaff_ballistic_parallel	
+[00:00:42]: [Wagstaff Debug]   RPC_LOOKUP[ 2 ] = wagstaff_buster_evolve	
+[00:00:42]: [Wagstaff Debug]   RPC_LOOKUP[ 3 ] = wagstaff_buster_parallel	
+[00:00:42]: [Wagstaff Debug]   RPC_LOOKUP[ 4 ] = wagstaff_celestial_possession	
+[00:00:42]: [Wagstaff Debug]   RPC_LOOKUP[ 5 ] = wagstaff_dispenser_mk2	
+[00:00:42]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count: 17 TOTAL_SKILLS_COUNT: 17	
+[00:00:42]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS existe!	
+[00:00:42]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!	
+[00:00:42]: [Wagstaff Standalone] Skill tree registered with 33 skills for wagstaff	
+[00:00:42]: [Wagstaff Debug] Set SkillTreeDefs.SKILLTREE_ORDERS.wagstaff	
+[00:00:42]: [Wagstaff Debug] Successfully created wagstaff skill tree	
+[00:00:42]: [Wagstaff Debug] Registering AddPrefabPostInit('world')	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_sounds	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_tuning	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_strings	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_postinits	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_stategraph	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_recipes	
+[00:00:42]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_shaders	
+[00:00:47]: Event data unavailable: lavaarena_event_server/lavaarena_achievement_quest_defs
+[00:00:47]: LOADING LUA SUCCESS
+[00:00:47]: Registering Client mod namespace "crash_recovery"
+[00:00:47]: Registering Shard mod namespace "crash_recovery"
+[00:00:47]: PlayerDeaths could not load morgue	
+[00:00:47]: PlayerHistory could not load player_history	
+[00:00:47]: ServerPreferences could not load server_preferences	
+[00:00:47]: ConsoleScreenSettings could not load consolescreen	
+[00:00:47]: bloom_enabled	true	
+[00:00:47]: OnFilesLoaded()	
+[00:00:47]: OnUpdatePurchaseStateComplete	
+[00:00:47]: SUCCESS: Loaded modoverrides.lua	
+[00:00:47]: Found a level data override file with these contents:	
+[00:00:47]: 	K: 	background_node_range	 V: 	table: 000000000F69DCB0	
+[00:00:47]: 		K: 	1	 V: 	0	
+[00:00:47]: 		K: 	2	 V: 	1	
+[00:00:47]: 	K: 	desc	 V: 	Delve into the caves... together!	
+[00:00:47]: 	K: 	hideminimap	 V: 	false	
+[00:00:47]: 	K: 	id	 V: 	DST_CAVE	
+[00:00:47]: 	K: 	location	 V: 	cave	
+[00:00:47]: 	K: 	max_playlist_position	 V: 	999	
+[00:00:47]: 	K: 	min_playlist_position	 V: 	0	
+[00:00:47]: 	K: 	name	 V: 	The Caves	
+[00:00:47]: 	K: 	numrandom_set_pieces	 V: 	0	
+[00:00:47]: 	K: 	override_level_string	 V: 	false	
+[00:00:47]: 	K: 	overrides	 V: 	table: 000000000F69E1B0	
+[00:00:47]: 		K: 	acidrain_enabled	 V: 	always	
+[00:00:47]: 		K: 	atriumgate	 V: 	default	
+[00:00:47]: 		K: 	banana	 V: 	default	
+[00:00:47]: 		K: 	basicresource_regrowth	 V: 	none	
+[00:00:47]: 		K: 	bats	 V: 	default	
+[00:00:47]: 		K: 	bats_setting	 V: 	default	
+[00:00:47]: 		K: 	beefaloheat	 V: 	default	
+[00:00:47]: 		K: 	berrybush	 V: 	default	
+[00:00:47]: 		K: 	boons	 V: 	default	
+[00:00:47]: 		K: 	branching	 V: 	default	
+[00:00:47]: 		K: 	brightmarecreatures	 V: 	default	
+[00:00:47]: 		K: 	bunnymen	 V: 	default	
+[00:00:47]: 		K: 	bunnymen_setting	 V: 	default	
+[00:00:47]: 		K: 	cave_ponds	 V: 	default	
+[00:00:47]: 		K: 	cave_spiders	 V: 	default	
+[00:00:47]: 		K: 	cavelight	 V: 	default	
+[00:00:47]: 		K: 	chess	 V: 	default	
+[00:00:47]: 		K: 	chest_mimics	 V: 	default	
+[00:00:47]: 		K: 	crow_carnival	 V: 	default	
+[00:00:47]: 		K: 	darkness	 V: 	default	
+[00:00:47]: 		K: 	day	 V: 	default	
+[00:00:47]: 		K: 	daywalker	 V: 	default	
+[00:00:47]: 		K: 	dropeverythingondespawn	 V: 	default	
+[00:00:47]: 		K: 	dustmoths	 V: 	default	
+[00:00:47]: 		K: 	earthquakes	 V: 	default	
+[00:00:47]: 		K: 	evergreen_regrowth	 V: 	default	
+[00:00:47]: 		K: 	extrastartingitems	 V: 	default	
+[00:00:47]: 		K: 	fern	 V: 	default	
+[00:00:47]: 		K: 	fissure	 V: 	default	
+[00:00:47]: 		K: 	flint	 V: 	default	
+[00:00:47]: 		K: 	flower_cave	 V: 	default	
+[00:00:47]: 		K: 	flower_cave_regrowth	 V: 	default	
+[00:00:47]: 		K: 	fruitfly	 V: 	default	
+[00:00:47]: 		K: 	ghostenabled	 V: 	always	
+[00:00:47]: 		K: 	ghostsanitydrain	 V: 	always	
+[00:00:47]: 		K: 	grass	 V: 	default	
+[00:00:47]: 		K: 	grassgekkos	 V: 	default	
+[00:00:47]: 		K: 	hallowed_nights	 V: 	default	
+[00:00:47]: 		K: 	healthpenalty	 V: 	always	
+[00:00:47]: 		K: 	hunger	 V: 	default	
+[00:00:47]: 		K: 	itemmimics	 V: 	default	
+[00:00:47]: 		K: 	krampus	 V: 	default	
+[00:00:47]: 		K: 	layout_mode	 V: 	RestrictNodesByKey	
+[00:00:47]: 		K: 	lessdamagetaken	 V: 	none	
+[00:00:47]: 		K: 	lichen	 V: 	default	
+[00:00:47]: 		K: 	liefs	 V: 	default	
+[00:00:47]: 		K: 	lightflier_flower_regrowth	 V: 	default	
+[00:00:47]: 		K: 	lightfliers	 V: 	default	
+[00:00:47]: 		K: 	loop	 V: 	default	
+[00:00:47]: 		K: 	marshbush	 V: 	default	
+[00:00:47]: 		K: 	merms	 V: 	default	
+[00:00:47]: 		K: 	molebats	 V: 	default	
+[00:00:47]: 		K: 	moles_setting	 V: 	default	
+[00:00:47]: 		K: 	monkey	 V: 	default	
+[00:00:47]: 		K: 	monkey_setting	 V: 	default	
+[00:00:47]: 		K: 	moon_spider	 V: 	default	
+[00:00:47]: 		K: 	mushgnome	 V: 	default	
+[00:00:47]: 		K: 	mushroom	 V: 	default	
+[00:00:47]: 		K: 	mushtree	 V: 	default	
+[00:00:47]: 		K: 	mushtree_moon_regrowth	 V: 	default	
+[00:00:47]: 		K: 	mushtree_regrowth	 V: 	default	
+[00:00:47]: 		K: 	mutated_birds	 V: 	default	
+[00:00:47]: 		K: 	mutated_merm	 V: 	default	
+[00:00:47]: 		K: 	mutated_spiderqueen	 V: 	default	
+[00:00:47]: 		K: 	nightmarecreatures	 V: 	default	
+[00:00:47]: 		K: 	pigs_setting	 V: 	default	
+[00:00:47]: 		K: 	portalresurection	 V: 	none	
+[00:00:47]: 		K: 	prefabswaps_start	 V: 	default	
+[00:00:47]: 		K: 	reeds	 V: 	default	
+[00:00:47]: 		K: 	reeds_regrowth	 V: 	default	
+[00:00:47]: 		K: 	regrowth	 V: 	default	
+[00:00:47]: 		K: 	resettime	 V: 	default	
+[00:00:47]: 		K: 	rifts_enabled_cave	 V: 	default	
+[00:00:47]: 		K: 	rifts_frequency_cave	 V: 	default	
+[00:00:47]: 		K: 	roads	 V: 	never	
+[00:00:47]: 		K: 	rock	 V: 	default	
+[00:00:47]: 		K: 	rocky	 V: 	default	
+[00:00:47]: 		K: 	rocky_setting	 V: 	default	
+[00:00:47]: 		K: 	sapling	 V: 	default	
+[00:00:47]: 		K: 	season_start	 V: 	default	
+[00:00:47]: 		K: 	seasonalstartingitems	 V: 	default	
+[00:00:47]: 		K: 	shadowcreatures	 V: 	default	
+[00:00:47]: 		K: 	slurper	 V: 	default	
+[00:00:47]: 		K: 	slurtles	 V: 	default	
+[00:00:47]: 		K: 	slurtles_setting	 V: 	default	
+[00:00:47]: 		K: 	snurtles	 V: 	default	
+[00:00:47]: 		K: 	spawnmode	 V: 	fixed	
+[00:00:47]: 		K: 	spawnprotection	 V: 	default	
+[00:00:47]: 		K: 	specialevent	 V: 	default	
+[00:00:47]: 		K: 	spider_dropper	 V: 	default	
+[00:00:47]: 		K: 	spider_hider	 V: 	default	
+[00:00:47]: 		K: 	spider_spitter	 V: 	default	
+[00:00:47]: 		K: 	spider_warriors	 V: 	default	
+[00:00:47]: 		K: 	spiderqueen	 V: 	default	
+[00:00:47]: 		K: 	spiders	 V: 	default	
+[00:00:47]: 		K: 	spiders_setting	 V: 	default	
+[00:00:47]: 		K: 	start_location	 V: 	caves	
+[00:00:47]: 		K: 	task_set	 V: 	cave_default	
+[00:00:47]: 		K: 	temperaturedamage	 V: 	default	
+[00:00:47]: 		K: 	tentacles	 V: 	default	
+[00:00:47]: 		K: 	toadstool	 V: 	default	
+[00:00:47]: 		K: 	touchstone	 V: 	default	
+[00:00:47]: 		K: 	tree_rock	 V: 	default	
+[00:00:47]: 		K: 	tree_rock_regrowth	 V: 	default	
+[00:00:47]: 		K: 	trees	 V: 	default	
+[00:00:47]: 		K: 	twiggytrees_regrowth	 V: 	default	
+[00:00:47]: 		K: 	weather	 V: 	default	
+[00:00:47]: 		K: 	winters_feast	 V: 	default	
+[00:00:47]: 		K: 	world_size	 V: 	default	
+[00:00:47]: 		K: 	wormattacks	 V: 	default	
+[00:00:47]: 		K: 	wormattacks_boss	 V: 	default	
+[00:00:47]: 		K: 	wormhole_prefab	 V: 	tentacle_pillar	
+[00:00:47]: 		K: 	wormlights	 V: 	default	
+[00:00:47]: 		K: 	worms	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_beefalo	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_bunnyman	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_carrat	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_catcoon	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_dragonfly	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_gobbler	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_knight	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_pig	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_snake	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_varg	 V: 	default	
+[00:00:47]: 	K: 	required_prefabs	 V: 	table: 000000000F69D710	
+[00:00:47]: 		K: 	1	 V: 	multiplayer_portal	
+[00:00:47]: 	K: 	settings_desc	 V: 	Delve into the caves... together!	
+[00:00:47]: 	K: 	settings_id	 V: 	DST_CAVE	
+[00:00:47]: 	K: 	settings_name	 V: 	The Caves	
+[00:00:47]: 	K: 	substitutes	 V: 	table: 000000000F69E660	
+[00:00:47]: 	K: 	version	 V: 	4	
+[00:00:47]: 	K: 	worldgen_desc	 V: 	Delve into the caves... together!	
+[00:00:47]: 	K: 	worldgen_id	 V: 	DST_CAVE	
+[00:00:47]: 	K: 	worldgen_name	 V: 	The Caves	
+[00:00:47]: Loaded and applied level data override from ../leveldataoverride.lua	
+[00:00:47]: Overwriting savedata with level data file.	
+[00:00:47]: Not applying world gen overrides.	
+[00:00:47]: [IPC] Signal 'DST_Secondary_WorldGen' opened  #0000000000000B60
+[00:00:47]: [IPC] Sending signal... #0000000000000B60
+[00:00:47]: WorldSim::SimThread::SimThread()
+[00:00:47]: ABOUT TO INSTALL STACKTRACE
+[00:00:47]: DoLuaFile scripts/stacktrace.lua
+[00:00:47]: DoLuaFile loading buffer scripts/stacktrace.lua
+[00:00:47]: INSTALLED STACKTRACE
+[00:00:47]: Engine Seed: (1781882907 + 755369674) & 0x7FFFFFFF = 389768933
+[00:00:47]: WorldSim::SimThread::SimThread() complete
+[00:00:47]: THREAD - started 'WorldSim' (17348)
+[00:00:47]: WorldSim::SimThread::Main()
+[00:00:47]: DoLuaFile scripts/worldgen_main.lua
+[00:00:47]: DoLuaFile loading buffer scripts/worldgen_main.lua
+[00:00:47]: Check for write access: TRUE
+[00:00:47]: Check for read access: TRUE
+[00:00:47]: Available disk space for save files: 118843 MB
+[00:00:47]: ModIndex: Load sequence finished successfully.	
+[00:00:47]: Reset() returning
+[00:00:47]: DLC enabled : 	false	
+[00:00:49]:   taskgrouplist:	default	Together	
+[00:00:49]:   taskgrouplist:	classic	Classic	
+[00:00:49]:   taskgrouplist:	cave_default	Underground	
+[00:00:49]:   taskgrouplist:	lavaarena_taskset	The Forge	
+[00:00:49]:   taskgrouplist:	quagmire_taskset	The Gorge	
+[00:00:50]: ModIndex:GetModsToLoad inserting modname, 	WagstaffPlus	
+[00:00:50]: ModIndex:GetModsToLoad inserting modname, 	workshop-3377689002	
+[00:00:50]: Loading mod: WagstaffPlus (Wagstaff Standalone) Version:2.0.0	
+[00:00:50]: Loading mod: workshop-3377689002 (Crash Never Mind) Version:26-5-27	
+[00:00:50]: Mod: workshop-3377689002 (Crash Never Mind)	Loading modworldgenmain.lua	
+[00:00:50]: modimport: ../mods/workshop-3377689002/src/main	
+[00:00:50]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modworldgenmain.lua	
+[00:00:50]: Mod: WagstaffPlus (Wagstaff Standalone)	  Mod had no modworldgenmain.lua. Skipping.	
+[00:00:50]: running worldgen_main.lua
+	
+[00:00:50]: SEED = 	389768933	
+[00:00:50]: Generating world with these parameters:	
+[00:00:50]: level_type	SURVIVAL	
+[00:00:50]: level_data:	
+[00:00:50]: 	K: 	background_node_range	 V: 	table: 00000000050F1090	
+[00:00:50]: 		K: 	1	 V: 	0	
+[00:00:50]: 		K: 	2	 V: 	1	
+[00:00:50]: 	K: 	desc	 V: 	Delve into the caves... together!	
+[00:00:50]: 	K: 	hideminimap	 V: 	false	
+[00:00:50]: 	K: 	id	 V: 	DST_CAVE	
+[00:00:50]: 	K: 	location	 V: 	cave	
+[00:00:50]: 	K: 	max_playlist_position	 V: 	999	
+[00:00:50]: 	K: 	min_playlist_position	 V: 	0	
+[00:00:50]: 	K: 	name	 V: 	The Caves	
+[00:00:50]: 	K: 	numrandom_set_pieces	 V: 	0	
+[00:00:50]: 	K: 	override_level_string	 V: 	false	
+[00:00:50]: 	K: 	overrides	 V: 	table: 00000000050F2E40	
+[00:00:50]: 		K: 	acidrain_enabled	 V: 	always	
+[00:00:50]: 		K: 	atriumgate	 V: 	default	
+[00:00:50]: 		K: 	banana	 V: 	default	
+[00:00:50]: 		K: 	basicresource_regrowth	 V: 	none	
+[00:00:50]: 		K: 	bats	 V: 	default	
+[00:00:50]: 		K: 	bats_setting	 V: 	default	
+[00:00:50]: 		K: 	beefaloheat	 V: 	default	
+[00:00:50]: 		K: 	berrybush	 V: 	default	
+[00:00:50]: 		K: 	boons	 V: 	default	
+[00:00:50]: 		K: 	branching	 V: 	default	
+[00:00:50]: 		K: 	brightmarecreatures	 V: 	default	
+[00:00:50]: 		K: 	bunnymen	 V: 	default	
+[00:00:50]: 		K: 	bunnymen_setting	 V: 	default	
+[00:00:50]: 		K: 	cave_ponds	 V: 	default	
+[00:00:50]: 		K: 	cave_spiders	 V: 	default	
+[00:00:50]: 		K: 	cavelight	 V: 	default	
+[00:00:50]: 		K: 	chess	 V: 	default	
+[00:00:50]: 		K: 	chest_mimics	 V: 	default	
+[00:00:50]: 		K: 	crow_carnival	 V: 	default	
+[00:00:50]: 		K: 	darkness	 V: 	default	
+[00:00:50]: 		K: 	day	 V: 	default	
+[00:00:50]: 		K: 	daywalker	 V: 	default	
+[00:00:50]: 		K: 	dropeverythingondespawn	 V: 	default	
+[00:00:50]: 		K: 	dustmoths	 V: 	default	
+[00:00:50]: 		K: 	earthquakes	 V: 	default	
+[00:00:50]: 		K: 	evergreen_regrowth	 V: 	default	
+[00:00:50]: 		K: 	extrastartingitems	 V: 	default	
+[00:00:50]: 		K: 	fern	 V: 	default	
+[00:00:50]: 		K: 	fissure	 V: 	default	
+[00:00:50]: 		K: 	flint	 V: 	default	
+[00:00:50]: 		K: 	flower_cave	 V: 	default	
+[00:00:50]: 		K: 	flower_cave_regrowth	 V: 	default	
+[00:00:50]: 		K: 	fruitfly	 V: 	default	
+[00:00:50]: 		K: 	ghostenabled	 V: 	always	
+[00:00:50]: 		K: 	ghostsanitydrain	 V: 	always	
+[00:00:50]: 		K: 	grass	 V: 	default	
+[00:00:50]: 		K: 	grassgekkos	 V: 	default	
+[00:00:50]: 		K: 	hallowed_nights	 V: 	default	
+[00:00:50]: 		K: 	healthpenalty	 V: 	always	
+[00:00:50]: 		K: 	hunger	 V: 	default	
+[00:00:50]: 		K: 	itemmimics	 V: 	default	
+[00:00:50]: 		K: 	krampus	 V: 	default	
+[00:00:50]: 		K: 	layout_mode	 V: 	RestrictNodesByKey	
+[00:00:50]: 		K: 	lessdamagetaken	 V: 	none	
+[00:00:50]: 		K: 	lichen	 V: 	default	
+[00:00:50]: 		K: 	liefs	 V: 	default	
+[00:00:50]: 		K: 	lightflier_flower_regrowth	 V: 	default	
+[00:00:50]: 		K: 	lightfliers	 V: 	default	
+[00:00:50]: 		K: 	loop	 V: 	default	
+[00:00:50]: 		K: 	marshbush	 V: 	default	
+[00:00:50]: 		K: 	merms	 V: 	default	
+[00:00:50]: 		K: 	molebats	 V: 	default	
+[00:00:50]: 		K: 	moles_setting	 V: 	default	
+[00:00:50]: 		K: 	monkey	 V: 	default	
+[00:00:50]: 		K: 	monkey_setting	 V: 	default	
+[00:00:50]: 		K: 	moon_spider	 V: 	default	
+[00:00:50]: 		K: 	mushgnome	 V: 	default	
+[00:00:50]: 		K: 	mushroom	 V: 	default	
+[00:00:50]: 		K: 	mushtree	 V: 	default	
+[00:00:50]: 		K: 	mushtree_moon_regrowth	 V: 	default	
+[00:00:50]: 		K: 	mushtree_regrowth	 V: 	default	
+[00:00:50]: 		K: 	mutated_birds	 V: 	default	
+[00:00:50]: 		K: 	mutated_merm	 V: 	default	
+[00:00:50]: 		K: 	mutated_spiderqueen	 V: 	default	
+[00:00:50]: 		K: 	nightmarecreatures	 V: 	default	
+[00:00:50]: 		K: 	pigs_setting	 V: 	default	
+[00:00:50]: 		K: 	portalresurection	 V: 	none	
+[00:00:50]: 		K: 	prefabswaps_start	 V: 	default	
+[00:00:50]: 		K: 	reeds	 V: 	default	
+[00:00:50]: 		K: 	reeds_regrowth	 V: 	default	
+[00:00:50]: 		K: 	regrowth	 V: 	default	
+[00:00:50]: 		K: 	resettime	 V: 	default	
+[00:00:50]: 		K: 	rifts_enabled_cave	 V: 	default	
+[00:00:50]: 		K: 	rifts_frequency_cave	 V: 	default	
+[00:00:50]: 		K: 	roads	 V: 	never	
+[00:00:50]: 		K: 	rock	 V: 	default	
+[00:00:50]: 		K: 	rocky	 V: 	default	
+[00:00:50]: 		K: 	rocky_setting	 V: 	default	
+[00:00:50]: 		K: 	sapling	 V: 	default	
+[00:00:50]: 		K: 	season_start	 V: 	default	
+[00:00:50]: 		K: 	seasonalstartingitems	 V: 	default	
+[00:00:50]: 		K: 	shadowcreatures	 V: 	default	
+[00:00:50]: 		K: 	slurper	 V: 	default	
+[00:00:50]: 		K: 	slurtles	 V: 	default	
+[00:00:50]: 		K: 	slurtles_setting	 V: 	default	
+[00:00:50]: 		K: 	snurtles	 V: 	default	
+[00:00:50]: 		K: 	spawnmode	 V: 	fixed	
+[00:00:50]: 		K: 	spawnprotection	 V: 	default	
+[00:00:50]: 		K: 	specialevent	 V: 	default	
+[00:00:50]: 		K: 	spider_dropper	 V: 	default	
+[00:00:50]: 		K: 	spider_hider	 V: 	default	
+[00:00:50]: 		K: 	spider_spitter	 V: 	default	
+[00:00:50]: 		K: 	spider_warriors	 V: 	default	
+[00:00:50]: 		K: 	spiderqueen	 V: 	default	
+[00:00:50]: 		K: 	spiders	 V: 	default	
+[00:00:50]: 		K: 	spiders_setting	 V: 	default	
+[00:00:50]: 		K: 	start_location	 V: 	caves	
+[00:00:50]: 		K: 	task_set	 V: 	cave_default	
+[00:00:50]: 		K: 	temperaturedamage	 V: 	default	
+[00:00:50]: 		K: 	tentacles	 V: 	default	
+[00:00:50]: 		K: 	toadstool	 V: 	default	
+[00:00:50]: 		K: 	touchstone	 V: 	default	
+[00:00:50]: 		K: 	tree_rock	 V: 	default	
+[00:00:50]: 		K: 	tree_rock_regrowth	 V: 	default	
+[00:00:50]: 		K: 	trees	 V: 	default	
+[00:00:50]: 		K: 	twiggytrees_regrowth	 V: 	default	
+[00:00:50]: 		K: 	weather	 V: 	default	
+[00:00:50]: 		K: 	winters_feast	 V: 	default	
+[00:00:50]: 		K: 	world_size	 V: 	default	
+[00:00:50]: 		K: 	wormattacks	 V: 	default	
+[00:00:50]: 		K: 	wormattacks_boss	 V: 	default	
+[00:00:50]: 		K: 	wormhole_prefab	 V: 	tentacle_pillar	
+[00:00:50]: 		K: 	wormlights	 V: 	default	
+[00:00:50]: 		K: 	worms	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_beefalo	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_bunnyman	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_carrat	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_catcoon	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_dragonfly	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_gobbler	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_knight	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_pig	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_snake	 V: 	default	
+[00:00:50]: 		K: 	year_of_the_varg	 V: 	default	
+[00:00:50]: 	K: 	required_prefabs	 V: 	table: 00000000050F2F80	
+[00:00:50]: 		K: 	1	 V: 	multiplayer_portal	
+[00:00:50]: 	K: 	settings_desc	 V: 	Delve into the caves... together!	
+[00:00:50]: 	K: 	settings_id	 V: 	DST_CAVE	
+[00:00:50]: 	K: 	settings_name	 V: 	The Caves	
+[00:00:50]: 	K: 	substitutes	 V: 	table: 00000000050F14F0	
+[00:00:50]: 	K: 	version	 V: 	4	
+[00:00:50]: 	K: 	worldgen_desc	 V: 	Delve into the caves... together!	
+[00:00:50]: 	K: 	worldgen_id	 V: 	DST_CAVE	
+[00:00:50]: 	K: 	worldgen_name	 V: 	The Caves	
+[00:00:50]: 
+#######
+#
+# Generating SURVIVAL Mode Level
+#
+#######
+	
+[00:00:50]: Prefab Swap Selection: regular grass	
+[00:00:50]: Prefab Swap Selection: twiggy trees	
+[00:00:50]: Prefab Swap Selection: regular berries	
+[00:00:50]: New size:	425	default	
+[00:00:50]: Creating story...	
+[00:00:50]: [Story Gen] Generate nodes. Starting at: 'MudWorld'	
+[00:00:50]: [Story Gen] RestrictNodesByKey	
+[00:00:50]: Finding valid start task...	
+[00:00:50]:    ...picked 	CaveExitTask1	
+[00:00:50]: Has start node	RabbitSinkhole	
+[00:00:50]: Adding Background Nodes	
+[00:00:50]: [Story Gen] Adding Cove Nodes	
+[00:00:50]: Warning! Couldn't find a spot in ArchiveMaze for FishingBoon	
+[00:00:50]: [WorldSimActual::WorldGen_InitializeNodePoints]
+[00:00:50]: [WorldSimActual::WorldGen_VoronoiPass]
+[00:00:50]: GenerateVoronoiMap [100]:
+[00:01:07]: ...Done.
+[00:01:07]: ... story created	
+[00:01:07]: Baking map...	425	
+[00:01:07]: [WorldSimActual::WorldGen_Commit] worldgen success.
+[00:01:07]: [WorldSimActual::ConvertToTileMap]
+[00:01:07]: [ConvertToTileMap]
+[00:01:07]: [WorldSimActual::ConvertToTileMap] complete
+[00:01:07]: [WorldSimActual::SeparateIslands]
+[00:01:07]: [SeparateIslands]
+[00:01:07]: [WorldSimActual::SeparateIslands] complete
+[00:01:07]: Map Baked!	
+[00:01:07]: [WorldSimActual::ForceConnectivity]
+[00:01:07]: [GenerateLandmasses]
+[00:01:07]: [GenerateLandmasses] islands: 15
+[00:01:07]: [MergeConnectedLandmasses] true
+[00:01:07]: [WorldSimActual::ForceConnectivity] complete
+[00:01:07]: Encoding...	
+[00:01:08]: [WorldSimActual::CreateNodeIdTileMap]
+[00:01:08]: Encoding... DONE	
+[00:01:08]: Checking Tags	
+[00:01:08]: Tag: Labyrinth	
+[00:01:08]: Tag: Maze	
+[00:01:09]: Couldn't generate any points for maze. Aborting.
+[00:01:09]: Populating voronoi...	
+[00:01:09]: Warning! Could not find a spot for EvergreenSinkhole in node CaveExitTask6:1:SinkholeCopses	
+[00:01:09]: Warning! Could not find a spot for EvergreenSinkhole in node CaveExitTask6:1:SinkholeCopses	
+[00:01:09]: Warning! Could not find a spot for RabbitTown in node RabbitCity:1:RabbitTown	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node SwampySinkhole:3:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node SwampySinkhole:3:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node SwampySinkhole:3:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node SwampySinkhole:3:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for EvergreenSinkhole in node CaveExitTask9:1:GreenMushSinkhole	
+[00:01:09]: Warning! Could not find a spot for EvergreenSinkhole in node SwampySinkhole:4:TentaclesAndTrees	
+[00:01:09]: Warning! Could not find a spot for EvergreenSinkhole in node SwampySinkhole:4:TentaclesAndTrees	
+[00:01:09]: Warning! Could not find a spot for EvergreenSinkhole in node SwampySinkhole:4:TentaclesAndTrees	
+[00:01:09]: Warning! Could not find a spot for GrassySinkhole in node CaveExitTask8:0:GrasslandSinkhole	
+[00:01:09]: Warning! Could not find a spot for StraightWall in node Residential:4:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall2 in node Residential:4:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall2 in node Residential:4:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall2 in node Residential:4:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:4:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:4:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:4:Vacant	
+[00:01:09]: Warning! Could not find a spot for GrassySinkhole in node PleasantSinkhole:4:GrasslandSinkhole	
+[00:01:09]: Warning! Could not find a spot for CornerWall in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall2 in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall2 in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:2:Vacant	
+[00:01:09]: Warning! Could not find a spot for GrassySinkhole in node PleasantSinkhole:5:GrasslandSinkhole	
+[00:01:09]: Warning! Could not find a spot for GrassySinkhole in node PleasantSinkhole:3:GrasslandSinkhole	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:09]: Warning! Could not find a spot for CornerWall in node Residential:3:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall in node Residential:3:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall in node Residential:3:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall in node Residential:3:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall2 in node Residential:3:Vacant	
+[00:01:09]: Warning! Could not find a spot for StraightWall2 in node Residential:3:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:3:Vacant	
+[00:01:09]: Warning! Could not find a spot for CornerWall2 in node Residential:3:Vacant	
+[00:01:09]: [ReplaceSingleNonLandTiles] Validating...
+[00:01:09]: [ReplaceSingleNonLandTiles] Replaced 54 tiles.
+[00:01:09]: DetectDisconnect	
+[00:01:09]: disconnected tiles...	875	
+[00:01:10]: Removing entity on IMPASSABLE	nightmarelight	179.515	334.515	-155.94, 0, 464.06	
+[00:01:10]: Removing entity on IMPASSABLE	cavelight_atrium	239.8575	339.9825	85.43, 0, 485.93	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_rubble_chair	254.4375	331.75	143.75, 0, 453	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_rubble_chair	254.545	332.6875	144.18, 0, 456.75	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_rubble_chair	255.9825	331.78	149.93, 0, 453.12	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_rubble_chair	256.545	331.89	152.18, 0, 453.56	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_rubble_chair	256.5775	332.78	152.31, 0, 457.12	
+[00:01:10]: Removing entity on IMPASSABLE	bishop_nightmare_spawner	171.25	336	-189, 0, 470	
+[00:01:10]: Removing entity on IMPASSABLE	bishop_nightmare_spawner	239.1875	331.3425	82.75, 0, 451.37	
+[00:01:10]: Removing entity on IMPASSABLE	bishop_nightmare_spawner	238.5925	331.4525	80.37, 0, 451.81	
+[00:01:10]: Removing entity on IMPASSABLE	bishop_nightmare_spawner	240.6875	332.375	88.75, 0, 455.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	243.625	339.5	100.5, 0, 484	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	243.625	340.5	100.5, 0, 488	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	236.75	340	73, 0, 486	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	240	343.25	86, 0, 499	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	240	336.75	86, 0, 473	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	247.5	332.25	116, 0, 455	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	247.5	330.75	116, 0, 449	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	257	326	154, 0, 430	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	257	321	154, 0, 410	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	245.25	339	107, 0, 482	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	247	337.25	114, 0, 475	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	245.25	315	107, 0, 386	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	247	313.25	114, 0, 379	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	238	323.75	78, 0, 421	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	241	323.75	90, 0, 421	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	253.75	332.25	141, 0, 455	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	257.25	332.25	155, 0, 455	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	249	325	122, 0, 426	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	248.5	322	120, 0, 414	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	246	324.5	110, 0, 424	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	241.75	316	93, 0, 390	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_light	240	317.75	86, 0, 397	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_rubble_table	254.75	332.25	145, 0, 455	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	238.5	328.75	80, 0, 441	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	239	328.5	82, 0, 440	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	239.5	328.75	84, 0, 441	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	240	328.5	86, 0, 440	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	240.5	328.75	88, 0, 441	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	242.75	330.5	97, 0, 448	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	242.5	331	96, 0, 450	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	242.75	331.5	97, 0, 452	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	242.5	332	96, 0, 454	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	242.75	332.5	97, 0, 456	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	232	330.5	54, 0, 448	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	232	331	54, 0, 450	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	232	331.5	54, 0, 452	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	256.5	316	152, 0, 390	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	256	316	150, 0, 390	
+[00:01:10]: Removing entity on IMPASSABLE	insanityrock	255.5	316	148, 0, 390	
+[00:01:10]: Removing entity on IMPASSABLE	ancient_altar_broken_spawner	172.25	334.5	-185, 0, 464	
+[00:01:10]: Removing entity on IMPASSABLE	pillar_atrium	237	343	74, 0, 498	
+[00:01:10]: Removing entity on IMPASSABLE	pillar_atrium	243.25	343	99, 0, 498	
+[00:01:10]: Removing entity on IMPASSABLE	pillar_atrium	243.25	337	99, 0, 474	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_table	256.25	332.25	151, 0, 455	
+[00:01:10]: Removing entity on IMPASSABLE	cave_hole	246.3275	306.625	111.31, 0, 352.5	
+[00:01:10]: Removing entity on IMPASSABLE	cave_hole	240.0925	324.89	86.37, 0, 425.56	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	237.5	331.5	76, 0, 452	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	237.5	330.5	76, 0, 448	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	238	330.5	78, 0, 448	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	237.75	331	77, 0, 450	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	238	331.5	78, 0, 452	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	234	330.5	62, 0, 448	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	234	331	62, 0, 450	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	234	331.5	62, 0, 452	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	232	328.5	54, 0, 440	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	232	329	54, 0, 442	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	232	329.5	54, 0, 444	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	233	334.5	58, 0, 464	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	233	334	58, 0, 462	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	233	333.5	58, 0, 460	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	256.5	318	152, 0, 398	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	256	318	150, 0, 398	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	255.5	318	148, 0, 398	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	258.5	316	160, 0, 390	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	258	316	158, 0, 390	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	257.5	316	156, 0, 390	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	252.5	317	136, 0, 394	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	253	317	138, 0, 394	
+[00:01:10]: Removing entity on IMPASSABLE	sanityrock	253.5	317	140, 0, 394	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue	249	309	122, 0, 362	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue	246	309	110, 0, 362	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue	247.5	331.5	116, 0, 452	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue	254	330	142, 0, 446	
+[00:01:10]: Removing entity on IMPASSABLE	pandoraschest	254.75	334.25	145, 0, 463	
+[00:01:10]: Removing entity on IMPASSABLE	pandoraschest	233	329	58, 0, 442	
+[00:01:10]: Removing entity on IMPASSABLE	pandoraschest	234	334	62, 0, 462	
+[00:01:10]: Removing entity on IMPASSABLE	pandoraschest	258	317	158, 0, 394	
+[00:01:10]: Removing entity on IMPASSABLE	pandoraschest	253	318	138, 0, 398	
+[00:01:10]: Removing entity on IMPASSABLE	pandoraschest	296.5	323.5	312, 0, 420	
+[00:01:10]: Removing entity on IMPASSABLE	wall_ruins	173.5	321.265	-180, 0, 411.06	
+[00:01:10]: Removing entity on IMPASSABLE	wall_ruins	183.265	318.5	-140.94, 0, 400	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	252.75	323.5	137, 0, 420	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	238.5	323	80, 0, 418	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	240	322.67	86, 0, 416.68	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	256.7325	333.375	152.93, 0, 459.5	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	256.4525	330.8125	151.81, 0, 449.25	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	255.39	332.3425	147.56, 0, 455.37	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	253.8425	331.5	141.37, 0, 452	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	254.7025	330.5775	144.81, 0, 448.31	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	248.015	325.89	118.06, 0, 429.56	
+[00:01:10]: Removing entity on IMPASSABLE	dropperweb	247.0625	325.405	114.25, 0, 427.62	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_gate	240	340	86, 0, 486	
+[00:01:10]: Removing entity on IMPASSABLE	tentacle_pillar_atrium	249	306.5	122, 0, 352	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_overgrowth	233	332.25	58, 0, 455	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_overgrowth	254.75	317	145, 0, 394	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	236.75	340.75	73, 0, 489	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	239.25	343.25	83, 0, 499	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	240.75	343.25	89, 0, 499	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	240.75	336.75	89, 0, 473	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	240	334	86, 0, 462	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	255.5	333	148, 0, 458	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	229	334	42, 0, 462	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	229	329	42, 0, 442	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	253	313	138, 0, 378	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_rubble	258	313	158, 0, 378	
+[00:01:10]: Removing entity on IMPASSABLE	ruins_statue_head_spawner	169.5	332.5	-196, 0, 456	
+[00:01:10]: Removing entity on IMPASSABLE	knight_nightmare_spawner	171.25	333.25	-189, 0, 459	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.0925	339.5	98.37, 0, 484	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.14	340.5	98.56, 0, 488	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.9375	339.9525	101.75, 0, 485.81	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.14	340.03	98.56, 0, 486.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.3125	339.8275	99.25, 0, 485.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.03	340.28	98.12, 0, 487.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.25	340.405	99, 0, 487.62	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.14	339.67	98.56, 0, 484.68	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.6075	340.0775	100.43, 0, 486.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	244.0625	339.625	102.25, 0, 484.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	244.0925	340.375	102.37, 0, 487.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.545	339.8125	100.18, 0, 485.25	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	243.75	340.25	101, 0, 487	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	244.8275	307.8125	105.31, 0, 357.25	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	244.67	308.25	104.68, 0, 359	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	250.1875	308.25	126.75, 0, 359	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	250.3425	307.39	127.37, 0, 355.56	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	249.875	306.53	125.5, 0, 352.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	250.265	306.28	127.06, 0, 351.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	249.8275	305.875	125.31, 0, 349.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	249.375	305.64	123.5, 0, 348.56	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	245.8575	304.8275	109.43, 0, 345.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	247.125	304.6875	114.5, 0, 344.75	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	246.64	305.03	112.56, 0, 346.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	247.875	304.875	117.5, 0, 345.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	248.265	305	119.06, 0, 346	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	248.045	305.8275	118.18, 0, 349.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	242.0625	333.3275	94.25, 0, 459.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	241.155	333.5625	90.62, 0, 460.25	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	241.3425	334.28	91.37, 0, 463.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	240.6875	334.28	88.75, 0, 463.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	240.9825	333.92	89.93, 0, 461.68	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	240.655	333.5925	88.62, 0, 460.37	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	239.0625	333.8575	82.25, 0, 461.43	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	238.8275	334.295	81.31, 0, 463.18	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	239.375	334.17	83.5, 0, 462.68	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	239.39	333.6075	83.56, 0, 460.43	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	257.3275	330.125	155.31, 0, 446.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	257.4525	329.7325	155.81, 0, 444.93	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	258.265	330.67	159.06, 0, 448.68	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	258.25	331.17	159, 0, 450.68	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	257.875	330.8275	157.5, 0, 449.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	254.7175	334	144.87, 0, 462	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	255.155	334.3575	146.62, 0, 463.43	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	252.6875	332.875	136.75, 0, 457.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	252.625	333.3575	136.5, 0, 459.43	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	253.045	332.9375	138.18, 0, 457.75	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	253.0775	333.3425	138.31, 0, 459.37	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	231.8275	334.2175	53.31, 0, 462.87	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	232.3575	333.75	55.43, 0, 461	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	230.5925	332.8425	48.37, 0, 457.37	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	231.155	332.875	50.62, 0, 457.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	230.4675	333.3425	47.87, 0, 459.37	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	229.3425	333.28	43.37, 0, 459.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	228.905	333.545	41.62, 0, 460.18	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	229.92	333.045	45.68, 0, 458.18	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	229.25	332.8275	43, 0, 457.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	228.905	331.9675	41.62, 0, 453.87	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	230.2175	330.53	46.87, 0, 448.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	230.14	331.14	46.56, 0, 450.56	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	231.17	330.03	50.68, 0, 446.12	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	229.9525	330.125	45.81, 0, 446.5	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	252.78	315.8275	137.12, 0, 389.31	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	253.25	316.3575	139, 0, 391.43	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	254.155	314.5925	142.62, 0, 384.37	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	254.125	315.155	142.5, 0, 386.62	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	253.655	314.4675	140.62, 0, 383.87	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	253.7175	313.3425	140.87, 0, 379.37	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	253.4525	312.905	139.81, 0, 377.62	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	253.9525	313.92	141.81, 0, 381.68	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	254.17	313.25	142.68, 0, 379	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	255.03	312.905	146.12, 0, 377.62	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	256.4675	314.2175	151.87, 0, 382.87	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	255.8575	314.14	149.43, 0, 382.56	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	256.9675	315.17	153.87, 0, 386.68	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_fence	256.875	313.9525	153.5, 0, 381.81	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue_facing	241.5	336.75	92, 0, 473	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue_facing	238.5	343.25	80, 0, 499	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue_facing	241.5	343.25	92, 0, 499	
+[00:01:10]: Removing entity on IMPASSABLE	atrium_statue_facing	236.75	341.5	73, 0, 492	
+[00:01:10]: Removing entity on IMPASSABLE	chessjunk_spawner	170.5	337	-192, 0, 474	
+[00:01:10]: Removing entity on IMPASSABLE	wall_stone_2	37.3575	289.89	-724.57, 0, 285.56	
+[00:01:10]: Removing entity on IMPASSABLE	wall_stone_2	40.6075	282.39	-711.57, 0, 255.56	
+[00:01:10]: Checking Required Prefab atrium_gate has at least 1 instances (0 found).	
+[00:01:10]: PANIC: missing required prefab [atrium_gate]! Expected 1, got 0	
+[00:01:10]: An error occured during world gen we will retry! [was 	1	 of 	5	]	
+[00:01:10]: New size:	425	default	
+[00:01:10]: Creating story...	
+[00:01:10]: [Story Gen] Generate nodes. Starting at: 'MudWorld'	
+[00:01:10]: [Story Gen] RestrictNodesByKey	
+[00:01:10]: Finding valid start task...	
+[00:01:10]:    ...picked 	CaveExitTask4	
+[00:01:10]: Has start node	RabbitTown	
+[00:01:10]: Adding Background Nodes	
+[00:01:10]: [Story Gen] Adding Cove Nodes	
+[00:01:10]: Warning! Couldn't find a spot in ArchiveMaze for FishingBoon	
+[00:01:10]: [WorldSimActual::WorldGen_InitializeNodePoints]
+[00:01:10]: [WorldSimActual::WorldGen_VoronoiPass]
+[00:01:10]: GenerateVoronoiMap [100]:
+[00:01:26]: ...Done.
+[00:01:26]: ... story created	
+[00:01:26]: Baking map...	425	
+[00:01:26]: [WorldSimActual::WorldGen_Commit] worldgen success.
+[00:01:26]: [WorldSimActual::ConvertToTileMap]
+[00:01:26]: [ConvertToTileMap]
+[00:01:26]: [WorldSimActual::ConvertToTileMap] complete
+[00:01:26]: [WorldSimActual::SeparateIslands]
+[00:01:26]: [SeparateIslands]
+[00:01:26]: [WorldSimActual::SeparateIslands] complete
+[00:01:26]: Map Baked!	
+[00:01:26]: [WorldSimActual::ForceConnectivity]
+[00:01:26]: [GenerateLandmasses]
+[00:01:26]: [GenerateLandmasses] islands: 17
+[00:01:26]: [MergeConnectedLandmasses] true
+[00:01:26]: [WorldSimActual::ForceConnectivity] complete
+[00:01:26]: Encoding...	
+[00:01:26]: [WorldSimActual::CreateNodeIdTileMap]
+[00:01:26]: Encoding... DONE	
+[00:01:26]: Checking Tags	
+[00:01:26]: Tag: Labyrinth	
+[00:01:26]: Tag: Maze	
+[00:01:26]: Populating voronoi...	
+[00:01:26]: Warning! Could not find a spot for EvergreenSinkhole in node CaveExitTask6:1:SinkholeCopses	
+[00:01:26]: Warning! Could not find a spot for EvergreenSinkhole in node CaveExitTask6:1:SinkholeCopses	
+[00:01:26]: Warning! Could not find a spot for RabbitTown in node RabbitCity:1:RabbitTown	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node SwampySinkhole:3:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node SwampySinkhole:3:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node SwampySinkhole:3:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for EvergreenSinkhole in node CaveExitTask9:1:GreenMushSinkhole	
+[00:01:26]: Warning! Could not find a spot for EvergreenSinkhole in node SwampySinkhole:4:TentaclesAndTrees	
+[00:01:26]: Warning! Could not find a spot for EvergreenSinkhole in node SwampySinkhole:4:TentaclesAndTrees	
+[00:01:26]: Warning! Could not find a spot for EvergreenSinkhole in node SwampySinkhole:4:TentaclesAndTrees	
+[00:01:26]: Warning! Could not find a spot for StraightWall in node Residential:4:Vacant	
+[00:01:26]: Warning! Could not find a spot for StraightWall2 in node Residential:4:Vacant	
+[00:01:26]: Warning! Could not find a spot for StraightWall2 in node Residential:4:Vacant	
+[00:01:26]: Warning! Could not find a spot for CornerWall2 in node Residential:4:Vacant	
+[00:01:26]: Warning! Could not find a spot for CornerWall2 in node Residential:4:Vacant	
+[00:01:26]: Warning! Could not find a spot for CornerWall2 in node Residential:4:Vacant	
+[00:01:26]: Warning! Could not find a spot for StraightWall in node Residential:2:Vacant	
+[00:01:26]: Warning! Could not find a spot for StraightWall in node Residential:2:Vacant	
+[00:01:26]: Warning! Could not find a spot for StraightWall2 in node Residential:2:Vacant	
+[00:01:26]: Warning! Could not find a spot for StraightWall2 in node Residential:2:Vacant	
+[00:01:26]: Warning! Could not find a spot for CornerWall2 in node Residential:2:Vacant	
+[00:01:26]: Warning! Could not find a spot for CornerWall2 in node Residential:2:Vacant	
+[00:01:26]: Warning! Could not find a spot for CornerWall2 in node Residential:2:Vacant	
+[00:01:26]: Warning! Could not find a spot for RabbitCity in node RabbitCity:5:RabbitCity	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for Mudlights in node CaveSwamp:0:TentacleMud	
+[00:01:26]: Warning! Could not find a spot for RabbitTown in node RabbitCity:0:RabbitTown	
+[00:01:26]: Warning! Could not find a spot for CornerWall2 in node Residential:3:Vacant	
+[00:01:26]: Warning! Could not find a spot for PondSinkhole in node PleasantSinkhole:0:SinkholeOasis	
+[00:01:26]: [ReplaceSingleNonLandTiles] Validating...
+[00:01:27]: [ReplaceSingleNonLandTiles] Replaced 38 tiles.
+[00:01:27]: DetectDisconnect	
+[00:01:27]: disconnected tiles...	93	
+[00:01:27]: Removing entity on IMPASSABLE	pandoraschest	310.5	329.5	392, 0, 468	
+[00:01:27]: Removing entity on IMPASSABLE	rook_nightmare_spawner	217	341.25	18, 0, 515	
+[00:01:27]: Removing entity on IMPASSABLE	wall_stone_2	66.5775	301.8575	-583.69, 0, 357.43	
+[00:01:27]: Checking Required Prefab atrium_gate has at least 1 instances (1 found).	
+[00:01:27]: Checking Required Prefab minotaur_spawner has at least 1 instances (1 found).	
+[00:01:27]: Checking Required Prefab sacred_chest has at least 1 instances (1 found).	
+[00:01:27]: Checking Required Prefab tentacle_pillar_atrium has at least 2 instances (2 found).	
+[00:01:27]: Checking Required Prefab archive_orchestrina_main has at least 1 instances (1 found).	
+[00:01:27]: Checking Required Prefab shadowthrall_centipede_spawner has at least 1 instances (1 found).	
+[00:01:27]: Checking Required Prefab archive_lockbox_dispencer has at least 3 instances (4 found).	
+[00:01:27]: [ReplaceSingleNonLandTiles] Validating...
+[00:01:27]: [ReplaceSingleNonLandTiles] Replaced 0 tiles.
+[00:01:28]: Done cave map gen!	
+[00:01:28]: Checking map...	
+[00:01:28]: Generation complete, injecting world entities.	
+[00:01:28]: Injected world entities.	
+[00:01:29]: WorldSim::SimThread::Main() complete
+[00:01:29]: Serializing world: session/3EAB4DCD8E473570/0000000002
+[00:01:29]: Klump load on boot started.	
+[00:01:29]: Klump files loaded: 	0	
+[00:01:29]: 	Unload FE	
+[00:01:29]: 	Unload FE done	
+[00:01:29]: Could not unload undefined prefab (quagmire_telebrella)
+[00:01:45]: Mod: workshop-3377689002 (Crash Never Mind)	Registering prefabs	
+[00:01:45]: Mod: workshop-3377689002 (Crash Never Mind)	  Registering default mod prefab	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	Registering prefabs	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff_none	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff_none	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/goggles	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesnormalhat	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesheathat	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesarmorhat	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesshoothat	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/fryfocals_charge	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    fryfocals_charge	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/thumper	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper_placer	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telipad	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    beacon	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad_placer	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telebrella	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella_glow	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/hiddendanger_fx	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    hiddendanger_fx	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    peculiar_marker_fx	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    identified_marker_fx	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/williamgadget	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamgadget	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_butler	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler2	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler3	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_builder	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_empty	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_buster	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster2	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster3	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_builder	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_empty	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_brute	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute2	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute3	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_gary	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_placer	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_builder	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_ballistic	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic3	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic2	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty_placer	
+[00:01:45]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charge	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_chargeup	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge_hit	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charged_fx	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamchargedfx	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_mistake	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_mistake	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/bot_aura_v5	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_butler	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_buster	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_bouncer	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_battery	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_shadow	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/dispenser	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    dispenser	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    ehealfx	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_bullet	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_bullet	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_rocket	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_rocket	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    eshockfx	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringenter	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_placer	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter_exit	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringexit	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit_placer	
+[00:01:46]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering default mod prefab	
+[00:01:46]: Could not preload undefined prefab (scrap)
+[00:01:47]: Could not preload undefined prefab (scrap)
+[00:01:49]: Could not preload undefined prefab (quagmire_telebrella)
+[00:01:49]: Could not preload undefined prefab (scrap)
+[00:01:50]: Could not preload undefined prefab (scrap)
+[00:01:50]: 	LOAD BE	
+[00:02:57]: 	LOAD BE: done	
+[00:02:57]: Begin Session: 3EAB4DCD8E473570
+[00:02:57]: saving to server_temp/server_save	
+[00:02:58]: OVERRIDE: setting	healthpenalty	to	always	
+[00:02:58]: OVERRIDE: setting	acidrain_enabled	to	always	
+[00:02:58]: OVERRIDE: setting	lessdamagetaken	to	none	
+[00:02:58]: MiniMapComponent::AddAtlas( minimap/minimap_data1.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( minimap/minimap_data2.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/wagstaff.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/inventoryimages/telipad.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/inventoryimages/thumper.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/esentry.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/esentry_2.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/esentry_3.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/dispenser.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/eteleporter.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/eteleporterentrance.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/eteleporterexit.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williambutler.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williambuster.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williambrute.xml )
+[00:02:58]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williamballistic.xml )
+[00:02:58]: [Wagstaff Standalone] AddPrefabPostInit('world') FIRED — self=	100041 - world	
+[00:02:58]: [Wagstaff Debug] AddPrefabPostInit('world') called, self= 100041 - world	
+[00:02:58]: [Wagstaff Debug] TheWorld.state exists? true	
+[00:02:58]: [Wagstaff Debug] TheWorld.ismastersim= true	
+[00:02:58]: [Wagstaff Standalone] World persistence installed: ApplyWagstaffSkills, SaveWagstaffSkillsToWorld, GetWagstaffSkillsFromWorld are now on TheWorld	
+[00:02:58]: [Wagstaff Debug] World persistence functions installed on TheWorld	
+[00:02:58]: Loading 20 new character(s)	
+[00:03:02]: Total 20 character(s) loaded	
+[00:03:25]: Loading Nav Grid	
+[00:03:25]: World generated on build 736959 with save version: 5.23, using seed: 389768933	
+[00:03:25]: [Shard] Secondary shard is waiting for LUA...
+[00:03:25]: OVERRIDE: setting	ghostenabled	to	always	
+[00:03:25]: OVERRIDE: setting	basicresource_regrowth	to	none	
+[00:03:25]: OVERRIDE: setting	portalresurection	to	none	
+[00:03:25]: OVERRIDE: setting	spawnmode	to	fixed	
+[00:03:25]: OVERRIDE: setting	ghostsanitydrain	to	always	
+[00:03:41]: Reconstructing topology	
+[00:03:41]: 	...Sorting points	
+[00:03:41]: 	...Sorting edges	
+[00:03:42]: 	...Connecting nodes	
+[00:03:42]: 	...Validating connections	
+[00:03:43]: 	...Housekeeping	
+[00:03:43]: 	...Done!	
+[00:03:43]: 1 uploads added to server. From server_temp
+[00:03:43]: About to start a shard with these settings:
+[00:03:43]:   ShardName: Caves
+[00:03:43]:   ShardID: 2664329712
+[00:03:43]:   ShardRole: SECONDARY
+[00:03:43]:   MasterHost: 127.0.0.1
+[00:03:43]:   MasterBind: (null)
+[00:03:43]:   MasterPort: 10888
+[00:03:44]: [Shard] Connecting to master...
+[00:03:44]: Telling Client our new session identifier: 3EAB4DCD8E473570
+[00:03:44]: [Shard] Sending secondary shard information to master...
+[00:03:45]: Peculiar object mushtree_tall rolled reward: trinket_25	
+[00:03:45]: Peculiar object evergreen rolled reward: trinket_10	
+[00:03:45]: Peculiar object mushtree_small rolled no reward	
+[00:03:45]: Skipping portal[1] (no available shard [Master] connected)	
+[00:03:45]: Skipping portal[2] (no available shard [Master] connected)	
+[00:03:45]: Peculiar object mushtree_tall rolled reward: trinket_22	
+[00:03:45]: Peculiar object evergreen rolled reward: trinket_44	
+[00:03:45]: Peculiar object mushtree_moon rolled reward: trinket_6	
+[00:03:45]: Peculiar object marsh_tree rolled reward: trinket_36	
+[00:03:45]: Peculiar object mushtree_medium rolled no reward	
+[00:03:46]: Peculiar object mushtree_medium rolled no reward	
+[00:03:46]: Peculiar object evergreen rolled no reward	
+[00:03:46]: Peculiar object mushtree_small rolled reward: trinket_24	
+[00:03:46]: Peculiar object mushtree_small rolled reward: trinket_34	
+[00:03:46]: Peculiar object mushtree_medium rolled reward: trinket_14	
+[00:03:46]: Skipping portal[3] (no available shard [Master] connected)	
+[00:03:46]: Peculiar object mushtree_small rolled reward: trinket_13	
+[00:03:46]: Peculiar object mushtree_moon rolled reward: trinket_2	
+[00:03:46]: Peculiar object mushtree_tall rolled reward: trinket_7	
+[00:03:46]: Peculiar object mushtree_moon rolled reward: trinket_7	
+[00:03:46]: Peculiar object mushtree_tall rolled no reward	
+[00:03:46]: Peculiar object mushtree_tall rolled reward: trinket_44	
+[00:03:46]: Peculiar object mushtree_tall rolled no reward	
+[00:03:46]: Peculiar object mushtree_tall rolled reward: trinket_13	
+[00:03:46]: Peculiar object mushtree_small rolled no reward	
+[00:03:46]: Peculiar object twiggytree rolled no reward	
+[00:03:46]: Peculiar object mushtree_medium rolled reward: trinket_20	
+[00:03:46]: Peculiar object mushtree_medium rolled reward: goldnugget	
+[00:03:46]: Peculiar object mushtree_small rolled no reward	
+[00:03:46]: Peculiar object mushtree_tall rolled reward: trinket_22	
+[00:03:46]: Peculiar object mushtree_medium rolled no reward	
+[00:03:46]: Peculiar object mushtree_medium rolled no reward	
+[00:03:46]: Peculiar object mushtree_tall rolled no reward	
+[00:03:46]: Peculiar object mushtree_tall rolled reward: trinket_18	
+[00:03:46]: Peculiar object mushtree_tall rolled reward: trinket_22	
+[00:03:46]: Skipping portal[4] (no available shard [Master] connected)	
+[00:03:46]: Peculiar object mushtree_medium rolled no reward	
+[00:03:47]: Peculiar object evergreen rolled no reward	
+[00:03:47]: Peculiar object mushtree_medium rolled no reward	
+[00:03:47]: Peculiar object mushtree_small rolled no reward	
+[00:03:47]: Peculiar object mushtree_moon rolled reward: trinket_20	
+[00:03:47]: Peculiar object marsh_tree rolled reward: flint	
+[00:03:47]: Skipping portal[5] (no available shard [Master] connected)	
+[00:03:47]: Peculiar object evergreen rolled reward: trinket_16	
+[00:03:47]: Peculiar object mushtree_tall rolled no reward	
+[00:03:47]: Skipping portal[6] (no available shard [Master] connected)	
+[00:03:47]: Peculiar object twiggytree rolled reward: trinket_23	
+[00:03:47]: Peculiar object mushtree_small rolled reward: trinket_17	
+[00:03:47]: Peculiar object mushtree_medium rolled no reward	
+[00:03:47]: Peculiar object mushtree_moon rolled reward: trinket_11	
+[00:03:47]: Peculiar object mushtree_moon rolled reward: trinket_29	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: trinket_28	
+[00:03:47]: Peculiar object mushtree_small rolled no reward	
+[00:03:47]: Skipping portal[7] (no available shard [Master] connected)	
+[00:03:47]: Peculiar object mushtree_medium rolled no reward	
+[00:03:47]: Peculiar object evergreen rolled reward: trinket_35	
+[00:03:47]: Peculiar object mushtree_moon rolled reward: trinket_33	
+[00:03:47]: Peculiar object evergreen rolled no reward	
+[00:03:47]: Peculiar object mushtree_tall rolled no reward	
+[00:03:47]: Peculiar object mushtree_medium rolled reward: trinket_7	
+[00:03:47]: Peculiar object evergreen rolled reward: trinket_23	
+[00:03:47]: Skipping portal[8] (no available shard [Master] connected)	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: trinket_29	
+[00:03:47]: Peculiar object mushtree_tall rolled no reward	
+[00:03:47]: Peculiar object mushtree_small rolled reward: trinket_18	
+[00:03:47]: Peculiar object mushtree_small rolled reward: trinket_23	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: trinket_23	
+[00:03:47]: Peculiar object mushtree_moon rolled no reward	
+[00:03:47]: Peculiar object mushtree_tall rolled no reward	
+[00:03:47]: Peculiar object mushtree_medium rolled reward: trinket_33	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: flint	
+[00:03:47]: Skipping portal[9] (no available shard [Master] connected)	
+[00:03:47]: Skipping portal[10] (no available shard [Master] connected)	
+[00:03:47]: Peculiar object mushtree_medium rolled reward: trinket_20	
+[00:03:47]: Peculiar object mushtree_small rolled reward: trinket_15	
+[00:03:47]: Peculiar object mushtree_tall rolled no reward	
+[00:03:47]: Peculiar object mushtree_moon rolled no reward	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: trinket_25	
+[00:03:47]: Skipping portal[oceanwhirlbigportal] (no available shard [Master] connected)	
+[00:03:47]: Peculiar object mushtree_small rolled reward: trinket_15	
+[00:03:47]: Peculiar object mushtree_medium rolled reward: trinket_21	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: trinket_16	
+[00:03:47]: Peculiar object mushtree_small rolled no reward	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: trinket_17	
+[00:03:47]: Peculiar object mushtree_moon rolled reward: trinket_17	
+[00:03:47]: Peculiar object mushtree_tall rolled reward: trinket_30	
+[00:03:47]: Peculiar object evergreen rolled no reward	
+[00:03:47]: Received MasterInfoPacket row KU_rSBqsLp5 region us-east-1
+[00:03:47]: Obtaining secondary shard IP from us-east-1 lobby
+[00:03:50]: [Shard] secondary shard is now ready!
+[00:03:50]: World 1(Master) is now connected	
+[00:03:50]: Validating portal[1] <-> 1[1] (active)	
+[00:03:50]: Validating portal[2] <-> 1[2] (active)	
+[00:03:50]: Validating portal[3] <-> 1[3] (active)	
+[00:03:50]: Validating portal[4] <-> 1[4] (active)	
+[00:03:50]: Validating portal[5] <-> 1[5] (active)	
+[00:03:50]: Validating portal[6] <-> 1[6] (active)	
+[00:03:50]: Validating portal[7] <-> 1[7] (active)	
+[00:03:50]: Validating portal[8] <-> 1[8] (active)	
+[00:03:50]: Validating portal[9] <-> 1[9] (active)	
+[00:03:50]: Validating portal[10] <-> 1[10] (active)	
+[00:03:50]: Validating portal[oceanwhirlbigportal] <-> 1[oceanwhirlbigportal] (disabled)	
+[00:03:50]: [SyncWorldSettings] recieved world settings from master shard.	true	
+[00:03:50]: [SyncWorldSettings] applying temperaturedamage = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying spawnmode = fixed from master shard.	
+[00:03:50]: [SyncWorldSettings] applying lessdamagetaken = none from master shard.	
+[00:03:50]: [SyncWorldSettings] applying ghostenabled = always from master shard.	
+[00:03:50]: [SyncWorldSettings] applying shadowcreatures = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying resettime = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying krampus = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying ghostsanitydrain = always from master shard.	
+[00:03:50]: [SyncWorldSettings] applying healthpenalty = always from master shard.	
+[00:03:50]: [SyncWorldSettings] applying dropeverythingondespawn = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying darkness = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying portalresurection = none from master shard.	
+[00:03:50]: [SyncWorldSettings] applying brightmarecreatures = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying hunger = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying basicresource_regrowth = none from master shard.	
+[00:03:50]: [SyncWorldSettings] recieved world settings from master shard.	true	
+[00:03:50]: [SyncWorldSettings] applying temperaturedamage = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying spawnmode = fixed from master shard.	
+[00:03:50]: [SyncWorldSettings] applying lessdamagetaken = none from master shard.	
+[00:03:50]: [SyncWorldSettings] applying ghostenabled = always from master shard.	
+[00:03:50]: [SyncWorldSettings] applying shadowcreatures = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying resettime = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying krampus = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying ghostsanitydrain = always from master shard.	
+[00:03:50]: [SyncWorldSettings] applying healthpenalty = always from master shard.	
+[00:03:50]: [SyncWorldSettings] applying dropeverythingondespawn = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying darkness = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying portalresurection = none from master shard.	
+[00:03:50]: [SyncWorldSettings] applying brightmarecreatures = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying hunger = default from master shard.	
+[00:03:50]: [SyncWorldSettings] applying basicresource_regrowth = none from master shard.	
+[00:03:51]: [Shard] secondary shard LUA is now ready!
+[00:03:51]: [IPC] Signal 'DST_Secondary_Ready' opened  #0000000000000764
+[00:03:51]: [IPC] Sending signal... #0000000000000764
+[00:03:51]: Sim paused
+[00:16:04]: Sim unpaused
+[00:16:14]: Server Autopaused	
+[00:16:15]: Server Unpaused	
+[00:16:22]: Server Autopaused	
+[00:16:26]: Server Unpaused	
+[00:16:35]: Server Autopaused	
+[00:16:49]: Server Unpaused	
+[00:17:18]: Server Autopaused	
+[00:17:21]: Server Unpaused	
+[00:17:24]: [Shard] We have been disconnected from the master. Waiting to reconnect...
+[00:17:24]: Sim paused
