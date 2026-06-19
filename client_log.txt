@@ -4793,3 +4793,147 @@ Please ensure that these point to valid files in your mod folder, or else commen
 [01:38:01]: Server Unpaused	
 [01:38:07]: Server Autopaused	
 [01:38:09]: Server Unpaused	
+[01:39:37]: Server Autopaused	
+[01:39:39]: DoRestart:	true	
+[01:39:39]: Server Unpaused	
+[01:39:40]: Serializing user: session/316D2FB564A0A18B/A7MLOBQDIN65/0000000001
+[01:39:40]: [Steam] Game Connection terminated (2130706433|10999)
+[01:39:40]: [Shard] Stopping shard mode
+[01:39:40]: [Workshop] CancelDownloads for all pending downloads
+[01:39:40]: [IPC] Sending signal... #00000000000009C0
+[01:39:48]: [IPC] Unregistering handler for signal #0000000000000834
+[01:39:48]: [IPC] Unregistering handler for signal #000000000000043C
+[01:39:48]: [IPC] Unregistering handler for signal #00000000000007B4
+[01:39:48]: [IPC] Unregistering handler for signal #0000000000000440
+[01:39:48]: [IPC] Unregistering handler for signal #00000000000009BC
+[01:39:48]: [IPC] Sending signal... #0000000000000A28
+[01:39:53]: [IPC] Unregistering handler for signal #0000000000000778
+[01:39:53]: [IPC] Unregistering handler for signal #000000000000090C
+[01:39:53]: [IPC] Unregistering handler for signal #00000000000007A4
+[01:39:53]: [IPC] Unregistering handler for signal #0000000000000A20
+[01:39:53]: [IPC] Unregistering handler for signal #0000000000000A24
+[01:39:53]: Collecting garbage...
+[01:39:54]: lua_gc took 0.10 seconds
+[01:39:54]: ~ShardLuaProxy()
+[01:39:54]: ~cEventLeaderboardProxy()
+[01:39:54]: ~ItemServerLuaProxy()
+[01:39:54]: ~InventoryLuaProxy()
+[01:39:54]: ~NetworkLuaProxy()
+[01:39:54]: ~SimLuaProxy()
+[01:39:54]: [Workshop] CancelDownloads for all pending downloads
+[01:39:54]: lua_close took 0.08 seconds
+[01:39:54]: ReleaseAll
+[01:39:54]: ReleaseAll Finished
+[01:39:54]: cGame::StartPlaying
+[01:39:54]: AppVersion::GetArchitecture() x64
+[01:39:54]: LOADING LUA
+[01:39:54]: DoLuaFile scripts/main.lua
+[01:39:54]: DoLuaFile loading buffer scripts/main.lua
+[01:39:54]:   taskgrouplist:	default	Together	
+[01:39:54]:   taskgrouplist:	classic	Classic	
+[01:39:54]:   taskgrouplist:	cave_default	Underground	
+[01:39:54]:   taskgrouplist:	lavaarena_taskset	The Forge	
+[01:39:54]:   taskgrouplist:	quagmire_taskset	The Gorge	
+[01:39:54]: Running main.lua
+	
+[01:39:54]: unloading prefabs for mod WagstaffPlus (Wagstaff Standalone)	
+[01:39:54]: Could not unload undefined prefab (scrap)
+[01:39:54]: Could not unload undefined prefab (scrap)
+[01:39:54]: Could not unload undefined prefab (scrap)
+[01:39:54]: Could not unload undefined prefab (scrap)
+[01:39:54]: loaded modindex	
+[01:39:54]: WARNING: icon paths for mod workshop-3728986472 (技能树栏) are not valid. Got icon_atlas="modicon.xml" and icon="modicon.tex".
+Please ensure that these point to valid files in your mod folder, or else comment out those lines from your modinfo.lua.	
+[01:39:54]: ModIndex: Beginning normal load sequence.
+	
+[01:39:55]: Event data unavailable: lavaarena_event_server/lavaarena_achievement_quest_defs
+[01:39:55]: Saving skilltree file as a fixup.	
+[01:39:55]: LOADING LUA SUCCESS
+[01:39:55]: PlayerDeaths loaded morgue	156	
+[01:39:55]: PlayerHistory could not load player_history	
+[01:39:55]: ServerPreferences loaded server_preferences	2	
+[01:39:55]: ConsoleScreenSettings loaded consolescreen	605	
+[01:39:55]: bloom_enabled	true	
+[01:39:55]: EnableShadeRenderer: 	true	
+[01:39:55]: loaded shardsaveindex	
+[01:39:55]: OnFilesLoaded()	
+[01:39:55]: OnUpdatePurchaseStateComplete	
+[01:39:55]: Klump load on boot started.	
+[01:39:55]: Klump files loaded: 	0	
+[01:39:55]: 	Unload characters	
+[01:39:55]: Could not unload undefined prefab (quagmire_telebrella)
+[01:39:55]: 	Unload BE	
+[01:39:55]: 	Unload BE done	
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med1)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med2)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med1)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med2)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med1)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med2)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med1)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med2)
+[01:39:55]: Could not unload undefined prefab (shadowmeteor)
+[01:39:55]: Could not unload undefined prefab (moon_altar_link_contained)
+[01:39:55]: Could not unload undefined prefab (gestalt_alterguardian_projectile)
+[01:39:55]: Could not unload undefined prefab (mining_moonglass_fx)
+[01:39:55]: Could not unload undefined prefab (moon_device_break_stage1)
+[01:39:55]: Could not unload undefined prefab (moon_device_break_stage2)
+[01:39:55]: Could not unload undefined prefab (moon_device_break_stage3)
+[01:39:55]: Could not unload undefined prefab (moon_altar_break)
+[01:39:55]: Could not unload undefined prefab (moon_altar_crown_break)
+[01:39:55]: Could not unload undefined prefab (burntground)
+[01:39:55]: Could not unload undefined prefab (moon_device_meteor_spawner)
+[01:39:55]: Could not unload undefined prefab (construction_container)
+[01:39:55]: Could not unload undefined prefab (moon_altar_link_contained)
+[01:39:55]: Could not unload undefined prefab (moon_device_break_stage1)
+[01:39:55]: Could not unload undefined prefab (moon_device_break_stage2)
+[01:39:55]: Could not unload undefined prefab (moon_device_break_stage3)
+[01:39:55]: Could not unload undefined prefab (moon_altar_break)
+[01:39:55]: Could not unload undefined prefab (moon_altar_crown_break)
+[01:39:55]: Could not unload undefined prefab (burntground)
+[01:39:55]: Could not unload undefined prefab (moon_device_meteor_spawner)
+[01:39:55]: Could not unload undefined prefab (construction_container)
+[01:39:55]: Could not unload undefined prefab (ash)
+[01:39:55]: Could not unload undefined prefab (campfirefire)
+[01:39:55]: Could not unload undefined prefab (ash)
+[01:39:55]: Could not unload undefined prefab (campfirefire)
+[01:39:55]: Could not unload undefined prefab (oceanfishinghook_ripple)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med1)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med2)
+[01:39:55]: Could not unload undefined prefab (splash_ocean)
+[01:39:55]: Could not unload undefined prefab (oceanfishinghook_ripple)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med1)
+[01:39:55]: Could not unload undefined prefab (ocean_splash_med2)
+[01:39:55]: Could not unload undefined prefab (splash_ocean)
+[01:39:58]: 	Load FE	
+[01:39:59]: 	Load FE: done	
+[01:39:59]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/blocklist.txt (Failure)
+[01:39:59]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/adminlist.txt (Failure)
+[01:39:59]: OnLoadUserIdList: APP:Klei//DoNotStarveTogether/112617283/client_save/whitelist.txt (Failure)
+[01:39:59]: [MOTD] Downloading info from	https://motd.klei.com/motd.json/?game=dst&platform=STEAM&locale=BR&lang=brazilian&version=736959	
+[01:39:59]: Check for write access: TRUE
+[01:39:59]: Check for read access: TRUE
+[01:39:59]: Available disk space for save files: 119340 MB
+[01:39:59]: ModIndex: Load sequence finished successfully.	
+[01:39:59]: Reset() returning
+[01:39:59]: Do AutoLogin	
+[01:40:00]: [MOTD] Done Loading.	
+[01:40:00]: [200] Account Communication Success (6)
+[01:40:00]: Received (KU_rSBqsLp5) from TokenPurpose
+[01:40:00]: [Steam] Auth Session Ticket requested...
+[01:40:01]: [Steam] Got Auth Session Ticket
+[01:40:01]: There is no active event to get the status of.
+[01:40:01]: [DLCS] 0, 2132800:0, 1338540:0, 1485060:0, 2236180:0, 282470:1:1, 840750:0, 1558300:0, 1205500:0, 1084430:0, 1289760:0, 1899050:0, 1051700:0, 3155070:0, 1205501:0, 981701:0, 840770:0, 1167510:0, 1447360:0, 981700:0, 840760:0, 382560:0, 1694780:0, 1874370:0, 798750:0, 1522880:0, 1230830:0, 1710241:0, 457140:0, 1172860:0, 1272440:0, 1710240:0, 2241030:0, 2711510:0, 3373370:0, 4211520:0, 393010:1:1, 987340:0, 2058281:0, 962960:0, 1167330:0, 2170670:0, 2058280:0, 798740:0, 2170671:0, 1612410:0, 1836630:0, 2769680:0, 3373360:0, 974740:0, 1698560:0, 2377640:0, 2007370:0, 712640:0, 981702:0
+[01:40:02]: could not load pending_keyvalues_prod
+[01:40:02]: loaded inventory_cache_prod
+[01:40:02]: using inventory state token from cached file
+[01:40:03]: saved APP:Klei//DoNotStarveTogether/112617283/client_save/inventory_cache_prod
+[01:40:03]: saved APP:Klei//DoNotStarveTogether/112617283/client_save/inventory_cache_prod_sig
+[01:40:04]: [Workshop] ItemQuery got this many results: 50, matching: 64
+[01:40:04]: [Workshop] ModQuery got 50 results
+[01:40:04]: [Workshop] ModQuery queued to download IDs: 3733666701 3732511659 3728986472 3720715617 3688913682 3684000581 3679679295 3678857150 3675508496 3664017907 3658174287 3621180063 3597024951 3579434847 3572909709 3483277539 3482371774 3383078008 3377689002 3363332852 3338199971 3305582804 3293693889 3264228824 3055010657 3014637953 3013355348 2914336761 2874781689 2873533916 2818292210 2812783478 2785731953 2678483936 2657513551 2607507857 2399658326 2376883615 2365583610 2289662010 2229630615 2225074153 2189004162 2033458869 1910111177 1653324376 1595631294 1463539363 1378549454 1322200744
+[01:40:04]: [Workshop] ItemQuery got this many results: 14, matching: 64
+[01:40:04]: [Workshop] ModQuery got 14 results
+[01:40:04]: [Workshop] ModQuery queued to download IDs: 1185229307 1085586145 912647660 869793805 791838548 788825160 771629575 727774324 699175387 663554209 659454031 457646167 352373173 351325790
+[01:40:04]: [Workshop] ItemQuery finished all queries, moving to download phase
+[01:40:04]: [Workshop] ItemQuery finished downloading everything

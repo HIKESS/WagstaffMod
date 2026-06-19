@@ -1421,3 +1421,44 @@ Process Memory:
 [00:07:33]: Server Unpaused	
 [00:07:39]: Server Autopaused	
 [00:07:41]: Server Unpaused	
+[00:09:09]: Server Autopaused	
+[00:09:11]: Server Unpaused	
+[00:09:15]: [Shard] We have been disconnected from the master. Waiting to reconnect...
+[00:09:15]: Sim paused
+[00:09:20]: About to start a shard with these settings:
+[00:09:20]:   ShardName: Caves
+[00:09:20]:   ShardID: 4287138846
+[00:09:20]:   ShardRole: SECONDARY
+[00:09:20]:   MasterHost: 127.0.0.1
+[00:09:20]:   MasterBind: (null)
+[00:09:20]:   MasterPort: 10888
+[00:09:20]: [Shard] Connecting to master...
+[00:09:20]: [IPC] Received shutdown signal.
+[00:09:20]: Available disk space for save files: 119343 MB
+[00:09:21]: [Wagstaff Debug] World OnSave called	
+[00:09:21]: [Wagstaff Debug] Saving wagstaff_activated_skills, self._wagstaff_activated_skills type: table	
+[00:09:21]: [Wagstaff Debug] No skills in world data, checking live players	
+[00:09:21]: [Wagstaff Debug] World OnSave done	
+[00:09:21]: Missing reference:	100041 - world	->	false	nil	
+[00:09:21]: Missing reference:	100041 - world	->	0	nil	
+[00:09:21]: Missing reference:	100041 - world	->	table: 00000000414149A0	nil	
+[00:09:22]: Serializing world: session/6A3246987BA66E5A/0000000003
+[00:09:22]: [Shard] Stopping shard mode
+[00:09:22]: [Steam] SendUserDisconnect for ''
+[00:09:22]: Collecting garbage...
+[00:09:23]: lua_gc took 0.64 seconds
+[00:09:23]: ~ShardLuaProxy()
+[00:09:23]: ~cEventLeaderboardProxy()
+[00:09:23]: ~ItemServerLuaProxy()
+[00:09:23]: ~InventoryLuaProxy()
+[00:09:23]: ~NetworkLuaProxy()
+[00:09:23]: ~SimLuaProxy()
+[00:09:24]: lua_close took 1.04 seconds
+[00:09:24]: Could not unload undefined prefab (scrap)
+[00:09:24]: Could not unload undefined prefab (scrap)
+[00:09:24]: Could not unload undefined prefab (scrap)
+[00:09:24]: Could not unload undefined prefab (scrap)
+[00:09:24]: Could not unload undefined prefab (quagmire_telebrella)
+[00:09:25]: CurlRequestManager::ClientThread::Main() complete
+[00:09:25]: HttpClient2 discarded 0 callbacks.
+[00:09:25]: Shutting down
