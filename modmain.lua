@@ -1165,39 +1165,6 @@ G.WagstaffHasSkill = function(worker, skill_id)
         return true
     end
     
-    -- CRITICAL FIX: If activatedskills is empty, try to load from world save immediately
-    -- This handles the case where skills were saved but not restored to the player
-    if not activated or next(activated) == nil then
-        print("[DEBUG WagstaffHasSkill] activatedskills está VAZIO! Tentando carregar do world save...")
-        if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
-            local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
-            print("[DEBUG WagstaffHasSkill] world_skills do GetWagstaffSkillsFromWorld:", world_skills)
-            if world_skills and type(world_skills) == "table" then
-                local found_in_world = false
-                for k, v in pairs(world_skills) do
-                    print("[DEBUG WagstaffHasSkill]   world_skill:", k, "=", v)
-                    if k == skill_id and v then
-                        found_in_world = true
-                        break
-                    end
-                end
-                if found_in_world then
-                    print("[DEBUG WagstaffHasSkill] Skill encontrada no world save! Restaurando para activatedskills...")
-                    -- Initialize activatedskills if needed
-                    if not worker.components.skilltreeupdater.activatedskills then
-                        worker.components.skilltreeupdater.activatedskills = {}
-                    end
-                    -- Restore the skill
-                    worker.components.skilltreeupdater.activatedskills[skill_id] = true
-                    -- Apply the tag
-                    if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_id] and G.WagstaffSkillDefs[skill_id].onactivate then
-                        G.WagstaffSkillDefs[skill_id].onactivate(worker, true)
-                    else
-                        worker:AddTag(skill_id)
-                    end
-                    print("[DEBUG WagstaffHasSkill] Skill restaurada com sucesso! Retornando true")
-                    return true
-                end
     -- CRITICAL FIX #2: Check if any SKILL that adds this tag is activated
     -- Some skills have different IDs but add the tag we're looking for
     -- We need to iterate through all activated skills and check their onactivate effects
