@@ -4770,3 +4770,26 @@ Please ensure that these point to valid files in your mod folder, or else commen
 [01:35:11]: Serializing user: session/316D2FB564A0A18B/A7MLOBQDIN65/0000000001
 [01:35:17]: Server Autopaused	
 [01:35:21]: Server Unpaused	
+[01:37:17]: Server Autopaused	
+[01:37:19]: Server Unpaused	
+[01:37:24]: Server Autopaused	
+[01:37:26]: SendRemoteExecute(c_freecrafting(), 62.141499, 175.471695)
+[01:37:26]: Server Unpaused	
+[01:37:34]: Error deserializing lua state for entity williamballistic_empty[104195] var:inherentactionsdirty - Failed to read net var data
+[01:37:34]:     actioncomponentsdirty
+[01:37:34]:     
+[01:37:34]:     inherentscenealtactiondirty
+[01:37:34]:     
+[01:37:34]:     inherentsceneactiondirty
+[01:37:34]:     namedirty
+[01:37:34]:     inherentactionsdirty <----
+[01:37:34]:     modactioncomponentsdirtyWagstaffPlus
+[01:37:34]:     isacidsizzlingdirty
+[01:37:34]:     iswetdirty
+[01:37:34]:     authordirty
+[01:37:52]: Server Autopaused	
+[01:37:55]: Server Unpaused	
+[01:38:00]: Server Autopaused	
+[01:38:01]: Server Unpaused	
+[01:38:07]: Server Autopaused	
+[01:38:09]: Server Unpaused	

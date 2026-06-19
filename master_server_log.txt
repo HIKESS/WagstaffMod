@@ -1970,3 +1970,186 @@ Process Memory:
 [00:04:52]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
 [00:04:52]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
 [00:04:53]: Server Unpaused	
+[00:06:49]: Server Autopaused	
+[00:06:51]: Server Unpaused	
+[00:06:56]: Server Autopaused	
+[00:06:58]: [(KU_rSBqsLp5) .FB] ReceiveRemoteExecute(c_freecrafting()) @(62.14, 175.47)
+[00:06:58]: Server Unpaused	
+[00:07:11]: [DEBUG] ==============================================	
+[00:07:11]: [DEBUG] OnFinishCallback chamado para Brute Bot	
+[00:07:11]: [DEBUG] inst.prefab:	williambrute	
+[00:07:11]: [DEBUG] worker.prefab:	wagstaff	
+[00:07:11]: [DEBUG] worker.name:	.FB	
+[00:07:11]: [DEBUG] inst.upgradelevel:	0	
+[00:07:11]: [DEBUG] inst.upgradelevel_mk3:	nil	
+[00:07:11]: [DEBUG] wrench:	tf2wrench	
+[00:07:11]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
+[00:07:11]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
+[00:07:11]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:07:11]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:11]: [DEBUG WagstaffHasSkill] worker:	120347 - wagstaff	wagstaff	
+[00:07:11]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:07:11]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:11]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:07:11]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:11]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:11]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 000000000FAD6850	
+[00:07:11]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:11]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:11]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:11]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:11]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001EA415C0	
+[00:07:11]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:11]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
+[00:07:11]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:11]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:11]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:11]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:11]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:11]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:11]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:11]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:07:11]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:07:12]: [DEBUG] ==============================================	
+[00:07:12]: [DEBUG] OnFinishCallback chamado para Brute Bot	
+[00:07:12]: [DEBUG] inst.prefab:	williambrute	
+[00:07:12]: [DEBUG] worker.prefab:	wagstaff	
+[00:07:12]: [DEBUG] worker.name:	.FB	
+[00:07:12]: [DEBUG] inst.upgradelevel:	0	
+[00:07:12]: [DEBUG] inst.upgradelevel_mk3:	nil	
+[00:07:12]: [DEBUG] wrench:	tf2wrench	
+[00:07:12]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
+[00:07:12]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
+[00:07:12]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:07:12]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:12]: [DEBUG WagstaffHasSkill] worker:	120347 - wagstaff	wagstaff	
+[00:07:12]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:07:12]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:12]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:07:12]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:12]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:12]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 000000000FAD6850	
+[00:07:12]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:12]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:12]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:12]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:12]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001EA415C0	
+[00:07:12]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:12]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
+[00:07:12]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:12]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:12]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:12]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:12]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:12]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:12]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:12]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:07:12]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:07:13]: [DEBUG] ==============================================	
+[00:07:13]: [DEBUG] OnFinishCallback chamado para Ballistic Bot	
+[00:07:13]: [DEBUG] inst.prefab:	williamballistic	
+[00:07:13]: [DEBUG] worker.prefab:	wagstaff	
+[00:07:13]: [DEBUG] worker.name:	.FB	
+[00:07:13]: [DEBUG] inst.upgradelevel:	0	
+[00:07:13]: [DEBUG] wrench:	tf2wrench	
+[00:07:13]: [DEBUG] Ballistic é MK1 - verificando upgrade para MK2	
+[00:07:13]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_ballistic_evolve	
+[00:07:13]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:07:13]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker:	120347 - wagstaff	wagstaff	
+[00:07:13]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_ballistic_evolve	
+[00:07:13]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:13]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_ballistic_evolve	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 000000000FAD6850	
+[00:07:13]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:13]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:13]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:13]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:13]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001EA415C0	
+[00:07:13]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:13]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_ballistic_evolve	- NAO ENCONTRADA	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:13]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:13]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:13]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:13]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:13]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:13]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:13]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:07:13]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:07:13]: [DEBUG] ==============================================	
+[00:07:13]: [DEBUG] OnFinishCallback chamado para Ballistic Bot	
+[00:07:13]: [DEBUG] inst.prefab:	williamballistic	
+[00:07:13]: [DEBUG] worker.prefab:	wagstaff	
+[00:07:13]: [DEBUG] worker.name:	.FB	
+[00:07:13]: [DEBUG] inst.upgradelevel:	0	
+[00:07:13]: [DEBUG] wrench:	tf2wrench	
+[00:07:13]: [DEBUG] Ballistic é MK1 - verificando upgrade para MK2	
+[00:07:13]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_ballistic_evolve	
+[00:07:13]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:07:13]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker:	120347 - wagstaff	wagstaff	
+[00:07:13]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_ballistic_evolve	
+[00:07:13]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:13]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_ballistic_evolve	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 000000000FAD6850	
+[00:07:13]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:13]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:13]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:13]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:13]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001EA415C0	
+[00:07:13]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:13]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_ballistic_evolve	- NAO ENCONTRADA	
+[00:07:13]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:13]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:13]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:13]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:13]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:13]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:13]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:13]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:07:13]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:07:14]: [DEBUG] ==============================================	
+[00:07:14]: [DEBUG] OnFinishCallback chamado para Ballistic Bot	
+[00:07:14]: [DEBUG] inst.prefab:	williamballistic	
+[00:07:14]: [DEBUG] worker.prefab:	wagstaff	
+[00:07:14]: [DEBUG] worker.name:	.FB	
+[00:07:14]: [DEBUG] inst.upgradelevel:	0	
+[00:07:14]: [DEBUG] wrench:	tf2wrench	
+[00:07:14]: [DEBUG] Ballistic é MK1 - verificando upgrade para MK2	
+[00:07:14]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_ballistic_evolve	
+[00:07:14]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:07:14]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:14]: [DEBUG WagstaffHasSkill] worker:	120347 - wagstaff	wagstaff	
+[00:07:14]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_ballistic_evolve	
+[00:07:14]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:14]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_ballistic_evolve	
+[00:07:14]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:14]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:14]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 000000000FAD6850	
+[00:07:14]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:14]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:14]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:14]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:14]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001EA415C0	
+[00:07:14]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:14]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_ballistic_evolve	- NAO ENCONTRADA	
+[00:07:14]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:14]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:14]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:14]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:14]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:14]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:14]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:14]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:07:14]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:07:24]: Server Autopaused	
+[00:07:27]: Server Unpaused	
+[00:07:32]: Server Autopaused	
+[00:07:33]: Server Unpaused	
+[00:07:39]: Server Autopaused	
+[00:07:41]: Server Unpaused	
