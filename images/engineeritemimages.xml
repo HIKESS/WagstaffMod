@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Atlas>
+	<Texture filename="engineeritemimages.tex" />
+	<Elements>
+		<Element name="destructionpda.tex" u1="0.001" u2="0.249" v2="0.999" v1="0.751" variant="" />
+		<Element name="dispenser.tex" u1="0.251" u2="0.499" v2="0.999" v1="0.751" variant="" />
+		<Element name="ehardhat.tex" u1="0.001" u2="0.249" v2="0.749" v1="0.501" variant="" />
+		<Element name="esentry.tex" u1="0.251" u2="0.499" v2="0.749" v1="0.501" variant="" />
+		<Element name="esentry_item.tex" u1="0.501" u2="0.749" v2="0.999" v1="0.751" variant="" />
+		<Element name="gibus.tex" u1="0.501" u2="0.749" v2="0.749" v1="0.501" variant="" />
+		<Element name="buildinglocked.tex" u1="0.001" u2="0.249" v2="0.499" v1="0.251" variant="" />
+		<Element name="eteleporter.tex" u1="0.001" u2="0.249" v2="0.249" v1="0.001" variant="" />
+		<Element name="eteleporter_exit.tex" u1="0.251" u2="0.499" v2="0.499" v1="0.251" variant="" />
+		<Element name="skull_engineer.tex" u1="0.501" u2="0.749" v2="0.499" v1="0.251" variant="" />
+		<Element name="scrap.tex" u1="0.751" u2="0.999" v2="0.999" v1="0.751" variant="" />
+		<Element name="tf2wrench.tex" u1="0.751" u2="0.999" v2="0.749" v1="0.501" variant="" />
+	</Elements>
+</Atlas>

@@ -1,9 +1,7 @@
 name = "Wagstaff Standalone"
 description = [[Standalone Wagstaff character mod — The Cryptic Founder.
 
-A great inventor, nearsighted, with a delicate stomach. Comes with his signature goggles (normal/heat/armor/shoot), the Telebrella/Telipad teleport system, and the Thumper harvester.
-
-Extracted and cleaned from the Hamlet Characters - Rework mod to run as a single self-contained character mod with no dependencies on other characters.
+A great inventor, nearsighted, with a delicate stomach. Now a fully self-contained mod with integrated skill tree progression, engineer bots, sentry guns, dispensers, and teleporters.
 
 Features:
 - Wagstaff character with nearsightedness & weak stomach mechanics
@@ -11,12 +9,20 @@ Features:
 - Spygoggles investigation system (peculiar objects in the world)
 - Telebrella + Telipad teleport network
 - Thumper ground-pounding harvester
+- FULL SKILL TREE (15 insights, per-world persistence, 3 branches: Mechanical/Robotic/Allegiance)
+- Engineer bots: Butler, Buster, Brute, Ballistic (each with MK2/MK3 upgrades)
+- Sentry Gun (MK2/MK3 upgrades with rockets + double damage)
+- Dispenser (MK2/MK3 upgrades with health regen + lucky drops)
+- Engineer Teleporter (entrance + exit, sanity cost reducible via skill)
+- TF2 Wrench (calibrated via skill to consume less durability)
+- Affinity system: Shadow Engineer vs Celestial Engineer (boss-gated)
+- Per-world progression: XP/insights saved per world, not per profile
 - Forge (Lava Arena) and Gorge (Quagmire) mode support
 - Blur shader for nearsighted vision
 
-Original character by Hornet, reworked by Niko. Standalone extraction by Wholemaker Team.]]
+Original character by Hornet, reworked by Niko. Skill tree + integration by Wholemaker Team.]]
 author = "Wholemaker Team (standalone) — original by Hornet/Niko"
-version = "1.0.0"
+version = "2.0.0"
 
 api_version = 10
 
