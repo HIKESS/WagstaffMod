@@ -1,5 +1,1 @@
-*.tmp
-*.bak
-*.log
-.DS_Store
-Thumbs.db
+(modified.lua is a source file, so no need to ignore it)
