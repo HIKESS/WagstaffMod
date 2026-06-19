@@ -2259,9 +2259,11 @@ AddPrefabPostInit("world", function(self)
         WagstaffDebug("Saving wagstaff_activated_skills, self._wagstaff_activated_skills type:", type(self._wagstaff_activated_skills))
         data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
         local has_skills = false
-        for _ in pairs(data.wagstaff_activated_skills) do
-            has_skills = true
-            break
+        if data.wagstaff_activated_skills ~= nil then
+            for _ in pairs(data.wagstaff_activated_skills) do
+                has_skills = true
+                break
+            end
         end
         if not has_skills then
             WagstaffDebug("No skills in world data, checking live players")
@@ -2270,13 +2272,21 @@ AddPrefabPostInit("world", function(self)
                     if player.prefab == "wagstaff" and player.components.skilltreeupdater then
                         WagstaffDebug("Found live Wagstaff player, checking activatedskills type:", type(player.components.skilltreeupdater.activatedskills))
                         data.wagstaff_activated_skills = CopyActivatedSkills(player.components.skilltreeupdater.activatedskills)
-                        local _lc = 0; for _ in pairs(data.wagstaff_activated_skills) do _lc = _lc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills from live player, count:", _lc)
+                        local _lc = 0
+                        if data.wagstaff_activated_skills ~= nil then
+                            for _ in pairs(data.wagstaff_activated_skills) do _lc = _lc + 1 end
+                        end
+                        WagstaffDebug("Saved wagstaff_activated_skills from live player, count:", _lc)
                         break
                     end
                 end
             end
         else
-            local _wc = 0; for _ in pairs(data.wagstaff_activated_skills) do _wc = _wc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills to world data, count:", _wc)
+            local _wc = 0
+            if data.wagstaff_activated_skills ~= nil then
+                for _ in pairs(data.wagstaff_activated_skills) do _wc = _wc + 1 end
+            end
+            WagstaffDebug("Saved wagstaff_activated_skills to world data, count:", _wc)
         end
         WagstaffDebug("World OnSave done")
         return data
