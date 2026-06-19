@@ -1113,6 +1113,17 @@ G.WagstaffHasSkill = function(worker, skill_id)
             all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
         end
     end
+    
+    -- EXTRA CHECK: Some skills add tags but have different IDs in activatedskills
+    -- For example: wagstaff_robotic_1 adds tag wagstaff_brute_evolve
+    -- So if we're looking for wagstaff_brute_evolve and it's not in activatedskills,
+    -- check if the TAG exists (which means the skill IS active)
+    if has_tag then
+        print("[DEBUG WagstaffHasSkill] EXTRA CHECK: Tag exists even though skill_id not in activatedskills - this is VALID")
+        print("[DEBUG WagstaffHasSkill] Retornando true (via tag)")
+        return true
+    end
+    
     print("[DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===")
     print("[DEBUG WagstaffHasSkill] Skill procurada:", skill_id, "- NAO ENCONTRADA")
     print("[DEBUG WagstaffHasSkill] worker.prefab=", tostring(worker.prefab))
