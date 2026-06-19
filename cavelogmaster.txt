@@ -1,0 +1,3054 @@
+[00:00:00]: 
+System Memory:
+	Memory Load: 48%
+	Available Physical Memory: 12594m/24300m
+	Available Page File: 12750m/28908m
+	Available Virtual Memory: 134213473m/134217727m
+	Available Extended Virtual Memory: 0m
+[00:00:00]: 
+Process Memory:
+	Peak Working Set Size: 34m
+	Working Set Size: 34m
+	Quota Peak Page Pool Usage: 233k
+	Quota Page Pool Usage: 230k
+	Quota Peak Non Paged Pool Usage:17k
+	Quota Non Paged Pool Usage: 15k
+	Page File Usage: 5m
+	Peak Page File Usage: 5m
+[00:00:00]: PersistRootStorage is now APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Master/ 
+[00:00:00]: Starting Up
+[00:00:00]: Version: 736959
+[00:00:00]: Current time: Fri Jun 19 15:18:52 2026
+
+[00:00:00]: Don't Starve Together: 736959 WIN32
+[00:00:00]: Build Date: 4175
+[00:00:01]: Mode: 64-bit
+[00:00:01]: Parsing command line
+[00:00:01]: Command Line Arguments: -monitor_parent_process 9708 -persistent_storage_root APP:Klei/ -conf_dir DoNotStarveTogether -cluster Cluster_1 -ownernetid 76561198072883011 -ownerdir 112617283 -clouddir 112617283 -backup_log_count 25 -backup_log_period 0 -ugc_directory C:\\Program Files (x86)\\Steam\\steamapps\\workshop -shard Master -secondary_log_prefix master -sigprefix DST_Master -token *********************************************************************************** 
+[00:00:01]: Initializing distribution platform
+[00:00:01]: Initializing Minidump handler
+[00:00:01]: ....Done
+[00:00:01]: ....Done
+[00:00:01]: Fixing DPI
+[00:00:01]: ...Done
+[00:00:01]: THREAD - started 'GAClient' (16828)
+[00:00:01]: CurlRequestManager::ClientThread::Main()
+[00:00:01]: ProfileIndex:5.26
+[00:00:01]: Mounting file system databundles/klump.zip successful.
+[00:00:01]: Mounting file system databundles/shaders.zip successful.
+[00:00:01]: Mounting file system databundles/fonts.zip successful.
+[00:00:01]: Mounting file system databundles/anim_dynamic.zip successful.
+[00:00:01]: Mounting file system databundles/bigportraits.zip successful.
+[00:00:01]: Mounting file system databundles/images.zip successful.
+[00:00:01]: Mounting file system databundles/scripts.zip successful.
+[00:00:01]: [Steam] SteamGameServer_Init(10999, 27016)
+[00:00:01]: [Steam] SteamGameServer_Init success
+[00:00:01]: [Connect] PendingConnection::Reset(true)
+[00:00:01]: Platform: 1
+[00:00:01]: Network tick rate: U=15(2), D=0
+[00:00:01]: Network tick rate: U=15(2), D=0
+[00:00:01]: [Warning] Authorized application C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe is not setup in the firewall.
+[00:00:01]: Authorized application C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe is now enabled in the firewall.
+[00:00:01]: THREAD - started 'StreamInput' (16244)
+[00:00:01]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/blocklist.txt (Failure)
+[00:00:01]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/adminlist.txt (Failure)
+[00:00:01]: OnLoadUserIdList: APP:Klei//DoNotStarveTogether/112617283/client_save/whitelist.txt (Failure)
+[00:00:01]: Offline user ID: OU_76561198072883011
+[00:00:01]: HardwareStats:
+  OS                        
+    name                      Microsoft Windows 11 Home Single Language
+    version                   10.0.26200
+    platformSpecific          SP 0.0
+    architecture              64 bits
+  CPU                       
+    clockSpeed                1300
+    name                      12th Gen Intel(R) Core(TM) i5-1235U
+    manufacturer              GenuineIntel
+    numCores                  10
+    features                  SSE,SSE2,SSE3,SSSE3,SSE41,SSE42,AVX
+  RAM                       
+    megsOfRam                 24576
+  GPU                       
+    megsOfRam                 2047
+    videoModeDescription      1366 x 768 x 4294967296 cores
+    name                      Intel(R) Iris(R) Xe Graphics
+    driverVersion             32.0.101.7085
+    driverDate                20260303000000.000000-000
+    refreshRate               60
+
+[00:00:01]: cGame::InitializeOnMainThread
+[00:00:01]: Renderer initialize: Okay
+[00:00:02]: AnimManager initialize: Okay
+[00:00:02]: Buffers initialize: Okay
+[00:00:02]: cDontStarveGame::DoGameSpecificInitialize()
+[00:00:02]: GameSpecific initialize: Okay
+[00:00:02]: cGame::StartPlaying
+[00:00:02]: AppVersion::GetArchitecture() x64
+[00:00:02]: LOADING LUA
+[00:00:02]: DoLuaFile scripts/main.lua
+[00:00:02]: DoLuaFile loading buffer scripts/main.lua
+[00:00:04]:   taskgrouplist:	default	Together	
+[00:00:04]:   taskgrouplist:	classic	Classic	
+[00:00:04]:   taskgrouplist:	cave_default	Underground	
+[00:00:04]:   taskgrouplist:	lavaarena_taskset	The Forge	
+[00:00:04]:   taskgrouplist:	quagmire_taskset	The Gorge	
+[00:00:04]: Running main.lua
+	
+[00:00:04]: Could not load modindex	
+[00:00:04]: ModIndex: Beginning normal load sequence for dedicated server.
+	
+[00:00:04]: SUCCESS: Loaded modoverrides.lua	
+[00:00:04]: modoverrides.lua enabling WagstaffPlus	
+[00:00:04]: ModIndex:GetModsToLoad inserting moddir, 	WagstaffPlus	
+[00:00:04]: Could not load mod_config_data/modconfiguration_WagstaffPlus_CLIENT	
+[00:00:04]: Loading mod: WagstaffPlus (Wagstaff Standalone) Version:2.0.0	
+[00:00:04]: applying configuration_options from modoverrides.lua to mod WagstaffPlus	
+[00:00:04]: Overriding mod WagstaffPlus's option mysterychance with value 0.03	
+[00:00:04]: Overriding mod WagstaffPlus's option flickerthreshold with value 0.75	
+[00:00:04]: Overriding mod WagstaffPlus's option debug with value true	
+[00:00:04]: Overriding mod WagstaffPlus's option enableblur with value true	
+[00:00:04]: Overriding mod WagstaffPlus's option weakstomachpain with value -3	
+[00:00:04]: Overriding mod WagstaffPlus's option gogglesrestricted with value false	
+[00:00:04]: Overriding mod WagstaffPlus's option telebrellaspelltype with value item	
+[00:00:04]: Overriding mod WagstaffPlus's option telebrellarandom with value true	
+[00:00:04]: Overriding mod WagstaffPlus's option preset with value NONE	
+[00:00:04]: Overriding mod WagstaffPlus's option mysterynilchance with value 0.4	
+[00:00:04]: Overriding mod WagstaffPlus's option language with value auto	
+[00:00:04]: Overriding mod WagstaffPlus's option mysterymidchance with value 0.7	
+[00:00:04]: Registering Mods:
+[00:00:04]:    Registering Mod WagstaffPlus
+[00:00:04]: Mods registered.
+[00:00:04]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modworldgenmain.lua	
+[00:00:04]: Mod: WagstaffPlus (Wagstaff Standalone)	  Mod had no modworldgenmain.lua. Skipping.	
+[00:00:04]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modmain.lua	
+[00:00:05]: [Wagstaff Debug] Debug mode ON. Log file: ../mods/WagstaffPlus//wagstaff_debug.txt	
+[00:00:05]: [Wagstaff Debug] Debug mode is ON at mod load. Use c_wagstaff_debug() to toggle at runtime.	
+[00:00:05]: [Wagstaff Debug] Verbose logs are enabled by default when Debug is ON.	
+[00:00:05]: [Wagstaff Debug] Standalone Wagstaff Integration mod is loading!	
+[00:00:05]:     [Wagstaff Standalone]: Tropical support is set to: false	
+[00:00:05]: modimport: ../mods/WagstaffPlus/imports/william_tuning	
+[00:00:05]: modimport: ../mods/WagstaffPlus/imports/william_widgets	
+[00:00:05]: modimport: ../mods/WagstaffPlus/imports/william_acts	
+[00:00:05]: modimport: ../mods/WagstaffPlus/imports/william_states	
+[00:00:05]: modimport: ../mods/WagstaffPlus/imports/william_dispenser_tint	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/standalone_prefabs	
+[00:00:05]: [Wagstaff Debug] CreateSkillTree called	
+[00:00:05]: [Wagstaff Debug] BuildSkillsData loaded: true	
+[00:00:05]: [Wagstaff Debug] BuildSkillsData returned data: true	
+[00:00:05]: [Wagstaff Debug] Saving skill definitions to G.WagstaffSkillDefs, #skills: 33	
+[00:00:05]: [Wagstaff Debug] === INICIANDO CreateSkillTreeFor ===	
+[00:00:05]: [Wagstaff Debug] SkillTreeDefs antes: table	
+[00:00:05]: [Wagstaff Debug] SKILLS antes: table	
+[00:00:05]: [Wagstaff Debug] data.SKILLS count: tem items	
+[00:00:05]: [Wagstaff Debug] [VERBOSE] Lista completa de skills sendo registradas:	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_6_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_mk2 - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_mk3 - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_3_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_5_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_2_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_x2_damage - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_buster_parallel - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_shadow_boss - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_4_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_mk2 - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_1_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_3_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_mk3 - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_ballistic_parallel - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_mechanical_1 - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_mechanical_1_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_1_parallel - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_3_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_7_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_shadow_path - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_lunar_boss - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_thermal_upgrade_parallel - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_2_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_ballistic_evolve - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_lunar_path - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_shadow_possession - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_celestial_possession - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_thermal_upgrade - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_buster_evolve - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_2_lock - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_1 - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_lucky_engineer - Nome: sem_nome	
+[00:00:05]: [Wagstaff Debug] CreateSkillTreeFor succeeded	
+[00:00:05]: [Wagstaff Debug] === POS CreateSkillTreeFor ===	
+[00:00:05]: [Wagstaff Debug] SKILLS depois: table wagstaff exists? false	
+[00:00:05]: [Wagstaff Debug] === VERIFICACAO COMPLETA DO SKILLTREEDEFS ===	
+[00:00:05]: [Wagstaff Debug] SkillTreeDefs keys: SKILLS, CreateSkillTreeFor, CUSTOM_FUNCTIONS, SKILLTREE_METAINFO, DEBUG_REBUILD, FN, SKILLTREE_DEFS, SKILLTREE_ORDERS	
+[00:00:05]: [Wagstaff Debug] ERROR: GLOBAL.TheSkillTree is NIL!	
+[00:00:05]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff: table	
+[00:00:05]: [Wagstaff Debug]   RPC_LOOKUP[ 1 ] = wagstaff_ballistic_parallel	
+[00:00:05]: [Wagstaff Debug]   RPC_LOOKUP[ 2 ] = wagstaff_buster_evolve	
+[00:00:05]: [Wagstaff Debug]   RPC_LOOKUP[ 3 ] = wagstaff_buster_parallel	
+[00:00:05]: [Wagstaff Debug]   RPC_LOOKUP[ 4 ] = wagstaff_celestial_possession	
+[00:00:05]: [Wagstaff Debug]   RPC_LOOKUP[ 5 ] = wagstaff_dispenser_mk2	
+[00:00:05]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count: 17 TOTAL_SKILLS_COUNT: 17	
+[00:00:05]: [Wagstaff Debug] [VERBOSE] RPC_LOOKUP completo do meta wagstaff:	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    1 -> wagstaff_ballistic_parallel	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    2 -> wagstaff_buster_evolve	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    3 -> wagstaff_buster_parallel	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    4 -> wagstaff_celestial_possession	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    5 -> wagstaff_dispenser_mk2	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    6 -> wagstaff_dispenser_mk3	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    7 -> wagstaff_lucky_engineer	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    8 -> wagstaff_mechanical_1	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    9 -> wagstaff_robotic_1	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    10 -> wagstaff_robotic_1_parallel	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    11 -> wagstaff_sentry_mk2	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    12 -> wagstaff_sentry_mk3	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    13 -> wagstaff_shadow_possession	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    14 -> wagstaff_thermal_upgrade	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    15 -> wagstaff_thermal_upgrade_parallel	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    16 -> wagstaff_x2_damage	
+[00:00:05]: [Wagstaff Debug] [VERBOSE]    0 -> wagstaff_ballistic_evolve	
+[00:00:05]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS existe!	
+[00:00:05]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!	
+[00:00:05]: [WAGSTAFF DEBUG] Skill tree registered with 33 skills for wagstaff	
+[00:00:05]: [WAGSTAFF DEBUG] Set SkillTreeDefs.SKILLTREE_ORDERS.wagstaff	
+[00:00:05]: [Wagstaff Debug] Successfully created wagstaff skill tree	
+[00:00:05]: [Wagstaff Debug] Registering AddPrefabPostInit('world')	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_sounds	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_tuning	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_strings	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_postinits	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_stategraph	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_recipes	
+[00:00:05]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_shaders	
+[00:00:06]: Event data unavailable: lavaarena_event_server/lavaarena_achievement_quest_defs
+[00:00:13]: LOADING LUA SUCCESS
+[00:00:13]: PlayerDeaths could not load morgue	
+[00:00:13]: PlayerHistory could not load player_history	
+[00:00:13]: ServerPreferences could not load server_preferences	
+[00:00:13]: ConsoleScreenSettings could not load consolescreen	
+[00:00:13]: bloom_enabled	true	
+[00:00:13]: OnFilesLoaded()	
+[00:00:13]: OnUpdatePurchaseStateComplete	
+[00:00:13]: Klump load on boot started.	
+[00:00:13]: Klump files loaded: 	0	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	Registering prefabs	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff_none	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff_none	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/goggles	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesnormalhat	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesheathat	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesarmorhat	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesshoothat	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/fryfocals_charge	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    fryfocals_charge	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/thumper	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper_placer	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telipad	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    beacon	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad_placer	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telebrella	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella_glow	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/hiddendanger_fx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    hiddendanger_fx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    peculiar_marker_fx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    identified_marker_fx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/williamgadget	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamgadget	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_butler	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler2	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler3	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_builder	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_empty	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_buster	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster2	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster3	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_builder	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_empty	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_brute	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute2	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute3	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_gary	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_placer	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_builder	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_ballistic	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic3	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic2	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty_placer	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charge	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_chargeup	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge_hit	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charged_fx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamchargedfx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_mistake	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_mistake	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/bot_aura_v5	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_butler	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_buster	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_bouncer	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_battery	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_shadow	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/dispenser	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    dispenser	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    ehealfx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_bullet	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_bullet	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_rocket	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_rocket	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    eshockfx	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringenter	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_placer	
+[00:00:23]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter_exit	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringexit	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit_placer	
+[00:00:24]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering default mod prefab	
+[00:00:25]: Could not preload undefined prefab (scrap)
+[00:00:25]: Could not preload undefined prefab (scrap)
+[00:00:28]: Could not preload undefined prefab (quagmire_telebrella)
+[00:00:28]: Could not preload undefined prefab (scrap)
+[00:00:29]: Could not preload undefined prefab (scrap)
+[00:00:29]: 	Load FE	
+[00:00:33]: 	Load FE: done	
+[00:00:33]: THREAD - started 'FilesExistAsyncThread' (12044)
+[00:00:33]: FilesExistAsyncThread started (0 files)...
+[00:00:33]: ... FilesExistAsyncThread complete
+[00:00:33]: Check for write access: TRUE
+[00:00:33]: Check for read access: TRUE
+[00:00:33]: Available disk space for save files: 119335 MB
+[00:00:33]: ModIndex: Load sequence finished successfully.	
+[00:00:33]: Reset() returning
+[00:00:33]: [IPC] Signal 'DST_Master_Kill' opened  #0000000000000780
+[00:00:33]: [IPC] Registering handler for signal #0000000000000780
+[00:00:33]: [IPC] Handle #0000000000000780 added to the Eventhandles
+[00:00:33]: [IPC] Signal 'DST_Master_ShutdownNoSave' opened  #0000000000000A9C
+[00:00:33]: [IPC] Registering handler for signal #0000000000000A9C
+[00:00:33]: [IPC] Handle #0000000000000A9C added to the Eventhandles
+[00:00:33]: [IPC] Signal 'DST_Master_Starting' opened  #0000000000000AAC
+[00:00:33]: [IPC] Sending signal... #0000000000000AAC
+[00:00:34]: [200] Account Communication Success (6)
+[00:00:34]: Cached userid (null) saved to APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Master/save/cached_userid
+[00:00:34]: Received (KU_rSBqsLp5) from TokenPurpose
+[00:00:34]: Starting Dedicated Server Game	
+[00:00:34]: Network tick rate: U=15(2), D=0
+[00:00:34]: About to start a server with the following settings:
+[00:00:34]:   Dedicated: true
+[00:00:34]:   Online: true
+[00:00:34]:   Passworded: false
+[00:00:34]:   ServerPort: 10999
+[00:00:34]:   SteamAuthPort: 8766
+[00:00:34]:   SteamMasterServerPort: 27016
+[00:00:34]:   ClanID: false
+[00:00:34]:   ClanOnly: false
+[00:00:34]:   ClanAdmin: false
+[00:00:34]:   LanOnly: false
+[00:00:34]:   FriendsOnly: false
+[00:00:34]:   EnableAutosaver: true
+[00:00:34]:   EncodeUserPath: true
+[00:00:34]:   PVP: false
+[00:00:34]:   MaxPlayers: 6
+[00:00:34]:   GameMode: survival
+[00:00:34]:   OverridenDNS: 
+[00:00:34]:   PauseWhenEmpty: true
+[00:00:34]:   IdleTimeout: 1800s
+[00:00:34]:   VoteEnabled: false
+[00:00:34]:   InternetBroadcasting: true
+[00:00:34]: [Warning] Could not confirm port 10999 is open in the firewall. 
+[00:00:34]: Could not load mod_config_data/modconfiguration_WagstaffPlus	
+[00:00:34]: Online Server Started on port: 10999
+[00:00:34]: SUCCESS: Loaded modoverrides.lua	
+[00:00:34]: Found a level data override file with these contents:	
+[00:00:34]: 	K: 	desc	 V: 	The standard Don't Starve experience.	
+[00:00:34]: 	K: 	hideminimap	 V: 	false	
+[00:00:34]: 	K: 	id	 V: 	SURVIVAL_TOGETHER	
+[00:00:34]: 	K: 	location	 V: 	forest	
+[00:00:34]: 	K: 	max_playlist_position	 V: 	999	
+[00:00:34]: 	K: 	min_playlist_position	 V: 	0	
+[00:00:34]: 	K: 	name	 V: 	Survival	
+[00:00:34]: 	K: 	numrandom_set_pieces	 V: 	4	
+[00:00:34]: 	K: 	override_level_string	 V: 	false	
+[00:00:34]: 	K: 	overrides	 V: 	table: 0000000010361220	
+[00:00:34]: 		K: 	alternatehunt	 V: 	default	
+[00:00:34]: 		K: 	angrybees	 V: 	default	
+[00:00:34]: 		K: 	antliontribute	 V: 	default	
+[00:00:34]: 		K: 	autumn	 V: 	default	
+[00:00:34]: 		K: 	balatro	 V: 	default	
+[00:00:34]: 		K: 	bananabush_portalrate	 V: 	default	
+[00:00:34]: 		K: 	basicresource_regrowth	 V: 	none	
+[00:00:34]: 		K: 	bats_setting	 V: 	default	
+[00:00:34]: 		K: 	bearger	 V: 	default	
+[00:00:34]: 		K: 	beefalo	 V: 	default	
+[00:00:34]: 		K: 	beefaloheat	 V: 	default	
+[00:00:34]: 		K: 	beequeen	 V: 	default	
+[00:00:34]: 		K: 	bees	 V: 	default	
+[00:00:34]: 		K: 	bees_setting	 V: 	default	
+[00:00:34]: 		K: 	berrybush	 V: 	default	
+[00:00:34]: 		K: 	birds	 V: 	default	
+[00:00:34]: 		K: 	boons	 V: 	default	
+[00:00:34]: 		K: 	branching	 V: 	default	
+[00:00:34]: 		K: 	brightmarecreatures	 V: 	default	
+[00:00:34]: 		K: 	bunnymen_setting	 V: 	default	
+[00:00:34]: 		K: 	butterfly	 V: 	default	
+[00:00:34]: 		K: 	buzzard	 V: 	default	
+[00:00:34]: 		K: 	cactus	 V: 	default	
+[00:00:34]: 		K: 	cactus_regrowth	 V: 	default	
+[00:00:34]: 		K: 	carrot	 V: 	default	
+[00:00:34]: 		K: 	carrots_regrowth	 V: 	default	
+[00:00:34]: 		K: 	catcoon	 V: 	default	
+[00:00:34]: 		K: 	catcoons	 V: 	default	
+[00:00:34]: 		K: 	chess	 V: 	default	
+[00:00:34]: 		K: 	cookiecutters	 V: 	default	
+[00:00:34]: 		K: 	crabking	 V: 	default	
+[00:00:34]: 		K: 	crow_carnival	 V: 	default	
+[00:00:34]: 		K: 	darkness	 V: 	default	
+[00:00:34]: 		K: 	day	 V: 	default	
+[00:00:34]: 		K: 	daywalker2	 V: 	default	
+[00:00:34]: 		K: 	deciduousmonster	 V: 	default	
+[00:00:34]: 		K: 	deciduoustree_regrowth	 V: 	default	
+[00:00:34]: 		K: 	deerclops	 V: 	default	
+[00:00:34]: 		K: 	dragonfly	 V: 	default	
+[00:00:34]: 		K: 	dropeverythingondespawn	 V: 	default	
+[00:00:34]: 		K: 	evergreen_regrowth	 V: 	default	
+[00:00:34]: 		K: 	extrastartingitems	 V: 	default	
+[00:00:34]: 		K: 	eyeofterror	 V: 	default	
+[00:00:34]: 		K: 	fishschools	 V: 	default	
+[00:00:34]: 		K: 	flint	 V: 	default	
+[00:00:34]: 		K: 	flowers	 V: 	default	
+[00:00:34]: 		K: 	flowers_regrowth	 V: 	default	
+[00:00:34]: 		K: 	frograin	 V: 	default	
+[00:00:34]: 		K: 	frogs	 V: 	default	
+[00:00:34]: 		K: 	fruitfly	 V: 	default	
+[00:00:34]: 		K: 	ghostenabled	 V: 	always	
+[00:00:34]: 		K: 	ghostsanitydrain	 V: 	always	
+[00:00:34]: 		K: 	gnarwail	 V: 	default	
+[00:00:34]: 		K: 	goosemoose	 V: 	default	
+[00:00:34]: 		K: 	grass	 V: 	default	
+[00:00:34]: 		K: 	grassgekkos	 V: 	default	
+[00:00:34]: 		K: 	hallowed_nights	 V: 	default	
+[00:00:34]: 		K: 	has_ocean	 V: 	true	
+[00:00:34]: 		K: 	healthpenalty	 V: 	always	
+[00:00:34]: 		K: 	hound_mounds	 V: 	default	
+[00:00:34]: 		K: 	houndmound	 V: 	default	
+[00:00:34]: 		K: 	hounds	 V: 	default	
+[00:00:34]: 		K: 	hunger	 V: 	default	
+[00:00:34]: 		K: 	hunt	 V: 	default	
+[00:00:34]: 		K: 	junkyard	 V: 	default	
+[00:00:34]: 		K: 	keep_disconnected_tiles	 V: 	true	
+[00:00:34]: 		K: 	klaus	 V: 	default	
+[00:00:34]: 		K: 	krampus	 V: 	default	
+[00:00:34]: 		K: 	layout_mode	 V: 	LinkNodesByKeys	
+[00:00:34]: 		K: 	lessdamagetaken	 V: 	none	
+[00:00:34]: 		K: 	liefs	 V: 	default	
+[00:00:34]: 		K: 	lightcrab_portalrate	 V: 	default	
+[00:00:34]: 		K: 	lightning	 V: 	default	
+[00:00:34]: 		K: 	lightninggoat	 V: 	default	
+[00:00:34]: 		K: 	loop	 V: 	default	
+[00:00:34]: 		K: 	lunarhail_frequency	 V: 	default	
+[00:00:34]: 		K: 	lureplants	 V: 	default	
+[00:00:34]: 		K: 	malbatross	 V: 	default	
+[00:00:34]: 		K: 	marshbush	 V: 	default	
+[00:00:34]: 		K: 	merm	 V: 	default	
+[00:00:34]: 		K: 	merms	 V: 	default	
+[00:00:34]: 		K: 	meteorshowers	 V: 	default	
+[00:00:34]: 		K: 	meteorspawner	 V: 	default	
+[00:00:34]: 		K: 	moles	 V: 	default	
+[00:00:34]: 		K: 	moles_setting	 V: 	default	
+[00:00:34]: 		K: 	monkeytail_portalrate	 V: 	default	
+[00:00:34]: 		K: 	moon_berrybush	 V: 	default	
+[00:00:34]: 		K: 	moon_bullkelp	 V: 	default	
+[00:00:34]: 		K: 	moon_carrot	 V: 	default	
+[00:00:34]: 		K: 	moon_fissure	 V: 	default	
+[00:00:34]: 		K: 	moon_fruitdragon	 V: 	default	
+[00:00:34]: 		K: 	moon_hotspring	 V: 	default	
+[00:00:34]: 		K: 	moon_rock	 V: 	default	
+[00:00:34]: 		K: 	moon_sapling	 V: 	default	
+[00:00:34]: 		K: 	moon_spider	 V: 	default	
+[00:00:34]: 		K: 	moon_spiders	 V: 	default	
+[00:00:34]: 		K: 	moon_starfish	 V: 	default	
+[00:00:34]: 		K: 	moon_tree	 V: 	default	
+[00:00:34]: 		K: 	moon_tree_regrowth	 V: 	default	
+[00:00:34]: 		K: 	mosquitos	 V: 	default	
+[00:00:34]: 		K: 	mushroom	 V: 	default	
+[00:00:34]: 		K: 	mutated_bearger	 V: 	default	
+[00:00:34]: 		K: 	mutated_bird_gestalt	 V: 	default	
+[00:00:34]: 		K: 	mutated_birds	 V: 	default	
+[00:00:34]: 		K: 	mutated_buzzard_gestalt	 V: 	default	
+[00:00:34]: 		K: 	mutated_deerclops	 V: 	default	
+[00:00:34]: 		K: 	mutated_hounds	 V: 	default	
+[00:00:34]: 		K: 	mutated_merm	 V: 	default	
+[00:00:34]: 		K: 	mutated_spiderqueen	 V: 	default	
+[00:00:34]: 		K: 	mutated_warg	 V: 	default	
+[00:00:34]: 		K: 	no_joining_islands	 V: 	true	
+[00:00:34]: 		K: 	no_wormholes_to_disconnected_tiles	 V: 	true	
+[00:00:34]: 		K: 	ocean_bullkelp	 V: 	default	
+[00:00:34]: 		K: 	ocean_otterdens	 V: 	default	
+[00:00:34]: 		K: 	ocean_seastack	 V: 	ocean_default	
+[00:00:34]: 		K: 	ocean_shoal	 V: 	default	
+[00:00:34]: 		K: 	ocean_waterplant	 V: 	ocean_default	
+[00:00:34]: 		K: 	ocean_wobsterden	 V: 	default	
+[00:00:34]: 		K: 	otters_setting	 V: 	default	
+[00:00:34]: 		K: 	palmcone_seed_portalrate	 V: 	default	
+[00:00:34]: 		K: 	palmconetree	 V: 	default	
+[00:00:34]: 		K: 	palmconetree_regrowth	 V: 	default	
+[00:00:34]: 		K: 	penguins	 V: 	default	
+[00:00:34]: 		K: 	penguins_moon	 V: 	default	
+[00:00:34]: 		K: 	perd	 V: 	default	
+[00:00:34]: 		K: 	petrification	 V: 	default	
+[00:00:34]: 		K: 	pigs	 V: 	default	
+[00:00:34]: 		K: 	pigs_setting	 V: 	default	
+[00:00:34]: 		K: 	pirateraids	 V: 	default	
+[00:00:34]: 		K: 	ponds	 V: 	default	
+[00:00:34]: 		K: 	portal_spawnrate	 V: 	default	
+[00:00:34]: 		K: 	portalresurection	 V: 	none	
+[00:00:34]: 		K: 	powder_monkey_portalrate	 V: 	default	
+[00:00:34]: 		K: 	prefabswaps_start	 V: 	default	
+[00:00:34]: 		K: 	rabbits	 V: 	default	
+[00:00:34]: 		K: 	rabbits_setting	 V: 	default	
+[00:00:34]: 		K: 	reeds	 V: 	default	
+[00:00:34]: 		K: 	reeds_regrowth	 V: 	default	
+[00:00:34]: 		K: 	regrowth	 V: 	default	
+[00:00:34]: 		K: 	resettime	 V: 	default	
+[00:00:34]: 		K: 	rifts_enabled	 V: 	default	
+[00:00:34]: 		K: 	rifts_frequency	 V: 	default	
+[00:00:34]: 		K: 	roads	 V: 	default	
+[00:00:34]: 		K: 	rock	 V: 	default	
+[00:00:34]: 		K: 	rock_ice	 V: 	default	
+[00:00:34]: 		K: 	saltstack_regrowth	 V: 	default	
+[00:00:34]: 		K: 	sapling	 V: 	default	
+[00:00:34]: 		K: 	season_start	 V: 	default	
+[00:00:34]: 		K: 	seasonalstartingitems	 V: 	default	
+[00:00:34]: 		K: 	shadowcreatures	 V: 	default	
+[00:00:34]: 		K: 	sharkboi	 V: 	default	
+[00:00:34]: 		K: 	sharks	 V: 	default	
+[00:00:34]: 		K: 	spawnmode	 V: 	fixed	
+[00:00:34]: 		K: 	spawnprotection	 V: 	default	
+[00:00:34]: 		K: 	specialevent	 V: 	default	
+[00:00:34]: 		K: 	spider_warriors	 V: 	default	
+[00:00:34]: 		K: 	spiderqueen	 V: 	default	
+[00:00:34]: 		K: 	spiders	 V: 	default	
+[00:00:34]: 		K: 	spiders_setting	 V: 	default	
+[00:00:34]: 		K: 	spring	 V: 	default	
+[00:00:34]: 		K: 	squid	 V: 	default	
+[00:00:34]: 		K: 	stageplays	 V: 	default	
+[00:00:34]: 		K: 	start_location	 V: 	default	
+[00:00:34]: 		K: 	summer	 V: 	default	
+[00:00:34]: 		K: 	summerhounds	 V: 	default	
+[00:00:34]: 		K: 	tallbirds	 V: 	default	
+[00:00:34]: 		K: 	task_set	 V: 	default	
+[00:00:34]: 		K: 	temperaturedamage	 V: 	default	
+[00:00:34]: 		K: 	tentacles	 V: 	default	
+[00:00:34]: 		K: 	terrariumchest	 V: 	default	
+[00:00:34]: 		K: 	touchstone	 V: 	default	
+[00:00:34]: 		K: 	trees	 V: 	default	
+[00:00:34]: 		K: 	tumbleweed	 V: 	default	
+[00:00:34]: 		K: 	twiggytrees_regrowth	 V: 	default	
+[00:00:34]: 		K: 	walrus	 V: 	default	
+[00:00:34]: 		K: 	walrus_setting	 V: 	default	
+[00:00:34]: 		K: 	wanderingtrader_enabled	 V: 	always	
+[00:00:34]: 		K: 	wasps	 V: 	default	
+[00:00:34]: 		K: 	weather	 V: 	default	
+[00:00:34]: 		K: 	wildfires	 V: 	default	
+[00:00:34]: 		K: 	winter	 V: 	default	
+[00:00:34]: 		K: 	winterhounds	 V: 	default	
+[00:00:34]: 		K: 	winters_feast	 V: 	default	
+[00:00:34]: 		K: 	wobsters	 V: 	default	
+[00:00:34]: 		K: 	world_size	 V: 	default	
+[00:00:34]: 		K: 	wormhole_prefab	 V: 	wormhole	
+[00:00:34]: 		K: 	year_of_the_beefalo	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_bunnyman	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_carrat	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_catcoon	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_dragonfly	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_gobbler	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_knight	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_pig	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_snake	 V: 	default	
+[00:00:34]: 		K: 	year_of_the_varg	 V: 	default	
+[00:00:34]: 	K: 	playstyle	 V: 	survival	
+[00:00:34]: 	K: 	random_set_pieces	 V: 	table: 0000000010360F50	
+[00:00:34]: 		K: 	1	 V: 	Sculptures_2	
+[00:00:34]: 		K: 	2	 V: 	Sculptures_3	
+[00:00:34]: 		K: 	3	 V: 	Sculptures_4	
+[00:00:34]: 		K: 	4	 V: 	Sculptures_5	
+[00:00:34]: 		K: 	5	 V: 	Chessy_1	
+[00:00:34]: 		K: 	6	 V: 	Chessy_2	
+[00:00:34]: 		K: 	7	 V: 	Chessy_3	
+[00:00:34]: 		K: 	8	 V: 	Chessy_4	
+[00:00:34]: 		K: 	9	 V: 	Chessy_5	
+[00:00:34]: 		K: 	10	 V: 	Chessy_6	
+[00:00:34]: 		K: 	11	 V: 	Maxwell1	
+[00:00:34]: 		K: 	12	 V: 	Maxwell2	
+[00:00:34]: 		K: 	13	 V: 	Maxwell3	
+[00:00:34]: 		K: 	14	 V: 	Maxwell4	
+[00:00:34]: 		K: 	15	 V: 	Maxwell6	
+[00:00:34]: 		K: 	16	 V: 	Maxwell7	
+[00:00:34]: 		K: 	17	 V: 	Warzone_1	
+[00:00:34]: 		K: 	18	 V: 	Warzone_2	
+[00:00:34]: 		K: 	19	 V: 	Warzone_3	
+[00:00:34]: 	K: 	required_prefabs	 V: 	table: 0000000010361450	
+[00:00:34]: 		K: 	1	 V: 	multiplayer_portal	
+[00:00:34]: 	K: 	required_setpieces	 V: 	table: 0000000010361540	
+[00:00:34]: 		K: 	1	 V: 	Sculptures_1	
+[00:00:34]: 		K: 	2	 V: 	Maxwell5	
+[00:00:34]: 	K: 	settings_desc	 V: 	The standard Don't Starve experience.	
+[00:00:34]: 	K: 	settings_id	 V: 	SURVIVAL_TOGETHER	
+[00:00:34]: 	K: 	settings_name	 V: 	Survival	
+[00:00:34]: 	K: 	substitutes	 V: 	table: 00000000103618B0	
+[00:00:34]: 	K: 	version	 V: 	4	
+[00:00:34]: 	K: 	worldgen_desc	 V: 	The standard Don't Starve experience.	
+[00:00:34]: 	K: 	worldgen_id	 V: 	SURVIVAL_TOGETHER	
+[00:00:34]: 	K: 	worldgen_name	 V: 	Survival	
+[00:00:34]: Loaded and applied level data override from ../leveldataoverride.lua	
+[00:00:34]: Overwriting savedata with level data file.	
+[00:00:34]: Not applying world gen overrides.	
+[00:00:34]: Collecting garbage...
+[00:00:35]: lua_gc took 0.29 seconds
+[00:00:35]: ~ShardLuaProxy()
+[00:00:35]: ~cEventLeaderboardProxy()
+[00:00:35]: ~ItemServerLuaProxy()
+[00:00:35]: ~InventoryLuaProxy()
+[00:00:35]: ~NetworkLuaProxy()
+[00:00:35]: ~SimLuaProxy()
+[00:00:35]: lua_close took 0.40 seconds
+[00:00:35]: ReleaseAll
+[00:00:35]: ReleaseAll Finished
+[00:00:35]: cGame::StartPlaying
+[00:00:35]: AppVersion::GetArchitecture() x64
+[00:00:35]: LOADING LUA
+[00:00:35]: DoLuaFile scripts/main.lua
+[00:00:35]: DoLuaFile loading buffer scripts/main.lua
+[00:00:36]: AddPortMapping(10999, 10999, 192.168.0.112) failed with code 718 (ConflictInMappingEntry)
+[00:00:38]:   taskgrouplist:	default	Together	
+[00:00:38]:   taskgrouplist:	classic	Classic	
+[00:00:38]:   taskgrouplist:	cave_default	Underground	
+[00:00:38]:   taskgrouplist:	lavaarena_taskset	The Forge	
+[00:00:38]:   taskgrouplist:	quagmire_taskset	The Gorge	
+[00:00:38]: Running main.lua
+	
+[00:00:38]: loaded modindex	
+[00:00:38]: ModIndex: Beginning normal load sequence for dedicated server.
+	
+[00:00:38]: SUCCESS: Loaded modoverrides.lua	
+[00:00:38]: modoverrides.lua enabling WagstaffPlus	
+[00:00:38]: ModIndex:GetModsToLoad inserting moddir, 	WagstaffPlus	
+[00:00:38]: Could not load mod_config_data/modconfiguration_WagstaffPlus	
+[00:00:38]: Loading mod: WagstaffPlus (Wagstaff Standalone) Version:2.0.0	
+[00:00:38]: applying configuration_options from modoverrides.lua to mod WagstaffPlus	
+[00:00:38]: Overriding mod WagstaffPlus's option mysterychance with value 0.03	
+[00:00:38]: Overriding mod WagstaffPlus's option flickerthreshold with value 0.75	
+[00:00:38]: Overriding mod WagstaffPlus's option debug with value true	
+[00:00:38]: Overriding mod WagstaffPlus's option enableblur with value true	
+[00:00:38]: Overriding mod WagstaffPlus's option weakstomachpain with value -3	
+[00:00:38]: Overriding mod WagstaffPlus's option gogglesrestricted with value false	
+[00:00:38]: Overriding mod WagstaffPlus's option telebrellaspelltype with value item	
+[00:00:38]: Overriding mod WagstaffPlus's option telebrellarandom with value true	
+[00:00:38]: Overriding mod WagstaffPlus's option preset with value NONE	
+[00:00:38]: Overriding mod WagstaffPlus's option mysterynilchance with value 0.4	
+[00:00:38]: Overriding mod WagstaffPlus's option language with value auto	
+[00:00:38]: Overriding mod WagstaffPlus's option mysterymidchance with value 0.7	
+[00:00:38]: Registering Mods:
+[00:00:38]:    Registering Mod WagstaffPlus
+[00:00:38]: Mods registered.
+[00:00:38]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modworldgenmain.lua	
+[00:00:38]: Mod: WagstaffPlus (Wagstaff Standalone)	  Mod had no modworldgenmain.lua. Skipping.	
+[00:00:38]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modmain.lua	
+[00:00:38]: [Wagstaff Debug] Debug mode ON. Log file: ../mods/WagstaffPlus//wagstaff_debug.txt	
+[00:00:38]: [Wagstaff Debug] Debug mode is ON at mod load. Use c_wagstaff_debug() to toggle at runtime.	
+[00:00:38]: [Wagstaff Debug] Verbose logs are enabled by default when Debug is ON.	
+[00:00:38]: [Wagstaff Debug] Standalone Wagstaff Integration mod is loading!	
+[00:00:38]:     [Wagstaff Standalone]: Tropical support is set to: false	
+[00:00:38]: modimport: ../mods/WagstaffPlus/imports/william_tuning	
+[00:00:38]: modimport: ../mods/WagstaffPlus/imports/william_widgets	
+[00:00:38]: modimport: ../mods/WagstaffPlus/imports/william_acts	
+[00:00:38]: modimport: ../mods/WagstaffPlus/imports/william_states	
+[00:00:38]: modimport: ../mods/WagstaffPlus/imports/william_dispenser_tint	
+[00:00:38]: modimport: ../mods/WagstaffPlus/scripts/standalone_prefabs	
+[00:00:39]: [Wagstaff Debug] CreateSkillTree called	
+[00:00:39]: [Wagstaff Debug] BuildSkillsData loaded: true	
+[00:00:39]: [Wagstaff Debug] BuildSkillsData returned data: true	
+[00:00:39]: [Wagstaff Debug] Saving skill definitions to G.WagstaffSkillDefs, #skills: 33	
+[00:00:39]: [Wagstaff Debug] === INICIANDO CreateSkillTreeFor ===	
+[00:00:39]: [Wagstaff Debug] SkillTreeDefs antes: table	
+[00:00:39]: [Wagstaff Debug] SKILLS antes: table	
+[00:00:39]: [Wagstaff Debug] data.SKILLS count: tem items	
+[00:00:39]: [Wagstaff Debug] [VERBOSE] Lista completa de skills sendo registradas:	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_6_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_mk2 - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_mk3 - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_3_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_5_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_2_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_x2_damage - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_buster_parallel - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_shadow_boss - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_4_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_mk2 - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_1_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_3_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_mk3 - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_ballistic_parallel - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_mechanical_1 - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_mechanical_1_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_1_parallel - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_sentry_3_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_7_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_shadow_path - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_lunar_boss - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_thermal_upgrade_parallel - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_dispenser_2_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_ballistic_evolve - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_allegiance_lock_lunar_path - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_shadow_possession - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_celestial_possession - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_thermal_upgrade - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_buster_evolve - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_2_lock - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_robotic_1 - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]   Skill ID: wagstaff_lucky_engineer - Nome: sem_nome	
+[00:00:39]: [Wagstaff Debug] CreateSkillTreeFor succeeded	
+[00:00:39]: [Wagstaff Debug] === POS CreateSkillTreeFor ===	
+[00:00:39]: [Wagstaff Debug] SKILLS depois: table wagstaff exists? false	
+[00:00:39]: [Wagstaff Debug] === VERIFICACAO COMPLETA DO SKILLTREEDEFS ===	
+[00:00:39]: [Wagstaff Debug] SkillTreeDefs keys: SKILLS, CreateSkillTreeFor, CUSTOM_FUNCTIONS, SKILLTREE_METAINFO, DEBUG_REBUILD, FN, SKILLTREE_DEFS, SKILLTREE_ORDERS	
+[00:00:39]: [Wagstaff Debug] ERROR: GLOBAL.TheSkillTree is NIL!	
+[00:00:39]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff: table	
+[00:00:39]: [Wagstaff Debug]   RPC_LOOKUP[ 1 ] = wagstaff_ballistic_parallel	
+[00:00:39]: [Wagstaff Debug]   RPC_LOOKUP[ 2 ] = wagstaff_buster_evolve	
+[00:00:39]: [Wagstaff Debug]   RPC_LOOKUP[ 3 ] = wagstaff_buster_parallel	
+[00:00:39]: [Wagstaff Debug]   RPC_LOOKUP[ 4 ] = wagstaff_celestial_possession	
+[00:00:39]: [Wagstaff Debug]   RPC_LOOKUP[ 5 ] = wagstaff_dispenser_mk2	
+[00:00:39]: [Wagstaff Debug] SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count: 17 TOTAL_SKILLS_COUNT: 17	
+[00:00:39]: [Wagstaff Debug] [VERBOSE] RPC_LOOKUP completo do meta wagstaff:	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    1 -> wagstaff_ballistic_parallel	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    2 -> wagstaff_buster_evolve	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    3 -> wagstaff_buster_parallel	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    4 -> wagstaff_celestial_possession	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    5 -> wagstaff_dispenser_mk2	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    6 -> wagstaff_dispenser_mk3	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    7 -> wagstaff_lucky_engineer	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    8 -> wagstaff_mechanical_1	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    9 -> wagstaff_robotic_1	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    10 -> wagstaff_robotic_1_parallel	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    11 -> wagstaff_sentry_mk2	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    12 -> wagstaff_sentry_mk3	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    13 -> wagstaff_shadow_possession	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    14 -> wagstaff_thermal_upgrade	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    15 -> wagstaff_thermal_upgrade_parallel	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    16 -> wagstaff_x2_damage	
+[00:00:39]: [Wagstaff Debug] [VERBOSE]    0 -> wagstaff_ballistic_evolve	
+[00:00:39]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS existe!	
+[00:00:39]: [Wagstaff Debug] SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!	
+[00:00:39]: [WAGSTAFF DEBUG] Skill tree registered with 33 skills for wagstaff	
+[00:00:39]: [WAGSTAFF DEBUG] Set SkillTreeDefs.SKILLTREE_ORDERS.wagstaff	
+[00:00:39]: [Wagstaff Debug] Successfully created wagstaff skill tree	
+[00:00:39]: [Wagstaff Debug] Registering AddPrefabPostInit('world')	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_sounds	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_tuning	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_strings	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_menustrings	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_postinits	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_stategraph	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_recipes	
+[00:00:39]: modimport: ../mods/WagstaffPlus/scripts/hamlet_character_shaders	
+[00:00:44]: Event data unavailable: lavaarena_event_server/lavaarena_achievement_quest_defs
+[00:00:44]: LOADING LUA SUCCESS
+[00:00:44]: PlayerDeaths could not load morgue	
+[00:00:44]: PlayerHistory could not load player_history	
+[00:00:44]: ServerPreferences could not load server_preferences	
+[00:00:44]: ConsoleScreenSettings could not load consolescreen	
+[00:00:44]: bloom_enabled	true	
+[00:00:44]: OnFilesLoaded()	
+[00:00:44]: OnUpdatePurchaseStateComplete	
+[00:00:44]: SUCCESS: Loaded modoverrides.lua	
+[00:00:44]: Found a level data override file with these contents:	
+[00:00:44]: 	K: 	desc	 V: 	The standard Don't Starve experience.	
+[00:00:44]: 	K: 	hideminimap	 V: 	false	
+[00:00:44]: 	K: 	id	 V: 	SURVIVAL_TOGETHER	
+[00:00:44]: 	K: 	location	 V: 	forest	
+[00:00:44]: 	K: 	max_playlist_position	 V: 	999	
+[00:00:44]: 	K: 	min_playlist_position	 V: 	0	
+[00:00:44]: 	K: 	name	 V: 	Survival	
+[00:00:44]: 	K: 	numrandom_set_pieces	 V: 	4	
+[00:00:44]: 	K: 	override_level_string	 V: 	false	
+[00:00:44]: 	K: 	overrides	 V: 	table: 000000000E991860	
+[00:00:44]: 		K: 	alternatehunt	 V: 	default	
+[00:00:44]: 		K: 	angrybees	 V: 	default	
+[00:00:44]: 		K: 	antliontribute	 V: 	default	
+[00:00:44]: 		K: 	autumn	 V: 	default	
+[00:00:44]: 		K: 	balatro	 V: 	default	
+[00:00:44]: 		K: 	bananabush_portalrate	 V: 	default	
+[00:00:44]: 		K: 	basicresource_regrowth	 V: 	none	
+[00:00:44]: 		K: 	bats_setting	 V: 	default	
+[00:00:44]: 		K: 	bearger	 V: 	default	
+[00:00:44]: 		K: 	beefalo	 V: 	default	
+[00:00:44]: 		K: 	beefaloheat	 V: 	default	
+[00:00:44]: 		K: 	beequeen	 V: 	default	
+[00:00:44]: 		K: 	bees	 V: 	default	
+[00:00:44]: 		K: 	bees_setting	 V: 	default	
+[00:00:44]: 		K: 	berrybush	 V: 	default	
+[00:00:44]: 		K: 	birds	 V: 	default	
+[00:00:44]: 		K: 	boons	 V: 	default	
+[00:00:44]: 		K: 	branching	 V: 	default	
+[00:00:44]: 		K: 	brightmarecreatures	 V: 	default	
+[00:00:44]: 		K: 	bunnymen_setting	 V: 	default	
+[00:00:44]: 		K: 	butterfly	 V: 	default	
+[00:00:44]: 		K: 	buzzard	 V: 	default	
+[00:00:44]: 		K: 	cactus	 V: 	default	
+[00:00:44]: 		K: 	cactus_regrowth	 V: 	default	
+[00:00:44]: 		K: 	carrot	 V: 	default	
+[00:00:44]: 		K: 	carrots_regrowth	 V: 	default	
+[00:00:44]: 		K: 	catcoon	 V: 	default	
+[00:00:44]: 		K: 	catcoons	 V: 	default	
+[00:00:44]: 		K: 	chess	 V: 	default	
+[00:00:44]: 		K: 	cookiecutters	 V: 	default	
+[00:00:44]: 		K: 	crabking	 V: 	default	
+[00:00:44]: 		K: 	crow_carnival	 V: 	default	
+[00:00:44]: 		K: 	darkness	 V: 	default	
+[00:00:44]: 		K: 	day	 V: 	default	
+[00:00:44]: 		K: 	daywalker2	 V: 	default	
+[00:00:44]: 		K: 	deciduousmonster	 V: 	default	
+[00:00:44]: 		K: 	deciduoustree_regrowth	 V: 	default	
+[00:00:44]: 		K: 	deerclops	 V: 	default	
+[00:00:44]: 		K: 	dragonfly	 V: 	default	
+[00:00:44]: 		K: 	dropeverythingondespawn	 V: 	default	
+[00:00:44]: 		K: 	evergreen_regrowth	 V: 	default	
+[00:00:44]: 		K: 	extrastartingitems	 V: 	default	
+[00:00:44]: 		K: 	eyeofterror	 V: 	default	
+[00:00:44]: 		K: 	fishschools	 V: 	default	
+[00:00:44]: 		K: 	flint	 V: 	default	
+[00:00:44]: 		K: 	flowers	 V: 	default	
+[00:00:44]: 		K: 	flowers_regrowth	 V: 	default	
+[00:00:44]: 		K: 	frograin	 V: 	default	
+[00:00:44]: 		K: 	frogs	 V: 	default	
+[00:00:44]: 		K: 	fruitfly	 V: 	default	
+[00:00:44]: 		K: 	ghostenabled	 V: 	always	
+[00:00:44]: 		K: 	ghostsanitydrain	 V: 	always	
+[00:00:44]: 		K: 	gnarwail	 V: 	default	
+[00:00:44]: 		K: 	goosemoose	 V: 	default	
+[00:00:44]: 		K: 	grass	 V: 	default	
+[00:00:44]: 		K: 	grassgekkos	 V: 	default	
+[00:00:44]: 		K: 	hallowed_nights	 V: 	default	
+[00:00:44]: 		K: 	has_ocean	 V: 	true	
+[00:00:44]: 		K: 	healthpenalty	 V: 	always	
+[00:00:44]: 		K: 	hound_mounds	 V: 	default	
+[00:00:44]: 		K: 	houndmound	 V: 	default	
+[00:00:44]: 		K: 	hounds	 V: 	default	
+[00:00:44]: 		K: 	hunger	 V: 	default	
+[00:00:44]: 		K: 	hunt	 V: 	default	
+[00:00:44]: 		K: 	junkyard	 V: 	default	
+[00:00:44]: 		K: 	keep_disconnected_tiles	 V: 	true	
+[00:00:44]: 		K: 	klaus	 V: 	default	
+[00:00:44]: 		K: 	krampus	 V: 	default	
+[00:00:44]: 		K: 	layout_mode	 V: 	LinkNodesByKeys	
+[00:00:44]: 		K: 	lessdamagetaken	 V: 	none	
+[00:00:44]: 		K: 	liefs	 V: 	default	
+[00:00:44]: 		K: 	lightcrab_portalrate	 V: 	default	
+[00:00:44]: 		K: 	lightning	 V: 	default	
+[00:00:44]: 		K: 	lightninggoat	 V: 	default	
+[00:00:44]: 		K: 	loop	 V: 	default	
+[00:00:44]: 		K: 	lunarhail_frequency	 V: 	default	
+[00:00:44]: 		K: 	lureplants	 V: 	default	
+[00:00:44]: 		K: 	malbatross	 V: 	default	
+[00:00:44]: 		K: 	marshbush	 V: 	default	
+[00:00:44]: 		K: 	merm	 V: 	default	
+[00:00:44]: 		K: 	merms	 V: 	default	
+[00:00:44]: 		K: 	meteorshowers	 V: 	default	
+[00:00:44]: 		K: 	meteorspawner	 V: 	default	
+[00:00:44]: 		K: 	moles	 V: 	default	
+[00:00:44]: 		K: 	moles_setting	 V: 	default	
+[00:00:44]: 		K: 	monkeytail_portalrate	 V: 	default	
+[00:00:44]: 		K: 	moon_berrybush	 V: 	default	
+[00:00:44]: 		K: 	moon_bullkelp	 V: 	default	
+[00:00:44]: 		K: 	moon_carrot	 V: 	default	
+[00:00:44]: 		K: 	moon_fissure	 V: 	default	
+[00:00:44]: 		K: 	moon_fruitdragon	 V: 	default	
+[00:00:44]: 		K: 	moon_hotspring	 V: 	default	
+[00:00:44]: 		K: 	moon_rock	 V: 	default	
+[00:00:44]: 		K: 	moon_sapling	 V: 	default	
+[00:00:44]: 		K: 	moon_spider	 V: 	default	
+[00:00:44]: 		K: 	moon_spiders	 V: 	default	
+[00:00:44]: 		K: 	moon_starfish	 V: 	default	
+[00:00:44]: 		K: 	moon_tree	 V: 	default	
+[00:00:44]: 		K: 	moon_tree_regrowth	 V: 	default	
+[00:00:44]: 		K: 	mosquitos	 V: 	default	
+[00:00:44]: 		K: 	mushroom	 V: 	default	
+[00:00:44]: 		K: 	mutated_bearger	 V: 	default	
+[00:00:44]: 		K: 	mutated_bird_gestalt	 V: 	default	
+[00:00:44]: 		K: 	mutated_birds	 V: 	default	
+[00:00:44]: 		K: 	mutated_buzzard_gestalt	 V: 	default	
+[00:00:44]: 		K: 	mutated_deerclops	 V: 	default	
+[00:00:44]: 		K: 	mutated_hounds	 V: 	default	
+[00:00:44]: 		K: 	mutated_merm	 V: 	default	
+[00:00:44]: 		K: 	mutated_spiderqueen	 V: 	default	
+[00:00:44]: 		K: 	mutated_warg	 V: 	default	
+[00:00:44]: 		K: 	no_joining_islands	 V: 	true	
+[00:00:44]: 		K: 	no_wormholes_to_disconnected_tiles	 V: 	true	
+[00:00:44]: 		K: 	ocean_bullkelp	 V: 	default	
+[00:00:44]: 		K: 	ocean_otterdens	 V: 	default	
+[00:00:44]: 		K: 	ocean_seastack	 V: 	ocean_default	
+[00:00:44]: 		K: 	ocean_shoal	 V: 	default	
+[00:00:44]: 		K: 	ocean_waterplant	 V: 	ocean_default	
+[00:00:44]: 		K: 	ocean_wobsterden	 V: 	default	
+[00:00:44]: 		K: 	otters_setting	 V: 	default	
+[00:00:44]: 		K: 	palmcone_seed_portalrate	 V: 	default	
+[00:00:44]: 		K: 	palmconetree	 V: 	default	
+[00:00:44]: 		K: 	palmconetree_regrowth	 V: 	default	
+[00:00:44]: 		K: 	penguins	 V: 	default	
+[00:00:44]: 		K: 	penguins_moon	 V: 	default	
+[00:00:44]: 		K: 	perd	 V: 	default	
+[00:00:44]: 		K: 	petrification	 V: 	default	
+[00:00:44]: 		K: 	pigs	 V: 	default	
+[00:00:44]: 		K: 	pigs_setting	 V: 	default	
+[00:00:44]: 		K: 	pirateraids	 V: 	default	
+[00:00:44]: 		K: 	ponds	 V: 	default	
+[00:00:44]: 		K: 	portal_spawnrate	 V: 	default	
+[00:00:44]: 		K: 	portalresurection	 V: 	none	
+[00:00:44]: 		K: 	powder_monkey_portalrate	 V: 	default	
+[00:00:44]: 		K: 	prefabswaps_start	 V: 	default	
+[00:00:44]: 		K: 	rabbits	 V: 	default	
+[00:00:44]: 		K: 	rabbits_setting	 V: 	default	
+[00:00:44]: 		K: 	reeds	 V: 	default	
+[00:00:44]: 		K: 	reeds_regrowth	 V: 	default	
+[00:00:44]: 		K: 	regrowth	 V: 	default	
+[00:00:44]: 		K: 	resettime	 V: 	default	
+[00:00:44]: 		K: 	rifts_enabled	 V: 	default	
+[00:00:44]: 		K: 	rifts_frequency	 V: 	default	
+[00:00:44]: 		K: 	roads	 V: 	default	
+[00:00:44]: 		K: 	rock	 V: 	default	
+[00:00:44]: 		K: 	rock_ice	 V: 	default	
+[00:00:44]: 		K: 	saltstack_regrowth	 V: 	default	
+[00:00:44]: 		K: 	sapling	 V: 	default	
+[00:00:44]: 		K: 	season_start	 V: 	default	
+[00:00:44]: 		K: 	seasonalstartingitems	 V: 	default	
+[00:00:44]: 		K: 	shadowcreatures	 V: 	default	
+[00:00:44]: 		K: 	sharkboi	 V: 	default	
+[00:00:44]: 		K: 	sharks	 V: 	default	
+[00:00:44]: 		K: 	spawnmode	 V: 	fixed	
+[00:00:44]: 		K: 	spawnprotection	 V: 	default	
+[00:00:44]: 		K: 	specialevent	 V: 	default	
+[00:00:44]: 		K: 	spider_warriors	 V: 	default	
+[00:00:44]: 		K: 	spiderqueen	 V: 	default	
+[00:00:44]: 		K: 	spiders	 V: 	default	
+[00:00:44]: 		K: 	spiders_setting	 V: 	default	
+[00:00:44]: 		K: 	spring	 V: 	default	
+[00:00:44]: 		K: 	squid	 V: 	default	
+[00:00:44]: 		K: 	stageplays	 V: 	default	
+[00:00:44]: 		K: 	start_location	 V: 	default	
+[00:00:44]: 		K: 	summer	 V: 	default	
+[00:00:44]: 		K: 	summerhounds	 V: 	default	
+[00:00:44]: 		K: 	tallbirds	 V: 	default	
+[00:00:44]: 		K: 	task_set	 V: 	default	
+[00:00:44]: 		K: 	temperaturedamage	 V: 	default	
+[00:00:44]: 		K: 	tentacles	 V: 	default	
+[00:00:44]: 		K: 	terrariumchest	 V: 	default	
+[00:00:44]: 		K: 	touchstone	 V: 	default	
+[00:00:44]: 		K: 	trees	 V: 	default	
+[00:00:44]: 		K: 	tumbleweed	 V: 	default	
+[00:00:44]: 		K: 	twiggytrees_regrowth	 V: 	default	
+[00:00:44]: 		K: 	walrus	 V: 	default	
+[00:00:44]: 		K: 	walrus_setting	 V: 	default	
+[00:00:44]: 		K: 	wanderingtrader_enabled	 V: 	always	
+[00:00:44]: 		K: 	wasps	 V: 	default	
+[00:00:44]: 		K: 	weather	 V: 	default	
+[00:00:44]: 		K: 	wildfires	 V: 	default	
+[00:00:44]: 		K: 	winter	 V: 	default	
+[00:00:44]: 		K: 	winterhounds	 V: 	default	
+[00:00:44]: 		K: 	winters_feast	 V: 	default	
+[00:00:44]: 		K: 	wobsters	 V: 	default	
+[00:00:44]: 		K: 	world_size	 V: 	default	
+[00:00:44]: 		K: 	wormhole_prefab	 V: 	wormhole	
+[00:00:44]: 		K: 	year_of_the_beefalo	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_bunnyman	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_carrat	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_catcoon	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_dragonfly	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_gobbler	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_knight	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_pig	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_snake	 V: 	default	
+[00:00:44]: 		K: 	year_of_the_varg	 V: 	default	
+[00:00:44]: 	K: 	playstyle	 V: 	survival	
+[00:00:44]: 	K: 	random_set_pieces	 V: 	table: 000000000E9923F0	
+[00:00:44]: 		K: 	1	 V: 	Sculptures_2	
+[00:00:44]: 		K: 	2	 V: 	Sculptures_3	
+[00:00:44]: 		K: 	3	 V: 	Sculptures_4	
+[00:00:44]: 		K: 	4	 V: 	Sculptures_5	
+[00:00:44]: 		K: 	5	 V: 	Chessy_1	
+[00:00:44]: 		K: 	6	 V: 	Chessy_2	
+[00:00:44]: 		K: 	7	 V: 	Chessy_3	
+[00:00:44]: 		K: 	8	 V: 	Chessy_4	
+[00:00:44]: 		K: 	9	 V: 	Chessy_5	
+[00:00:44]: 		K: 	10	 V: 	Chessy_6	
+[00:00:44]: 		K: 	11	 V: 	Maxwell1	
+[00:00:44]: 		K: 	12	 V: 	Maxwell2	
+[00:00:44]: 		K: 	13	 V: 	Maxwell3	
+[00:00:44]: 		K: 	14	 V: 	Maxwell4	
+[00:00:44]: 		K: 	15	 V: 	Maxwell6	
+[00:00:44]: 		K: 	16	 V: 	Maxwell7	
+[00:00:44]: 		K: 	17	 V: 	Warzone_1	
+[00:00:44]: 		K: 	18	 V: 	Warzone_2	
+[00:00:44]: 		K: 	19	 V: 	Warzone_3	
+[00:00:44]: 	K: 	required_prefabs	 V: 	table: 000000000E992760	
+[00:00:44]: 		K: 	1	 V: 	multiplayer_portal	
+[00:00:44]: 	K: 	required_setpieces	 V: 	table: 000000000E992530	
+[00:00:44]: 		K: 	1	 V: 	Sculptures_1	
+[00:00:44]: 		K: 	2	 V: 	Maxwell5	
+[00:00:44]: 	K: 	settings_desc	 V: 	The standard Don't Starve experience.	
+[00:00:44]: 	K: 	settings_id	 V: 	SURVIVAL_TOGETHER	
+[00:00:44]: 	K: 	settings_name	 V: 	Survival	
+[00:00:44]: 	K: 	substitutes	 V: 	table: 000000000E991BD0	
+[00:00:44]: 	K: 	version	 V: 	4	
+[00:00:44]: 	K: 	worldgen_desc	 V: 	The standard Don't Starve experience.	
+[00:00:44]: 	K: 	worldgen_id	 V: 	SURVIVAL_TOGETHER	
+[00:00:44]: 	K: 	worldgen_name	 V: 	Survival	
+[00:00:44]: Loaded and applied level data override from ../leveldataoverride.lua	
+[00:00:44]: Overwriting savedata with level data file.	
+[00:00:44]: Not applying world gen overrides.	
+[00:00:44]: [IPC] Signal 'DST_Master_WorldGen' opened  #00000000000009E8
+[00:00:44]: [IPC] Sending signal... #00000000000009E8
+[00:00:44]: WorldSim::SimThread::SimThread()
+[00:00:44]: ABOUT TO INSTALL STACKTRACE
+[00:00:44]: DoLuaFile scripts/stacktrace.lua
+[00:00:44]: DoLuaFile loading buffer scripts/stacktrace.lua
+[00:00:44]: INSTALLED STACKTRACE
+[00:00:45]: Engine Seed: (1781893176 + 3691911473) & 0x7FFFFFFF = 1178837353
+[00:00:45]: WorldSim::SimThread::SimThread() complete
+[00:00:45]: THREAD - started 'WorldSim' (4068)
+[00:00:45]: WorldSim::SimThread::Main()
+[00:00:45]: DoLuaFile scripts/worldgen_main.lua
+[00:00:45]: DoLuaFile loading buffer scripts/worldgen_main.lua
+[00:00:45]: Check for write access: TRUE
+[00:00:45]: Check for read access: TRUE
+[00:00:45]: Available disk space for save files: 119336 MB
+[00:00:45]: ModIndex: Load sequence finished successfully.	
+[00:00:45]: Reset() returning
+[00:00:45]: DLC enabled : 	false	
+[00:00:46]:   taskgrouplist:	default	Together	
+[00:00:46]:   taskgrouplist:	classic	Classic	
+[00:00:46]:   taskgrouplist:	cave_default	Underground	
+[00:00:46]:   taskgrouplist:	lavaarena_taskset	The Forge	
+[00:00:46]:   taskgrouplist:	quagmire_taskset	The Gorge	
+[00:00:46]: ModIndex:GetModsToLoad inserting modname, 	WagstaffPlus	
+[00:00:47]: Loading mod: WagstaffPlus (Wagstaff Standalone) Version:2.0.0	
+[00:00:47]: Mod: WagstaffPlus (Wagstaff Standalone)	Loading modworldgenmain.lua	
+[00:00:47]: Mod: WagstaffPlus (Wagstaff Standalone)	  Mod had no modworldgenmain.lua. Skipping.	
+[00:00:47]: running worldgen_main.lua
+	
+[00:00:47]: SEED = 	1178837353	
+[00:00:47]: Generating world with these parameters:	
+[00:00:47]: level_type	SURVIVAL	
+[00:00:47]: level_data:	
+[00:00:47]: 	K: 	desc	 V: 	The standard Don't Starve experience.	
+[00:00:47]: 	K: 	hideminimap	 V: 	false	
+[00:00:47]: 	K: 	id	 V: 	SURVIVAL_TOGETHER	
+[00:00:47]: 	K: 	location	 V: 	forest	
+[00:00:47]: 	K: 	max_playlist_position	 V: 	999	
+[00:00:47]: 	K: 	min_playlist_position	 V: 	0	
+[00:00:47]: 	K: 	name	 V: 	Survival	
+[00:00:47]: 	K: 	numrandom_set_pieces	 V: 	4	
+[00:00:47]: 	K: 	override_level_string	 V: 	false	
+[00:00:47]: 	K: 	overrides	 V: 	table: 000000000A40C6B0	
+[00:00:47]: 		K: 	alternatehunt	 V: 	default	
+[00:00:47]: 		K: 	angrybees	 V: 	default	
+[00:00:47]: 		K: 	antliontribute	 V: 	default	
+[00:00:47]: 		K: 	autumn	 V: 	default	
+[00:00:47]: 		K: 	balatro	 V: 	default	
+[00:00:47]: 		K: 	bananabush_portalrate	 V: 	default	
+[00:00:47]: 		K: 	basicresource_regrowth	 V: 	none	
+[00:00:47]: 		K: 	bats_setting	 V: 	default	
+[00:00:47]: 		K: 	bearger	 V: 	default	
+[00:00:47]: 		K: 	beefalo	 V: 	default	
+[00:00:47]: 		K: 	beefaloheat	 V: 	default	
+[00:00:47]: 		K: 	beequeen	 V: 	default	
+[00:00:47]: 		K: 	bees	 V: 	default	
+[00:00:47]: 		K: 	bees_setting	 V: 	default	
+[00:00:47]: 		K: 	berrybush	 V: 	default	
+[00:00:47]: 		K: 	birds	 V: 	default	
+[00:00:47]: 		K: 	boons	 V: 	default	
+[00:00:47]: 		K: 	branching	 V: 	default	
+[00:00:47]: 		K: 	brightmarecreatures	 V: 	default	
+[00:00:47]: 		K: 	bunnymen_setting	 V: 	default	
+[00:00:47]: 		K: 	butterfly	 V: 	default	
+[00:00:47]: 		K: 	buzzard	 V: 	default	
+[00:00:47]: 		K: 	cactus	 V: 	default	
+[00:00:47]: 		K: 	cactus_regrowth	 V: 	default	
+[00:00:47]: 		K: 	carrot	 V: 	default	
+[00:00:47]: 		K: 	carrots_regrowth	 V: 	default	
+[00:00:47]: 		K: 	catcoon	 V: 	default	
+[00:00:47]: 		K: 	catcoons	 V: 	default	
+[00:00:47]: 		K: 	chess	 V: 	default	
+[00:00:47]: 		K: 	cookiecutters	 V: 	default	
+[00:00:47]: 		K: 	crabking	 V: 	default	
+[00:00:47]: 		K: 	crow_carnival	 V: 	default	
+[00:00:47]: 		K: 	darkness	 V: 	default	
+[00:00:47]: 		K: 	day	 V: 	default	
+[00:00:47]: 		K: 	daywalker2	 V: 	default	
+[00:00:47]: 		K: 	deciduousmonster	 V: 	default	
+[00:00:47]: 		K: 	deciduoustree_regrowth	 V: 	default	
+[00:00:47]: 		K: 	deerclops	 V: 	default	
+[00:00:47]: 		K: 	dragonfly	 V: 	default	
+[00:00:47]: 		K: 	dropeverythingondespawn	 V: 	default	
+[00:00:47]: 		K: 	evergreen_regrowth	 V: 	default	
+[00:00:47]: 		K: 	extrastartingitems	 V: 	default	
+[00:00:47]: 		K: 	eyeofterror	 V: 	default	
+[00:00:47]: 		K: 	fishschools	 V: 	default	
+[00:00:47]: 		K: 	flint	 V: 	default	
+[00:00:47]: 		K: 	flowers	 V: 	default	
+[00:00:47]: 		K: 	flowers_regrowth	 V: 	default	
+[00:00:47]: 		K: 	frograin	 V: 	default	
+[00:00:47]: 		K: 	frogs	 V: 	default	
+[00:00:47]: 		K: 	fruitfly	 V: 	default	
+[00:00:47]: 		K: 	ghostenabled	 V: 	always	
+[00:00:47]: 		K: 	ghostsanitydrain	 V: 	always	
+[00:00:47]: 		K: 	gnarwail	 V: 	default	
+[00:00:47]: 		K: 	goosemoose	 V: 	default	
+[00:00:47]: 		K: 	grass	 V: 	default	
+[00:00:47]: 		K: 	grassgekkos	 V: 	default	
+[00:00:47]: 		K: 	hallowed_nights	 V: 	default	
+[00:00:47]: 		K: 	has_ocean	 V: 	true	
+[00:00:47]: 		K: 	healthpenalty	 V: 	always	
+[00:00:47]: 		K: 	hound_mounds	 V: 	default	
+[00:00:47]: 		K: 	houndmound	 V: 	default	
+[00:00:47]: 		K: 	hounds	 V: 	default	
+[00:00:47]: 		K: 	hunger	 V: 	default	
+[00:00:47]: 		K: 	hunt	 V: 	default	
+[00:00:47]: 		K: 	junkyard	 V: 	default	
+[00:00:47]: 		K: 	keep_disconnected_tiles	 V: 	true	
+[00:00:47]: 		K: 	klaus	 V: 	default	
+[00:00:47]: 		K: 	krampus	 V: 	default	
+[00:00:47]: 		K: 	layout_mode	 V: 	LinkNodesByKeys	
+[00:00:47]: 		K: 	lessdamagetaken	 V: 	none	
+[00:00:47]: 		K: 	liefs	 V: 	default	
+[00:00:47]: 		K: 	lightcrab_portalrate	 V: 	default	
+[00:00:47]: 		K: 	lightning	 V: 	default	
+[00:00:47]: 		K: 	lightninggoat	 V: 	default	
+[00:00:47]: 		K: 	loop	 V: 	default	
+[00:00:47]: 		K: 	lunarhail_frequency	 V: 	default	
+[00:00:47]: 		K: 	lureplants	 V: 	default	
+[00:00:47]: 		K: 	malbatross	 V: 	default	
+[00:00:47]: 		K: 	marshbush	 V: 	default	
+[00:00:47]: 		K: 	merm	 V: 	default	
+[00:00:47]: 		K: 	merms	 V: 	default	
+[00:00:47]: 		K: 	meteorshowers	 V: 	default	
+[00:00:47]: 		K: 	meteorspawner	 V: 	default	
+[00:00:47]: 		K: 	moles	 V: 	default	
+[00:00:47]: 		K: 	moles_setting	 V: 	default	
+[00:00:47]: 		K: 	monkeytail_portalrate	 V: 	default	
+[00:00:47]: 		K: 	moon_berrybush	 V: 	default	
+[00:00:47]: 		K: 	moon_bullkelp	 V: 	default	
+[00:00:47]: 		K: 	moon_carrot	 V: 	default	
+[00:00:47]: 		K: 	moon_fissure	 V: 	default	
+[00:00:47]: 		K: 	moon_fruitdragon	 V: 	default	
+[00:00:47]: 		K: 	moon_hotspring	 V: 	default	
+[00:00:47]: 		K: 	moon_rock	 V: 	default	
+[00:00:47]: 		K: 	moon_sapling	 V: 	default	
+[00:00:47]: 		K: 	moon_spider	 V: 	default	
+[00:00:47]: 		K: 	moon_spiders	 V: 	default	
+[00:00:47]: 		K: 	moon_starfish	 V: 	default	
+[00:00:47]: 		K: 	moon_tree	 V: 	default	
+[00:00:47]: 		K: 	moon_tree_regrowth	 V: 	default	
+[00:00:47]: 		K: 	mosquitos	 V: 	default	
+[00:00:47]: 		K: 	mushroom	 V: 	default	
+[00:00:47]: 		K: 	mutated_bearger	 V: 	default	
+[00:00:47]: 		K: 	mutated_bird_gestalt	 V: 	default	
+[00:00:47]: 		K: 	mutated_birds	 V: 	default	
+[00:00:47]: 		K: 	mutated_buzzard_gestalt	 V: 	default	
+[00:00:47]: 		K: 	mutated_deerclops	 V: 	default	
+[00:00:47]: 		K: 	mutated_hounds	 V: 	default	
+[00:00:47]: 		K: 	mutated_merm	 V: 	default	
+[00:00:47]: 		K: 	mutated_spiderqueen	 V: 	default	
+[00:00:47]: 		K: 	mutated_warg	 V: 	default	
+[00:00:47]: 		K: 	no_joining_islands	 V: 	true	
+[00:00:47]: 		K: 	no_wormholes_to_disconnected_tiles	 V: 	true	
+[00:00:47]: 		K: 	ocean_bullkelp	 V: 	default	
+[00:00:47]: 		K: 	ocean_otterdens	 V: 	default	
+[00:00:47]: 		K: 	ocean_seastack	 V: 	ocean_default	
+[00:00:47]: 		K: 	ocean_shoal	 V: 	default	
+[00:00:47]: 		K: 	ocean_waterplant	 V: 	ocean_default	
+[00:00:47]: 		K: 	ocean_wobsterden	 V: 	default	
+[00:00:47]: 		K: 	otters_setting	 V: 	default	
+[00:00:47]: 		K: 	palmcone_seed_portalrate	 V: 	default	
+[00:00:47]: 		K: 	palmconetree	 V: 	default	
+[00:00:47]: 		K: 	palmconetree_regrowth	 V: 	default	
+[00:00:47]: 		K: 	penguins	 V: 	default	
+[00:00:47]: 		K: 	penguins_moon	 V: 	default	
+[00:00:47]: 		K: 	perd	 V: 	default	
+[00:00:47]: 		K: 	petrification	 V: 	default	
+[00:00:47]: 		K: 	pigs	 V: 	default	
+[00:00:47]: 		K: 	pigs_setting	 V: 	default	
+[00:00:47]: 		K: 	pirateraids	 V: 	default	
+[00:00:47]: 		K: 	ponds	 V: 	default	
+[00:00:47]: 		K: 	portal_spawnrate	 V: 	default	
+[00:00:47]: 		K: 	portalresurection	 V: 	none	
+[00:00:47]: 		K: 	powder_monkey_portalrate	 V: 	default	
+[00:00:47]: 		K: 	prefabswaps_start	 V: 	default	
+[00:00:47]: 		K: 	rabbits	 V: 	default	
+[00:00:47]: 		K: 	rabbits_setting	 V: 	default	
+[00:00:47]: 		K: 	reeds	 V: 	default	
+[00:00:47]: 		K: 	reeds_regrowth	 V: 	default	
+[00:00:47]: 		K: 	regrowth	 V: 	default	
+[00:00:47]: 		K: 	resettime	 V: 	default	
+[00:00:47]: 		K: 	rifts_enabled	 V: 	default	
+[00:00:47]: 		K: 	rifts_frequency	 V: 	default	
+[00:00:47]: 		K: 	roads	 V: 	default	
+[00:00:47]: 		K: 	rock	 V: 	default	
+[00:00:47]: 		K: 	rock_ice	 V: 	default	
+[00:00:47]: 		K: 	saltstack_regrowth	 V: 	default	
+[00:00:47]: 		K: 	sapling	 V: 	default	
+[00:00:47]: 		K: 	season_start	 V: 	default	
+[00:00:47]: 		K: 	seasonalstartingitems	 V: 	default	
+[00:00:47]: 		K: 	shadowcreatures	 V: 	default	
+[00:00:47]: 		K: 	sharkboi	 V: 	default	
+[00:00:47]: 		K: 	sharks	 V: 	default	
+[00:00:47]: 		K: 	spawnmode	 V: 	fixed	
+[00:00:47]: 		K: 	spawnprotection	 V: 	default	
+[00:00:47]: 		K: 	specialevent	 V: 	default	
+[00:00:47]: 		K: 	spider_warriors	 V: 	default	
+[00:00:47]: 		K: 	spiderqueen	 V: 	default	
+[00:00:47]: 		K: 	spiders	 V: 	default	
+[00:00:47]: 		K: 	spiders_setting	 V: 	default	
+[00:00:47]: 		K: 	spring	 V: 	default	
+[00:00:47]: 		K: 	squid	 V: 	default	
+[00:00:47]: 		K: 	stageplays	 V: 	default	
+[00:00:47]: 		K: 	start_location	 V: 	default	
+[00:00:47]: 		K: 	summer	 V: 	default	
+[00:00:47]: 		K: 	summerhounds	 V: 	default	
+[00:00:47]: 		K: 	tallbirds	 V: 	default	
+[00:00:47]: 		K: 	task_set	 V: 	default	
+[00:00:47]: 		K: 	temperaturedamage	 V: 	default	
+[00:00:47]: 		K: 	tentacles	 V: 	default	
+[00:00:47]: 		K: 	terrariumchest	 V: 	default	
+[00:00:47]: 		K: 	touchstone	 V: 	default	
+[00:00:47]: 		K: 	trees	 V: 	default	
+[00:00:47]: 		K: 	tumbleweed	 V: 	default	
+[00:00:47]: 		K: 	twiggytrees_regrowth	 V: 	default	
+[00:00:47]: 		K: 	walrus	 V: 	default	
+[00:00:47]: 		K: 	walrus_setting	 V: 	default	
+[00:00:47]: 		K: 	wanderingtrader_enabled	 V: 	always	
+[00:00:47]: 		K: 	wasps	 V: 	default	
+[00:00:47]: 		K: 	weather	 V: 	default	
+[00:00:47]: 		K: 	wildfires	 V: 	default	
+[00:00:47]: 		K: 	winter	 V: 	default	
+[00:00:47]: 		K: 	winterhounds	 V: 	default	
+[00:00:47]: 		K: 	winters_feast	 V: 	default	
+[00:00:47]: 		K: 	wobsters	 V: 	default	
+[00:00:47]: 		K: 	world_size	 V: 	default	
+[00:00:47]: 		K: 	wormhole_prefab	 V: 	wormhole	
+[00:00:47]: 		K: 	year_of_the_beefalo	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_bunnyman	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_carrat	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_catcoon	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_dragonfly	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_gobbler	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_knight	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_pig	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_snake	 V: 	default	
+[00:00:47]: 		K: 	year_of_the_varg	 V: 	default	
+[00:00:47]: 	K: 	playstyle	 V: 	survival	
+[00:00:47]: 	K: 	random_set_pieces	 V: 	table: 000000000A40AB80	
+[00:00:47]: 		K: 	1	 V: 	Sculptures_2	
+[00:00:47]: 		K: 	2	 V: 	Sculptures_3	
+[00:00:47]: 		K: 	3	 V: 	Sculptures_4	
+[00:00:47]: 		K: 	4	 V: 	Sculptures_5	
+[00:00:47]: 		K: 	5	 V: 	Chessy_1	
+[00:00:47]: 		K: 	6	 V: 	Chessy_2	
+[00:00:47]: 		K: 	7	 V: 	Chessy_3	
+[00:00:47]: 		K: 	8	 V: 	Chessy_4	
+[00:00:47]: 		K: 	9	 V: 	Chessy_5	
+[00:00:47]: 		K: 	10	 V: 	Chessy_6	
+[00:00:47]: 		K: 	11	 V: 	Maxwell1	
+[00:00:47]: 		K: 	12	 V: 	Maxwell2	
+[00:00:47]: 		K: 	13	 V: 	Maxwell3	
+[00:00:47]: 		K: 	14	 V: 	Maxwell4	
+[00:00:47]: 		K: 	15	 V: 	Maxwell6	
+[00:00:47]: 		K: 	16	 V: 	Maxwell7	
+[00:00:47]: 		K: 	17	 V: 	Warzone_1	
+[00:00:47]: 		K: 	18	 V: 	Warzone_2	
+[00:00:47]: 		K: 	19	 V: 	Warzone_3	
+[00:00:47]: 	K: 	required_prefabs	 V: 	table: 000000000A40B4E0	
+[00:00:47]: 		K: 	1	 V: 	multiplayer_portal	
+[00:00:47]: 	K: 	required_setpieces	 V: 	table: 000000000A40A9A0	
+[00:00:47]: 		K: 	1	 V: 	Sculptures_1	
+[00:00:47]: 		K: 	2	 V: 	Maxwell5	
+[00:00:47]: 	K: 	settings_desc	 V: 	The standard Don't Starve experience.	
+[00:00:47]: 	K: 	settings_id	 V: 	SURVIVAL_TOGETHER	
+[00:00:47]: 	K: 	settings_name	 V: 	Survival	
+[00:00:47]: 	K: 	substitutes	 V: 	table: 000000000A40B8F0	
+[00:00:47]: 	K: 	version	 V: 	4	
+[00:00:47]: 	K: 	worldgen_desc	 V: 	The standard Don't Starve experience.	
+[00:00:47]: 	K: 	worldgen_id	 V: 	SURVIVAL_TOGETHER	
+[00:00:47]: 	K: 	worldgen_name	 V: 	Survival	
+[00:00:47]: 
+#######
+#
+# Generating SURVIVAL Mode Level
+#
+#######
+	
+[00:00:47]: Prefab Swap Selection: regular grass	
+[00:00:47]: Prefab Swap Selection: regular twigs	
+[00:00:47]: Prefab Swap Selection: regular berries	
+[00:00:47]: Sculptures_1 added to task Squeltch	
+[00:00:47]: Maxwell5 added to task Mole Colony Rocks	
+[00:00:47]: Maxwell4 added to task Lightning Bluff	
+[00:00:47]: Warzone_2 added to task Make a pick	
+[00:00:47]: Sculptures_2 added to task Beeeees!	
+[00:00:47]: Maxwell2 added to task MooseBreedingTask	
+[00:00:47]: New size:	425	default	
+[00:00:47]: Creating story...	
+[00:00:47]: [Story Gen] Generate nodes. Starting at: 'Make a pick'	
+[00:00:47]: [Story Gen] LinkNodesByKeys	
+[00:00:47]: Finding valid start task...	
+[00:00:47]:    ...picked 	Make a pick	
+[00:00:47]: Has start node	Clearing	
+[00:00:47]: Adding Background Nodes	
+[00:00:47]: [Story Gen] Adding Cove Nodes	
+[00:00:47]: [Ocean] Processing ocean fake room content.	
+[00:00:47]: [WorldSimActual::WorldGen_InitializeNodePoints]
+[00:00:47]: [WorldSimActual::WorldGen_VoronoiPass]
+[00:00:47]: GenerateVoronoiMap [100]:
+[00:00:53]: ...Done.
+[00:00:53]: [Story Gen] Finding nodes on mainland to connect a region to.	
+[00:00:53]: [Story Gen] Generate nodes. Starting at: 'MoonIsland_IslandShards'	
+[00:00:53]: [Story Gen] RestrictNodesByKey	
+[00:00:53]: [Story Gen] Adding Cove Nodes	
+[00:00:53]: [WorldSimActual::WorldGen_AddNewPositions]
+[00:00:53]: [WorldSimActual::WorldGen_VoronoiPass]
+[00:00:53]: GenerateVoronoiMap [50]:
+[00:00:58]: ...Done.
+[00:00:58]: ... story created	
+[00:00:58]: Baking map...	425	
+[00:00:58]: [WorldSimActual::WorldGen_Commit] worldgen success.
+[00:00:58]: [WorldSimActual::ConvertToTileMap]
+[00:00:58]: [ConvertToTileMap]
+[00:00:58]: [WorldSimActual::ConvertToTileMap] complete
+[00:00:58]: [WorldSimActual::SeparateIslands]
+[00:00:58]: [SeparateIslands]
+[00:00:58]: [WorldSimActual::SeparateIslands] complete
+[00:00:58]: Map Baked!	
+[00:00:58]: [WorldSimActual::ForceConnectivity]
+[00:00:58]: [GenerateLandmasses]
+[00:00:58]: [GenerateLandmasses] islands: 11
+[00:00:58]: [MergeConnectedLandmasses] false
+[00:00:58]: [WorldSimActual::ForceConnectivity] complete
+[00:00:58]: [WorldSimActual::DrawRoads]
+[00:00:58]: [DrawRoads]
+[00:00:58]: [WorldSimActual::DrawRoads] complete
+[00:00:58]: Encoding...	
+[00:00:58]: [WorldSimActual::CreateNodeIdTileMap]
+[00:00:58]: Encoding... DONE	
+[00:00:58]: Checking Tags	
+[00:00:58]: Tag: Labyrinth	
+[00:00:58]: Tag: Maze	
+[00:00:58]: Populating voronoi...	
+[00:00:59]: [ReplaceSingleNonLandTiles] Validating...
+[00:01:00]: [ReplaceSingleNonLandTiles] Replaced 7 tiles.
+[00:01:00]: Not checking for disconnected tiles.	
+[00:01:01]: [Ocean] Placing ocean set pieces.	
+[00:01:01]: [Ocean] Placed 11 of 11 ocean set pieces.	
+[00:01:01]: [Ocean] Convert impassible to water...	
+[00:01:01]: [Ocean]  Square fill...	
+[00:01:07]: [Ocean]  Ground fill...	
+[00:01:09]: [Ocean]  Noise...	
+[00:01:10]: [Ocean]  Blend...	
+[00:01:11]: [Ocean]  Adding shoreline...	
+[00:01:13]: [Ocean] Void Outline...	
+[00:01:13]: [Ocean] Populating the ocean with lots of fun things to do...	
+[00:01:13]: [Ocean] Placing ocean set pieces.	
+[00:01:13]: [Ocean] Placed 9 of 9 ocean set pieces.	
+[00:01:13]: [Ocean] Placing ocean set pieces.	
+[00:01:13]: [Ocean] Placed 4 of 4 ocean set pieces.	
+[00:01:13]: [Ocean] Placing ocean set pieces.	
+[00:01:13]: [Ocean] Placed 3 of 3 ocean set pieces.	
+[00:01:13]: Checking Required Prefab moon_altar_rock_glass has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab sculpture_bishop has at least 1 instances (2 found).	
+[00:01:13]: Checking Required Prefab pigking has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab moon_fissure has at least 2 instances (100 found).	
+[00:01:13]: Checking Required Prefab monkeyqueen has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab terrariumchest has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab gravestone has at least 1 instances (17 found).	
+[00:01:13]: Checking Required Prefab statueglommer has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab waterplant has at least 1 instances (111 found).	
+[00:01:13]: Checking Required Prefab balatro_machine has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab sculpture_rook has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab hermithouse_construction1 has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab moon_altar_rock_seed has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab charlie_stage_post has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab statueharp_hedgespawner has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab crabking_spawner has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab moon_altar_rock_idol has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab junk_pile_big has at least 1 instances (1 found).	
+[00:01:13]: Checking Required Prefab sculpture_knight has at least 1 instances (3 found).	
+[00:01:13]: Checking Required Prefab oceanwhirlbigportal has at least 1 instances (1 found).	
+[00:01:13]: [ReplaceSingleNonLandTiles] Validating...
+[00:01:13]: [ReplaceSingleNonLandTiles] Replaced 0 tiles.
+[00:01:14]: Done forest map gen!	
+[00:01:14]: Checking map...	
+[00:01:14]: Generation complete, injecting world entities.	
+[00:01:14]: Injected world entities.	
+[00:01:15]: WorldSim::SimThread::Main() complete
+[00:01:15]: Serializing world: session/7C477E8442AF2AC5/0000000002
+[00:01:15]: Klump load on boot started.	
+[00:01:15]: Klump files loaded: 	0	
+[00:01:15]: 	Unload FE	
+[00:01:15]: 	Unload FE done	
+[00:01:15]: Could not unload undefined prefab (quagmire_telebrella)
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	Registering prefabs	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/wagstaff_none	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    wagstaff_none	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/goggles	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesnormalhat	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesheathat	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesarmorhat	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    gogglesshoothat	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/fryfocals_charge	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    fryfocals_charge	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/thumper	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    thumper_placer	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telipad	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    beacon	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    telipad_placer	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/telebrella	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    telebrella_glow	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/hiddendanger_fx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    hiddendanger_fx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    peculiar_marker_fx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    identified_marker_fx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/williamgadget	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamgadget	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_butler	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler2	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler3	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_builder	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambutler_empty	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_buster	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster2	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster3	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_builder	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambuster_empty	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_brute	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute2	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute3	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_gary	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_placer	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williambrute_builder	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_ballistic	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic3	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic2	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamballistic_empty_placer	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charge	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_chargeup	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_charge_hit	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_charged_fx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    williamchargedfx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/william_mistake	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    william_mistake	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/bot_aura_v5	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_butler	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_buster	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_bouncer	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_battery	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    bot_aura_shadow	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/dispenser	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    dispenser	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    ehealfx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_bullet	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_bullet	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/esentry_rocket	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    esentry_rocket	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    eshockfx	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringenter	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_placer	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering prefab file: prefabs/eteleporter_exit	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleringexit	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	    eteleporter_exit_placer	
+[00:01:31]: Mod: WagstaffPlus (Wagstaff Standalone)	  Registering default mod prefab	
+[00:01:32]: Could not preload undefined prefab (scrap)
+[00:01:32]: Could not preload undefined prefab (scrap)
+[00:01:36]: Could not preload undefined prefab (quagmire_telebrella)
+[00:01:36]: Could not preload undefined prefab (scrap)
+[00:01:36]: Could not preload undefined prefab (scrap)
+[00:01:37]: 	LOAD BE	
+[00:02:47]: 	LOAD BE: done	
+[00:02:47]: Begin Session: 7C477E8442AF2AC5
+[00:02:47]: saving to server_temp/server_save	
+[00:02:48]: OVERRIDE: setting	healthpenalty	to	always	
+[00:02:48]: OVERRIDE: setting	wanderingtrader_enabled	to	always	
+[00:02:48]: OVERRIDE: setting	lessdamagetaken	to	none	
+[00:02:48]: MiniMapComponent::AddAtlas( minimap/minimap_data1.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( minimap/minimap_data2.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/wagstaff.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/inventoryimages/telipad.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/inventoryimages/thumper.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/esentry.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/esentry_2.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/esentry_3.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/dispenser.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/eteleporter.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/eteleporterentrance.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/minimap/eteleporterexit.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williambutler.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williambuster.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williambrute.xml )
+[00:02:48]: MiniMapComponent::AddAtlas( ../mods/WagstaffPlus/images/map_icons/williamballistic.xml )
+[00:02:49]: [Wagstaff Standalone] AddPrefabPostInit('world') FIRED — self=	100041 - world	
+[00:02:49]: [Wagstaff Debug] AddPrefabPostInit('world') called, self= 100041 - world	
+[00:02:49]: [Wagstaff Debug] TheWorld.state exists? true	
+[00:02:49]: [Wagstaff Debug] TheWorld.ismastersim= true	
+[00:02:49]: [Wagstaff Standalone] World persistence installed: ApplyWagstaffSkills, SaveWagstaffSkillsToWorld, GetWagstaffSkillsFromWorld are now on TheWorld	
+[00:02:49]: [Wagstaff Debug] World persistence functions installed on TheWorld	
+[00:02:49]: Loading 20 new character(s)	
+[00:02:52]: Total 20 character(s) loaded	
+[00:02:54]: Loading Nav Grid	
+[00:02:54]: World generated on build 736959 with save version: 5.23, using seed: 1178837353	
+[00:02:54]: OVERRIDE: setting	ghostenabled	to	always	
+[00:02:54]: OVERRIDE: setting	basicresource_regrowth	to	none	
+[00:02:54]: OVERRIDE: setting	portalresurection	to	none	
+[00:02:54]: OVERRIDE: setting	spawnmode	to	fixed	
+[00:02:54]: OVERRIDE: setting	ghostsanitydrain	to	always	
+[00:03:16]: Reconstructing topology	
+[00:03:16]: 	...Sorting points	
+[00:03:16]: 	...Sorting edges	
+[00:03:16]: 	...Connecting nodes	
+[00:03:16]: 	...Validating connections	
+[00:03:17]: 	...Housekeeping	
+[00:03:17]: 	...Done!	
+[00:03:18]: 1 uploads added to server. From server_temp
+[00:03:18]: About to start a shard with these settings:
+[00:03:18]:   ShardName: Master
+[00:03:18]:   ShardID: 1
+[00:03:18]:   ShardRole: MASTER
+[00:03:18]:   MasterHost: (null)
+[00:03:18]:   MasterBind: 127.0.0.1
+[00:03:18]:   MasterPort: 10888
+[00:03:18]: [Shard] Starting master server
+[00:03:18]: [Warning] Could not confirm port 10888 is open in the firewall. 
+[00:03:18]: [Shard] Shard server started on port: 10888
+[00:03:18]: [IPC] Signal 'DST_Master_Ready' opened  #0000000000000B9C
+[00:03:18]: [IPC] Sending signal... #0000000000000B9C
+[00:03:18]: Telling Client our new session identifier: 7C477E8442AF2AC5
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object evergreen_sparse rolled reward: trinket_18	
+[00:03:20]: Peculiar object moon_tree rolled no reward	
+[00:03:20]: Peculiar object evergreen_sparse rolled reward: trinket_25	
+[00:03:20]: Peculiar object deciduoustree rolled reward: trinket_8	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:20]: Peculiar object marsh_tree rolled reward: trinket_10	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object rock2 rolled no reward	
+[00:03:20]: Peculiar object evergreen_sparse rolled reward: trinket_43	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_24	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_37	
+[00:03:20]: Peculiar object deciduoustree rolled reward: trinket_24	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_11	
+[00:03:20]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object deciduoustree rolled reward: trinket_32	
+[00:03:20]: Peculiar object rock1 rolled reward: trinket_14	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_41	
+[00:03:20]: Peculiar object marsh_tree rolled reward: trinket_31	
+[00:03:20]: Peculiar object marsh_tree rolled reward: trinket_44	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_21	
+[00:03:20]: Skipping portal[oceanwhirlbigportal] (no available shard [Caves] connected)	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_8	
+[00:03:20]: Peculiar object rock1 rolled reward: trinket_46	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_39	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_36	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object deciduoustree rolled no reward	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_6	
+[00:03:20]: Skipping portal[1] (no available shard [Caves] connected)	
+[00:03:20]: Peculiar object evergreen rolled no reward	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_7	
+[00:03:20]: Skipping portal[2] (no available shard [Caves] connected)	
+[00:03:20]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:20]: Peculiar object marsh_tree rolled no reward	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_1	
+[00:03:20]: Peculiar object rock1 rolled no reward	
+[00:03:20]: Peculiar object evergreen_sparse rolled reward: trinket_5	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_15	
+[00:03:20]: Peculiar object evergreen rolled reward: trinket_15	
+[00:03:20]: Peculiar object marsh_tree rolled reward: trinket_13	
+[00:03:20]: Peculiar object marsh_tree rolled no reward	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object deciduoustree rolled reward: trinket_19	
+[00:03:21]: Peculiar object rock2 rolled no reward	
+[00:03:21]: Peculiar object moon_tree rolled reward: trinket_27	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_18	
+[00:03:21]: Skipping portal[3] (no available shard [Caves] connected)	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_25	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_12	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_34	
+[00:03:21]: Peculiar object rock1 rolled no reward	
+[00:03:21]: Skipping portal[4] (no available shard [Caves] connected)	
+[00:03:21]: Peculiar object marsh_tree rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_29	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_22	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object moon_tree rolled reward: trinket_14	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_35	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_26	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_36	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_24	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_43	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_17	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_9	
+[00:03:21]: Peculiar object marsh_tree rolled reward: trinket_45	
+[00:03:21]: Skipping portal[5] (no available shard [Caves] connected)	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_1	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_26	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_27	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: flint	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_34	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_5	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object rock1 rolled reward: trinket_37	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_9	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_26	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_26	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object rock1 rolled no reward	
+[00:03:21]: Peculiar object deciduoustree rolled reward: trinket_33	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_15	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_44	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_7	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_30	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_32	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_41	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_32	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: flint	
+[00:03:21]: Peculiar object moon_tree rolled no reward	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_23	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_24	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object rock2 rolled reward: trinket_37	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_29	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_24	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_12	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_20	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_19	
+[00:03:21]: Peculiar object deciduoustree rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_43	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_12	
+[00:03:21]: Peculiar object rock1 rolled reward: trinket_6	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_31	
+[00:03:21]: Peculiar object marsh_tree rolled no reward	
+[00:03:21]: Peculiar object deciduoustree rolled reward: trinket_25	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_1	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_6	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_31	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_26	
+[00:03:21]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_37	
+[00:03:21]: Peculiar object evergreen_sparse rolled reward: trinket_8	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_41	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Skipping portal[6] (no available shard [Caves] connected)	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_16	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_29	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_38	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_8	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_21	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object rock1 rolled no reward	
+[00:03:21]: Peculiar object moon_tree rolled reward: trinket_40	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object deciduoustree rolled reward: trinket_28	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_18	
+[00:03:21]: Peculiar object evergreen rolled no reward	
+[00:03:21]: Peculiar object evergreen rolled reward: trinket_13	
+[00:03:22]: Skipping portal[7] (no available shard [Caves] connected)	
+[00:03:22]: Peculiar object evergreen rolled no reward	
+[00:03:22]: Peculiar object moon_tree rolled reward: trinket_26	
+[00:03:22]: Peculiar object deciduoustree rolled reward: trinket_22	
+[00:03:22]: Peculiar object evergreen rolled no reward	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_22	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_36	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_2	
+[00:03:22]: Peculiar object marsh_tree rolled no reward	
+[00:03:22]: Skipping portal[8] (no available shard [Caves] connected)	
+[00:03:22]: Peculiar object rock2 rolled reward: trinket_39	
+[00:03:22]: Peculiar object evergreen rolled no reward	
+[00:03:22]: Peculiar object rock2 rolled reward: trinket_9	
+[00:03:22]: Peculiar object moon_tree rolled no reward	
+[00:03:22]: Peculiar object evergreen rolled no reward	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_30	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_17	
+[00:03:22]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:22]: Peculiar object evergreen_sparse rolled reward: trinket_1	
+[00:03:22]: Peculiar object deciduoustree rolled no reward	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_13	
+[00:03:22]: Peculiar object evergreen_sparse rolled reward: trinket_45	
+[00:03:22]: Peculiar object evergreen rolled no reward	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_7	
+[00:03:22]: Peculiar object deciduoustree rolled reward: trinket_45	
+[00:03:22]: Peculiar object evergreen rolled no reward	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_6	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_39	
+[00:03:22]: Peculiar object evergreen rolled reward: trinket_14	
+[00:03:22]: Peculiar object rock_moon rolled no reward	
+[00:03:22]: Peculiar object marsh_tree rolled reward: trinket_32	
+[00:03:22]: Peculiar object evergreen_sparse rolled no reward	
+[00:03:22]: Skipping portal[9] (no available shard [Caves] connected)	
+[00:03:22]: Peculiar object deciduoustree rolled reward: trinket_24	
+[00:03:22]: Peculiar object rock_flintless rolled no reward	
+[00:03:22]: Skipping portal[10] (no available shard [Caves] connected)	
+[00:03:22]: Peculiar object marsh_tree rolled reward: trinket_29	
+[00:03:23]: Server registered via geo DNS in us-east-1
+[00:03:23]: Sim paused
+[00:03:27]: [Shard] Secondary shard Caves(259419336) connected: [LAN] 127.0.0.1
+[00:03:31]: [Shard] Secondary Caves(259419336) ready!
+[00:03:31]: World 259419336(Caves) is now connected	
+[00:03:31]: [SyncWorldSettings] Sending master world option ghostsanitydrain = always to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option darkness = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option resettime = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option hunger = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option healthpenalty = always to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option temperaturedamage = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option spawnmode = fixed to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option shadowcreatures = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option ghostenabled = always to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option brightmarecreatures = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option lessdamagetaken = none to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option portalresurection = none to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option basicresource_regrowth = none to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option krampus = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Sending master world option dropeverythingondespawn = default to secondary shards.	
+[00:03:31]: Validating portal[oceanwhirlbigportal] <-> 259419336[oceanwhirlbigportal] (active)	
+[00:03:31]: Validating portal[1] <-> 259419336[1] (disabled)	
+[00:03:31]: Validating portal[2] <-> 259419336[2] (disabled)	
+[00:03:31]: Validating portal[3] <-> 259419336[3] (disabled)	
+[00:03:31]: Validating portal[4] <-> 259419336[4] (disabled)	
+[00:03:31]: Validating portal[5] <-> 259419336[5] (disabled)	
+[00:03:31]: Validating portal[6] <-> 259419336[6] (disabled)	
+[00:03:31]: Validating portal[7] <-> 259419336[7] (disabled)	
+[00:03:31]: Validating portal[8] <-> 259419336[8] (disabled)	
+[00:03:31]: Validating portal[9] <-> 259419336[9] (disabled)	
+[00:03:31]: Validating portal[10] <-> 259419336[10] (disabled)	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option ghostsanitydrain = always to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option darkness = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option resettime = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option hunger = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option healthpenalty = always to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option temperaturedamage = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option spawnmode = fixed to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option shadowcreatures = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option ghostenabled = always to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option brightmarecreatures = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option lessdamagetaken = none to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option portalresurection = none to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option basicresource_regrowth = none to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option krampus = default to secondary shards.	
+[00:03:31]: [SyncWorldSettings] Resyncing master world option dropeverythingondespawn = default to secondary shards.	
+[00:03:33]: New incoming connection 127.0.0.1|61684 <6681104388469769741>
+[00:03:33]: Client connected from [LAN] 127.0.0.1|61684 <6681104388469769741>
+[00:03:33]: ValidateGameSessionToken GUID<6681104388469769741>
+[00:03:34]: Client authenticated: (KU_rSBqsLp5) .FB
+[00:03:34]: [Steam] Authenticated host '76561198072883011'
+[00:03:36]: There is no active event to validate against.
+[00:03:36]: [Shard] Read save location file for (KU_rSBqsLp5)
+[00:04:11]: Resuming user: session/7C477E8442AF2AC5/A7MLOBQDIN65
+[00:05:02]: Spawn request: wagstaff from .FB
+[00:05:02]: Skin request: () (body_wilson_shadow) () () ()
+[00:05:02]: Skill Selection request: 0
+[00:05:02]: User ID	KU_rSBqsLp5	assigned ownership to entity	118132 - wagstaff	
+[00:05:02]: Spawning player at: [Fixed] (-350.00, 0.00, -278.00)	
+[00:05:02]: [Wagstaff Debug] Player OnSave called	
+[00:05:02]: [Wagstaff Debug] Player OnSave done	
+[00:05:02]: Serializing user: session/7C477E8442AF2AC5/A7MLOBQDIN65/0000000003
+[00:05:02]: Sim unpaused
+[00:05:02]: Warning: Can't give item because it's not an inventory item.	
+[00:05:12]: Server Autopaused	
+[00:05:14]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
+[00:05:15]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
+[00:05:15]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
+[00:05:17]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
+[00:05:18]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
+[00:05:19]: Server Unpaused	
+[00:05:28]: Server Autopaused	
+[00:05:29]: [(KU_rSBqsLp5) .FB] ReceiveRemoteExecute(c_freecrafting()) @(-336.70, -275.01)
+[00:05:29]: Server Unpaused	
+[00:05:39]: [DEBUG] ==============================================	
+[00:05:39]: [DEBUG] OnFinishCallback chamado para Brute Bot	
+[00:05:39]: [DEBUG] inst.prefab:	williambrute	
+[00:05:39]: [DEBUG] worker.prefab:	wagstaff	
+[00:05:39]: [DEBUG] worker.name:	.FB	
+[00:05:39]: [DEBUG] inst.upgradelevel:	0	
+[00:05:39]: [DEBUG] inst.upgradelevel_mk3:	nil	
+[00:05:39]: [DEBUG] wrench:	tf2wrench	
+[00:05:39]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
+[00:05:39]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
+[00:05:39]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:05:39]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:05:39]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:05:39]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:05:39]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:05:39]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:05:39]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:05:39]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:05:39]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:05:39]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:05:39]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:05:39]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:05:39]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:05:39]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:05:39]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:05:39]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
+[00:05:39]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:05:39]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:05:39]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:05:39]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:05:39]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:05:39]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:05:39]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:05:39]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:05:39]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:05:40]: [DEBUG] ==============================================	
+[00:05:40]: [DEBUG] OnFinishCallback chamado para Brute Bot	
+[00:05:40]: [DEBUG] inst.prefab:	williambrute	
+[00:05:40]: [DEBUG] worker.prefab:	wagstaff	
+[00:05:40]: [DEBUG] worker.name:	.FB	
+[00:05:40]: [DEBUG] inst.upgradelevel:	0	
+[00:05:40]: [DEBUG] inst.upgradelevel_mk3:	nil	
+[00:05:40]: [DEBUG] wrench:	tf2wrench	
+[00:05:40]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
+[00:05:40]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
+[00:05:40]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:05:40]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:05:40]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:05:40]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:05:40]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:05:40]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:05:40]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:05:40]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:05:40]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:05:40]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:05:40]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:05:40]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:05:40]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:05:40]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:05:40]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:05:40]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:05:40]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:05:40]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:05:40]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:05:40]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:05:40]: [DEBUG] ==============================================	
+[00:05:40]: [DEBUG] OnFinishCallback chamado para Brute Bot	
+[00:05:40]: [DEBUG] inst.prefab:	williambrute	
+[00:05:40]: [DEBUG] worker.prefab:	wagstaff	
+[00:05:40]: [DEBUG] worker.name:	.FB	
+[00:05:40]: [DEBUG] inst.upgradelevel:	0	
+[00:05:40]: [DEBUG] inst.upgradelevel_mk3:	nil	
+[00:05:40]: [DEBUG] wrench:	tf2wrench	
+[00:05:40]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
+[00:05:40]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
+[00:05:40]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:05:40]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:05:40]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:05:40]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:05:40]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:05:40]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:05:40]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:05:40]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:05:40]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:05:40]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:05:40]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:05:40]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
+[00:05:40]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:05:40]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:05:40]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:05:40]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:05:40]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:05:40]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:05:40]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:05:40]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:05:40]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:05:43]: Server Autopaused	
+[00:06:26]: Server Unpaused	
+[00:06:28]: Server Autopaused	
+[00:06:31]: Server Unpaused	
+[00:06:34]: [DEBUG] ==============================================	
+[00:06:34]: [DEBUG] OnFinishCallback chamado para Buster Bot	
+[00:06:34]: [DEBUG] inst.prefab:	williambuster	
+[00:06:34]: [DEBUG] worker.prefab:	wagstaff	
+[00:06:34]: [DEBUG] worker.name:	.FB	
+[00:06:34]: [DEBUG] inst.upgradelevel:	0	
+[00:06:34]: [DEBUG] wrench:	tf2wrench	
+[00:06:34]: [DEBUG] Buster é MK1 - verificando upgrade para MK2	
+[00:06:34]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_buster_evolve	
+[00:06:34]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:06:34]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:06:34]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_buster_evolve	
+[00:06:34]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:06:34]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_buster_evolve	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:06:34]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:06:34]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:06:34]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:06:34]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:06:34]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:06:34]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:06:34]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_buster_evolve	- NAO ENCONTRADA	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:06:34]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:06:34]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:06:34]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:06:34]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:06:34]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:06:34]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:06:34]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:06:34]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:06:34]: [DEBUG] ==============================================	
+[00:06:34]: [DEBUG] OnFinishCallback chamado para Buster Bot	
+[00:06:34]: [DEBUG] inst.prefab:	williambuster	
+[00:06:34]: [DEBUG] worker.prefab:	wagstaff	
+[00:06:34]: [DEBUG] worker.name:	.FB	
+[00:06:34]: [DEBUG] inst.upgradelevel:	0	
+[00:06:34]: [DEBUG] wrench:	tf2wrench	
+[00:06:34]: [DEBUG] Buster é MK1 - verificando upgrade para MK2	
+[00:06:34]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_buster_evolve	
+[00:06:34]: [DEBUG] worker tem skilltreeupdater?	true	
+[00:06:34]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:06:34]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_buster_evolve	
+[00:06:34]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:06:34]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_buster_evolve	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:06:34]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:06:34]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:06:34]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:06:34]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:06:34]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:06:34]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:06:34]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_buster_evolve	- NAO ENCONTRADA	
+[00:06:34]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:06:34]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:06:34]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:06:34]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:06:34]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:06:34]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:06:34]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:06:34]: [DEBUG] Resultado de WagstaffHasSkill:	false	
+[00:06:34]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
+[00:06:35]: Server Autopaused	
+[00:06:38]: Server Unpaused	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:03]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:03]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:03]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:03]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:03]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:03]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:03]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:03]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:03]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:03]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:04]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:04]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:04]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:04]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:04]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:04]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:04]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:04]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:04]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:04]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:07]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:07]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:07]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:07]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:07]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:07]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:07]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:07]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:07]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:07]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:07]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:07]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:07]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:07]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:07]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:07]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:07]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:07]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:07]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:07]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:07]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:07]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:09]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:09]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:09]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:09]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:09]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:09]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:09]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:09]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:09]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:09]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:09]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:09]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:09]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:09]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:09]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:09]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:09]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:09]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:09]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:09]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:09]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:09]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:10]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:	118132 - wagstaff	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_sentry_mk2	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 0000000047CECD10	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Verificando world skills...	
+[00:07:10]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000000E98F970	
+[00:07:10]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
+[00:07:10]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_sentry_mk2	- NAO ENCONTRADA	
+[00:07:10]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
+[00:07:10]: [DEBUG WagstaffHasSkill] HasTag=	false	
+[00:07:10]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
+[00:07:10]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
+[00:07:10]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
+[00:07:10]: [DEBUG WagstaffHasSkill] Retornando false	
+[00:07:13]: Server Autopaused	
+[00:07:16]: Server Unpaused	
+[00:07:17]: [Steam] SendUserDisconnect for '76561198072883011'
+[00:07:17]: [Shard] (KU_rSBqsLp5) disconnected from Master(1)
+[00:07:17]: [IPC] Received shutdown signal.
+[00:07:17]: Available disk space for save files: 119322 MB
+[00:07:17]: [Wagstaff Debug] World OnSave called	
+[00:07:17]: [Wagstaff Debug] Saving wagstaff_activated_skills, self._wagstaff_activated_skills type: table	
+[00:07:17]: [Wagstaff Debug] No skills in world data, checking live players	
+[00:07:17]: [Wagstaff Debug] Found live Wagstaff player, checking activatedskills type: nil	
+[00:07:17]: [Wagstaff Debug] Saved wagstaff_activated_skills from live player, count: 0	
+[00:07:17]: [Wagstaff Debug] World OnSave done	
+[00:07:17]: [Wagstaff Debug] Player OnSave called	
+[00:07:17]: [Wagstaff Debug] Player OnSave done	
+[00:07:17]: Serializing user: session/7C477E8442AF2AC5/A7MLOBQDIN65/0000000003
+[00:07:17]: Missing reference:	100041 - world	->	false	nil	
+[00:07:17]: Missing reference:	100041 - world	->	0	nil	
+[00:07:17]: Missing reference:	100041 - world	->	table: 000000004C2B3E00	nil	
+[00:07:17]: Serializing world: session/7C477E8442AF2AC5/0000000003
+[00:07:17]: Removing server from lobby
+[00:07:17]: [Shard] Stopping shard mode
+[00:07:17]: [Steam] SendUserDisconnect for ''
+[00:07:18]: Collecting garbage...
+[00:07:18]: lua_gc took 0.27 seconds
+[00:07:18]: ~ShardLuaProxy()
+[00:07:18]: ~cEventLeaderboardProxy()
+[00:07:18]: ~ItemServerLuaProxy()
+[00:07:18]: ~InventoryLuaProxy()
+[00:07:18]: ~NetworkLuaProxy()
+[00:07:18]: ~SimLuaProxy()
+[00:07:18]: Cancelling LuaQueryCallback handle [5]
+[00:07:18]: lua_close took 0.30 seconds
+[00:07:18]: Could not unload undefined prefab (scrap)
+[00:07:18]: Could not unload undefined prefab (scrap)
+[00:07:18]: Could not unload undefined prefab (scrap)
+[00:07:18]: Could not unload undefined prefab (scrap)
+[00:07:18]: Could not unload undefined prefab (quagmire_telebrella)
+[00:07:18]: CurlRequestManager::ClientThread::Main() complete
+[00:07:18]: HttpClient2 discarded 0 callbacks.
+[00:07:19]: Shutting down
