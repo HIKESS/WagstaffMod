@@ -2190,10 +2190,20 @@ local CreateSkillTree = function()
                 
                 -- DEBUG AGRESSIVO: Verificar se RPC_LOOKUP foi criado corretamente
                 WagstaffDebug("=== VERIFICACAO DO RPC_LOOKUP ===")
+                local rpc_lookup_to_use = nil
                 if SkillTreeDefs and SkillTreeDefs.RPC_LOOKUP then
-                    WagstaffDebug("RPC_LOOKUP existe!")
+                    rpc_lookup_to_use = SkillTreeDefs.RPC_LOOKUP
+                    WagstaffDebug("RPC_LOOKUP existe em SkillTreeDefs!")
+                elseif GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
+                    rpc_lookup_to_use = GLOBAL.TheSkillTree.RPC_LOOKUP
+                    WagstaffDebug("RPC_LOOKUP existe em GLOBAL.TheSkillTree!")
+                else
+                    WagstaffDebug("RPC_LOOKUP NAO EXISTE EM LUGAR NENHUM!")
+                end
+                
+                if rpc_lookup_to_use then
                     local rpc_count = 0
-                    for k, v in pairs(SkillTreeDefs.RPC_LOOKUP) do
+                    for k, v in pairs(rpc_lookup_to_use) do
                         rpc_count = rpc_count + 1
                         if rpc_count <= 20 then
                             WagstaffDebug("  RPC_LOOKUP[", k, "] =", v)
@@ -2206,7 +2216,7 @@ local CreateSkillTree = function()
                     local bot_skills = {"wagstaff_brute_evolve", "wagstaff_buster_evolve", "wagstaff_ballistic_evolve", "wagstaff_butler_evolve", "wagstaff_brute_mk3", "wagstaff_buster_mk3", "wagstaff_ballistic_mk3", "wagstaff_butler_mk3"}
                     for _, skill_name in ipairs(bot_skills) do
                         local found = false
-                        for k, v in pairs(SkillTreeDefs.RPC_LOOKUP) do
+                        for k, v in pairs(rpc_lookup_to_use) do
                             if v == skill_name then
                                 WagstaffDebug("  [OK]", skill_name, "-> ID:", k)
                                 found = true
@@ -2217,8 +2227,6 @@ local CreateSkillTree = function()
                             WagstaffDebug("  [ERRO]", skill_name, "NAO ENCONTRADO NO RPC_LOOKUP!")
                         end
                     end
-                else
-                    WagstaffDebug("RPC_LOOKUP NAO EXISTE!")
                 end
                 
                 WagstaffDebug("=== POS CreateSkillTreeFor ===")
