@@ -60,7 +60,30 @@ end
 -- ============================================================================
 G.WagstaffDebugEnabled = GetModConfigData("debug") == true
 
-local _moddir = MODROOT or "."
+-- Get the mod directory properly using TheModManager or MODROOT
+local function get_mod_directory()
+    local moddir = "."
+    -- First try MODROOT which is set by the game for each mod
+    if MODROOT and MODROOT ~= "" then
+        return MODROOT
+    end
+    -- Fallback: Try to get our mod's directory from TheModManager
+    if G.TheModManager then
+        for _, mod in pairs(G.TheModManager.mods) do
+            if mod and mod.modinfo and mod.modinfo.id then
+                if mod.modinfo.id == "wagstaff_standalone" or 
+                   string.find(mod.modinfo.id, "wagstaff") or 
+                   string.find(mod.modinfo.name, "Wagstaff") then
+                    moddir = mod.path or mod.modpath or moddir
+                    break
+                end
+            end
+        end
+    end
+    return moddir
+end
+
+local _moddir = get_mod_directory()
 local _debug_log_path = _moddir .. "/wagstaff_debug.txt"
 local _debug_buffer = {}  -- lines collected in memory, flushed periodically
 local _debug_max_buffer = 500  -- flush early if buffer gets this big
