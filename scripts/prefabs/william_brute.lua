@@ -588,15 +588,25 @@ inst.components.burnable.ignorefuel = true
         end
     end)
     inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+        print("[DEBUG] ==============================================")
+        print("[DEBUG] OnFinishCallback chamado para Brute Bot")
+        print("[DEBUG] inst.prefab:", inst.prefab)
+        print("[DEBUG] worker.prefab:", worker.prefab)
+        print("[DEBUG] worker.name:", worker.name)
+        print("[DEBUG] inst.upgradelevel:", inst.upgradelevel)
+        print("[DEBUG] inst.upgradelevel_mk3:", inst.upgradelevel_mk3)
+        
         inst.components.engieworkable:SetWorkLeft(1)
         -- Use wrench durability
         local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+        print("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
         if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
             wrench.components.finiteuses:Use(1)
         end
 
         -- Level 2 repair: wrench + scrap restores HP
         if inst.prefab == "williambrute2" or inst:HasTag("brute_upgraded") then
+            print("[DEBUG] Brute é MK2 ou superior - modo repair")
             if inst.components.health and inst.components.health.currenthealth >= inst.components.health.maxhealth then
                 if worker.components.talker then
                     worker.components.talker:Say("HP is already full!")
@@ -625,14 +635,19 @@ inst.components.burnable.ignorefuel = true
             return
         end
 
-        print("[Wagstaff Debug] Brute upgrade check: calling WagstaffHasSkill for wagstaff_brute_evolve")
-        print("[Wagstaff Debug] Brute worker.prefab=", tostring(worker.prefab), "has skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
-        if not _G.WagstaffHasSkill(worker, "wagstaff_brute_evolve") then
+        print("[DEBUG] Brute é MK1 - verificando upgrade para MK2")
+        print("[DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve")
+        print("[DEBUG] worker tem skilltreeupdater?", worker.components.skilltreeupdater ~= nil)
+        local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_brute_evolve")
+        print("[DEBUG] Resultado de WagstaffHasSkill:", has_skill)
+        if not has_skill then
+            print("[DEBUG] Skill NÃO encontrada! Abortando upgrade.")
             if worker.components.talker then
                 worker.components.talker:Say("Requires Brute Bot MK. II skill!\n(Activate it in the skill tree!)")
             end
             return
         end
+        print("[DEBUG] Skill encontrada! Prosseguindo com upgrade...")
 
         -- Upgrade: scrap metal per wrench hit (5 per hit, 65 total for Mk.II)
         local function IsScrap(item)
@@ -1029,15 +1044,27 @@ inst.components.burnable.ignorefuel = true
             end
         end)
         inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+            print("[DEBUG] ==============================================")
+            print("[DEBUG] OnFinishCallback chamado para Brute Bot MK2")
+            print("[DEBUG] inst.prefab:", inst.prefab)
+            print("[DEBUG] worker.prefab:", worker.prefab)
+            print("[DEBUG] inst.upgradelevel_mk3:", inst.upgradelevel_mk3)
+            
             inst.components.engieworkable:SetWorkLeft(1)
             -- Use wrench durability
             local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+            print("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
             if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
                 wrench.components.finiteuses:Use(1)
             end
 
             -- Check if can upgrade first
-            if _G.WagstaffHasSkill(worker, "wagstaff_brute_mk3") and inst.upgradelevel_mk3 < 40 then
+            print("[DEBUG] Verificando skill wagstaff_brute_mk3...")
+            local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_brute_mk3")
+            print("[DEBUG] Tem skill MK3?", has_mk3_skill)
+            print("[DEBUG] upgradelevel_mk3 atual:", inst.upgradelevel_mk3)
+            if has_mk3_skill and inst.upgradelevel_mk3 < 40 then
+                print("[DEBUG] Tentando upgrade para MK3...")
                 -- Try to upgrade
                 local function IsScrap(item)
                     return item.prefab == "scrap"
