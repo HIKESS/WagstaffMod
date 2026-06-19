@@ -224,7 +224,7 @@ configuration_options = {
     {
         name = "debug",
         label = "*Debug mode",
-        hover = "* not overwritten by presets. Print debug info to log file.",
+        hover = "* not overwritten by presets. Enable debug logging for skill tree registration and activation.",
         options = {
             {description = "No",  data = false},
             {description = "Yes", data = true},
