@@ -1,5 +1,1 @@
-(modified.lua is a source code file, and there are no build artifacts, dependencies, or temp files in the changes)
-
-```lua
-
-```
+Nothing should be ignored based on the provided file changes, as they consist only of source code files (.lua) without any build artifacts, dependencies, or temporary files.

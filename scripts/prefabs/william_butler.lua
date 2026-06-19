@@ -589,35 +589,48 @@ inst.components.burnable.ignorefuel = true
         inst.components.engieworkable:SetMaxWork(1)
         inst.components.engieworkable:SetWorkLeft(1)
         inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+            print("[DEBUG UPGRADE] OnWorkCallback chamado!")
             if inst.sg ~= nil then
                 inst.sg:GoToState("hit")
             end
         end)
         inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+            print("[DEBUG UPGRADE] === INICIO DO UPGRADE DO BUTLER ===")
+            print("[DEBUG UPGRADE] worker:", worker, worker.prefab)
+            print("[DEBUG UPGRADE] inst:", inst, inst.prefab)
+            
             if inst.sg ~= nil and inst.sg:HasStateTag("shutdown") then
+                print("[DEBUG UPGRADE] Bot em estado shutdown, abortando")
                 return
             end
-            inst.components.engieworkable:SetWorkLeft(1)
-            -- Use wrench durability
+            
             local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+            print("[DEBUG UPGRADE] Wrench equipada:", wrench and wrench.prefab or "NENHUMA")
+            
             if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
+                print("[DEBUG UPGRADE] Usando durabilidade da wrench")
                 wrench.components.finiteuses:Use(1)
             end
 
             -- PRIORITY 1: Repair if HP < 100% (NO skill required)
+            print("[DEBUG UPGRADE] HP atual:", inst.components.health.currenthealth, "/", inst.components.health.maxhealth)
             if inst.components.health.currenthealth < inst.components.health.maxhealth then
+                print("[DEBUG UPGRADE] Tentando reparar bot...")
                 local function IsScrap(item)
                     return item.prefab == "scrap"
                 end
                 local scrapstack = worker.components.inventory:FindItem(IsScrap)
                 local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+                print("[DEBUG UPGRADE] Scrap encontrado:", scrapstack and scrapstack.prefab or "NENHUM", "Custo reparo:", repair_cost)
                 if repair_cost > 0 and scrapstack == nil then
+                    print("[DEBUG UPGRADE] Sem scrap para reparo!")
                     if worker.components.talker then
                         worker.components.talker:Say("Need Scrap Metal to repair!")
                     end
                     return
                 end
                 if repair_cost > 0 then
+                    print("[DEBUG UPGRADE] Consumindo", repair_cost, "scrap(s) para reparo")
                     worker.components.inventory:ConsumeByName("scrap", repair_cost)
                 end
                 inst.components.health:DoDelta(50)
@@ -625,18 +638,27 @@ inst.components.burnable.ignorefuel = true
                 if worker.components.talker then
                     worker.components.talker:Say("Repaired 50 HP!")
                 end
+                print("[DEBUG UPGRADE] Reparo concluido!")
                 return
             end
 
             -- PRIORITY 2: Upgrade if HP = 100% AND skill learned
-            print("[Wagstaff Debug] Butler upgrade check: calling WagstaffHasSkill for wagstaff_thermal_upgrade")
-        print("[Wagstaff Debug] Butler worker.prefab=", tostring(worker.prefab), "has skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
-        if not _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade") then
+            print("[DEBUG UPGRADE] Bot com HP maximo, verificando skill wagstaff_thermal_upgrade...")
+            print("[DEBUG UPGRADE] worker.prefab=", tostring(worker.prefab))
+            print("[DEBUG UPGRADE] worker tem skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
+            
+            local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade")
+            print("[DEBUG UPGRADE] Resultado de WagstaffHasSkill:", has_skill)
+            
+            if not has_skill then
+                print("[DEBUG UPGRADE] Skill NAO encontrada! Bloqueando upgrade.")
                 if worker.components.talker then
                     worker.components.talker:Say("Requires Butler MK. II skill!\n(Activate it in the skill tree!)")
                 end
                 return
             end
+            
+            print("[DEBUG UPGRADE] Skill encontrada! Prosseguindo com upgrade...")
 
     -- Upgrade: variable scrap cost per wrench hit (10, 10, 10, 10, 10, 15 = 85 total)
             local scrap_count = 0
@@ -649,26 +671,32 @@ inst.components.burnable.ignorefuel = true
                     end
                 end
             end
+            print("[DEBUG UPGRADE] Scrap count no inventario:", scrap_count)
             
             -- Determine cost based on current upgrade level
             local upgrade_cost_table = {10, 10, 10, 10, 10, 15}  -- Total: 85 scraps
             local hits_so_far = math.floor(inst.upgradelevel / 10)  -- 0-5 hits
             local base_cost = upgrade_cost_table[hits_so_far + 1] or 15
             local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, base_cost)
+            print("[DEBUG UPGRADE] Upgrade level atual:", inst.upgradelevel, "hits_so_far:", hits_so_far, "base_cost:", base_cost, "upgrade_cost (com eficiencia):", upgrade_cost)
             
             if upgrade_cost > 0 and scrap_count < upgrade_cost then
+                print("[DEBUG UPGRADE] Scrap insuficiente! Precisa de", upgrade_cost, "tem", scrap_count)
                 if worker.components.talker then
                     worker.components.talker:Say("Need " .. upgrade_cost .. " Scrap Metal!")
                 end
                 return
             end
             if upgrade_cost > 0 then
+                print("[DEBUG UPGRADE] Consumindo", upgrade_cost, "scrap(s) para upgrade")
                 worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
             end
             inst.upgradelevel = inst.upgradelevel + base_cost
+            print("[DEBUG UPGRADE] Novo upgrade level:", inst.upgradelevel)
             UpdateButlerName(inst)
 
             if inst.upgradelevel >= 85 then
+                print("[DEBUG UPGRADE] UPGRADE COMPLETO! Spawnando williambutler2...")
                 inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                 if worker.components.talker then
                     worker.components.talker:Say("Butler Bot MK. II upgrade complete!")
@@ -677,16 +705,19 @@ inst.components.burnable.ignorefuel = true
                 -- Spawn upgraded bot
                 local pt = inst:GetPosition()
                 local newbot = SpawnPrefab("williambutler2")
+                print("[DEBUG UPGRADE] newbot spawned:", newbot and "SUCESSO" or "FALHA")
                 if newbot ~= nil then
                     newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
                     newbot.Transform:SetRotation(inst.Transform:GetRotation())
 
                     -- Transfer fuel
                     if inst.components.fueled and newbot.components.fueled then
+                        print("[DEBUG UPGRADE] Transferindo fuel:", inst.components.fueled.currentfuel)
                         newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
                     end
                     -- Transfer health
                     if inst.components.health and newbot.components.health then
+                        print("[DEBUG UPGRADE] Transferindo health:", inst.components.health.currenthealth)
                         newbot.components.health:SetCurrentHealth(inst.components.health.currenthealth)
                     end
                     -- Transfer container items (crockpot slots 1-3)
@@ -694,6 +725,7 @@ inst.components.burnable.ignorefuel = true
                         for slot = 1, 3 do
                             local item = inst.components.container:GetItemInSlot(slot)
                             if item ~= nil then
+                                print("[DEBUG UPGRADE] Transferindo item do slot", slot, ":", item.prefab)
                                 newbot.components.container:GiveItem(item, slot)
                             end
                         end
@@ -703,6 +735,7 @@ inst.components.burnable.ignorefuel = true
                     if inst.components.follower and newbot.components.follower then
                         local leader = inst.components.follower:GetLeader()
                         if leader ~= nil then
+                            print("[DEBUG UPGRADE] Transferindo leader:", leader.prefab)
                             newbot.components.follower.leader = leader
                         end
                     end
@@ -711,7 +744,10 @@ inst.components.burnable.ignorefuel = true
                     SpawnPrefab("small_puff").Transform:SetPosition(pt.x, pt.y, pt.z)
                 end
 
+                print("[DEBUG UPGRADE] Removendo bot antigo...")
                 inst:Remove()
+            else
+                print("[DEBUG UPGRADE] Upgrade em andamento... falta", 85 - inst.upgradelevel, "para completar")
             end
         end)
 

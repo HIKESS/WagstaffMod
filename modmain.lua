@@ -1037,34 +1037,60 @@ end
 
 -- Used by bot/sentry/dispenser upgrade checks: tag OR activated skill (re-applies tag if missing)
 G.WagstaffHasSkill = function(worker, skill_id)
+    print("[DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===")
+    print("[DEBUG WagstaffHasSkill] worker:", worker, worker and worker.prefab or "NIL")
+    print("[DEBUG WagstaffHasSkill] skill_id:", skill_id)
+    
     if not worker or not skill_id then
+        print("[DEBUG WagstaffHasSkill] worker ou skill_id nil, retornando false")
         return false
     end
-    if worker:HasTag(skill_id) then
-        G.WagstaffDebug("WagstaffHasSkill: tag found for", skill_id)
+    
+    local has_tag = worker:HasTag(skill_id)
+    print("[DEBUG WagstaffHasSkill] worker:HasTag(skill_id):", has_tag)
+    
+    if has_tag then
+        print("[DEBUG WagstaffHasSkill] Tag encontrada! Retornando true")
         return true
     end
+    
+    print("[DEBUG WagstaffHasSkill] worker.prefab:", worker.prefab)
+    print("[DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:", worker.components.skilltreeupdater)
+    
     if worker.prefab ~= "wagstaff" or not worker.components.skilltreeupdater then
+        print("[DEBUG WagstaffHasSkill] Nao e wagstaff ou nao tem skilltreeupdater, retornando false")
         return false
     end
+    
     local activated = worker.components.skilltreeupdater.activatedskills
+    print("[DEBUG WagstaffHasSkill] activatedskills:", activated)
+    print("[DEBUG WagstaffHasSkill] activatedskills[skill_id]:", activated and activated[skill_id])
+    
     if activated and activated[skill_id] then
+        print("[DEBUG WagstaffHasSkill] Skill esta em activatedskills mas tag faltando, re-aplicando tag...")
         -- Skill is recorded as activated but the tag is missing (common right after a
         -- reload, before apply_world_skills_to_wagstaff re-runs). Re-apply the tag now.
         if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_id] and G.WagstaffSkillDefs[skill_id].onactivate then
+            print("[DEBUG WagstaffHasSkill] Chamando onactivate da skill")
             G.WagstaffSkillDefs[skill_id].onactivate(worker, true)
         else
+            print("[DEBUG WagstaffHasSkill] Adicionando tag manualmente")
             worker:AddTag(skill_id)
         end
+        print("[DEBUG WagstaffHasSkill] Tag re-aplicada, retornando true")
         return true
     end
+    
     -- Fallback: consult the per-world saved skills. If the skill is saved in the world
     -- but not yet restored onto this player (transient desync after a reload), restore
     -- it on the fly. This prevents bot/sentry/dispenser Mk2/Mk3 upgrades from being
     -- blocked with "Requires ... skill!" right after loading a save.
+    print("[DEBUG WagstaffHasSkill] Verificando world skills...")
     if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
         local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
+        print("[DEBUG WagstaffHasSkill] world_skills:", world_skills)
         if world_skills and world_skills[skill_id] then
+            print("[DEBUG WagstaffHasSkill] Skill encontrada no world data, restaurando...")
             if worker.components.skilltreeupdater.activatedskills then
                 worker.components.skilltreeupdater.activatedskills[skill_id] = true
             end
@@ -1073,9 +1099,13 @@ G.WagstaffHasSkill = function(worker, skill_id)
             else
                 worker:AddTag(skill_id)
             end
+            print("[DEBUG WagstaffHasSkill] Skill restaurada do world data, retornando true")
             return true
         end
+    else
+        print("[DEBUG WagstaffHasSkill] TheWorld ou GetWagstaffSkillsFromWorld nao disponivel")
     end
+    
     -- Detailed diagnostic: dump all activatedskills keys
     local all_skills = ""
     if worker.components.skilltreeupdater and worker.components.skilltreeupdater.activatedskills then
@@ -1083,19 +1113,22 @@ G.WagstaffHasSkill = function(worker, skill_id)
             all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
         end
     end
-    G.WagstaffDebug("WagstaffHasSkill: NOT FOUND:", tostring(skill_id))
-    G.WagstaffDebug("  worker.prefab=", tostring(worker.prefab), "HasTag=", tostring(worker:HasTag(skill_id)))
-    G.WagstaffDebug("  has skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
-    G.WagstaffDebug("  activatedskills for this skill=", tostring(worker.components.skilltreeupdater and worker.components.skilltreeupdater.activatedskills and worker.components.skilltreeupdater.activatedskills[skill_id] or "NIL"))
-    G.WagstaffDebug("  ALL activatedskills: ", all_skills ~= "" and all_skills or "(empty)")
+    print("[DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===")
+    print("[DEBUG WagstaffHasSkill] Skill procurada:", skill_id, "- NAO ENCONTRADA")
+    print("[DEBUG WagstaffHasSkill] worker.prefab=", tostring(worker.prefab))
+    print("[DEBUG WagstaffHasSkill] HasTag=", tostring(has_tag))
+    print("[DEBUG WagstaffHasSkill] has skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
+    print("[DEBUG WagstaffHasSkill] activatedskills[skill_id]=", tostring(activated and activated[skill_id] or "NIL"))
+    print("[DEBUG WagstaffHasSkill] ALL activatedskills: ", all_skills ~= "" and all_skills or "(empty)")
     if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
         local ws = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
         local ws_str = ""
         for k, v in pairs(ws) do ws_str = ws_str .. tostring(k) .. "=" .. tostring(v) .. ", " end
-        G.WagstaffDebug("  world saved skills: ", ws_str ~= "" and ws_str or "(empty)")
+        print("[DEBUG WagstaffHasSkill] world saved skills: ", ws_str ~= "" and ws_str or "(empty)")
     else
-        G.WagstaffDebug("  world saved skills: GetWagstaffSkillsFromWorld NOT AVAILABLE")
+        print("[DEBUG WagstaffHasSkill] world saved skills: GetWagstaffSkillsFromWorld NOT AVAILABLE")
     end
+    print("[DEBUG WagstaffHasSkill] Retornando false")
     return false
 end
 
