@@ -2048,7 +2048,14 @@ local CreateSkillTree = function()
                 WagstaffDebug("=== INICIANDO CreateSkillTreeFor ===")
                 WagstaffDebug("SkillTreeDefs antes:", type(SkillTreeDefs))
                 WagstaffDebug("SKILLS antes:", type(SkillTreeDefs.SKILLS))
-                WagstaffDebug("data.SKILLS count:", G.next(data.SKILLS) and "tem items" or "vazio")
+                local has_skills = false
+                if data.SKILLS ~= nil then
+                    for _ in pairs(data.SKILLS) do
+                        has_skills = true
+                        break
+                    end
+                end
+                WagstaffDebug("data.SKILLS count:", has_skills and "tem items" or "vazio")
                 
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
                 if not ok then
