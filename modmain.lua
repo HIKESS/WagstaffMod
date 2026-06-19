@@ -38,7 +38,12 @@ local function tableToString(t, indent, depth, visited)
         local keyStr = type(k) == "string" and ('"' .. k .. '"') or tostring(k)
         local valStr
         if type(v) == "table" then
-            valStr = tableToString(v, indent .. "  ", depth + 1, visited)
+            -- Evitar recursão em tabelas conhecidas por causar loop (como TheWorld.state)
+            if v._iscomponent or v._isclock or v._isentity then
+                valStr = "<" .. (v.prefab or v._name or type(v)) .. ">"
+            else
+                valStr = tableToString(v, indent .. "  ", depth + 1, visited)
+            end
         elseif type(v) == "string" then
             valStr = '"' .. v .. '"'
         elseif type(v) == "function" or type(v) == "userdata" then
@@ -49,6 +54,7 @@ local function tableToString(t, indent, depth, visited)
         result = result .. "\n" .. indent .. "  " .. keyStr .. " = " .. valStr
     end
     result = result .. "\n" .. indent .. "}"
+    visited[t] = nil -- Libera para permitir re-visita em outros contextos
     return result
 end
 
@@ -1368,7 +1374,24 @@ local function WagstaffWilliamPostInit(inst)
                 WagstaffDebug("ActivateSkill BLOCKED: no available insight points")
                 return false
             end
-            local result = old_ActivateSkill(self, skill, prefab, fromrpc)
+            
+            -- CORRECAO CRITICA: Quando fromrpc=true, o jogo espera um ID numerico, nao um nome
+            -- Se skill for uma string e fromrpc=true, precisamos converter para ID
+            local skill_to_pass = skill
+            if fromrpc and type(skill) == "string" then
+                -- Tentar obter o ID do RPC_LOOKUP
+                if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
+                    local rpc_id = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
+                    if rpc_id then
+                        WagstaffDebug("CORRECAO: Convertendo skill string '", skill, "' para ID RPC:", rpc_id)
+                        skill_to_pass = rpc_id
+                    else
+                        WagstaffDebug("ERRO: Skill '", skill, "' nao encontrada no RPC_LOOKUP, tentando passar como string mesmo assim")
+                    end
+                end
+            end
+            
+            local result = old_ActivateSkill(self, skill_to_pass, prefab, fromrpc)
             WagstaffDebug("ActivateSkill: old_ActivateSkill returned:", tostring(result))
             if result then
                 WagstaffDebug("ActivateSkill: skill activated successfully!")
