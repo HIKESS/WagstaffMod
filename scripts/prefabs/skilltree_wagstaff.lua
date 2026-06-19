@@ -213,9 +213,14 @@ local function BuildSkillsData(SkillTreeFns)
             root = true,
             cost = 1,
             onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_robotic_1 onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
                 inst:AddTag("wagstaff_brute_evolve")
+                print("[SKILL DEBUG] Tag wagstaff_brute_evolve adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_brute_evolve"))
             end,
             ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_robotic_1 ondeactivate called")
                 inst:RemoveTag("wagstaff_brute_evolve")
             end,
         },
@@ -243,9 +248,14 @@ local function BuildSkillsData(SkillTreeFns)
             cost = 1,
             locks = {"wagstaff_robotic_1_lock"},
             onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_robotic_1_parallel onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
                 inst:AddTag("wagstaff_brute_mk3")
+                print("[SKILL DEBUG] Tag wagstaff_brute_mk3 adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_brute_mk3"))
             end,
             ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_robotic_1_parallel ondeactivate called")
                 inst:RemoveTag("wagstaff_brute_mk3")
             end,
         },
@@ -273,9 +283,14 @@ local function BuildSkillsData(SkillTreeFns)
             cost = 1,
             locks = {"wagstaff_robotic_2_lock"},
             onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_buster_evolve onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
                 inst:AddTag("wagstaff_buster_evolve")
+                print("[SKILL DEBUG] Tag wagstaff_buster_evolve adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_buster_evolve"))
             end,
             ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_buster_evolve ondeactivate called")
                 inst:RemoveTag("wagstaff_buster_evolve")
             end,
         },
@@ -303,9 +318,14 @@ local function BuildSkillsData(SkillTreeFns)
             cost = 1,
             locks = {"wagstaff_robotic_3_lock"},
             onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_buster_parallel onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
                 inst:AddTag("wagstaff_buster_mk3")
+                print("[SKILL DEBUG] Tag wagstaff_buster_mk3 adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_buster_mk3"))
             end,
             ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_buster_parallel ondeactivate called")
                 inst:RemoveTag("wagstaff_buster_mk3")
             end,
         },
@@ -333,9 +353,14 @@ local function BuildSkillsData(SkillTreeFns)
             cost = 1,
             locks = {"wagstaff_robotic_4_lock"},
             onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_ballistic_evolve onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
                 inst:AddTag("wagstaff_ballistic_evolve")
+                print("[SKILL DEBUG] Tag wagstaff_ballistic_evolve adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_ballistic_evolve"))
             end,
             ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_ballistic_evolve ondeactivate called")
                 inst:RemoveTag("wagstaff_ballistic_evolve")
             end,
         },
@@ -363,9 +388,14 @@ local function BuildSkillsData(SkillTreeFns)
             cost = 1,
             locks = {"wagstaff_robotic_5_lock"},
             onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_ballistic_parallel onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
                 inst:AddTag("wagstaff_ballistic_mk3")
+                print("[SKILL DEBUG] Tag wagstaff_ballistic_mk3 adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_ballistic_mk3"))
             end,
             ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_ballistic_parallel ondeactivate called")
                 inst:RemoveTag("wagstaff_ballistic_mk3")
             end,
         },
@@ -393,9 +423,14 @@ local function BuildSkillsData(SkillTreeFns)
             cost = 1,
             locks = {"wagstaff_robotic_6_lock"},
             onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_thermal_upgrade onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
                 inst:AddTag("wagstaff_thermal_upgrade")
+                print("[SKILL DEBUG] Tag wagstaff_thermal_upgrade adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_thermal_upgrade"))
             end,
             ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_thermal_upgrade ondeactivate called")
                 inst:RemoveTag("wagstaff_thermal_upgrade")
             end,
         },
