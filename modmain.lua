@@ -137,6 +137,25 @@ G.WagstaffDebug = function(...)
     end
     wagstaff_debug_emit(str)
 end
+
+-- Helper functions for debug
+local function count_table(t)
+    if not t or type(t) ~= "table" then return 0 end
+    local count = 0
+    for _ in pairs(t) do count = count + 1 end
+    return count
+end
+
+local function dump_table_keys(t)
+    if not t or type(t) ~= "table" then return "NIL or not a table" end
+    local keys = {}
+    for k, _ in pairs(t) do
+        table.insert(keys, tostring(k))
+    end
+    if #keys == 0 then return "(empty table)" end
+    return table.concat(keys, ", ")
+end
+
 -- Runtime toggle: type c_wagstaff_debug() in the console to flip debug on/off
 -- without restarting. Announces the new state in-game.
 G.c_wagstaff_debug = function()
@@ -2089,6 +2108,26 @@ local CreateSkillTree = function()
                 
                 WagstaffDebug("=== POS CreateSkillTreeFor ===")
                 WagstaffDebug("SKILLS depois:", type(SkillTreeDefs.SKILLS), "wagstaff exists?", SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS["wagstaff"] ~= nil)
+                
+                -- DEBUG AGRESSIVO: Verificar TODAS as estruturas do SkillTreeDefs
+                WagstaffDebug("=== VERIFICACAO COMPLETA DO SKILLTREEDEFS ===")
+                WagstaffDebug("SkillTreeDefs keys:", dump_table_keys(SkillTreeDefs))
+                
+                -- Verificar se TheSkillTree.RPC_LOOKUP foi criado
+                if GLOBAL.TheSkillTree then
+                    WagstaffDebug("GLOBAL.TheSkillTree EXISTS")
+                    if GLOBAL.TheSkillTree.RPC_LOOKUP then
+                        WagstaffDebug("TheSkillTree.RPC_LOOKUP EXISTS com", count_table(GLOBAL.TheSkillTree.RPC_LOOKUP), "entries")
+                        -- Listar todas as skills no RPC_LOOKUP
+                        for k, v in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do
+                            WagstaffDebug("  TheSkillTree.RPC_LOOKUP[\"", k, "\"] =", v)
+                        end
+                    else
+                        WagstaffDebug("ERROR: TheSkillTree.RPC_LOOKUP is NIL!")
+                    end
+                else
+                    WagstaffDebug("ERROR: GLOBAL.TheSkillTree is NIL!")
+                end
                 
                 -- Verify RPC_LOOKUP was created
                 local meta = SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
