@@ -167,11 +167,33 @@ G.c_wagstaff_debug = function()
     end
     return msg
 end
+-- Runtime toggle for verbose debug: c_wagstaff_verbose()
+G.c_wagstaff_verbose = function()
+    if not G.WagstaffDebugEnabled then
+        print("[Wagstaff Debug] Enable debug mode first with c_wagstaff_debug()")
+        return "Debug mode is OFF. Enable it first."
+    end
+    -- Toggle verbose by reusing the main debug flag logic or a separate internal flag
+    -- For simplicity, we'll just use the main debug flag for now as verbose was removed from config
+    local msg = "[Wagstaff Debug] Verbose logs are now part of the main Debug mode."
+    print(msg)
+    if G.ThePlayer and G.ThePlayer.components and G.ThePlayer.components.talker then
+        G.ThePlayer.components.talker:Say("Wagstaff Debug: Verbose always ON when Debug is ON")
+    end
+    return msg
+end
 if G.WagstaffDebugEnabled then
     print("[Wagstaff Debug] Debug mode is ON at mod load. Use c_wagstaff_debug() to toggle at runtime.")
+    print("[Wagstaff Debug] Verbose logs are enabled by default when Debug is ON.")
 end
 -- Also make a local alias for convenience
 local WagstaffDebug = G.WagstaffDebug
+local WagstaffVerboseDebug = function(...)
+    -- Verbose is now always enabled when Debug is ON
+    if G.WagstaffDebugEnabled then
+        G.WagstaffDebug("[VERBOSE]", ...)
+    end
+end
 
 -- Bypass strict mode for our variables
 rawset(G, "strict", false)
@@ -1302,67 +1324,81 @@ local function WagstaffWilliamPostInit(inst)
         -- 3. Intercepta a ativação: salva a habilidade ao mundo
         local old_ActivateSkill = inst.components.skilltreeupdater.ActivateSkill
         inst.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
-            print("[WAGSTAFF DEBUG] === ActivateSkill START ===")
-            print("[WAGSTAFF DEBUG] ActivateSkill: skill=", tostring(skill), "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
-            print("[WAGSTAFF DEBUG] ActivateSkill: available points=", tostring(self:GetAvailableSkillPoints()), "total=", tostring(self:GetTotalSkillPoints()))
-            print("[WAGSTAFF DEBUG] ActivateSkill: already activated?", tostring(self:IsActivated(skill)))
+            WagstaffDebug("=== ActivateSkill START ===")
+            WagstaffDebug("ActivateSkill: skill=", tostring(skill), "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
+            WagstaffDebug("ActivateSkill: available points=", tostring(self:GetAvailableSkillPoints()), "total=", tostring(self:GetTotalSkillPoints()))
+            WagstaffDebug("ActivateSkill: already activated?", tostring(self:IsActivated(skill)))
+            
+            -- Verbose debug: verifica RPC_LOOKUP detalhadamente
+            WagstaffDebug("[VERBOSE] Verificando RPC_LOOKUP para skill:", skill)
+            if SkillTreeDefs and SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
+                local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
+                if defs_meta and defs_meta.RPC_LOOKUP then
+                    local found_in_defs = defs_meta.RPC_LOOKUP[skill]
+                    WagstaffDebug("[VERBOSE]   Em SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP:", found_in_defs ~= nil and "ENCONTRADA (ID="..tostring(found_in_defs)..")" or "NAO ENCONTRADA")
+                end
+            end
+            if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
+                local found_in_global = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
+                WagstaffDebug("[VERBOSE]   Em TheSkillTree.RPC_LOOKUP:", found_in_global ~= nil and "ENCONTRADA (ID="..tostring(found_in_global)..")" or "NAO ENCONTRADA")
+            end
             
             -- Debug RPC_LOOKUP antes de ativar
             if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
                 local rpc_id = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
-                print("[WAGSTAFF DEBUG] RPC_LOOKUP[", skill, "] =", rpc_id ~= nil and tostring(rpc_id) or "NIL (PROBLEMA!)")
+                WagstaffDebug("RPC_LOOKUP[", skill, "] =", rpc_id ~= nil and tostring(rpc_id) or "NIL (PROBLEMA!)")
                 if rpc_id == nil then
-                    print("[WAGSTAFF DEBUG] ERROR: Skill '", skill, "' nao esta no RPC_LOOKUP! Skills disponiveis:")
+                    WagstaffDebug("ERROR: Skill '", skill, "' nao esta no RPC_LOOKUP! Skills disponiveis:")
                     local count = 0
                     for k, v in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do
                         count = count + 1
                         if count <= 10 then
-                            print("[WAGSTAFF DEBUG]   ", k, "=", v)
+                            WagstaffDebug("  ", k, "=", v)
                         end
                     end
                     if count > 10 then
-                        print("[WAGSTAFF DEBUG]   ... e mais ", count - 10, " skills")
+                        WagstaffDebug("  ... e mais ", count - 10, " skills")
                     end
                 end
             else
-                print("[WAGSTAFF DEBUG] WARNING: TheSkillTree.RPC_LOOKUP is NIL!")
+                WagstaffDebug("WARNING: TheSkillTree.RPC_LOOKUP is NIL!")
             end
             
             if self:GetAvailableSkillPoints() <= 0 and not self:IsActivated(skill) then
-                print("[WAGSTAFF DEBUG] ActivateSkill BLOCKED: no available insight points")
+                WagstaffDebug("ActivateSkill BLOCKED: no available insight points")
                 return false
             end
             local result = old_ActivateSkill(self, skill, prefab, fromrpc)
-            print("[WAGSTAFF DEBUG] ActivateSkill: old_ActivateSkill returned:", tostring(result))
+            WagstaffDebug("ActivateSkill: old_ActivateSkill returned:", tostring(result))
             if result then
-                print("[WAGSTAFF DEBUG] ActivateSkill: skill activated successfully!")
-                print("[WAGSTAFF DEBUG] ActivateSkill: self.activatedskills now contains:", skill, "?", self.activatedskills and self.activatedskills[skill] or "NOT FOUND")
+                WagstaffDebug("ActivateSkill: skill activated successfully!")
+                WagstaffDebug("ActivateSkill: self.activatedskills now contains:", skill, "?", self.activatedskills and self.activatedskills[skill] or "NOT FOUND")
                 -- Apply onactivate callback (adds tag)
                 if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].onactivate then
-                    print("[WAGSTAFF DEBUG] ActivateSkill: calling onactivate for", skill)
+                    WagstaffDebug("ActivateSkill: calling onactivate for", skill)
                     G.WagstaffSkillDefs[skill].onactivate(inst, false)
-                    print("[WAGSTAFF DEBUG] ActivateSkill: tag now present?", tostring(inst:HasTag(skill)))
+                    WagstaffDebug("ActivateSkill: tag now present?", tostring(inst:HasTag(skill)))
                 else
-                    print("[WAGSTAFF DEBUG] ActivateSkill: no onactivate defined, adding tag directly")
+                    WagstaffDebug("ActivateSkill: no onactivate defined, adding tag directly")
                     inst:AddTag(skill)
                 end
                 -- Save to world
                 if GLOBAL.TheWorld and GLOBAL.TheWorld.SaveWagstaffSkillsToWorld then
-                    print("[WAGSTAFF DEBUG] ActivateSkill: saving to world")
+                    WagstaffDebug("ActivateSkill: saving to world")
                     GLOBAL.TheWorld:SaveWagstaffSkillsToWorld(self.activatedskills)
                 else
-                    print("[WAGSTAFF DEBUG] ActivateSkill: WARNING - SaveWagstaffSkillsToWorld not available on TheWorld!")
+                    WagstaffDebug("ActivateSkill: WARNING - SaveWagstaffSkillsToWorld not available on TheWorld!")
                 end
                 -- Log current activatedskills
                 local count = 0
                 if self.activatedskills then
                     for k, v in pairs(self.activatedskills) do count = count + 1 end
                 end
-                print("[WAGSTAFF DEBUG] ActivateSkill: total activated skills now =", count)
+                WagstaffDebug("ActivateSkill: total activated skills now =", count)
             else
-                print("[WAGSTAFF DEBUG] ActivateSkill: FAILED - old_ActivateSkill returned false")
+                WagstaffDebug("ActivateSkill: FAILED - old_ActivateSkill returned false")
             end
-            print("[WAGSTAFF DEBUG] === ActivateSkill END ===")
+            WagstaffDebug("=== ActivateSkill END ===")
             return result
         end
 
@@ -2087,9 +2123,9 @@ local CreateSkillTree = function()
                 SkillTreeDefs.SKILLS = {}
             end
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
-                print("[WAGSTAFF DEBUG] === INICIANDO CreateSkillTreeFor ===")
-                print("[WAGSTAFF DEBUG] SkillTreeDefs antes:", type(SkillTreeDefs))
-                print("[WAGSTAFF DEBUG] SKILLS antes:", type(SkillTreeDefs.SKILLS))
+                WagstaffDebug("=== INICIANDO CreateSkillTreeFor ===")
+                WagstaffDebug("SkillTreeDefs antes:", type(SkillTreeDefs))
+                WagstaffDebug("SKILLS antes:", type(SkillTreeDefs.SKILLS))
                 local has_skills = false
                 if data.SKILLS ~= nil then
                     for _ in pairs(data.SKILLS) do
@@ -2097,75 +2133,112 @@ local CreateSkillTree = function()
                         break
                     end
                 end
-                print("[WAGSTAFF DEBUG] data.SKILLS count:", has_skills and "tem items" or "vazio")
+                WagstaffDebug("data.SKILLS count:", has_skills and "tem items" or "vazio")
+                
+                WagstaffDebug("[VERBOSE] Lista completa de skills sendo registradas:")
+                for skill_id, skill_data in pairs(data.SKILLS) do
+                    WagstaffDebug("[VERBOSE]   Skill ID:", skill_id, "- Nome:", skill_data.name or "sem_nome")
+                end
                 
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
                 if not ok then
-                    print("[WAGSTAFF DEBUG] CreateSkillTreeFor FAILED:", tostring(err))
+                    WagstaffDebug("CreateSkillTreeFor FAILED:", tostring(err))
                 else
-                    print("[WAGSTAFF DEBUG] CreateSkillTreeFor succeeded")
+                    WagstaffDebug("CreateSkillTreeFor succeeded")
                 end
                 
-                print("[WAGSTAFF DEBUG] === POS CreateSkillTreeFor ===")
-                print("[WAGSTAFF DEBUG] SKILLS depois:", type(SkillTreeDefs.SKILLS), "wagstaff exists?", SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS["wagstaff"] ~= nil)
+                WagstaffDebug("=== POS CreateSkillTreeFor ===")
+                WagstaffDebug("SKILLS depois:", type(SkillTreeDefs.SKILLS), "wagstaff exists?", SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS["wagstaff"] ~= nil)
                 
                 -- DEBUG AGRESSIVO: Verificar TODAS as estruturas do SkillTreeDefs
-                print("[WAGSTAFF DEBUG] === VERIFICACAO COMPLETA DO SKILLTREEDEFS ===")
-                print("[WAGSTAFF DEBUG] SkillTreeDefs keys:", dump_table_keys(SkillTreeDefs))
+                WagstaffDebug("=== VERIFICACAO COMPLETA DO SKILLTREEDEFS ===")
+                WagstaffDebug("SkillTreeDefs keys:", dump_table_keys(SkillTreeDefs))
                 
                 -- Verificar se TheSkillTree.RPC_LOOKUP foi criado
                 if GLOBAL.TheSkillTree then
-                    print("[WAGSTAFF DEBUG] GLOBAL.TheSkillTree EXISTS")
+                    WagstaffDebug("GLOBAL.TheSkillTree EXISTS")
                     if GLOBAL.TheSkillTree.RPC_LOOKUP then
                         local rpc_count = 0
                         for k, v in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do 
                             rpc_count = rpc_count + 1
                             if rpc_count <= 20 then
-                                print("[WAGSTAFF DEBUG] TheSkillTree.RPC_LOOKUP[\"" .. tostring(k) .. "\"] = " .. tostring(v))
+                                WagstaffDebug("TheSkillTree.RPC_LOOKUP[\"" .. tostring(k) .. "\"] = " .. tostring(v))
                             end
                         end
-                        print("[WAGSTAFF DEBUG] TheSkillTree.RPC_LOOKUP TOTAL COUNT: " .. rpc_count)
+                        WagstaffDebug("TheSkillTree.RPC_LOOKUP TOTAL COUNT: " .. rpc_count)
+                        
+                        -- Verbose: procura especificamente pelas skills dos bots
+                        WagstaffDebug("[VERBOSE] Procurando skills dos bots no RPC_LOOKUP global:")
+                        local bot_skills = {"wagstaff_brute_evolve", "wagstaff_buster_evolve", "wagstaff_ballistic_evolve", "wagstaff_butler_evolve", "wagstaff_brute_mk3", "wagstaff_buster_mk3", "wagstaff_ballistic_mk3", "wagstaff_butler_mk3"}
+                        for _, skill_name in ipairs(bot_skills) do
+                            if GLOBAL.TheSkillTree.RPC_LOOKUP[skill_name] then
+                                WagstaffDebug("[VERBOSE]   ENCONTRADA:", skill_name, "-> ID:", GLOBAL.TheSkillTree.RPC_LOOKUP[skill_name])
+                            else
+                                WagstaffDebug("[VERBOSE]   NAO ENCONTRADA:", skill_name)
+                            end
+                        end
                     else
-                        print("[WAGSTAFF DEBUG] ERROR: TheSkillTree.RPC_LOOKUP is NIL!")
+                        WagstaffDebug("ERROR: TheSkillTree.RPC_LOOKUP is NIL!")
                     end
                 else
-                    print("[WAGSTAFF DEBUG] ERROR: GLOBAL.TheSkillTree is NIL!")
+                    WagstaffDebug("ERROR: GLOBAL.TheSkillTree is NIL!")
                 end
                 
                 -- Verify RPC_LOOKUP was created
                 local meta = SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
-                print("[WAGSTAFF DEBUG] SKILLTREE_METAINFO.wagstaff:", type(meta))
+                WagstaffDebug("SKILLTREE_METAINFO.wagstaff:", type(meta))
                 if meta then
                     local rpc_count = 0
                     if meta.RPC_LOOKUP then
                         for k, v in pairs(meta.RPC_LOOKUP) do 
                             rpc_count = rpc_count + 1
                             if rpc_count <= 5 then
-                                print("[WAGSTAFF DEBUG]   RPC_LOOKUP[", k, "] =", v)
+                                WagstaffDebug("  RPC_LOOKUP[", k, "] =", v)
                             end
                         end
                     end
-                    print("[WAGSTAFF DEBUG] SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count:", rpc_count, "TOTAL_SKILLS_COUNT:", tostring(meta.TOTAL_SKILLS_COUNT))
+                    WagstaffDebug("SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count:", rpc_count, "TOTAL_SKILLS_COUNT:", tostring(meta.TOTAL_SKILLS_COUNT))
+                    
+                    -- Verbose: lista todo o RPC_LOOKUP do meta
+                    WagstaffDebug("[VERBOSE] RPC_LOOKUP completo do meta wagstaff:")
+                    if meta.RPC_LOOKUP then
+                        for k, v in pairs(meta.RPC_LOOKUP) do
+                            WagstaffDebug("[VERBOSE]   ", k, "->", v)
+                        end
+                    else
+                        WagstaffDebug("[VERBOSE]   meta.RPC_LOOKUP é NIL!")
+                    end
                     
                     -- Check SKILLTREE_DEFS (engine usa isso!)
                     if SkillTreeDefs and SkillTreeDefs.SKILLTREE_DEFS then
-                        print("[WAGSTAFF DEBUG] SkillTreeDefs.SKILLTREE_DEFS existe!")
+                        WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS existe!")
                         if SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
-                            print("[WAGSTAFF DEBUG] SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!")
+                            WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!")
                             local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
                             if defs_meta and defs_meta.RPC_LOOKUP then
                                 local defs_rpc_count = 0
                                 for _ in pairs(defs_meta.RPC_LOOKUP) do defs_rpc_count = defs_rpc_count + 1 end
-                                print("[WAGSTAFF DEBUG] SkillTreeDefs.SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP count:", defs_rpc_count)
+                                WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP count:", defs_rpc_count)
+                                
+                                -- Verbose: verifica skills dos bots no SKILLTREE_DEFS
+                                WagstaffDebug("[VERBOSE] Verificando skills dos bots em SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP:")
+                                local bot_skills = {"wagstaff_brute_evolve", "wagstaff_buster_evolve", "wagstaff_ballistic_evolve", "wagstaff_butler_evolve", "wagstaff_brute_mk3", "wagstaff_buster_mk3", "wagstaff_ballistic_mk3", "wagstaff_butler_mk3"}
+                                for _, skill_name in ipairs(bot_skills) do
+                                    if defs_meta.RPC_LOOKUP[skill_name] then
+                                        WagstaffDebug("[VERBOSE]   ENCONTRADA em DEFS:", skill_name, "-> ID:", defs_meta.RPC_LOOKUP[skill_name])
+                                    else
+                                        WagstaffDebug("[VERBOSE]   NAO ENCONTRADA em DEFS:", skill_name)
+                                    end
+                                end
                             end
                         else
-                            print("[WAGSTAFF DEBUG] ERROR: SkillTreeDefs.SKILLTREE_DEFS.wagstaff NAO EXISTE!")
+                            WagstaffDebug("ERROR: SkillTreeDefs.SKILLTREE_DEFS.wagstaff NAO EXISTE!")
                         end
                     else
-                        print("[WAGSTAFF DEBUG] ERROR: SkillTreeDefs.SKILLTREE_DEFS global NAO EXISTE!")
+                        WagstaffDebug("ERROR: SkillTreeDefs.SKILLTREE_DEFS global NAO EXISTE!")
                     end
                 else
-                    print("[WAGSTAFF DEBUG] WARNING: SKILLTREE_METAINFO.wagstaff is NIL after CreateSkillTreeFor!")
+                    WagstaffDebug("WARNING: SKILLTREE_METAINFO.wagstaff is NIL after CreateSkillTreeFor!")
                 end
             elseif type(SkillTreeDefs.FN) == "function" then
                 print("[WAGSTAFF DEBUG] Using SkillTreeDefs.FN")
