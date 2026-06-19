@@ -1075,6 +1075,7 @@ end
 local function SortedActivatedSkillKeys(skills_map)
     local keys = {}
     if skills_map == nil then
+        WagstaffDebug("SortedActivatedSkillKeys: skills_map is nil, returning empty table")
         return keys
     end
     for skill, active in pairs(skills_map) do
@@ -1083,19 +1084,24 @@ local function SortedActivatedSkillKeys(skills_map)
         end
     end
     table.sort(keys)
+    WagstaffDebug("SortedActivatedSkillKeys: sorted", #keys, "skills")
     return keys
 end
 
 local function CopyActivatedSkills(source)
     local copy = {}
     if source == nil then
+        WagstaffDebug("CopyActivatedSkills: source is nil, returning empty table")
         return copy
     end
+    local count = 0
     for skill, active in pairs(source) do
         if active then
             copy[skill] = true
+            count = count + 1
         end
     end
+    WagstaffDebug("CopyActivatedSkills: copied", count, "skills")
     return copy
 end
 
@@ -1202,15 +1208,21 @@ G.WagstaffHasSkill = function(worker, skill_id)
     if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
         local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
         print("[DEBUG WagstaffHasSkill] world_skills:", world_skills)
-        if world_skills and world_skills[skill_id] then
-            print("[DEBUG WagstaffHasSkill] Skill encontrada no world data, restaurando...")
+        
+        -- Also check for source_skill_id in world skills
+        local source_skill_id = tag_to_skill_map[skill_id]
+        print("[DEBUG WagstaffHasSkill] source_skill_id for world check:", source_skill_id)
+        
+        if world_skills and (world_skills[skill_id] or (source_skill_id and world_skills[source_skill_id])) then
+            local found_skill = world_skills[skill_id] and skill_id or source_skill_id
+            print("[DEBUG WagstaffHasSkill] Skill encontrada no world data (via:", found_skill, "), restaurando...")
             if worker.components.skilltreeupdater.activatedskills then
-                worker.components.skilltreeupdater.activatedskills[skill_id] = true
+                worker.components.skilltreeupdater.activatedskills[found_skill] = true
             end
-            if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_id] and G.WagstaffSkillDefs[skill_id].onactivate then
-                G.WagstaffSkillDefs[skill_id].onactivate(worker, true)
+            if G.WagstaffSkillDefs and G.WagstaffSkillDefs[found_skill] and G.WagstaffSkillDefs[found_skill].onactivate then
+                G.WagstaffSkillDefs[found_skill].onactivate(worker, true)
             else
-                worker:AddTag(skill_id)
+                worker:AddTag(tag_to_check)
             end
             print("[DEBUG WagstaffHasSkill] Skill restaurada do world data, retornando true")
             return true
@@ -2399,7 +2411,15 @@ AddPrefabPostInit("world", function(self)
     local function apply_world_skills_to_wagstaff()
         local _sk_count = 0; for _ in pairs(self._wagstaff_activated_skills) do _sk_count = _sk_count + 1 end; WagstaffDebug("apply_world_skills_to_wagstaff called, skills count:", _sk_count)
         WagstaffDebug("self._wagstaff_days_survived:", self._wagstaff_days_survived)
+        
+        -- Check if there are any skills to apply
+        if not self._wagstaff_activated_skills or next(self._wagstaff_activated_skills) == nil then
+            WagstaffDebug("No skills to apply, skipping")
+            return
+        end
+        
         if not GLOBAL.AllPlayers then
+            WagstaffDebug("GLOBAL.AllPlayers not available yet")
             return
         end
 
@@ -2413,14 +2433,17 @@ AddPrefabPostInit("world", function(self)
             keep_set[sorted_saved[i]] = true
         end
 
+        local applied_to_any = false
         for _, player in ipairs(GLOBAL.AllPlayers) do
             WagstaffDebug("Checking player:", player.prefab)
             if player.prefab == "wagstaff" and player.components.skilltreeupdater then
                 WagstaffDebug("Found Wagstaff player")
+                applied_to_any = true
                 local updater = player.components.skilltreeupdater
                 local oldActivatedSkills = updater.activatedskills or {}
                 local _oc = 0; for _ in pairs(oldActivatedSkills or {}) do _oc = _oc + 1 end; WagstaffDebug("Old activated skills count:", _oc)
 
+                -- Deactivate skills that should no longer be active
                 for skill, _ in pairs(oldActivatedSkills) do
                     if not keep_set[skill] then
                         WagstaffDebug("Deactivating skill:", skill)
@@ -2430,6 +2453,7 @@ AddPrefabPostInit("world", function(self)
                     end
                 end
 
+                -- Clear and re-apply skills
                 updater.activatedskills = {}
                 local applied_count = 0
                 for i = 1, math.min(#sorted_saved, max_insights) do
@@ -2445,6 +2469,10 @@ AddPrefabPostInit("world", function(self)
                 SafeDirtySkillXP(updater)
                 player.wagstaff_world_insights = max_insights
             end
+        end
+        
+        if not applied_to_any then
+            WagstaffDebug("WARNING: No Wagstaff player found to apply skills to!")
         end
     end
 
@@ -2576,13 +2604,32 @@ AddComponentPostInit("skilltreeupdater", function(self)
     local old_SaveActivatedSkills = self.SaveActivatedSkills
     self.SaveActivatedSkills = function(self2, ...)
         if self2.inst and self2.inst.prefab == "wagstaff" then
+            WagstaffDebug("SaveActivatedSkills called for wagstaff, activatedskills count:", self2.activatedskills and next(self2.activatedskills) and "has skills" or "empty")
             if GLOBAL.TheWorld and GLOBAL.TheWorld.SaveWagstaffSkillsToWorld then
                 GLOBAL.TheWorld:SaveWagstaffSkillsToWorld(self2.activatedskills)
+            else
+                WagstaffDebug("WARNING: SaveWagstaffSkillsToWorld not available!")
             end
             return
         end
         if old_SaveActivatedSkills then
             return old_SaveActivatedSkills(self2, ...)
+        end
+    end
+    
+    -- Also hook into ActivateSkill to ensure skills are saved immediately
+    local old_ActivateSkill = self.ActivateSkill
+    if old_ActivateSkill then
+        self.ActivateSkill = function(self2, skill, prefab, fromrpc)
+            WagstaffDebug("ActivateSkill hook called, skill:", skill)
+            local result = old_ActivateSkill(self2, skill, prefab, fromrpc)
+            if self2.inst and self2.inst.prefab == "wagstaff" and result then
+                WagstaffDebug("ActivateSkill succeeded, saving to world...")
+                if GLOBAL.TheWorld and GLOBAL.TheWorld.SaveWagstaffSkillsToWorld then
+                    GLOBAL.TheWorld:SaveWagstaffSkillsToWorld(self2.activatedskills)
+                end
+            end
+            return result
         end
     end
 end)
