@@ -2158,12 +2158,14 @@ AddPrefabPostInit("world", function(self)
         local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
         data.wagstaff_days_survived = days
         data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
-        if next(data.wagstaff_activated_skills) == nil and GLOBAL.AllPlayers then
-            for _, player in ipairs(GLOBAL.AllPlayers) do
-                if player.prefab == "wagstaff" and player.components.skilltreeupdater then
-                    data.wagstaff_activated_skills = CopyActivatedSkills(player.components.skilltreeupdater.activatedskills)
-                    local _lc = 0; for _ in pairs(data.wagstaff_activated_skills or {}) do _lc = _lc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills from live player, count:", _lc)
-                    break
+        if data.wagstaff_activated_skills == nil or next(data.wagstaff_activated_skills) == nil then
+            if GLOBAL.AllPlayers then
+                for _, player in ipairs(GLOBAL.AllPlayers) do
+                    if player.prefab == "wagstaff" and player.components.skilltreeupdater then
+                        data.wagstaff_activated_skills = CopyActivatedSkills(player.components.skilltreeupdater.activatedskills)
+                        local _lc = 0; for _ in pairs(data.wagstaff_activated_skills or {}) do _lc = _lc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills from live player, count:", _lc)
+                        break
+                    end
                 end
             end
         else
