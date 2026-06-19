@@ -61,7 +61,7 @@ end
 G.WagstaffDebugEnabled = GetModConfigData("debug") == true
 
 local _moddir = MODROOT or "."
-local _debug_log_path = _moddir .. "/wagstaff_debug.log"
+local _debug_log_path = _moddir .. "/wagstaff_debug.txt"
 local _debug_buffer = {}  -- lines collected in memory, flushed periodically
 local _debug_max_buffer = 500  -- flush early if buffer gets this big
 
