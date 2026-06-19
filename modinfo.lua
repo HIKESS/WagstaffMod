@@ -21,6 +21,7 @@ Features:
 - Blur shader for nearsighted vision
 
 Original character by Hornet, reworked by Niko. Skill tree + integration by Wholemaker Team.]]
+id = "wagstaff_standalone"
 author = "Wholemaker Team (standalone) — original by Hornet/Niko"
 version = "2.0.0"
 
