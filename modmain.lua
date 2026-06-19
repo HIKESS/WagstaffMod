@@ -1110,11 +1110,37 @@ G.WagstaffHasSkill = function(worker, skill_id)
         return false
     end
     
-    local has_tag = worker:HasTag(skill_id)
+    -- Map skill_ids to their actual tags (some skills add different tags than their ID)
+    local skill_to_tag_map = {
+        ["wagstaff_brute_evolve"] = "wagstaff_brute_evolve",
+        ["wagstaff_brute_mk3"] = "wagstaff_brute_mk3",
+        ["wagstaff_ballistic_evolve"] = "wagstaff_ballistic_evolve",
+        ["wagstaff_ballistic_mk3"] = "wagstaff_ballistic_mk3",
+        ["wagstaff_sentry_mk2"] = "wagstaff_sentry_mk2",
+        ["wagstaff_sentry_mk3"] = "wagstaff_sentry_mk3",
+        ["wagstaff_dispenser_mk2"] = "wagstaff_dispenser_mk2",
+        ["wagstaff_dispenser_mk3"] = "wagstaff_dispenser_mk3",
+    }
+    
+    -- Map tags back to their source skill IDs (for checking activatedskills)
+    local tag_to_skill_map = {
+        ["wagstaff_brute_evolve"] = "wagstaff_robotic_1",
+        ["wagstaff_brute_mk3"] = "wagstaff_robotic_1_parallel",
+        ["wagstaff_ballistic_evolve"] = "wagstaff_ballistic_evolve",
+        ["wagstaff_ballistic_mk3"] = "wagstaff_ballistic_parallel",
+        ["wagstaff_sentry_mk2"] = "wagstaff_sentry_mk2",
+        ["wagstaff_sentry_mk3"] = "wagstaff_sentry_mk3",
+        ["wagstaff_dispenser_mk2"] = "wagstaff_dispenser_mk2",
+        ["wagstaff_dispenser_mk3"] = "wagstaff_dispenser_mk3",
+    }
+    
+    local tag_to_check = skill_to_tag_map[skill_id] or skill_id
+    local has_tag = worker:HasTag(tag_to_check)
     print("[DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===")
     print("[DEBUG WagstaffHasSkill] skill_id:", skill_id)
+    print("[DEBUG WagstaffHasSkill] tag_to_check:", tag_to_check)
     print("[DEBUG WagstaffHasSkill] worker.prefab:", worker.prefab)
-    print("[DEBUG WagstaffHasSkill] worker:HasTag(skill_id):", has_tag)
+    print("[DEBUG WagstaffHasSkill] worker:HasTag(tag_to_check):", has_tag)
     
     -- EXTRA CHECK FIRST: Some skills add tags but have different IDs in activatedskills
     -- For example: wagstaff_robotic_1 adds tag wagstaff_brute_evolve
@@ -1136,6 +1162,13 @@ G.WagstaffHasSkill = function(worker, skill_id)
     print("[DEBUG WagstaffHasSkill] activatedskills:", activated)
     print("[DEBUG WagstaffHasSkill] activatedskills[skill_id]:", activated and activated[skill_id])
     
+    -- Also check if the source skill ID is activated (for skills that add different tags)
+    local source_skill_id = tag_to_skill_map[skill_id]
+    print("[DEBUG WagstaffHasSkill] source_skill_id for this tag:", source_skill_id)
+    if source_skill_id then
+        print("[DEBUG WagstaffHasSkill] activatedskills[source_skill_id]:", activated and activated[source_skill_id])
+    end
+    
     -- Dump ALL keys in activatedskills to see what's actually there
     local all_skills = ""
     if activated then
@@ -1145,16 +1178,17 @@ G.WagstaffHasSkill = function(worker, skill_id)
     end
     print("[DEBUG WagstaffHasSkill] ALL activatedskills keys:", all_skills ~= "" and all_skills or "(empty)")
     
-    if activated and activated[skill_id] then
-        print("[DEBUG WagstaffHasSkill] Skill esta em activatedskills mas tag faltando, re-aplicando tag...")
+    if activated and (activated[skill_id] or (source_skill_id and activated[source_skill_id])) then
+        print("[DEBUG WagstaffHasSkill] Skill esta em activatedskills (direct or via source_skill_id) mas tag faltando, re-aplicando tag...")
         -- Skill is recorded as activated but the tag is missing (common right after a
         -- reload, before apply_world_skills_to_wagstaff re-runs). Re-apply the tag now.
-        if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_id] and G.WagstaffSkillDefs[skill_id].onactivate then
-            print("[DEBUG WagstaffHasSkill] Chamando onactivate da skill")
-            G.WagstaffSkillDefs[skill_id].onactivate(worker, true)
+        local actual_skill_id = activated[skill_id] and skill_id or source_skill_id
+        if G.WagstaffSkillDefs and G.WagstaffSkillDefs[actual_skill_id] and G.WagstaffSkillDefs[actual_skill_id].onactivate then
+            print("[DEBUG WagstaffHasSkill] Chamando onactivate da skill:", actual_skill_id)
+            G.WagstaffSkillDefs[actual_skill_id].onactivate(worker, true)
         else
-            print("[DEBUG WagstaffHasSkill] Adicionando tag manualmente")
-            worker:AddTag(skill_id)
+            print("[DEBUG WagstaffHasSkill] Adicionando tag manualmente:", tag_to_check)
+            worker:AddTag(tag_to_check)
         end
         print("[DEBUG WagstaffHasSkill] Tag re-aplicada, retornando true")
         return true
