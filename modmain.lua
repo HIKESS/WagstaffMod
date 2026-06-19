@@ -18,7 +18,7 @@ local function tableToString(t, indent, depth, visited)
     indent = indent or ""
     depth = depth or 0
     visited = visited or {}
-    if depth > 4 then return "<table depth limit>" end
+    if depth > 3 then return "<table depth limit>" end
     if type(t) ~= "table" then return tostring(t) end
     if visited[t] then return "<circular ref>" end
     visited[t] = true
@@ -27,8 +27,8 @@ local function tableToString(t, indent, depth, visited)
     local count = 0
     for k, v in pairs(t) do
         count = count + 1
-        if count > 20 then
-            result = result .. ", ... (+" .. tostring(count - 20) .. " more)"
+        if count > 15 then
+            result = result .. ", ... (+more)"
             break
         end
         if not first then
@@ -2158,7 +2158,12 @@ AddPrefabPostInit("world", function(self)
         local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
         data.wagstaff_days_survived = days
         data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
-        if data.wagstaff_activated_skills == nil or next(data.wagstaff_activated_skills) == nil then
+        local has_skills = false
+        for _ in pairs(data.wagstaff_activated_skills or {}) do
+            has_skills = true
+            break
+        end
+        if not has_skills then
             if GLOBAL.AllPlayers then
                 for _, player in ipairs(GLOBAL.AllPlayers) do
                     if player.prefab == "wagstaff" and player.components.skilltreeupdater then
