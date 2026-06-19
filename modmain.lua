@@ -1287,6 +1287,28 @@ local function WagstaffWilliamPostInit(inst)
             WagstaffDebug("ActivateSkill: skill=", tostring(skill), "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
             WagstaffDebug("ActivateSkill: available points=", tostring(self:GetAvailableSkillPoints()), "total=", tostring(self:GetTotalSkillPoints()))
             WagstaffDebug("ActivateSkill: already activated?", tostring(self:IsActivated(skill)))
+            
+            -- Debug RPC_LOOKUP antes de ativar
+            if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
+                local rpc_id = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
+                WagstaffDebug("RPC_LOOKUP[", skill, "] =", rpc_id ~= nil and tostring(rpc_id) or "NIL (PROBLEMA!)")
+                if rpc_id == nil then
+                    WagstaffDebug("ERROR: Skill '", skill, "' nao esta no RPC_LOOKUP! Skills disponiveis:")
+                    local count = 0
+                    for k, v in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do
+                        count = count + 1
+                        if count <= 10 then
+                            WagstaffDebug("  ", k, "=", v)
+                        end
+                    end
+                    if count > 10 then
+                        WagstaffDebug("  ... e mais ", count - 10, " skills")
+                    end
+                end
+            else
+                WagstaffDebug("WARNING: TheSkillTree.RPC_LOOKUP is NIL!")
+            end
+            
             if self:GetAvailableSkillPoints() <= 0 and not self:IsActivated(skill) then
                 WagstaffDebug("ActivateSkill BLOCKED: no available insight points")
                 return false
@@ -1295,6 +1317,7 @@ local function WagstaffWilliamPostInit(inst)
             WagstaffDebug("ActivateSkill: old_ActivateSkill returned:", tostring(result))
             if result then
                 WagstaffDebug("ActivateSkill: skill activated successfully!")
+                WagstaffDebug("ActivateSkill: self.activatedskills now contains:", skill, "?", self.activatedskills and self.activatedskills[skill] or "NOT FOUND")
                 -- Apply onactivate callback (adds tag)
                 if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].onactivate then
                     WagstaffDebug("ActivateSkill: calling onactivate for", skill)
