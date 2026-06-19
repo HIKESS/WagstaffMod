@@ -18,7 +18,7 @@ local function tableToString(t, indent, depth, visited)
     indent = indent or ""
     depth = depth or 0
     visited = visited or {}
-    if depth > 3 then return "<table depth limit>" end
+    if depth > 2 then return "<table depth limit>" end
     if type(t) ~= "table" then return tostring(t) end
     if visited[t] then return "<circular ref>" end
     visited[t] = true
@@ -27,7 +27,7 @@ local function tableToString(t, indent, depth, visited)
     local count = 0
     for k, v in pairs(t) do
         count = count + 1
-        if count > 15 then
+        if count > 10 then
             result = result .. ", ... (+more)"
             break
         end
@@ -1010,7 +1010,10 @@ end
 
 local function SortedActivatedSkillKeys(skills_map)
     local keys = {}
-    for skill, active in pairs(skills_map or {}) do
+    if skills_map == nil then
+        return keys
+    end
+    for skill, active in pairs(skills_map) do
         if active and not string.find(skill, "_lock") then
             table.insert(keys, skill)
         end
@@ -1021,7 +1024,10 @@ end
 
 local function CopyActivatedSkills(source)
     local copy = {}
-    for skill, active in pairs(source or {}) do
+    if source == nil then
+        return copy
+    end
+    for skill, active in pairs(source) do
         if active then
             copy[skill] = true
         end
@@ -1248,7 +1254,9 @@ local function WagstaffWilliamPostInit(inst)
                 end
                 -- Log current activatedskills
                 local count = 0
-                for k, v in pairs(self.activatedskills or {}) do count = count + 1 end
+                if self.activatedskills then
+                    for k, v in pairs(self.activatedskills) do count = count + 1 end
+                end
                 WagstaffDebug("ActivateSkill: total activated skills now =", count)
             else
                 WagstaffDebug("ActivateSkill: FAILED - old_ActivateSkill returned false")
@@ -2096,7 +2104,7 @@ AddPrefabPostInit("world", function(self)
 
     -- Function to apply world skills to all Wagstaff players
     local function apply_world_skills_to_wagstaff()
-        local _sk_count = 0; for _ in pairs(self._wagstaff_activated_skills or {}) do _sk_count = _sk_count + 1 end; WagstaffDebug("apply_world_skills_to_wagstaff called, skills count:", _sk_count)
+        local _sk_count = 0; for _ in pairs(self._wagstaff_activated_skills) do _sk_count = _sk_count + 1 end; WagstaffDebug("apply_world_skills_to_wagstaff called, skills count:", _sk_count)
         WagstaffDebug("self._wagstaff_days_survived:", self._wagstaff_days_survived)
         if not GLOBAL.AllPlayers then
             return
@@ -2157,24 +2165,27 @@ AddPrefabPostInit("world", function(self)
         -- Save days survived so we can reconstruct XP on load
         local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
         data.wagstaff_days_survived = days
+        WagstaffDebug("Saving wagstaff_activated_skills, self._wagstaff_activated_skills type:", type(self._wagstaff_activated_skills))
         data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
         local has_skills = false
-        for _ in pairs(data.wagstaff_activated_skills or {}) do
+        for _ in pairs(data.wagstaff_activated_skills) do
             has_skills = true
             break
         end
         if not has_skills then
+            WagstaffDebug("No skills in world data, checking live players")
             if GLOBAL.AllPlayers then
                 for _, player in ipairs(GLOBAL.AllPlayers) do
                     if player.prefab == "wagstaff" and player.components.skilltreeupdater then
+                        WagstaffDebug("Found live Wagstaff player, checking activatedskills type:", type(player.components.skilltreeupdater.activatedskills))
                         data.wagstaff_activated_skills = CopyActivatedSkills(player.components.skilltreeupdater.activatedskills)
-                        local _lc = 0; for _ in pairs(data.wagstaff_activated_skills or {}) do _lc = _lc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills from live player, count:", _lc)
+                        local _lc = 0; for _ in pairs(data.wagstaff_activated_skills) do _lc = _lc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills from live player, count:", _lc)
                         break
                     end
                 end
             end
         else
-            local _wc = 0; for _ in pairs(data.wagstaff_activated_skills or {}) do _wc = _wc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills to world data, count:", _wc)
+            local _wc = 0; for _ in pairs(data.wagstaff_activated_skills) do _wc = _wc + 1 end; WagstaffDebug("Saved wagstaff_activated_skills to world data, count:", _wc)
         end
         WagstaffDebug("World OnSave done")
         return data
@@ -2194,9 +2205,10 @@ AddPrefabPostInit("world", function(self)
             self.state.wagstaff_fuelweaver_killed = data.wagstaff_fuelweaver_killed or false
             self.state.wagstaff_celestial_killed  = data.wagstaff_celestial_killed  or false
             self._wagstaff_days_survived = data.wagstaff_days_survived
+            WagstaffDebug("Loading wagstaff_activated_skills, data type:", type(data), "data.wagstaff_activated_skills type:", type(data.wagstaff_activated_skills))
             self._wagstaff_activated_skills = CopyActivatedSkills(data.wagstaff_activated_skills)
             WagstaffDebug("Loaded _wagstaff_days_survived:", self._wagstaff_days_survived)
-            local _lac = 0; for _ in pairs(self._wagstaff_activated_skills or {}) do _lac = _lac + 1 end; WagstaffDebug("Loaded _wagstaff_activated_skills count:", _lac)
+            local _lac = 0; for _ in pairs(self._wagstaff_activated_skills) do _lac = _lac + 1 end; WagstaffDebug("Loaded _wagstaff_activated_skills count:", _lac)
             local days = data.wagstaff_days_survived
             if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
                 WagstaffDebug("DoTaskInTime scheduled for 0.5 seconds")
@@ -2240,7 +2252,8 @@ AddPrefabPostInit("world", function(self)
 
     -- Expose function to save activated skills to world
     self.SaveWagstaffSkillsToWorld = function(self, activatedskills)
-        local _sc = 0; for _ in pairs(activatedskills or {}) do _sc = _sc + 1 end; WagstaffDebug("SaveWagstaffSkillsToWorld called, skills count:", _sc)
+        WagstaffDebug("SaveWagstaffSkillsToWorld called, activatedskills type:", type(activatedskills))
+        local _sc = 0; for _ in pairs(activatedskills) do _sc = _sc + 1 end; WagstaffDebug("SaveWagstaffSkillsToWorld called, skills count:", _sc)
         self._wagstaff_activated_skills = CopyActivatedSkills(activatedskills)
     end
 
