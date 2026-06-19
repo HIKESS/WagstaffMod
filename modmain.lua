@@ -1183,11 +1183,20 @@ G.WagstaffHasSkill = function(worker, skill_id)
     -- it on the fly. This prevents bot/sentry/dispenser Mk2/Mk3 upgrades from being
     -- blocked with "Requires ... skill!" right after loading a save.
     print("[DEBUG WagstaffHasSkill] Verificando world skills...")
+    WagstaffDebug("[WagstaffHasSkill] Verificando world skills para:", skill_id)
     if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
         local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
         print("[DEBUG WagstaffHasSkill] world_skills:", world_skills)
+        WagstaffDebug("[WagstaffHasSkill] world_skills type:", type(world_skills))
+        if world_skills then
+            WagstaffDebug("[WagstaffHasSkill] world_skills keys:")
+            for k, v in pairs(world_skills) do
+                WagstaffDebug("  ", k, "=", v)
+            end
+        end
         if world_skills and world_skills[skill_id] then
             print("[DEBUG WagstaffHasSkill] Skill encontrada no world data, restaurando...")
+            WagstaffDebug("[WagstaffHasSkill] Skill", skill_id, "encontrada no world data! Restaurando...")
             if worker.components.skilltreeupdater.activatedskills then
                 worker.components.skilltreeupdater.activatedskills[skill_id] = true
             end
@@ -1197,10 +1206,14 @@ G.WagstaffHasSkill = function(worker, skill_id)
                 worker:AddTag(skill_id)
             end
             print("[DEBUG WagstaffHasSkill] Skill restaurada do world data, retornando true")
+            WagstaffDebug("[WagstaffHasSkill] Skill restaurada com sucesso, retornando true")
             return true
+        else
+            WagstaffDebug("[WagstaffHasSkill] Skill", skill_id, "NAO encontrada no world data")
         end
     else
         print("[DEBUG WagstaffHasSkill] TheWorld ou GetWagstaffSkillsFromWorld nao disponivel")
+        WagstaffDebug("[WagstaffHasSkill] TheWorld ou GetWagstaffSkillsFromWorld nao disponivel")
     end
     
     -- Detailed diagnostic: dump all activatedskills keys
@@ -2184,15 +2197,61 @@ local CreateSkillTree = function()
                 WagstaffDebug("data.SKILLS count:", has_skills and "tem items" or "vazio")
                 
                 WagstaffDebug("[VERBOSE] Lista completa de skills sendo registradas:")
+                local skill_count = 0
                 for skill_id, skill_data in pairs(data.SKILLS) do
                     WagstaffDebug("[VERBOSE]   Skill ID:", skill_id, "- Nome:", skill_data.name or "sem_nome")
+                    skill_count = skill_count + 1
                 end
+                WagstaffDebug("[VERBOSE] Total de skills:", skill_count)
                 
+                -- Registrar a skill tree ANTES de criar o RPC_LOOKUP
+                WagstaffDebug("[VERBOSE] Criando skill tree para wagstaff...")
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
                 if not ok then
                     WagstaffDebug("CreateSkillTreeFor FAILED:", tostring(err))
                 else
                     WagstaffDebug("CreateSkillTreeFor succeeded")
+                end
+                
+                -- DEBUG AGRESSIVO: Verificar se RPC_LOOKUP foi criado corretamente
+                WagstaffDebug("=== VERIFICACAO DO RPC_LOOKUP ===")
+                local rpc_lookup_to_use = nil
+                if SkillTreeDefs and SkillTreeDefs.RPC_LOOKUP then
+                    rpc_lookup_to_use = SkillTreeDefs.RPC_LOOKUP
+                    WagstaffDebug("RPC_LOOKUP existe em SkillTreeDefs!")
+                elseif GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
+                    rpc_lookup_to_use = GLOBAL.TheSkillTree.RPC_LOOKUP
+                    WagstaffDebug("RPC_LOOKUP existe em GLOBAL.TheSkillTree!")
+                else
+                    WagstaffDebug("RPC_LOOKUP NAO EXISTE EM LUGAR NENHUM!")
+                end
+                
+                if rpc_lookup_to_use then
+                    local rpc_count = 0
+                    for k, v in pairs(rpc_lookup_to_use) do
+                        rpc_count = rpc_count + 1
+                        if rpc_count <= 20 then
+                            WagstaffDebug("  RPC_LOOKUP[", k, "] =", v)
+                        end
+                    end
+                    WagstaffDebug("Total entries in RPC_LOOKUP:", rpc_count)
+                    
+                    -- Verificar especificamente as skills dos bots
+                    WagstaffDebug("=== VERIFICANDO SKILLS DOS BOTS NO RPC_LOOKUP ===")
+                    local bot_skills = {"wagstaff_brute_evolve", "wagstaff_buster_evolve", "wagstaff_ballistic_evolve", "wagstaff_butler_evolve", "wagstaff_brute_mk3", "wagstaff_buster_mk3", "wagstaff_ballistic_mk3", "wagstaff_butler_mk3"}
+                    for _, skill_name in ipairs(bot_skills) do
+                        local found = false
+                        for k, v in pairs(rpc_lookup_to_use) do
+                            if v == skill_name then
+                                WagstaffDebug("  [OK]", skill_name, "-> ID:", k)
+                                found = true
+                                break
+                            end
+                        end
+                        if not found then
+                            WagstaffDebug("  [ERRO]", skill_name, "NAO ENCONTRADO NO RPC_LOOKUP!")
+                        end
+                    end
                 end
                 
                 WagstaffDebug("=== POS CreateSkillTreeFor ===")
@@ -2460,6 +2519,7 @@ AddPrefabPostInit("world", function(self)
     -- SAVE: store boss flags + days survived + activated skills
     local old_OnSave = self.OnSave
     self.OnSave = function(self, ...)
+        WagstaffDebug("=== World OnSave START ===")
         WagstaffDebug("World OnSave called")
         local data = old_OnSave and old_OnSave(self, ...) or {}
         data.wagstaff_fuelweaver_killed = self.state.wagstaff_fuelweaver_killed
@@ -2467,8 +2527,38 @@ AddPrefabPostInit("world", function(self)
         -- Save days survived so we can reconstruct XP on load
         local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
         data.wagstaff_days_survived = days
-        WagstaffDebug("Saving wagstaff_activated_skills, self._wagstaff_activated_skills type:", type(self._wagstaff_activated_skills))
+        
+        WagstaffDebug("=== SALVANDO SKILLS ===")
+        WagstaffDebug("self._wagstaff_activated_skills type:", type(self._wagstaff_activated_skills))
+        
+        -- Debug: mostrar TODAS as skills salvas em self._wagstaff_activated_skills
+        WagstaffDebug("Conteudo de self._wagstaff_activated_skills:")
+        local skill_count = 0
+        if self._wagstaff_activated_skills then
+            for k, v in pairs(self._wagstaff_activated_skills) do
+                WagstaffDebug("  ", k, "=", v)
+                skill_count = skill_count + 1
+            end
+        else
+            WagstaffDebug("  (nil)")
+        end
+        WagstaffDebug("Total skills em self._wagstaff_activated_skills:", skill_count)
+        
         data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
+        
+        WagstaffDebug("data.wagstaff_activated_skills apos CopyActivatedSkills type:", type(data.wagstaff_activated_skills))
+        if data.wagstaff_activated_skills then
+            WagstaffDebug("Conteudo de data.wagstaff_activated_skills:")
+            local data_skill_count = 0
+            for k, v in pairs(data.wagstaff_activated_skills) do
+                WagstaffDebug("  ", k, "=", v)
+                data_skill_count = data_skill_count + 1
+            end
+            WagstaffDebug("Total skills em data.wagstaff_activated_skills:", data_skill_count)
+        else
+            WagstaffDebug("data.wagstaff_activated_skills is nil!")
+        end
+        
         local has_skills = false
         if data.wagstaff_activated_skills ~= nil then
             for _ in pairs(data.wagstaff_activated_skills) do
@@ -2499,7 +2589,7 @@ AddPrefabPostInit("world", function(self)
             end
             WagstaffDebug("Saved wagstaff_activated_skills to world data, count:", _wc)
         end
-        WagstaffDebug("World OnSave done")
+        WagstaffDebug("=== World OnSave END ===")
         return data
     end
 
