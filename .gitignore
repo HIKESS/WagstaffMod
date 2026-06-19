@@ -1,5 +1,1 @@
-(modified.lua is a source code file, and there are no build artifacts, dependencies, or temp files in the change list)
-
-```lua
-
-```
+(modified.lua is a source code file, so it should not be added to .gitignore)
