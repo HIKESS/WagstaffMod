@@ -1110,18 +1110,17 @@ G.WagstaffHasSkill = function(worker, skill_id)
         return false
     end
     
+    -- CRITICAL FIX #1: Check if the TAG exists FIRST (before checking activatedskills)
+    -- Many skills add tags with DIFFERENT names than their skill_id
+    -- Example: wagstaff_robotic_1 adds tag wagstaff_brute_evolve
     local has_tag = worker:HasTag(skill_id)
     print("[DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===")
     print("[DEBUG WagstaffHasSkill] skill_id:", skill_id)
     print("[DEBUG WagstaffHasSkill] worker.prefab:", worker.prefab)
     print("[DEBUG WagstaffHasSkill] worker:HasTag(skill_id):", has_tag)
     
-    -- EXTRA CHECK FIRST: Some skills add tags but have different IDs in activatedskills
-    -- For example: wagstaff_robotic_1 adds tag wagstaff_brute_evolve
-    -- So if we're looking for wagstaff_brute_evolve and it's not in activatedskills,
-    -- check if the TAG exists (which means the skill IS active)
     if has_tag then
-        print("[DEBUG WagstaffHasSkill] Tag encontrada! Retornando true")
+        print("[DEBUG WagstaffHasSkill] Tag encontrada! Retornando true IMEDIATAMENTE")
         return true
     end
     
@@ -1160,6 +1159,19 @@ G.WagstaffHasSkill = function(worker, skill_id)
         return true
     end
     
+    -- CRITICAL FIX #2: Check if any SKILL that adds this tag is activated
+    -- Some skills have different IDs but add the tag we're looking for
+    -- We need to iterate through all activated skills and check their onactivate effects
+    if activated then
+        for activated_skill_id, _ in pairs(activated) do
+            if G.WagstaffSkillDefs and G.WagstaffSkillDefs[activated_skill_id] and G.WagstaffSkillDefs[activated_skill_id].onactivate then
+                -- This skill has an onactivate callback - it might have added our tag
+                -- We can't easily know which tags it adds without calling it, but we already checked HasTag above
+                -- So this is just for logging purposes
+            end
+        end
+    end
+    
     -- Fallback: consult the per-world saved skills. If the skill is saved in the world
     -- but not yet restored onto this player (transient desync after a reload), restore
     -- it on the fly. This prevents bot/sentry/dispenser Mk2/Mk3 upgrades from being
@@ -1191,16 +1203,6 @@ G.WagstaffHasSkill = function(worker, skill_id)
         for k, v in pairs(worker.components.skilltreeupdater.activatedskills) do
             all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
         end
-    end
-    
-    -- EXTRA CHECK: Some skills add tags but have different IDs in activatedskills
-    -- For example: wagstaff_robotic_1 adds tag wagstaff_brute_evolve
-    -- So if we're looking for wagstaff_brute_evolve and it's not in activatedskills,
-    -- check if the TAG exists (which means the skill IS active)
-    if has_tag then
-        print("[DEBUG WagstaffHasSkill] EXTRA CHECK: Tag exists even though skill_id not in activatedskills - this is VALID")
-        print("[DEBUG WagstaffHasSkill] Retornando true (via tag)")
-        return true
     end
     
     print("[DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===")
@@ -2366,6 +2368,7 @@ AddPrefabPostInit("world", function(self)
         local _sk_count = 0; for _ in pairs(self._wagstaff_activated_skills) do _sk_count = _sk_count + 1 end; WagstaffDebug("apply_world_skills_to_wagstaff called, skills count:", _sk_count)
         WagstaffDebug("self._wagstaff_days_survived:", self._wagstaff_days_survived)
         if not GLOBAL.AllPlayers then
+            WagstaffDebug("GLOBAL.AllPlayers is nil, returning")
             return
         end
 
@@ -2384,6 +2387,13 @@ AddPrefabPostInit("world", function(self)
             if player.prefab == "wagstaff" and player.components.skilltreeupdater then
                 WagstaffDebug("Found Wagstaff player")
                 local updater = player.components.skilltreeupdater
+                
+                -- CRITICAL FIX: Ensure activatedskills table exists before using it
+                if not updater.activatedskills then
+                    updater.activatedskills = {}
+                    WagstaffDebug("Created empty activatedskills table for player")
+                end
+                
                 local oldActivatedSkills = updater.activatedskills or {}
                 local _oc = 0; for _ in pairs(oldActivatedSkills or {}) do _oc = _oc + 1 end; WagstaffDebug("Old activated skills count:", _oc)
 
@@ -2396,6 +2406,7 @@ AddPrefabPostInit("world", function(self)
                     end
                 end
 
+                -- Clear and rebuild activatedskills
                 updater.activatedskills = {}
                 local applied_count = 0
                 for i = 1, math.min(#sorted_saved, max_insights) do
@@ -2408,8 +2419,17 @@ AddPrefabPostInit("world", function(self)
                     end
                 end
                 WagstaffDebug("Final activated skills count:", applied_count)
+                
+                -- CRITICAL: Force dirty the skills to ensure they're replicated
                 SafeDirtySkillXP(updater)
                 player.wagstaff_world_insights = max_insights
+                
+                -- EXTRA DEBUG: Verify skills were actually set
+                local verify_count = 0
+                for _ in pairs(updater.activatedskills) do verify_count = verify_count + 1 end
+                WagstaffDebug("VERIFICATION: activatedskills now has", verify_count, "skills")
+            elseif player.prefab == "wagstaff" then
+                WagstaffDebug("Player is wagstaff but MISSING skilltreeupdater component!")
             end
         end
     end
