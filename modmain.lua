@@ -1047,14 +1047,20 @@ G.WagstaffHasSkill = function(worker, skill_id)
     end
     
     local has_tag = worker:HasTag(skill_id)
+    print("[DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===")
+    print("[DEBUG WagstaffHasSkill] skill_id:", skill_id)
+    print("[DEBUG WagstaffHasSkill] worker.prefab:", worker.prefab)
     print("[DEBUG WagstaffHasSkill] worker:HasTag(skill_id):", has_tag)
     
+    -- EXTRA CHECK FIRST: Some skills add tags but have different IDs in activatedskills
+    -- For example: wagstaff_robotic_1 adds tag wagstaff_brute_evolve
+    -- So if we're looking for wagstaff_brute_evolve and it's not in activatedskills,
+    -- check if the TAG exists (which means the skill IS active)
     if has_tag then
         print("[DEBUG WagstaffHasSkill] Tag encontrada! Retornando true")
         return true
     end
     
-    print("[DEBUG WagstaffHasSkill] worker.prefab:", worker.prefab)
     print("[DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:", worker.components.skilltreeupdater)
     
     if worker.prefab ~= "wagstaff" or not worker.components.skilltreeupdater then
@@ -1065,6 +1071,15 @@ G.WagstaffHasSkill = function(worker, skill_id)
     local activated = worker.components.skilltreeupdater.activatedskills
     print("[DEBUG WagstaffHasSkill] activatedskills:", activated)
     print("[DEBUG WagstaffHasSkill] activatedskills[skill_id]:", activated and activated[skill_id])
+    
+    -- Dump ALL keys in activatedskills to see what's actually there
+    local all_skills = ""
+    if activated then
+        for k, v in pairs(activated) do
+            all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
+        end
+    end
+    print("[DEBUG WagstaffHasSkill] ALL activatedskills keys:", all_skills ~= "" and all_skills or "(empty)")
     
     if activated and activated[skill_id] then
         print("[DEBUG WagstaffHasSkill] Skill esta em activatedskills mas tag faltando, re-aplicando tag...")
@@ -2030,21 +2045,53 @@ local CreateSkillTree = function()
                 SkillTreeDefs.SKILLS = {}
             end
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
-                WagstaffDebug("Using SkillTreeDefs.CreateSkillTreeFor")
+                WagstaffDebug("=== INICIANDO CreateSkillTreeFor ===")
+                WagstaffDebug("SkillTreeDefs antes:", type(SkillTreeDefs))
+                WagstaffDebug("SKILLS antes:", type(SkillTreeDefs.SKILLS))
+                WagstaffDebug("data.SKILLS count:", G.next(data.SKILLS) and "tem items" or "vazio")
+                
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
                 if not ok then
                     WagstaffDebug("CreateSkillTreeFor FAILED:", tostring(err))
                 else
                     WagstaffDebug("CreateSkillTreeFor succeeded")
                 end
+                
+                WagstaffDebug("=== POS CreateSkillTreeFor ===")
+                WagstaffDebug("SKILLS depois:", type(SkillTreeDefs.SKILLS), "wagstaff exists?", SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS["wagstaff"] ~= nil)
+                
                 -- Verify RPC_LOOKUP was created
                 local meta = SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
+                WagstaffDebug("SKILLTREE_METAINFO.wagstaff:", type(meta))
                 if meta then
                     local rpc_count = 0
                     if meta.RPC_LOOKUP then
-                        for _ in pairs(meta.RPC_LOOKUP) do rpc_count = rpc_count + 1 end
+                        for k, v in pairs(meta.RPC_LOOKUP) do 
+                            rpc_count = rpc_count + 1
+                            if rpc_count <= 5 then
+                                WagstaffDebug("  RPC_LOOKUP[", k, "] =", v)
+                            end
+                        end
                     end
                     WagstaffDebug("SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count:", rpc_count, "TOTAL_SKILLS_COUNT:", tostring(meta.TOTAL_SKILLS_COUNT))
+                    
+                    -- Check SKILLTREE_DEFS (engine usa isso!)
+                    if GLOBAL.SKILLTREE_DEFS then
+                        WagstaffDebug("SKILLTREE_DEFS existe!")
+                        if GLOBAL.SKILLTREE_DEFS["wagstaff"] then
+                            WagstaffDebug("SKILLTREE_DEFS.wagstaff existe!")
+                            local defs_meta = GLOBAL.SKILLTREE_DEFS["wagstaff"].meta
+                            if defs_meta and defs_meta.RPC_LOOKUP then
+                                local defs_rpc_count = 0
+                                for _ in pairs(defs_meta.RPC_LOOKUP) do defs_rpc_count = defs_rpc_count + 1 end
+                                WagstaffDebug("SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP count:", defs_rpc_count)
+                            end
+                        else
+                            WagstaffDebug("ERROR: SKILLTREE_DEFS.wagstaff NAO EXISTE!")
+                        end
+                    else
+                        WagstaffDebug("ERROR: SKILLTREE_DEFS global NAO EXISTE!")
+                    end
                 else
                     WagstaffDebug("WARNING: SKILLTREE_METAINFO.wagstaff is NIL after CreateSkillTreeFor!")
                 end
