@@ -2076,21 +2076,21 @@ local CreateSkillTree = function()
                     WagstaffDebug("SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count:", rpc_count, "TOTAL_SKILLS_COUNT:", tostring(meta.TOTAL_SKILLS_COUNT))
                     
                     -- Check SKILLTREE_DEFS (engine usa isso!)
-                    if GLOBAL.SKILLTREE_DEFS then
-                        WagstaffDebug("SKILLTREE_DEFS existe!")
-                        if GLOBAL.SKILLTREE_DEFS["wagstaff"] then
-                            WagstaffDebug("SKILLTREE_DEFS.wagstaff existe!")
-                            local defs_meta = GLOBAL.SKILLTREE_DEFS["wagstaff"].meta
+                    if SkillTreeDefs and SkillTreeDefs.SKILLTREE_DEFS then
+                        WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS existe!")
+                        if SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
+                            WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!")
+                            local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
                             if defs_meta and defs_meta.RPC_LOOKUP then
                                 local defs_rpc_count = 0
                                 for _ in pairs(defs_meta.RPC_LOOKUP) do defs_rpc_count = defs_rpc_count + 1 end
-                                WagstaffDebug("SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP count:", defs_rpc_count)
+                                WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP count:", defs_rpc_count)
                             end
                         else
-                            WagstaffDebug("ERROR: SKILLTREE_DEFS.wagstaff NAO EXISTE!")
+                            WagstaffDebug("ERROR: SkillTreeDefs.SKILLTREE_DEFS.wagstaff NAO EXISTE!")
                         end
                     else
-                        WagstaffDebug("ERROR: SKILLTREE_DEFS global NAO EXISTE!")
+                        WagstaffDebug("ERROR: SkillTreeDefs.SKILLTREE_DEFS global NAO EXISTE!")
                     end
                 else
                     WagstaffDebug("WARNING: SKILLTREE_METAINFO.wagstaff is NIL after CreateSkillTreeFor!")
