@@ -935,6 +935,8 @@ local PortalAffinity = nil
 
 modimport("imports/william_dispenser_tint")
 
+-- Skill helper functions - MUST be loaded before prefabs that use them
+modimport("wagstaff_skill_helpers")
 
 -- Affinity pulse module: exposed as global so prefabs can use it
 
