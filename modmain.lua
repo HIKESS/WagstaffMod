@@ -13,6 +13,12 @@ local G = GLOBAL
 local rawset = G.rawset
 local rawget = G.rawget
 
+-- Safe aliases for Lua base iteration functions (they may not be in the global
+-- environment during certain mod-load phases in DST).
+local pairs = G.pairs or pairs
+local ipairs = G.ipairs or ipairs
+local next = G.next or next
+
 -- Safe table printer (circular-ref aware, depth-limited)
 local function tableToString(t, indent, depth, visited)
     indent = indent or ""
@@ -197,6 +203,115 @@ G.c_wagstaff_debug = function()
     return msg
 end
 -- Runtime toggle for verbose debug: c_wagstaff_verbose()
+
+-- ============================================================================
+-- WAGSTAFF SKILL TREE RPC HELPERS
+-- ============================================================================
+-- Em mundos com caves o Master e o Caves carregam em paralelo. Durante essa
+-- janela GLOBAL.TheSkillTree pode ainda estar nil ou sem RPC_LOOKUP, enquanto
+-- prefabs/skilltree_defs ja possui SKILLTREE_METAINFO.wagstaff.RPC_LOOKUP.
+-- O helper abaixo resolve a skill pelo fallback correto e tambem publica o
+-- lookup no TheSkillTree quando ele fica disponivel.
+-- Garantir alias local seguro para debug, mesmo que G.WagstaffDebug ainda nao exista
+local WagstaffDebug = (G.WagstaffDebug ~= nil) and G.WagstaffDebug or function(...) end
+
+local function WagstaffGetSkillTreeDefs()
+    if require == nil then
+        return nil
+    end
+    local ok, defs = GLOBAL.pcall(require, "prefabs/skilltree_defs")
+    if ok then
+        return defs
+    end
+    return nil
+end
+
+local function WagstaffGetRPCLookup()
+    local defs = WagstaffGetSkillTreeDefs()
+
+    -- Preferir a tabela da engine quando existir.
+    if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
+        return GLOBAL.TheSkillTree.RPC_LOOKUP
+    end
+
+    -- Fallback principal: criado por CreateSkillTreeFor antes de TheSkillTree existir.
+    if defs and defs.SKILLTREE_METAINFO and defs.SKILLTREE_METAINFO["wagstaff"] then
+        local meta = defs.SKILLTREE_METAINFO["wagstaff"]
+        if meta.RPC_LOOKUP then
+            return meta.RPC_LOOKUP
+        end
+    end
+
+    -- Fallback extra: algumas versoes/ordens de load guardam em SKILLTREE_DEFS.
+    if defs and defs.SKILLTREE_DEFS and defs.SKILLTREE_DEFS["wagstaff"] then
+        local meta = defs.SKILLTREE_DEFS["wagstaff"].meta
+        if meta and meta.RPC_LOOKUP then
+            return meta.RPC_LOOKUP
+        end
+    end
+
+    -- Ultimo fallback caso alguma versao exponha direto em skilltree_defs.
+    if defs and defs.RPC_LOOKUP then
+        return defs.RPC_LOOKUP
+    end
+
+    return nil
+end
+
+local function WagstaffResolveSkillRPCID(skill_name)
+    if type(skill_name) ~= "string" then
+        return skill_name
+    end
+
+    local lookup = WagstaffGetRPCLookup()
+    if not lookup then
+        return nil
+    end
+
+    -- Formato possivel A: skill_name -> rpc_id
+    local direct = lookup[skill_name]
+    if type(direct) == "number" then
+        return direct
+    end
+
+    -- Formato observado nos logs: rpc_id -> skill_name
+    for rpc_id, name in pairs(lookup) do
+        if name == skill_name and type(rpc_id) == "number" then
+            return rpc_id
+        end
+    end
+
+    return nil
+end
+
+local function WagstaffPublishRPCLookup()
+    local lookup = WagstaffGetRPCLookup()
+    if lookup and GLOBAL.TheSkillTree then
+        GLOBAL.TheSkillTree.RPC_LOOKUP = lookup
+        local count = 0
+        for _ in pairs(lookup) do
+            count = count + 1
+        end
+        WagstaffDebug("Published Wagstaff RPC_LOOKUP to TheSkillTree, count:", count)
+        return true
+    end
+    return false
+end
+
+local function WagstaffScheduleRPCPublish()
+    -- Tenta agora; se TheSkillTree ainda nao existir, tenta de novo assim que o mundo existe.
+    if WagstaffPublishRPCLookup() then
+        return
+    end
+    if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
+        for i = 1, 20 do
+            GLOBAL.TheWorld:DoTaskInTime(0.1 * i, function()
+                WagstaffPublishRPCLookup()
+            end)
+        end
+    end
+end
+
 G.c_wagstaff_verbose = function()
     if not G.WagstaffDebugEnabled then
         print("[Wagstaff Debug] Enable debug mode first with c_wagstaff_debug()")
@@ -1144,7 +1259,7 @@ G.WagstaffHasSkill = function(worker, skill_id)
     -- Dump ALL keys in activatedskills to see what's actually there
     local all_skills = ""
     if activated then
-        for k, v in pairs(activated) do
+        for k, v in GLOBAL.pairs(activated) do
             all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
         end
     end
@@ -1167,14 +1282,14 @@ G.WagstaffHasSkill = function(worker, skill_id)
     
     -- CRITICAL FIX: If activatedskills is empty, try to load from world save immediately
     -- This handles the case where skills were saved but not restored to the player
-    if not activated or next(activated) == nil then
+    if not activated or GLOBAL.next(activated) == nil then
         print("[DEBUG WagstaffHasSkill] activatedskills está VAZIO! Tentando carregar do world save...")
         if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
             local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
             print("[DEBUG WagstaffHasSkill] world_skills do GetWagstaffSkillsFromWorld:", world_skills)
             if world_skills and type(world_skills) == "table" then
                 local found_in_world = false
-                for k, v in pairs(world_skills) do
+                for k, v in GLOBAL.pairs(world_skills) do
                     print("[DEBUG WagstaffHasSkill]   world_skill:", k, "=", v)
                     if k == skill_id and v then
                         found_in_world = true
@@ -1214,7 +1329,7 @@ G.WagstaffHasSkill = function(worker, skill_id)
         WagstaffDebug("[WagstaffHasSkill] world_skills type:", type(world_skills))
         if world_skills then
             WagstaffDebug("[WagstaffHasSkill] world_skills keys:")
-            for k, v in pairs(world_skills) do
+            for k, v in GLOBAL.pairs(world_skills) do
                 WagstaffDebug("  ", k, "=", v)
             end
         end
@@ -1243,7 +1358,7 @@ G.WagstaffHasSkill = function(worker, skill_id)
     -- Detailed diagnostic: dump all activatedskills keys
     local all_skills = ""
     if worker.components.skilltreeupdater and worker.components.skilltreeupdater.activatedskills then
-        for k, v in pairs(worker.components.skilltreeupdater.activatedskills) do
+        for k, v in GLOBAL.pairs(worker.components.skilltreeupdater.activatedskills) do
             all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
         end
     end
@@ -1258,7 +1373,7 @@ G.WagstaffHasSkill = function(worker, skill_id)
     if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
         local ws = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
         local ws_str = ""
-        for k, v in pairs(ws) do ws_str = ws_str .. tostring(k) .. "=" .. tostring(v) .. ", " end
+        for k, v in GLOBAL.pairs(ws) do ws_str = ws_str .. tostring(k) .. "=" .. tostring(v) .. ", " end
         print("[DEBUG WagstaffHasSkill] world saved skills: ", ws_str ~= "" and ws_str or "(empty)")
     else
         print("[DEBUG WagstaffHasSkill] world saved skills: GetWagstaffSkillsFromWorld NOT AVAILABLE")
@@ -1451,19 +1566,19 @@ local function WagstaffWilliamPostInit(inst)
                 return false
             end
             
-            -- CORRECAO CRITICA: Quando fromrpc=true, o jogo espera um ID numerico, nao um nome
-            -- Se skill for uma string e fromrpc=true, precisamos converter para ID
+            -- CORRECAO CRITICA: Quando fromrpc=true, o jogo espera um ID numerico, nao um nome.
+            -- Em mundo com caves, GLOBAL.TheSkillTree.RPC_LOOKUP pode ainda nao existir;
+            -- por isso resolvemos tambem pelo SKILLTREE_METAINFO.wagstaff.RPC_LOOKUP.
+            WagstaffPublishRPCLookup()
             local skill_to_pass = skill
             if fromrpc and type(skill) == "string" then
-                -- Tentar obter o ID do RPC_LOOKUP
-                if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
-                    local rpc_id = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
-                    if rpc_id then
-                        WagstaffDebug("CORRECAO: Convertendo skill string '", skill, "' para ID RPC:", rpc_id)
-                        skill_to_pass = rpc_id
-                    else
-                        WagstaffDebug("ERRO: Skill '", skill, "' nao encontrada no RPC_LOOKUP, tentando passar como string mesmo assim")
-                    end
+                local rpc_id = WagstaffResolveSkillRPCID(skill)
+                if rpc_id ~= nil then
+                    WagstaffDebug("CORRECAO: Convertendo skill string '", skill, "' para ID RPC:", rpc_id)
+                    skill_to_pass = rpc_id
+                else
+                    WagstaffDebug("ERRO: Skill '", skill, "' nao encontrada em nenhum RPC_LOOKUP; abortando ativacao")
+                    return false
                 end
             end
             
@@ -2419,6 +2534,10 @@ local CreateSkillTree = function()
             end
             SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"].BACKGROUND_SETTINGS = data.BACKGROUND_SETTINGS
 
+            -- Publica o RPC_LOOKUP quando possivel. Em mundos com caves, TheSkillTree
+            -- costuma ficar nil neste ponto e aparecer alguns frames depois.
+            WagstaffScheduleRPCPublish()
+
             -- Created wagstaff skill tree
             WagstaffDebug("Successfully created wagstaff skill tree")
         end
@@ -2432,6 +2551,9 @@ CreateSkillTree()
 -- FIX: RPC_LOOKUP nil guard for skill tree crashes
 --==================================================================================
 AddSimPostInit(function()
+    -- Tenta preencher RPC_LOOKUP com a tabela real de Wagstaff antes de criar
+    -- qualquer fallback vazio. Criar {} cedo demais mascara o lookup valido.
+    WagstaffScheduleRPCPublish()
     if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP == nil then
         GLOBAL.TheSkillTree.RPC_LOOKUP = {}
     end
@@ -2726,6 +2848,7 @@ AddPrefabPostInit("world", function(self)
     -- Expose function to save activated skills to world
     self.SaveWagstaffSkillsToWorld = function(self, activatedskills)
         WagstaffDebug("SaveWagstaffSkillsToWorld called, activatedskills type:", type(activatedskills))
+        activatedskills = activatedskills or {}
         local _sc = 0; for _ in pairs(activatedskills) do _sc = _sc + 1 end; WagstaffDebug("SaveWagstaffSkillsToWorld called, skills count:", _sc)
         self._wagstaff_activated_skills = CopyActivatedSkills(activatedskills)
     end
