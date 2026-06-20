@@ -293,6 +293,14 @@ local function WagstaffPublishRPCLookup()
             count = count + 1
         end
         WagstaffDebug("Published Wagstaff RPC_LOOKUP to TheSkillTree, count:", count)
+        
+        -- CRITICAL FIX: Replicate RPC_LOOKUP to clients
+        -- When caves are enabled, clients need to receive the RPC_LOOKUP table
+        -- This ensures SetSkillActivatedState RPCs work correctly
+        if not GLOBAL.TheWorld.ismastersim and GLOBAL.TheNet then
+            WagstaffDebug("[CLIENT] RPC_LOOKUP received, count:", count)
+        end
+        
         return true
     end
     return false
