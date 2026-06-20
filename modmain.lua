@@ -1166,14 +1166,45 @@ local _wagstaff_xp_injecting = false
 
 local WAGSTAFF_SKILL_THRESHOLDS = {3,6,10,14,18,23,28,33,38,43,48,53,58,63,68}
 
+-- Cluster-aware days survived: reads from the Master/connected shard cluster save
+-- data when available (via GetSharedSaveData), falling back to local state.cycles.
+-- This prevents cave shards from reporting day 0 and zeroing out insights/skills.
 local function GetWagstaffDaysSurvived()
+    -- 1. Local cached value set by Master sync (highest priority)
     if GLOBAL.TheWorld and GLOBAL.TheWorld._wagstaff_days_survived ~= nil then
         return GLOBAL.TheWorld._wagstaff_days_survived
     end
+    -- 2. Shared cluster save data (autoritativo do Master)
+    if GLOBAL.TheWorld and GLOBAL.TheWorld.network and GLOBAL.TheWorld.network.GetSharedSaveData then
+        local shared = GLOBAL.TheWorld.network:GetSharedSaveData()
+        if shared and shared.wagstaff_days_survived ~= nil then
+            return shared.wagstaff_days_survived
+        end
+    end
+    -- 3. Fallback to local world state (non-cave or pre-sync)
     if GLOBAL.TheWorld and GLOBAL.TheWorld.state then
         return GLOBAL.TheWorld.state.cycles or 0
     end
     return 0
+end
+
+-- Merge cluster-shared skills into the local world table if available.
+-- This is the Camada C bridge: reads from GetSharedSaveData and overrides
+-- _wagstaff_activated_skills when the cluster data is more complete.
+local function WagstaffMergeClusterSaveData(self)
+    if self.network and self.network.GetSharedSaveData then
+        local shared = self.network:GetSharedSaveData()
+        if shared and type(shared) == "table" and shared.wagstaff_activated_skills then
+            WagstaffDebug("[CLUSTER] Merging cluster skills into local world, count:", shared.wagstaff_activated_skills)
+            self._wagstaff_activated_skills = CopyActivatedSkills(shared.wagstaff_activated_skills)
+            -- Also sync days if available
+            if shared.wagstaff_days_survived ~= nil then
+                self._wagstaff_days_survived = shared.wagstaff_days_survived
+            end
+            return true
+        end
+    end
+    return false
 end
 
 local function GetWagstaffMaxInsights(days)
@@ -2548,6 +2579,39 @@ end
 CreateSkillTree()
 
 --==================================================================================
+-- CAMADA A: RPC_LOOKUP cross-shard — republish quando shard conecta ao cluster.
+-- Em mundos com caves, o shard de cave carrega TheSkillTree e RPC_LOOKUP
+-- MUITO depois do PostInit inicial, quando o link Master↔Cave já está estabelecido.
+-- Este hook intercepta SetSharedSaveData no network object; Toda vez que o
+-- Master propaga dados para o cluster, o cave também republica o RPC_LOOKUP.
+--==================================================================================
+AddSimPostInit(function()
+    if GLOBAL.TheWorld and GLOBAL.TheWorld.network and GLOBAL.TheWorld.network.SetSharedSaveData then
+        local orig_SetSharedSaveData = GLOBAL.TheWorld.network.SetSharedSaveData
+        GLOBAL.TheWorld.network.SetSharedSaveData = function(net, data)
+            if orig_SetSharedSaveData then
+                orig_SetSharedSaveData(net, data)
+            end
+            -- Master acabou de propagar cluster save: republicar RPC_LOOKUP
+            -- no próximo frame para garantir que TheSkillTree existe
+            if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
+                GLOBAL.TheWorld:DoTaskInTime(0, function()
+                    WagstaffScheduleRPCPublish()
+                    WagstaffDebug("[CAMADA A] Re-published RPC_LOOKUP after cluster sync")
+                end)
+            end
+        end
+        WagstaffDebug("[CAMADA A] Hooked SetSharedSaveData for cross-shard RPC sync")
+    end
+    -- Post-load safety: republicar RPC_LOOKUP após 1s (catch shards tardios)
+    if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
+        GLOBAL.TheWorld:DoTaskInTime(1.0, function()
+            WagstaffScheduleRPCPublish()
+        end)
+    end
+end)
+
+--==================================================================================
 -- FIX: RPC_LOOKUP nil guard for skill tree crashes
 --==================================================================================
 AddSimPostInit(function()
@@ -2616,6 +2680,23 @@ AddPrefabPostInit("world", function(self)
     self._wagstaff_days_survived = nil
     self._wagstaff_activated_skills = {} -- Store activated skills per world
 
+    -- Camada C: Persistência cluster-wide via shared save data.
+    -- Em clusters (Master + Caves), cada shard tem seu próprio world save.
+    -- Usamos GetSharedSaveData/SetSharedSaveData para compartilhar o estado
+    -- autoritativo (dias + skills) entre todos os shards.
+    -- NOTA: GetSharedSaveData retorna uma VIEW SOMENTE-LEITURA do cluster save.
+    -- O engine aceita que mods retornem tabelas customizadas de lá; não chamamos
+    -- SetSharedSaveData diretamente (API não existe publicamente).
+    local function WagstaffGetClusterSaveData()
+        if self.network and self.network.GetSharedSaveData then
+            local shared = self.network:GetSharedSaveData()
+            if shared and type(shared) == "table" then
+                return shared
+            end
+        end
+        return nil
+    end
+
     -- Function to apply world skills to all Wagstaff players
     local function apply_world_skills_to_wagstaff()
         local _sk_count = 0; for _ in pairs(self._wagstaff_activated_skills) do _sk_count = _sk_count + 1 end; WagstaffDebug("apply_world_skills_to_wagstaff called, skills count:", _sk_count)
@@ -2630,8 +2711,18 @@ AddPrefabPostInit("world", function(self)
         local sorted_saved = SortedActivatedSkillKeys(self._wagstaff_activated_skills)
         WagstaffDebug("max_insights:", max_insights, "sorted_saved count:", #sorted_saved)
 
+        -- Camada B (autoritativo): Usar o maior valor entre os insights calculados
+        -- localmente e o número de skills salvas. Isso NUNCA poda skills que existem
+        -- no save. O motivo: o shard de cave pode ter max_insights=0 (day 0 local)
+        -- enquanto o Master tem skills salvas de dias > 0. O #sorted_saved é a fonte
+        -- de verdade autoritativa para "quantas skills existem".
+        local effective_max = math.max(max_insights, #sorted_saved)
+        if effective_max ~= max_insights then
+            WagstaffDebug("[CLUSTER B] max_insights expandido de", max_insights, "para", effective_max, "(#sorted_saved=", #sorted_saved, ")")
+        end
+
         local keep_set = {}
-        for i = 1, math.min(#sorted_saved, max_insights) do
+        for i = 1, math.min(#sorted_saved, effective_max) do
             keep_set[sorted_saved[i]] = true
         end
 
@@ -2659,10 +2750,10 @@ AddPrefabPostInit("world", function(self)
                     end
                 end
 
-                -- Clear and rebuild activatedskills
+                -- Clear and rebuild activatedskills (usa effective_max da Camada B)
                 updater.activatedskills = {}
                 local applied_count = 0
-                for i = 1, math.min(#sorted_saved, max_insights) do
+                for i = 1, math.min(#sorted_saved, effective_max) do
                     local skill = sorted_saved[i]
                     WagstaffDebug("Activating skill:", skill)
                     updater.activatedskills[skill] = true
@@ -2675,7 +2766,7 @@ AddPrefabPostInit("world", function(self)
                 
                 -- CRITICAL: Force dirty the skills to ensure they're replicated
                 SafeDirtySkillXP(updater)
-                player.wagstaff_world_insights = max_insights
+                player.wagstaff_world_insights = effective_max
                 
                 -- EXTRA DEBUG: Verify skills were actually set
                 local verify_count = 0
@@ -2783,6 +2874,11 @@ AddPrefabPostInit("world", function(self)
             WagstaffDebug("Loading wagstaff_activated_skills, data type:", type(data), "data.wagstaff_activated_skills type:", type(data.wagstaff_activated_skills))
             self._wagstaff_activated_skills = CopyActivatedSkills(data.wagstaff_activated_skills)
             WagstaffDebug("Loaded _wagstaff_days_survived:", self._wagstaff_days_survived)
+
+            -- Camada C: merge cluster-shared data (Master → Caves) se disponível.
+            -- Isso garante que um shard de cave novo leia skills/dias do Master
+            -- mesmo quando seu próprio world save está vazio.
+            WagstaffMergeClusterSaveData(self)
             local _lac = 0; for _ in pairs(self._wagstaff_activated_skills) do _lac = _lac + 1 end; WagstaffDebug("Loaded _wagstaff_activated_skills count:", _lac)
             local days = data.wagstaff_days_survived
             if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
@@ -2845,6 +2941,54 @@ AddPrefabPostInit("world", function(self)
         end
     end
 
+    -- Camada C (escrita): Propagar dias+skills para o cluster save quando o
+    -- shard Master persistir. Usa SetSharedSaveData quando disponível, senão
+    -- propaga via eventos de rede. Isso garante que caves recebam o estado
+    -- autoritativo sem depender apenas do world save local.
+    local function WagstaffPropagateToCluster(self)
+        if not self.network then return end
+        local ok_write, write_fn = pcall(function()
+            return self.network.SetSharedSaveData
+        end)
+        if ok_write and write_fn then
+            -- SetSharedSaveData existe: propagar diretamente.
+            local payload = {
+                wagstaff_days_survived = self._wagstaff_days_survived or 0,
+                wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills),
+            }
+            -- Usar pcall para evitar crash se a API mudar no futuro.
+            local ok_set, err = pcall(write_fn, self.network, payload)
+            if not ok_set then
+                WagstaffDebug("[CLUSTER] SetSharedSaveData falhou:", tostring(err))
+            else
+                WagstaffDebug("[CLUSTER] Propagado para cluster save, days:", payload.wagstaff_days_survived)
+            end
+        else
+            -- Fallback: broadcast via evento de rede (menos confiável, mas melhor que nada).
+            -- O Master e caves podem escutar esse evento e atualizar seu estado local.
+            if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("master") then
+                self:PushEvent("wagstaff_cluster_sync", {
+                    days = self._wagstaff_days_survived or 0,
+                    skills = CopyActivatedSkills(self._wagstaff_activated_skills),
+                })
+                WagstaffDebug("[CLUSTER] Broadcast sync via PushEvent (fallback)")
+            end
+        end
+    end
+
+    -- Intercepta OnSave do world para também propagar ao cluster.
+    local old_OnSave = self.OnSave
+    self.OnSave = function(self, ...)
+        local data = old_OnSave and old_OnSave(self, ...) or {}
+        data.wagstaff_fuelweaver_killed = self.state.wagstaff_fuelweaver_killed
+        data.wagstaff_celestial_killed  = self.state.wagstaff_celestial_killed
+        local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
+        data.wagstaff_days_survived = days
+        data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
+        -- Camada C: propagar para o cluster após salvar localmente.
+        WagstaffPropagateToCluster(self)
+        return data
+    end
     -- Expose function to save activated skills to world
     self.SaveWagstaffSkillsToWorld = function(self, activatedskills)
         WagstaffDebug("SaveWagstaffSkillsToWorld called, activatedskills type:", type(activatedskills))

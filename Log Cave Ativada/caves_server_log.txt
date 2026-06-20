@@ -1,8 +1,8 @@
 [00:00:00]: 
 System Memory:
 	Memory Load: 60%
-	Available Physical Memory: 9666m/24300m
-	Available Page File: 11067m/28908m
+	Available Physical Memory: 9667m/24300m
+	Available Page File: 11072m/28908m
 	Available Virtual Memory: 134213473m/134217727m
 	Available Extended Virtual Memory: 0m
 [00:00:00]: 
@@ -15,7 +15,7 @@ Process Memory:
 	Quota Non Paged Pool Usage: 15k
 	Page File Usage: 5m
 	Peak Page File Usage: 5m
-[00:00:00]: PersistRootStorage is now APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Master/ 
+[00:00:00]: PersistRootStorage is now APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Caves/ 
 [00:00:00]: Starting Up
 [00:00:00]: Version: 736959
 [00:00:00]: Current time: Fri Jun 19 23:56:46 2026
@@ -24,16 +24,16 @@ Process Memory:
 [00:00:00]: Build Date: 4175
 [00:00:00]: Mode: 64-bit
 [00:00:00]: Parsing command line
-[00:00:00]: Command Line Arguments: -monitor_parent_process 13172 -persistent_storage_root APP:Klei/ -conf_dir DoNotStarveTogether -cluster Cluster_1 -ownernetid 76561198072883011 -ownerdir 112617283 -clouddir 112617283 -backup_log_count 25 -backup_log_period 0 -ugc_directory C:\\Program Files (x86)\\Steam\\steamapps\\workshop -shard Master -secondary_log_prefix master -sigprefix DST_Master -token *********************************************************************************** 
+[00:00:00]: Command Line Arguments: -monitor_parent_process 13172 -persistent_storage_root APP:Klei/ -conf_dir DoNotStarveTogether -cluster Cluster_1 -ownernetid 76561198072883011 -ownerdir 112617283 -clouddir 112617283 -backup_log_count 25 -backup_log_period 0 -ugc_directory C:\\Program Files (x86)\\Steam\\steamapps\\workshop -shard Caves -secondary_log_prefix caves -sigprefix DST_Secondary -token *********************************************************************************** 
 [00:00:00]: Initializing distribution platform
 [00:00:00]: Initializing Minidump handler
 [00:00:00]: ....Done
 [00:00:00]: ....Done
 [00:00:00]: Fixing DPI
 [00:00:00]: ...Done
-[00:00:00]: THREAD - started 'GAClient' (20976)
+[00:00:00]: THREAD - started 'GAClient' (20424)
 [00:00:00]: CurlRequestManager::ClientThread::Main()
-[00:00:00]: ProfileIndex:0.81
+[00:00:00]: ProfileIndex:0.70
 [00:00:00]: Mounting file system databundles/klump.zip successful.
 [00:00:00]: Mounting file system databundles/shaders.zip successful.
 [00:00:00]: Mounting file system databundles/fonts.zip successful.
@@ -41,7 +41,7 @@ Process Memory:
 [00:00:00]: Mounting file system databundles/bigportraits.zip successful.
 [00:00:00]: Mounting file system databundles/images.zip successful.
 [00:00:00]: Mounting file system databundles/scripts.zip successful.
-[00:00:00]: [Steam] SteamGameServer_Init(10999, 27016)
+[00:00:00]: [Steam] SteamGameServer_Init(10998, 27017)
 [00:00:01]: [Steam] SteamGameServer_Init success
 [00:00:01]: [Connect] PendingConnection::Reset(true)
 [00:00:01]: Platform: 1
@@ -50,7 +50,7 @@ Process Memory:
 [00:00:01]: [Warning] Authorized application C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe is not setup in the firewall.
 [00:00:01]: Authorized application C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe is now enabled in the firewall.
 [00:00:01]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/blocklist.txt (Failure)
-[00:00:01]: THREAD - started 'StreamInput' (19636)
+[00:00:01]: THREAD - started 'StreamInput' (7636)
 [00:00:01]: OnLoadPermissionList: APP:Klei//DoNotStarveTogether/112617283/client_save/adminlist.txt (Failure)
 [00:00:01]: OnLoadUserIdList: APP:Klei//DoNotStarveTogether/112617283/client_save/whitelist.txt (Failure)
 [00:00:01]: Offline user ID: OU_76561198072883011
@@ -145,16 +145,16 @@ Process Memory:
 [00:00:01]: mod require file: src/cr/crsm.lua	
 [00:00:01]: mod require file: src/save/save.lua	
 [00:00:01]: mod require file: src/analysis/geterrormod.lua	
-[00:00:02]: mod require file: src/analysis/geterrorprefab.lua	
-[00:00:02]: mod require file: src/analysis/stackanalysis.lua	
-[00:00:02]: mod require file: src/ui/announce.lua	
-[00:00:02]: mod require file: src/ui/chatqueuetweak.lua	
-[00:00:02]: mod require file: src/creatserver/eesm.lua	
-[00:00:02]: mod require file: src/tools/readlogfile.lua	
-[00:00:02]: mod require file: src/analysis/analysisforpop.lua	
-[00:00:02]: mod require file: src/tools/gamestatusrecord.lua	
-[00:00:02]: mod require file: src/datacenter.lua	
-[00:00:02]: mod require file: src/html/htmlloggen.lua	
+[00:00:01]: mod require file: src/analysis/geterrorprefab.lua	
+[00:00:01]: mod require file: src/analysis/stackanalysis.lua	
+[00:00:01]: mod require file: src/ui/announce.lua	
+[00:00:01]: mod require file: src/ui/chatqueuetweak.lua	
+[00:00:01]: mod require file: src/creatserver/eesm.lua	
+[00:00:01]: mod require file: src/tools/readlogfile.lua	
+[00:00:01]: mod require file: src/analysis/analysisforpop.lua	
+[00:00:01]: mod require file: src/tools/gamestatusrecord.lua	
+[00:00:01]: mod require file: src/datacenter.lua	
+[00:00:01]: mod require file: src/html/htmlloggen.lua	
 [00:00:02]: mod require file: lib/threadscheduler.lua	
 [00:00:02]: mod require file: src/tools/threadmanager.lua	
 [00:00:02]: mod require file: src/tools/crypto.lua	
@@ -386,7 +386,7 @@ Process Memory:
 [00:00:08]: Could not preload undefined prefab (scrap)
 [00:00:08]: 	Load FE	
 [00:00:09]: 	Load FE: done	
-[00:00:09]: THREAD - started 'FilesExistAsyncThread' (12764)
+[00:00:09]: THREAD - started 'FilesExistAsyncThread' (19676)
 [00:00:09]: FilesExistAsyncThread started (0 files)...
 [00:00:09]: ... FilesExistAsyncThread complete
 [00:00:09]: Check for write access: TRUE
@@ -394,16 +394,16 @@ Process Memory:
 [00:00:09]: Available disk space for save files: 116189 MB
 [00:00:09]: ModIndex: Load sequence finished successfully.	
 [00:00:09]: Reset() returning
-[00:00:09]: [IPC] Signal 'DST_Master_Kill' opened  #00000000000009AC
-[00:00:09]: [IPC] Registering handler for signal #00000000000009AC
-[00:00:09]: [IPC] Handle #00000000000009AC added to the Eventhandles
-[00:00:09]: [IPC] Signal 'DST_Master_ShutdownNoSave' opened  #0000000000000A78
-[00:00:09]: [IPC] Registering handler for signal #0000000000000A78
-[00:00:09]: [IPC] Handle #0000000000000A78 added to the Eventhandles
-[00:00:09]: [IPC] Signal 'DST_Master_Starting' opened  #0000000000000A6C
-[00:00:09]: [IPC] Sending signal... #0000000000000A6C
+[00:00:09]: [IPC] Signal 'DST_Secondary_Kill' opened  #0000000000000A40
+[00:00:09]: [IPC] Registering handler for signal #0000000000000A40
+[00:00:09]: [IPC] Handle #0000000000000A40 added to the Eventhandles
+[00:00:09]: [IPC] Signal 'DST_Secondary_ShutdownNoSave' opened  #00000000000009F0
+[00:00:09]: [IPC] Registering handler for signal #00000000000009F0
+[00:00:09]: [IPC] Handle #00000000000009F0 added to the Eventhandles
+[00:00:09]: [IPC] Signal 'DST_Secondary_Starting' opened  #00000000000009CC
+[00:00:09]: [IPC] Sending signal... #00000000000009CC
 [00:00:11]: [200] Account Communication Success (6)
-[00:00:11]: Cached userid (null) saved to APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Master/save/cached_userid
+[00:00:11]: Cached userid (null) saved to APP:Klei//DoNotStarveTogether/112617283/Cluster_1/Caves/save/cached_userid
 [00:00:11]: Received (KU_rSBqsLp5) from TokenPurpose
 [00:00:11]: Starting Dedicated Server Game	
 [00:00:11]: Network tick rate: U=15(2), D=0
@@ -411,9 +411,9 @@ Process Memory:
 [00:00:11]:   Dedicated: true
 [00:00:11]:   Online: true
 [00:00:11]:   Passworded: false
-[00:00:11]:   ServerPort: 10999
-[00:00:11]:   SteamAuthPort: 8766
-[00:00:11]:   SteamMasterServerPort: 27016
+[00:00:11]:   ServerPort: 10998
+[00:00:11]:   SteamAuthPort: 8767
+[00:00:11]:   SteamMasterServerPort: 27017
 [00:00:11]:   ClanID: false
 [00:00:11]:   ClanOnly: false
 [00:00:11]:   ClanAdmin: false
@@ -429,208 +429,139 @@ Process Memory:
 [00:00:11]:   IdleTimeout: 1800s
 [00:00:11]:   VoteEnabled: false
 [00:00:11]:   InternetBroadcasting: true
-[00:00:11]: [Warning] Could not confirm port 10999 is open in the firewall. 
+[00:00:11]: [Warning] Could not confirm port 10998 is open in the firewall. 
 [00:00:11]: Could not load mod_config_data/modconfiguration_WagstaffPlus	
 [00:00:11]: Could not load mod_config_data/modconfiguration_workshop-3377689002	
-[00:00:11]: Online Server Started on port: 10999
+[00:00:11]: Online Server Started on port: 10998
 [00:00:11]: SUCCESS: Loaded modoverrides.lua	
 [00:00:11]: Found a level data override file with these contents:	
-[00:00:11]: 	K: 	desc	 V: 	The standard Don't Starve experience.	
+[00:00:11]: 	K: 	background_node_range	 V: 	table: 0000000014C60600	
+[00:00:11]: 		K: 	1	 V: 	0	
+[00:00:11]: 		K: 	2	 V: 	1	
+[00:00:11]: 	K: 	desc	 V: 	Delve into the caves... together!	
 [00:00:11]: 	K: 	hideminimap	 V: 	false	
-[00:00:11]: 	K: 	id	 V: 	SURVIVAL_TOGETHER	
-[00:00:11]: 	K: 	location	 V: 	forest	
+[00:00:11]: 	K: 	id	 V: 	DST_CAVE	
+[00:00:11]: 	K: 	location	 V: 	cave	
 [00:00:11]: 	K: 	max_playlist_position	 V: 	999	
 [00:00:11]: 	K: 	min_playlist_position	 V: 	0	
-[00:00:11]: 	K: 	name	 V: 	Survival	
-[00:00:11]: 	K: 	numrandom_set_pieces	 V: 	4	
+[00:00:11]: 	K: 	name	 V: 	The Caves	
+[00:00:11]: 	K: 	numrandom_set_pieces	 V: 	0	
 [00:00:11]: 	K: 	override_level_string	 V: 	false	
-[00:00:11]: 	K: 	overrides	 V: 	table: 000000001ACC12F0	
-[00:00:11]: 		K: 	alternatehunt	 V: 	default	
-[00:00:11]: 		K: 	angrybees	 V: 	default	
-[00:00:11]: 		K: 	antliontribute	 V: 	default	
-[00:00:11]: 		K: 	autumn	 V: 	default	
-[00:00:11]: 		K: 	balatro	 V: 	default	
-[00:00:11]: 		K: 	bananabush_portalrate	 V: 	default	
+[00:00:11]: 	K: 	overrides	 V: 	table: 0000000014C60150	
+[00:00:11]: 		K: 	acidrain_enabled	 V: 	always	
+[00:00:11]: 		K: 	atriumgate	 V: 	default	
+[00:00:11]: 		K: 	banana	 V: 	default	
 [00:00:11]: 		K: 	basicresource_regrowth	 V: 	none	
+[00:00:11]: 		K: 	bats	 V: 	default	
 [00:00:11]: 		K: 	bats_setting	 V: 	default	
-[00:00:11]: 		K: 	bearger	 V: 	default	
-[00:00:11]: 		K: 	beefalo	 V: 	default	
 [00:00:11]: 		K: 	beefaloheat	 V: 	default	
-[00:00:11]: 		K: 	beequeen	 V: 	default	
-[00:00:11]: 		K: 	bees	 V: 	default	
-[00:00:11]: 		K: 	bees_setting	 V: 	default	
 [00:00:11]: 		K: 	berrybush	 V: 	default	
-[00:00:11]: 		K: 	birds	 V: 	default	
 [00:00:11]: 		K: 	boons	 V: 	default	
 [00:00:11]: 		K: 	branching	 V: 	default	
 [00:00:11]: 		K: 	brightmarecreatures	 V: 	default	
+[00:00:11]: 		K: 	bunnymen	 V: 	default	
 [00:00:11]: 		K: 	bunnymen_setting	 V: 	default	
-[00:00:11]: 		K: 	butterfly	 V: 	default	
-[00:00:11]: 		K: 	buzzard	 V: 	default	
-[00:00:11]: 		K: 	cactus	 V: 	default	
-[00:00:11]: 		K: 	cactus_regrowth	 V: 	default	
-[00:00:11]: 		K: 	carrot	 V: 	default	
-[00:00:11]: 		K: 	carrots_regrowth	 V: 	default	
-[00:00:11]: 		K: 	catcoon	 V: 	default	
-[00:00:11]: 		K: 	catcoons	 V: 	default	
+[00:00:11]: 		K: 	cave_ponds	 V: 	default	
+[00:00:11]: 		K: 	cave_spiders	 V: 	default	
+[00:00:11]: 		K: 	cavelight	 V: 	default	
 [00:00:11]: 		K: 	chess	 V: 	default	
-[00:00:11]: 		K: 	cookiecutters	 V: 	default	
-[00:00:11]: 		K: 	crabking	 V: 	default	
+[00:00:11]: 		K: 	chest_mimics	 V: 	default	
 [00:00:11]: 		K: 	crow_carnival	 V: 	default	
 [00:00:11]: 		K: 	darkness	 V: 	default	
 [00:00:11]: 		K: 	day	 V: 	default	
-[00:00:11]: 		K: 	daywalker2	 V: 	default	
-[00:00:11]: 		K: 	deciduousmonster	 V: 	default	
-[00:00:11]: 		K: 	deciduoustree_regrowth	 V: 	default	
-[00:00:11]: 		K: 	deerclops	 V: 	default	
-[00:00:11]: 		K: 	dragonfly	 V: 	default	
+[00:00:11]: 		K: 	daywalker	 V: 	default	
 [00:00:11]: 		K: 	dropeverythingondespawn	 V: 	default	
+[00:00:11]: 		K: 	dustmoths	 V: 	default	
+[00:00:11]: 		K: 	earthquakes	 V: 	default	
 [00:00:11]: 		K: 	evergreen_regrowth	 V: 	default	
 [00:00:11]: 		K: 	extrastartingitems	 V: 	default	
-[00:00:11]: 		K: 	eyeofterror	 V: 	default	
-[00:00:11]: 		K: 	fishschools	 V: 	default	
+[00:00:11]: 		K: 	fern	 V: 	default	
+[00:00:11]: 		K: 	fissure	 V: 	default	
 [00:00:11]: 		K: 	flint	 V: 	default	
-[00:00:11]: 		K: 	flowers	 V: 	default	
-[00:00:11]: 		K: 	flowers_regrowth	 V: 	default	
-[00:00:11]: 		K: 	frograin	 V: 	default	
-[00:00:11]: 		K: 	frogs	 V: 	default	
+[00:00:11]: 		K: 	flower_cave	 V: 	default	
+[00:00:11]: 		K: 	flower_cave_regrowth	 V: 	default	
 [00:00:11]: 		K: 	fruitfly	 V: 	default	
 [00:00:11]: 		K: 	ghostenabled	 V: 	always	
 [00:00:11]: 		K: 	ghostsanitydrain	 V: 	always	
-[00:00:11]: 		K: 	gnarwail	 V: 	default	
-[00:00:11]: 		K: 	goosemoose	 V: 	default	
 [00:00:11]: 		K: 	grass	 V: 	default	
 [00:00:11]: 		K: 	grassgekkos	 V: 	default	
 [00:00:11]: 		K: 	hallowed_nights	 V: 	default	
-[00:00:11]: 		K: 	has_ocean	 V: 	true	
 [00:00:11]: 		K: 	healthpenalty	 V: 	always	
-[00:00:11]: 		K: 	hound_mounds	 V: 	default	
-[00:00:11]: 		K: 	houndmound	 V: 	default	
-[00:00:11]: 		K: 	hounds	 V: 	default	
 [00:00:11]: 		K: 	hunger	 V: 	default	
-[00:00:11]: 		K: 	hunt	 V: 	default	
-[00:00:11]: 		K: 	junkyard	 V: 	default	
-[00:00:11]: 		K: 	keep_disconnected_tiles	 V: 	true	
-[00:00:11]: 		K: 	klaus	 V: 	default	
+[00:00:11]: 		K: 	itemmimics	 V: 	default	
 [00:00:11]: 		K: 	krampus	 V: 	default	
-[00:00:11]: 		K: 	layout_mode	 V: 	LinkNodesByKeys	
+[00:00:11]: 		K: 	layout_mode	 V: 	RestrictNodesByKey	
 [00:00:11]: 		K: 	lessdamagetaken	 V: 	none	
+[00:00:11]: 		K: 	lichen	 V: 	default	
 [00:00:11]: 		K: 	liefs	 V: 	default	
-[00:00:11]: 		K: 	lightcrab_portalrate	 V: 	default	
-[00:00:11]: 		K: 	lightning	 V: 	default	
-[00:00:11]: 		K: 	lightninggoat	 V: 	default	
+[00:00:11]: 		K: 	lightflier_flower_regrowth	 V: 	default	
+[00:00:11]: 		K: 	lightfliers	 V: 	default	
 [00:00:11]: 		K: 	loop	 V: 	default	
-[00:00:11]: 		K: 	lunarhail_frequency	 V: 	default	
-[00:00:11]: 		K: 	lureplants	 V: 	default	
-[00:00:11]: 		K: 	malbatross	 V: 	default	
 [00:00:11]: 		K: 	marshbush	 V: 	default	
-[00:00:11]: 		K: 	merm	 V: 	default	
 [00:00:11]: 		K: 	merms	 V: 	default	
-[00:00:11]: 		K: 	meteorshowers	 V: 	default	
-[00:00:11]: 		K: 	meteorspawner	 V: 	default	
-[00:00:11]: 		K: 	moles	 V: 	default	
+[00:00:11]: 		K: 	molebats	 V: 	default	
 [00:00:11]: 		K: 	moles_setting	 V: 	default	
-[00:00:11]: 		K: 	monkeytail_portalrate	 V: 	default	
-[00:00:11]: 		K: 	moon_berrybush	 V: 	default	
-[00:00:11]: 		K: 	moon_bullkelp	 V: 	default	
-[00:00:11]: 		K: 	moon_carrot	 V: 	default	
-[00:00:11]: 		K: 	moon_fissure	 V: 	default	
-[00:00:11]: 		K: 	moon_fruitdragon	 V: 	default	
-[00:00:11]: 		K: 	moon_hotspring	 V: 	default	
-[00:00:11]: 		K: 	moon_rock	 V: 	default	
-[00:00:11]: 		K: 	moon_sapling	 V: 	default	
+[00:00:11]: 		K: 	monkey	 V: 	default	
+[00:00:11]: 		K: 	monkey_setting	 V: 	default	
 [00:00:11]: 		K: 	moon_spider	 V: 	default	
-[00:00:11]: 		K: 	moon_spiders	 V: 	default	
-[00:00:11]: 		K: 	moon_starfish	 V: 	default	
-[00:00:11]: 		K: 	moon_tree	 V: 	default	
-[00:00:11]: 		K: 	moon_tree_regrowth	 V: 	default	
-[00:00:11]: 		K: 	mosquitos	 V: 	default	
+[00:00:11]: 		K: 	mushgnome	 V: 	default	
 [00:00:11]: 		K: 	mushroom	 V: 	default	
-[00:00:11]: 		K: 	mutated_bearger	 V: 	default	
-[00:00:11]: 		K: 	mutated_bird_gestalt	 V: 	default	
+[00:00:11]: 		K: 	mushtree	 V: 	default	
+[00:00:11]: 		K: 	mushtree_moon_regrowth	 V: 	default	
+[00:00:11]: 		K: 	mushtree_regrowth	 V: 	default	
 [00:00:11]: 		K: 	mutated_birds	 V: 	default	
-[00:00:11]: 		K: 	mutated_buzzard_gestalt	 V: 	default	
-[00:00:11]: 		K: 	mutated_deerclops	 V: 	default	
-[00:00:11]: 		K: 	mutated_hounds	 V: 	default	
 [00:00:11]: 		K: 	mutated_merm	 V: 	default	
 [00:00:11]: 		K: 	mutated_spiderqueen	 V: 	default	
-[00:00:11]: 		K: 	mutated_warg	 V: 	default	
-[00:00:11]: 		K: 	no_joining_islands	 V: 	true	
-[00:00:11]: 		K: 	no_wormholes_to_disconnected_tiles	 V: 	true	
-[00:00:11]: 		K: 	ocean_bullkelp	 V: 	default	
-[00:00:11]: 		K: 	ocean_otterdens	 V: 	default	
-[00:00:11]: 		K: 	ocean_seastack	 V: 	ocean_default	
-[00:00:11]: 		K: 	ocean_shoal	 V: 	default	
-[00:00:11]: 		K: 	ocean_waterplant	 V: 	ocean_default	
-[00:00:11]: 		K: 	ocean_wobsterden	 V: 	default	
-[00:00:11]: 		K: 	otters_setting	 V: 	default	
-[00:00:11]: 		K: 	palmcone_seed_portalrate	 V: 	default	
-[00:00:11]: 		K: 	palmconetree	 V: 	default	
-[00:00:11]: 		K: 	palmconetree_regrowth	 V: 	default	
-[00:00:11]: 		K: 	penguins	 V: 	default	
-[00:00:11]: 		K: 	penguins_moon	 V: 	default	
-[00:00:11]: 		K: 	perd	 V: 	default	
-[00:00:11]: 		K: 	petrification	 V: 	default	
-[00:00:11]: 		K: 	pigs	 V: 	default	
+[00:00:11]: 		K: 	nightmarecreatures	 V: 	default	
 [00:00:11]: 		K: 	pigs_setting	 V: 	default	
-[00:00:11]: 		K: 	pirateraids	 V: 	default	
-[00:00:11]: 		K: 	ponds	 V: 	default	
-[00:00:11]: 		K: 	portal_spawnrate	 V: 	default	
 [00:00:11]: 		K: 	portalresurection	 V: 	none	
-[00:00:11]: 		K: 	powder_monkey_portalrate	 V: 	default	
 [00:00:11]: 		K: 	prefabswaps_start	 V: 	default	
-[00:00:11]: 		K: 	rabbits	 V: 	default	
-[00:00:11]: 		K: 	rabbits_setting	 V: 	default	
 [00:00:11]: 		K: 	reeds	 V: 	default	
 [00:00:11]: 		K: 	reeds_regrowth	 V: 	default	
 [00:00:11]: 		K: 	regrowth	 V: 	default	
 [00:00:11]: 		K: 	resettime	 V: 	default	
-[00:00:11]: 		K: 	rifts_enabled	 V: 	default	
-[00:00:11]: 		K: 	rifts_frequency	 V: 	default	
-[00:00:11]: 		K: 	roads	 V: 	default	
+[00:00:11]: 		K: 	rifts_enabled_cave	 V: 	default	
+[00:00:11]: 		K: 	rifts_frequency_cave	 V: 	default	
+[00:00:11]: 		K: 	roads	 V: 	never	
 [00:00:11]: 		K: 	rock	 V: 	default	
-[00:00:11]: 		K: 	rock_ice	 V: 	default	
-[00:00:11]: 		K: 	saltstack_regrowth	 V: 	default	
+[00:00:11]: 		K: 	rocky	 V: 	default	
+[00:00:11]: 		K: 	rocky_setting	 V: 	default	
 [00:00:11]: 		K: 	sapling	 V: 	default	
 [00:00:11]: 		K: 	season_start	 V: 	default	
 [00:00:11]: 		K: 	seasonalstartingitems	 V: 	default	
 [00:00:11]: 		K: 	shadowcreatures	 V: 	default	
-[00:00:11]: 		K: 	sharkboi	 V: 	default	
-[00:00:11]: 		K: 	sharks	 V: 	default	
+[00:00:11]: 		K: 	slurper	 V: 	default	
+[00:00:11]: 		K: 	slurtles	 V: 	default	
+[00:00:11]: 		K: 	slurtles_setting	 V: 	default	
+[00:00:11]: 		K: 	snurtles	 V: 	default	
 [00:00:11]: 		K: 	spawnmode	 V: 	fixed	
 [00:00:11]: 		K: 	spawnprotection	 V: 	default	
 [00:00:11]: 		K: 	specialevent	 V: 	default	
+[00:00:11]: 		K: 	spider_dropper	 V: 	default	
+[00:00:11]: 		K: 	spider_hider	 V: 	default	
+[00:00:11]: 		K: 	spider_spitter	 V: 	default	
 [00:00:11]: 		K: 	spider_warriors	 V: 	default	
 [00:00:11]: 		K: 	spiderqueen	 V: 	default	
 [00:00:11]: 		K: 	spiders	 V: 	default	
 [00:00:11]: 		K: 	spiders_setting	 V: 	default	
-[00:00:11]: 		K: 	spring	 V: 	default	
-[00:00:11]: 		K: 	squid	 V: 	default	
-[00:00:11]: 		K: 	stageplays	 V: 	default	
-[00:00:11]: 		K: 	start_location	 V: 	default	
-[00:00:11]: 		K: 	summer	 V: 	default	
-[00:00:11]: 		K: 	summerhounds	 V: 	default	
-[00:00:11]: 		K: 	tallbirds	 V: 	default	
-[00:00:11]: 		K: 	task_set	 V: 	default	
+[00:00:11]: 		K: 	start_location	 V: 	caves	
+[00:00:11]: 		K: 	task_set	 V: 	cave_default	
 [00:00:11]: 		K: 	temperaturedamage	 V: 	default	
 [00:00:11]: 		K: 	tentacles	 V: 	default	
-[00:00:11]: 		K: 	terrariumchest	 V: 	default	
+[00:00:11]: 		K: 	toadstool	 V: 	default	
 [00:00:11]: 		K: 	touchstone	 V: 	default	
+[00:00:11]: 		K: 	tree_rock	 V: 	default	
+[00:00:11]: 		K: 	tree_rock_regrowth	 V: 	default	
 [00:00:11]: 		K: 	trees	 V: 	default	
-[00:00:11]: 		K: 	tumbleweed	 V: 	default	
 [00:00:11]: 		K: 	twiggytrees_regrowth	 V: 	default	
-[00:00:11]: 		K: 	walrus	 V: 	default	
-[00:00:11]: 		K: 	walrus_setting	 V: 	default	
-[00:00:11]: 		K: 	wanderingtrader_enabled	 V: 	always	
-[00:00:11]: 		K: 	wasps	 V: 	default	
 [00:00:11]: 		K: 	weather	 V: 	default	
-[00:00:11]: 		K: 	wildfires	 V: 	default	
-[00:00:11]: 		K: 	winter	 V: 	default	
-[00:00:11]: 		K: 	winterhounds	 V: 	default	
 [00:00:11]: 		K: 	winters_feast	 V: 	default	
-[00:00:11]: 		K: 	wobsters	 V: 	default	
 [00:00:11]: 		K: 	world_size	 V: 	default	
-[00:00:11]: 		K: 	wormhole_prefab	 V: 	wormhole	
+[00:00:11]: 		K: 	wormattacks	 V: 	default	
+[00:00:11]: 		K: 	wormattacks_boss	 V: 	default	
+[00:00:11]: 		K: 	wormhole_prefab	 V: 	tentacle_pillar	
+[00:00:11]: 		K: 	wormlights	 V: 	default	
+[00:00:11]: 		K: 	worms	 V: 	default	
 [00:00:11]: 		K: 	year_of_the_beefalo	 V: 	default	
 [00:00:11]: 		K: 	year_of_the_bunnyman	 V: 	default	
 [00:00:11]: 		K: 	year_of_the_carrat	 V: 	default	
@@ -641,52 +572,28 @@ Process Memory:
 [00:00:11]: 		K: 	year_of_the_pig	 V: 	default	
 [00:00:11]: 		K: 	year_of_the_snake	 V: 	default	
 [00:00:11]: 		K: 	year_of_the_varg	 V: 	default	
-[00:00:11]: 	K: 	playstyle	 V: 	survival	
-[00:00:11]: 	K: 	random_set_pieces	 V: 	table: 000000001ACC1AC0	
-[00:00:11]: 		K: 	1	 V: 	Sculptures_2	
-[00:00:11]: 		K: 	2	 V: 	Sculptures_3	
-[00:00:11]: 		K: 	3	 V: 	Sculptures_4	
-[00:00:11]: 		K: 	4	 V: 	Sculptures_5	
-[00:00:11]: 		K: 	5	 V: 	Chessy_1	
-[00:00:11]: 		K: 	6	 V: 	Chessy_2	
-[00:00:11]: 		K: 	7	 V: 	Chessy_3	
-[00:00:11]: 		K: 	8	 V: 	Chessy_4	
-[00:00:11]: 		K: 	9	 V: 	Chessy_5	
-[00:00:11]: 		K: 	10	 V: 	Chessy_6	
-[00:00:11]: 		K: 	11	 V: 	Maxwell1	
-[00:00:11]: 		K: 	12	 V: 	Maxwell2	
-[00:00:11]: 		K: 	13	 V: 	Maxwell3	
-[00:00:11]: 		K: 	14	 V: 	Maxwell4	
-[00:00:11]: 		K: 	15	 V: 	Maxwell6	
-[00:00:11]: 		K: 	16	 V: 	Maxwell7	
-[00:00:11]: 		K: 	17	 V: 	Warzone_1	
-[00:00:11]: 		K: 	18	 V: 	Warzone_2	
-[00:00:11]: 		K: 	19	 V: 	Warzone_3	
-[00:00:11]: 	K: 	required_prefabs	 V: 	table: 000000001ACC1A20	
+[00:00:11]: 	K: 	required_prefabs	 V: 	table: 0000000014C5FDE0	
 [00:00:11]: 		K: 	1	 V: 	multiplayer_portal	
-[00:00:11]: 	K: 	required_setpieces	 V: 	table: 000000001ACC1570	
-[00:00:11]: 		K: 	1	 V: 	Sculptures_1	
-[00:00:11]: 		K: 	2	 V: 	Maxwell5	
-[00:00:11]: 	K: 	settings_desc	 V: 	The standard Don't Starve experience.	
-[00:00:11]: 	K: 	settings_id	 V: 	SURVIVAL_TOGETHER	
-[00:00:11]: 	K: 	settings_name	 V: 	Survival	
-[00:00:11]: 	K: 	substitutes	 V: 	table: 000000001ACC0D50	
+[00:00:11]: 	K: 	settings_desc	 V: 	Delve into the caves... together!	
+[00:00:11]: 	K: 	settings_id	 V: 	DST_CAVE	
+[00:00:11]: 	K: 	settings_name	 V: 	The Caves	
+[00:00:11]: 	K: 	substitutes	 V: 	table: 0000000014C60FB0	
 [00:00:11]: 	K: 	version	 V: 	4	
-[00:00:11]: 	K: 	worldgen_desc	 V: 	The standard Don't Starve experience.	
-[00:00:11]: 	K: 	worldgen_id	 V: 	SURVIVAL_TOGETHER	
-[00:00:11]: 	K: 	worldgen_name	 V: 	Survival	
+[00:00:11]: 	K: 	worldgen_desc	 V: 	Delve into the caves... together!	
+[00:00:11]: 	K: 	worldgen_id	 V: 	DST_CAVE	
+[00:00:11]: 	K: 	worldgen_name	 V: 	The Caves	
 [00:00:11]: Loaded and applied level data override from ../leveldataoverride.lua	
 [00:00:11]: Overwriting savedata with level data file.	
 [00:00:11]: Not applying world gen overrides.	
 [00:00:11]: Collecting garbage...
-[00:00:11]: lua_gc took 0.12 seconds
+[00:00:11]: lua_gc took 0.11 seconds
 [00:00:11]: ~ShardLuaProxy()
 [00:00:11]: ~cEventLeaderboardProxy()
 [00:00:11]: ~ItemServerLuaProxy()
 [00:00:11]: ~InventoryLuaProxy()
 [00:00:11]: ~NetworkLuaProxy()
 [00:00:11]: ~SimLuaProxy()
-[00:00:11]: lua_close took 0.14 seconds
+[00:00:11]: lua_close took 0.15 seconds
 [00:00:11]: ReleaseAll
 [00:00:11]: ReleaseAll Finished
 [00:00:11]: cGame::StartPlaying
@@ -896,14 +803,14 @@ Process Memory:
 [00:00:13]: bloom_enabled	true	
 [00:00:13]: OnFilesLoaded()	
 [00:00:13]: OnUpdatePurchaseStateComplete	
-[00:00:13]: Loading world: session/57634CF146E2AF22/0000000003	
+[00:00:13]: Loading world: session/35BF5C4A3B67FB23/0000000003	
 [00:00:13]: Save file is at version 5.23	
 [00:00:13]: Klump load on boot started.	
 [00:00:13]: Klump files loaded: 	0	
-[00:00:14]: 	Unload FE	
-[00:00:14]: 	Unload FE done	
-[00:00:14]: Could not unload undefined prefab (quagmire_telebrella)
-[00:00:14]: AddPortMapping(10999, 10999, 192.168.0.112) failed with code 718 (ConflictInMappingEntry)
+[00:00:13]: 	Unload FE	
+[00:00:13]: 	Unload FE done	
+[00:00:13]: Could not unload undefined prefab (quagmire_telebrella)
+[00:00:14]: AddPortMapping(10998, 10998, 192.168.0.112) failed with code 718 (ConflictInMappingEntry)
 [00:00:17]: Mod: workshop-3377689002 (Crash Never Mind)	Registering prefabs	
 [00:00:17]: Mod: workshop-3377689002 (Crash Never Mind)	  Registering default mod prefab	
 [00:00:17]: Mod: WagstaffPlus (Wagstaff Standalone)	Registering prefabs	
@@ -997,12 +904,12 @@ Process Memory:
 [00:00:18]: Could not preload undefined prefab (quagmire_telebrella)
 [00:00:18]: Could not preload undefined prefab (scrap)
 [00:00:18]: Could not preload undefined prefab (scrap)
-[00:00:19]: 	LOAD BE	
+[00:00:18]: 	LOAD BE	
 [00:00:38]: 	LOAD BE: done	
-[00:00:38]: Begin Session: 57634CF146E2AF22
+[00:00:38]: Begin Session: 35BF5C4A3B67FB23
 [00:00:38]: saving to server_temp/server_save	
 [00:00:38]: OVERRIDE: setting	healthpenalty	to	always	
-[00:00:38]: OVERRIDE: setting	wanderingtrader_enabled	to	always	
+[00:00:38]: OVERRIDE: setting	acidrain_enabled	to	always	
 [00:00:38]: OVERRIDE: setting	lessdamagetaken	to	none	
 [00:00:38]: MiniMapComponent::AddAtlas( minimap/minimap_data1.xml )
 [00:00:38]: MiniMapComponent::AddAtlas( minimap/minimap_data2.xml )
@@ -1028,359 +935,151 @@ Process Memory:
 [00:00:38]: [Wagstaff Debug] World persistence functions installed on TheWorld	
 [00:00:38]: Loading 20 new character(s)	
 [00:00:39]: Total 20 character(s) loaded	
-[00:00:40]: Loading Nav Grid	
-[00:00:40]: World generated on build 736959 with save version: 5.23, using seed: 805983718	
-[00:00:40]: setting 	summerlength	15	
-[00:00:40]: setting 	cavemoonphase	new	
-[00:00:40]: setting 	iscavefullmoon	false	
-[00:00:40]: setting 	isnightmaredawn	false	
-[00:00:40]: setting 	elapseddaysinseason	0	
-[00:00:40]: setting 	isfullmoon	false	
-[00:00:40]: setting 	moisture	7.0999774932861	
-[00:00:40]: setting 	springlength	20	
-[00:00:40]: setting 	iscavewaxingmoon	true	
-[00:00:40]: setting 	isnightmarewild	false	
-[00:00:40]: setting 	remainingdaysinseason	20	
-[00:00:40]: setting 	nightmaretimeinphase	0	
-[00:00:40]: setting 	precipitationrate	0	
-[00:00:40]: setting 	moonphase	new	
-[00:00:40]: setting 	israining	false	
-[00:00:40]: setting 	iswet	false	
-[00:00:40]: setting 	isnewmoon	false	
-[00:00:40]: setting 	islunarhailing	false	
-[00:00:40]: setting 	iswinter	false	
-[00:00:40]: setting 	isnightmarewarn	false	
-[00:00:40]: setting 	lunarhailrate	0	
-[00:00:40]: setting 	precipitation	none	
-[00:00:40]: setting 	isacidraining	false	
-[00:00:40]: setting 	wagstaff_celestial_killed	false	
-[00:00:40]: setting 	winterlength	15	
-[00:00:40]: setting 	timeinphase	0.11835861206055	
-[00:00:40]: setting 	temperature	34.640999570424	
-[00:00:40]: setting 	iscavedusk	false	
-[00:00:40]: setting 	moistureceil	886.07299804688	
-[00:00:40]: setting 	isday	true	
-[00:00:40]: setting 	pop	0.0080128584314568	
-[00:00:40]: setting 	season	autumn	
-[00:00:40]: setting 	issnowing	false	
-[00:00:40]: setting 	isalterawake	false	
-[00:00:40]: setting 	isnightmarecalm	false	
-[00:00:40]: setting 	isnight	false	
-[00:00:40]: setting 	isdusk	false	
-[00:00:40]: setting 	isspring	false	
-[00:00:40]: setting 	isautumn	true	
-[00:00:40]: setting 	iscaveday	true	
-[00:00:40]: setting 	lunarhaillevel	0	
-[00:00:40]: setting 	issnowcovered	false	
-[00:00:40]: setting 	snowlevel	0	
-[00:00:40]: setting 	iswaxingmoon	true	
-[00:00:40]: setting 	autumnlength	20	
-[00:00:40]: setting 	phase	day	
-[00:00:40]: setting 	nightmaretime	0	
-[00:00:40]: setting 	cycles	0	
-[00:00:40]: setting 	wagstaff_fuelweaver_killed	false	
-[00:00:40]: setting 	nightmarephase	none	
-[00:00:40]: setting 	wetness	0	
-[00:00:40]: setting 	seasonprogress	0.5	
-[00:00:40]: setting 	iscavenight	false	
-[00:00:40]: setting 	iscavenewmoon	false	
-[00:00:40]: setting 	issummer	false	
-[00:00:40]: setting 	cavephase	day	
-[00:00:40]: setting 	time	0.059179306030273	
-[00:00:40]: [Wagstaff Debug] World OnLoad called	
-[00:00:40]: [Wagstaff Debug] New world detected, setting defaults	
-[00:00:40]: OVERRIDE: setting	ghostenabled	to	always	
-[00:00:40]: OVERRIDE: setting	basicresource_regrowth	to	none	
-[00:00:40]: OVERRIDE: setting	portalresurection	to	none	
-[00:00:40]: OVERRIDE: setting	spawnmode	to	fixed	
-[00:00:40]: OVERRIDE: setting	ghostsanitydrain	to	always	
-[00:00:47]: Reconstructing topology	
-[00:00:47]: 	...Sorting points	
-[00:00:47]: 	...Sorting edges	
-[00:00:47]: 	...Connecting nodes	
-[00:00:47]: 	...Validating connections	
-[00:00:47]: 	...Housekeeping	
-[00:00:47]: 	...Done!	
-[00:00:47]: [Wagstaff Debug] Published Wagstaff RPC_LOOKUP to TheSkillTree, count: 17	
-[00:00:47]: 1 uploads added to server. From server_temp
-[00:00:47]: About to start a shard with these settings:
-[00:00:47]:   ShardName: Master
-[00:00:47]:   ShardID: 1
-[00:00:47]:   ShardRole: MASTER
-[00:00:47]:   MasterHost: (null)
-[00:00:47]:   MasterBind: 127.0.0.1
-[00:00:47]:   MasterPort: 10888
-[00:00:47]: [Shard] Starting master server
-[00:00:47]: [Warning] Could not confirm port 10888 is open in the firewall. 
-[00:00:47]: [Shard] Shard server started on port: 10888
-[00:00:47]: [IPC] Signal 'DST_Master_Ready' opened  #0000000000000B08
-[00:00:47]: [IPC] Sending signal... #0000000000000B08
-[00:00:47]: Telling Client our new session identifier: 57634CF146E2AF22
-[00:00:47]: Check for write access: TRUE
-[00:00:47]: Check for read access: TRUE
-[00:00:47]: Available disk space for save files: 116184 MB
-[00:00:47]: ModIndex: Load sequence finished successfully.	
-[00:00:48]: Reset() returning
-[00:00:48]: Validating portal[7] <-> 1900311911[7] (inactive)	
-[00:00:48]: Validating portal[2] <-> 1900311911[2] (inactive)	
-[00:00:48]: Validating portal[3] <-> 1900311911[3] (inactive)	
-[00:00:48]: Validating portal[9] <-> 1900311911[9] (inactive)	
-[00:00:48]: Validating portal[5] <-> 1900311911[5] (inactive)	
-[00:00:48]: Validating portal[oceanwhirlbigportal] <-> 1900311911[oceanwhirlbigportal] (inactive)	
-[00:00:49]: Validating portal[1] <-> 1900311911[1] (inactive)	
-[00:00:49]: Validating portal[10] <-> 1900311911[10] (inactive)	
-[00:00:49]: Validating portal[8] <-> 1900311911[8] (inactive)	
-[00:00:49]: Validating portal[4] <-> 1900311911[4] (inactive)	
-[00:00:49]: Validating portal[6] <-> 1900311911[6] (inactive)	
-[00:00:49]: Sim paused
-[00:00:49]: Server registered via geo DNS in us-east-1
-[00:00:53]: [Shard] Secondary shard Caves(1900311911) connected: [LAN] 127.0.0.1
-[00:00:55]: [Shard] Secondary Caves(1900311911) ready!
-[00:00:55]: World 1900311911(Caves) is now connected	
-[00:00:55]: [SyncWorldSettings] Sending master world option ghostsanitydrain = always to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option darkness = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option resettime = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option hunger = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option healthpenalty = always to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option temperaturedamage = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option spawnmode = fixed to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option shadowcreatures = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option ghostenabled = always to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option brightmarecreatures = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option lessdamagetaken = none to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option portalresurection = none to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option basicresource_regrowth = none to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option krampus = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Sending master world option dropeverythingondespawn = default to secondary shards.	
-[00:00:55]: Validating portal[7] <-> 1900311911[7] (disabled)	
-[00:00:55]: Validating portal[2] <-> 1900311911[2] (disabled)	
-[00:00:55]: Validating portal[3] <-> 1900311911[3] (disabled)	
-[00:00:55]: Validating portal[9] <-> 1900311911[9] (disabled)	
-[00:00:55]: Validating portal[5] <-> 1900311911[5] (disabled)	
-[00:00:55]: Validating portal[oceanwhirlbigportal] <-> 1900311911[oceanwhirlbigportal] (active)	
-[00:00:55]: Validating portal[1] <-> 1900311911[1] (disabled)	
-[00:00:55]: Validating portal[10] <-> 1900311911[10] (disabled)	
-[00:00:55]: Validating portal[8] <-> 1900311911[8] (disabled)	
-[00:00:55]: Validating portal[4] <-> 1900311911[4] (disabled)	
-[00:00:55]: Validating portal[6] <-> 1900311911[6] (disabled)	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option ghostsanitydrain = always to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option darkness = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option resettime = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option hunger = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option healthpenalty = always to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option temperaturedamage = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option spawnmode = fixed to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option shadowcreatures = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option ghostenabled = always to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option brightmarecreatures = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option lessdamagetaken = none to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option portalresurection = none to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option basicresource_regrowth = none to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option krampus = default to secondary shards.	
-[00:00:55]: [SyncWorldSettings] Resyncing master world option dropeverythingondespawn = default to secondary shards.	
-[00:00:57]: New incoming connection 127.0.0.1|53454 <4608373995074801191>
-[00:00:57]: Client connected from [LAN] 127.0.0.1|53454 <4608373995074801191>
-[00:00:57]: ValidateGameSessionToken GUID<4608373995074801191>
-[00:00:57]: Client authenticated: (KU_rSBqsLp5) .FB
-[00:00:57]: [Steam] Authenticated host '76561198072883011'
-[00:00:59]: There is no active event to validate against.
-[00:00:59]: [Shard] Read save location file for (KU_rSBqsLp5)
-[00:01:39]: Resuming user: session/57634CF146E2AF22/A7MLOBQDIN65/0000000003
-[00:01:39]: User ID	KU_rSBqsLp5	assigned ownership to entity	118379 - wagstaff	
-[00:01:39]: [Wagstaff Debug] Player OnLoad called	
-[00:01:39]: [Wagstaff Debug] Scheduling ForceZeroWagstaffXP in 0 seconds	
-[00:01:39]: [Wagstaff Debug] Set wagstaff_received_starting_items to true	
-[00:01:39]: [Wagstaff Debug] Scheduling ApplyWagstaffSkills in 0.6 seconds	
-[00:01:39]: Spawning player at: [Load] (-42.75, 0.00, 61.51)	
+[00:00:48]: Loading Nav Grid	
+[00:00:49]: World generated on build 736959 with save version: 5.23, using seed: 576849091	
+[00:00:49]: setting 	summerlength	15	
+[00:00:49]: setting 	cavemoonphase	new	
+[00:00:49]: setting 	iscavefullmoon	false	
+[00:00:49]: setting 	isnightmaredawn	false	
+[00:00:49]: setting 	elapseddaysinseason	0	
+[00:00:49]: setting 	isfullmoon	false	
+[00:00:49]: setting 	moisture	9.0499477386475	
+[00:00:49]: setting 	springlength	20	
+[00:00:49]: setting 	iscavewaxingmoon	true	
+[00:00:49]: setting 	isnightmarewild	false	
+[00:00:49]: setting 	remainingdaysinseason	20	
+[00:00:49]: setting 	nightmaretimeinphase	0.10053100585938	
+[00:00:49]: setting 	precipitationrate	0	
+[00:00:49]: setting 	moonphase	new	
+[00:00:49]: setting 	israining	false	
+[00:00:49]: setting 	iswet	false	
+[00:00:49]: setting 	isnewmoon	false	
+[00:00:49]: setting 	islunarhailing	false	
+[00:00:49]: setting 	iswinter	false	
+[00:00:49]: setting 	isnightmarewarn	false	
+[00:00:49]: setting 	lunarhailrate	0	
+[00:00:49]: setting 	precipitation	none	
+[00:00:49]: setting 	isacidraining	false	
+[00:00:49]: setting 	wagstaff_celestial_killed	false	
+[00:00:49]: setting 	winterlength	15	
+[00:00:49]: setting 	timeinphase	0.12849966684977	
+[00:00:49]: setting 	temperature	19.663247420561	
+[00:00:49]: setting 	iscavedusk	false	
+[00:00:49]: setting 	moistureceil	762.90484619141	
+[00:00:49]: setting 	isday	false	
+[00:00:49]: setting 	pop	0.011862485582346	
+[00:00:49]: setting 	season	autumn	
+[00:00:49]: setting 	issnowing	false	
+[00:00:49]: setting 	isalterawake	false	
+[00:00:49]: setting 	isnightmarecalm	true	
+[00:00:49]: setting 	isnight	true	
+[00:00:49]: setting 	isdusk	false	
+[00:00:49]: setting 	isspring	false	
+[00:00:49]: setting 	isautumn	true	
+[00:00:49]: setting 	iscaveday	true	
+[00:00:49]: setting 	lunarhaillevel	0	
+[00:00:49]: setting 	issnowcovered	false	
+[00:00:49]: setting 	snowlevel	0	
+[00:00:49]: setting 	iswaxingmoon	true	
+[00:00:49]: setting 	autumnlength	20	
+[00:00:49]: setting 	phase	night	
+[00:00:49]: setting 	nightmaretime	36.191162109375	
+[00:00:49]: setting 	cycles	0	
+[00:00:49]: setting 	wagstaff_fuelweaver_killed	false	
+[00:00:49]: setting 	nightmarephase	calm	
+[00:00:49]: setting 	wetness	0	
+[00:00:49]: setting 	seasonprogress	0.5	
+[00:00:49]: setting 	iscavenight	false	
+[00:00:49]: setting 	iscavenewmoon	false	
+[00:00:49]: setting 	issummer	false	
+[00:00:49]: setting 	cavephase	day	
+[00:00:49]: setting 	time	0.064249833424886	
+[00:00:49]: [Wagstaff Debug] World OnLoad called	
+[00:00:49]: [Wagstaff Debug] New world detected, setting defaults	
+[00:00:49]: [Wagstaff Debug] [CAVE] New cave world detected, using delayed initialization	
+[00:00:49]: [Shard] Secondary shard is waiting for LUA...
+[00:00:49]: OVERRIDE: setting	ghostenabled	to	always	
+[00:00:49]: OVERRIDE: setting	basicresource_regrowth	to	none	
+[00:00:49]: OVERRIDE: setting	portalresurection	to	none	
+[00:00:49]: OVERRIDE: setting	spawnmode	to	fixed	
+[00:00:49]: OVERRIDE: setting	ghostsanitydrain	to	always	
+[00:00:53]: Reconstructing topology	
+[00:00:53]: 	...Sorting points	
+[00:00:53]: 	...Sorting edges	
+[00:00:53]: 	...Connecting nodes	
+[00:00:53]: 	...Validating connections	
+[00:00:53]: 	...Housekeeping	
+[00:00:53]: 	...Done!	
+[00:00:53]: [Wagstaff Debug] Published Wagstaff RPC_LOOKUP to TheSkillTree, count: 17	
+[00:00:53]: 1 uploads added to server. From server_temp
+[00:00:53]: About to start a shard with these settings:
+[00:00:53]:   ShardName: Caves
+[00:00:53]:   ShardID: 1900311911
+[00:00:53]:   ShardRole: SECONDARY
+[00:00:53]:   MasterHost: 127.0.0.1
+[00:00:53]:   MasterBind: (null)
+[00:00:53]:   MasterPort: 10888
+[00:00:53]: [Shard] Connecting to master...
+[00:00:53]: Telling Client our new session identifier: 35BF5C4A3B67FB23
+[00:00:53]: Check for write access: TRUE
+[00:00:53]: Check for read access: TRUE
+[00:00:53]: Available disk space for save files: 116184 MB
+[00:00:53]: ModIndex: Load sequence finished successfully.	
+[00:00:53]: Reset() returning
+[00:00:53]: [Shard] Sending secondary shard information to master...
+[00:00:53]: Validating portal[10] <-> 1[10] (inactive)	
+[00:00:53]: Validating portal[8] <-> 1[8] (inactive)	
+[00:00:53]: Validating portal[1] <-> 1[1] (inactive)	
+[00:00:53]: Validating portal[oceanwhirlbigportal] <-> 1[oceanwhirlbigportal] (inactive)	
+[00:00:53]: Validating portal[3] <-> 1[3] (inactive)	
+[00:00:53]: Validating portal[4] <-> 1[4] (inactive)	
+[00:00:53]: Validating portal[6] <-> 1[6] (inactive)	
+[00:00:53]: Validating portal[7] <-> 1[7] (inactive)	
+[00:00:53]: Validating portal[5] <-> 1[5] (inactive)	
+[00:00:53]: Validating portal[2] <-> 1[2] (inactive)	
+[00:00:53]: Validating portal[9] <-> 1[9] (inactive)	
+[00:00:53]: Received MasterInfoPacket row KU_rSBqsLp5 region us-east-1
+[00:00:53]: Obtaining secondary shard IP from us-east-1 lobby
+[00:00:54]: [Wagstaff Debug] Published Wagstaff RPC_LOOKUP to TheSkillTree, count: 17	
+[00:00:54]: [Shard] secondary shard is now ready!
+[00:00:55]: World 1(Master) is now connected	
+[00:00:55]: Validating portal[10] <-> 1[10] (active)	
+[00:00:55]: Validating portal[8] <-> 1[8] (active)	
+[00:00:55]: Validating portal[1] <-> 1[1] (active)	
+[00:00:55]: Validating portal[oceanwhirlbigportal] <-> 1[oceanwhirlbigportal] (disabled)	
+[00:00:55]: Validating portal[3] <-> 1[3] (active)	
+[00:00:55]: Validating portal[4] <-> 1[4] (active)	
+[00:00:55]: Validating portal[6] <-> 1[6] (active)	
+[00:00:55]: Validating portal[7] <-> 1[7] (active)	
+[00:00:55]: Validating portal[5] <-> 1[5] (active)	
+[00:00:55]: Validating portal[2] <-> 1[2] (active)	
+[00:00:55]: Validating portal[9] <-> 1[9] (active)	
+[00:00:55]: [SyncWorldSettings] recieved world settings from master shard.	true	
+[00:00:55]: [SyncWorldSettings] applying temperaturedamage = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying spawnmode = fixed from master shard.	
+[00:00:55]: [SyncWorldSettings] applying lessdamagetaken = none from master shard.	
+[00:00:55]: [SyncWorldSettings] applying ghostenabled = always from master shard.	
+[00:00:55]: [SyncWorldSettings] applying shadowcreatures = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying resettime = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying krampus = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying ghostsanitydrain = always from master shard.	
+[00:00:55]: [SyncWorldSettings] applying healthpenalty = always from master shard.	
+[00:00:55]: [SyncWorldSettings] applying dropeverythingondespawn = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying darkness = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying portalresurection = none from master shard.	
+[00:00:55]: [SyncWorldSettings] applying brightmarecreatures = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying hunger = default from master shard.	
+[00:00:55]: [SyncWorldSettings] applying basicresource_regrowth = none from master shard.	
+[00:00:55]: [Wagstaff Debug] apply_world_skills_to_wagstaff called, skills count: 0	
+[00:00:55]: [Wagstaff Debug] self._wagstaff_days_survived: 0	
+[00:00:55]: [Wagstaff Debug] max_insights: 0 sorted_saved count: 0	
+[00:00:56]: [Shard] secondary shard LUA is now ready!
+[00:00:56]: [IPC] Signal 'DST_Secondary_Ready' opened  #000000000000098C
+[00:00:56]: [IPC] Sending signal... #000000000000098C
+[00:00:56]: Sim paused
 [00:01:39]: Sim unpaused
-[00:01:39]: [Wagstaff Debug] apply_world_skills_to_wagstaff called, skills count: 0	
-[00:01:39]: [Wagstaff Debug] self._wagstaff_days_survived: 0	
-[00:01:39]: [Wagstaff Debug] max_insights: 0 sorted_saved count: 0	
-[00:01:39]: [Wagstaff Debug] Checking player: wagstaff	
-[00:01:39]: [Wagstaff Debug] Found Wagstaff player	
-[00:01:39]: [Wagstaff Debug] Created empty activatedskills table for player	
-[00:01:39]: [Wagstaff Debug] Old activated skills count: 0	
-[00:01:39]: [Wagstaff Debug] Final activated skills count: 0	
-[00:01:39]: [Wagstaff Debug] VERIFICATION: activatedskills now has 0 skills	
-[00:01:40]: [Wagstaff Debug] ApplyWagstaffSkills DoTaskInTime callback executing	
-[00:01:40]: [Wagstaff Debug] Calling GLOBAL.TheWorld:ApplyWagstaffSkills	
-[00:01:40]: [Wagstaff Debug] apply_world_skills_to_wagstaff called, skills count: 0	
-[00:01:40]: [Wagstaff Debug] self._wagstaff_days_survived: 0	
-[00:01:40]: [Wagstaff Debug] max_insights: 0 sorted_saved count: 0	
-[00:01:40]: [Wagstaff Debug] Checking player: wagstaff	
-[00:01:40]: [Wagstaff Debug] Found Wagstaff player	
-[00:01:40]: [Wagstaff Debug] Old activated skills count: 0	
-[00:01:40]: [Wagstaff Debug] Final activated skills count: 0	
-[00:01:40]: [Wagstaff Debug] VERIFICATION: activatedskills now has 0 skills	
-[00:01:40]: [Wagstaff Debug] Set inst.wagstaff_world_insights to: 0	
-[00:01:40]: [Wagstaff Debug] Published Wagstaff RPC_LOOKUP to TheSkillTree, count: 17	
-[00:02:43]: [DEBUG] ==============================================	
-[00:02:43]: [DEBUG] OnFinishCallback chamado para Brute Bot	
-[00:02:43]: [DEBUG] inst.prefab:	williambrute	
-[00:02:43]: [DEBUG] worker.prefab:	wagstaff	
-[00:02:43]: [DEBUG] worker.name:	.FB	
-[00:02:43]: [DEBUG] inst.upgradelevel:	0	
-[00:02:43]: [DEBUG] inst.upgradelevel_mk3:	nil	
-[00:02:43]: [DEBUG] wrench:	tf2wrench	
-[00:02:43]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
-[00:02:43]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
-[00:02:43]: [DEBUG] worker tem skilltreeupdater?	true	
-[00:02:43]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
-[00:02:43]: [DEBUG WagstaffHasSkill] worker:	118379 - wagstaff	wagstaff	
-[00:02:43]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:43]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
-[00:02:43]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:43]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
-[00:02:43]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
-[00:02:43]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 00000000090885B0	
-[00:02:43]: [DEBUG WagstaffHasSkill] activatedskills:	table: 00000000452A1760	
-[00:02:43]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
-[00:02:43]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
-[00:02:43]: [DEBUG WagstaffHasSkill] activatedskills está VAZIO! Tentando carregar do world save...	
-[00:02:43]: [DEBUG WagstaffHasSkill] world_skills do GetWagstaffSkillsFromWorld:	table: 000000001E526D60	
-[00:02:43]: [DEBUG WagstaffHasSkill] Verificando world skills...	
-[00:02:43]: [Wagstaff Debug] [WagstaffHasSkill] Verificando world skills para: wagstaff_brute_evolve	
-[00:02:43]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001E526D60	
-[00:02:43]: [Wagstaff Debug] [WagstaffHasSkill] world_skills type: table	
-[00:02:43]: [Wagstaff Debug] [WagstaffHasSkill] world_skills keys:	
-[00:02:43]: [Wagstaff Debug] [WagstaffHasSkill] Skill wagstaff_brute_evolve NAO encontrada no world data	
-[00:02:43]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
-[00:02:43]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
-[00:02:43]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
-[00:02:43]: [DEBUG WagstaffHasSkill] HasTag=	false	
-[00:02:43]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
-[00:02:43]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
-[00:02:43]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
-[00:02:43]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
-[00:02:43]: [DEBUG WagstaffHasSkill] Retornando false	
-[00:02:43]: [DEBUG] Resultado de WagstaffHasSkill:	false	
-[00:02:43]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
 [00:02:45]: Server Autopaused	
-[00:02:46]: Invalid SetSkillActivatedState no skill with id RPC from (KU_rSBqsLp5) .FB	
 [00:02:48]: Server Unpaused	
-[00:02:52]: [DEBUG] ==============================================	
-[00:02:52]: [DEBUG] OnFinishCallback chamado para Brute Bot	
-[00:02:52]: [DEBUG] inst.prefab:	williambrute	
-[00:02:52]: [DEBUG] worker.prefab:	wagstaff	
-[00:02:52]: [DEBUG] worker.name:	.FB	
-[00:02:52]: [DEBUG] inst.upgradelevel:	0	
-[00:02:52]: [DEBUG] inst.upgradelevel_mk3:	nil	
-[00:02:52]: [DEBUG] wrench:	tf2wrench	
-[00:02:52]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
-[00:02:52]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
-[00:02:52]: [DEBUG] worker tem skilltreeupdater?	true	
-[00:02:52]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker:	118379 - wagstaff	wagstaff	
-[00:02:52]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:52]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
-[00:02:52]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 00000000090885B0	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills:	table: 00000000452A1760	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
-[00:02:52]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills está VAZIO! Tentando carregar do world save...	
-[00:02:52]: [DEBUG WagstaffHasSkill] world_skills do GetWagstaffSkillsFromWorld:	table: 000000001E526D60	
-[00:02:52]: [DEBUG WagstaffHasSkill] Verificando world skills...	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] Verificando world skills para: wagstaff_brute_evolve	
-[00:02:52]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001E526D60	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] world_skills type: table	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] world_skills keys:	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] Skill wagstaff_brute_evolve NAO encontrada no world data	
-[00:02:52]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
-[00:02:52]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
-[00:02:52]: [DEBUG WagstaffHasSkill] HasTag=	false	
-[00:02:52]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
-[00:02:52]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
-[00:02:52]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
-[00:02:52]: [DEBUG WagstaffHasSkill] Retornando false	
-[00:02:52]: [DEBUG] Resultado de WagstaffHasSkill:	false	
-[00:02:52]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
-[00:02:52]: [DEBUG] ==============================================	
-[00:02:52]: [DEBUG] OnFinishCallback chamado para Brute Bot	
-[00:02:52]: [DEBUG] inst.prefab:	williambrute	
-[00:02:52]: [DEBUG] worker.prefab:	wagstaff	
-[00:02:52]: [DEBUG] worker.name:	.FB	
-[00:02:52]: [DEBUG] inst.upgradelevel:	0	
-[00:02:52]: [DEBUG] inst.upgradelevel_mk3:	nil	
-[00:02:52]: [DEBUG] wrench:	tf2wrench	
-[00:02:52]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
-[00:02:52]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
-[00:02:52]: [DEBUG] worker tem skilltreeupdater?	true	
-[00:02:52]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker:	118379 - wagstaff	wagstaff	
-[00:02:52]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:52]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
-[00:02:52]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 00000000090885B0	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills:	table: 00000000452A1760	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
-[00:02:52]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills está VAZIO! Tentando carregar do world save...	
-[00:02:52]: [DEBUG WagstaffHasSkill] world_skills do GetWagstaffSkillsFromWorld:	table: 000000001E526D60	
-[00:02:52]: [DEBUG WagstaffHasSkill] Verificando world skills...	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] Verificando world skills para: wagstaff_brute_evolve	
-[00:02:52]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001E526D60	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] world_skills type: table	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] world_skills keys:	
-[00:02:52]: [Wagstaff Debug] [WagstaffHasSkill] Skill wagstaff_brute_evolve NAO encontrada no world data	
-[00:02:52]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
-[00:02:52]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
-[00:02:52]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
-[00:02:52]: [DEBUG WagstaffHasSkill] HasTag=	false	
-[00:02:52]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
-[00:02:52]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
-[00:02:52]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
-[00:02:52]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
-[00:02:52]: [DEBUG WagstaffHasSkill] Retornando false	
-[00:02:52]: [DEBUG] Resultado de WagstaffHasSkill:	false	
-[00:02:52]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
-[00:02:53]: [DEBUG] ==============================================	
-[00:02:53]: [DEBUG] OnFinishCallback chamado para Brute Bot	
-[00:02:53]: [DEBUG] inst.prefab:	williambrute	
-[00:02:53]: [DEBUG] worker.prefab:	wagstaff	
-[00:02:53]: [DEBUG] worker.name:	.FB	
-[00:02:53]: [DEBUG] inst.upgradelevel:	0	
-[00:02:53]: [DEBUG] inst.upgradelevel_mk3:	nil	
-[00:02:53]: [DEBUG] wrench:	tf2wrench	
-[00:02:53]: [DEBUG] Brute é MK1 - verificando upgrade para MK2	
-[00:02:53]: [DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve	
-[00:02:53]: [DEBUG] worker tem skilltreeupdater?	true	
-[00:02:53]: [DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===	
-[00:02:53]: [DEBUG WagstaffHasSkill] worker:	118379 - wagstaff	wagstaff	
-[00:02:53]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:53]: [DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===	
-[00:02:53]: [DEBUG WagstaffHasSkill] skill_id:	wagstaff_brute_evolve	
-[00:02:53]: [DEBUG WagstaffHasSkill] worker.prefab:	wagstaff	
-[00:02:53]: [DEBUG WagstaffHasSkill] worker:HasTag(skill_id):	false	
-[00:02:53]: [DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:	table: 00000000090885B0	
-[00:02:53]: [DEBUG WagstaffHasSkill] activatedskills:	table: 00000000452A1760	
-[00:02:53]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]:	nil	
-[00:02:53]: [DEBUG WagstaffHasSkill] ALL activatedskills keys:	(empty)	
-[00:02:53]: [DEBUG WagstaffHasSkill] activatedskills está VAZIO! Tentando carregar do world save...	
-[00:02:53]: [DEBUG WagstaffHasSkill] world_skills do GetWagstaffSkillsFromWorld:	table: 000000001E526D60	
-[00:02:53]: [DEBUG WagstaffHasSkill] Verificando world skills...	
-[00:02:53]: [Wagstaff Debug] [WagstaffHasSkill] Verificando world skills para: wagstaff_brute_evolve	
-[00:02:53]: [DEBUG WagstaffHasSkill] world_skills:	table: 000000001E526D60	
-[00:02:53]: [Wagstaff Debug] [WagstaffHasSkill] world_skills type: table	
-[00:02:53]: [Wagstaff Debug] [WagstaffHasSkill] world_skills keys:	
-[00:02:53]: [Wagstaff Debug] [WagstaffHasSkill] Skill wagstaff_brute_evolve NAO encontrada no world data	
-[00:02:53]: [DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===	
-[00:02:53]: [DEBUG WagstaffHasSkill] Skill procurada:	wagstaff_brute_evolve	- NAO ENCONTRADA	
-[00:02:53]: [DEBUG WagstaffHasSkill] worker.prefab=	wagstaff	
-[00:02:53]: [DEBUG WagstaffHasSkill] HasTag=	false	
-[00:02:53]: [DEBUG WagstaffHasSkill] has skilltreeupdater=	true	
-[00:02:53]: [DEBUG WagstaffHasSkill] activatedskills[skill_id]=	NIL	
-[00:02:53]: [DEBUG WagstaffHasSkill] ALL activatedskills: 	(empty)	
-[00:02:53]: [DEBUG WagstaffHasSkill] world saved skills: 	(empty)	
-[00:02:53]: [DEBUG WagstaffHasSkill] Retornando false	
-[00:02:53]: [DEBUG] Resultado de WagstaffHasSkill:	false	
-[00:02:53]: [DEBUG] Skill NÃO encontrada! Abortando upgrade.	
 [00:02:55]: Server Autopaused	
 [00:02:55]: Server Unpaused	
 [00:02:56]: Server Autopaused	
