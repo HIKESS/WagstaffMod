@@ -1322,6 +1322,11 @@ end
 
 -- Helper: inject XP via the normal path so the engine recalculates skill points
 local function InjectWagstaffXP(days)
+    -- BUG FIX #2: Não injetar XP em shards de cave
+    if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave") then
+        return
+    end
+    
     days = days or 0
     local xp = GetWagstaffSkillXPFromDays(days)
     if not GLOBAL.TheSkillTree then return end
@@ -1392,7 +1397,16 @@ local function WagstaffWilliamPostInit(inst)
         -- 3. Intercepta a ativação: salva a habilidade ao mundo
         local old_ActivateSkill = inst.components.skilltreeupdater.ActivateSkill
         inst.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
-            WagstaffDebug("=== ActivateSkill START ===")
+            -- BUG FIX #1: No client, NÃO interceptar — deixar o engine original processar
+            -- O cliente usa UI do skilltreebuilder que tem seu próprio caminho para enviar RPC
+            -- Se interceptarmos no cliente, quebramos o RPC_LOOKUP e a skill nunca é ativada
+            if not GLOBAL.TheWorld.ismastersim then
+                WagstaffDebug("[CLIENT] ActivateSkill: bypassing override, calling original")
+                return old_ActivateSkill(self, skill, prefab, fromrpc)
+            end
+            
+            -- Server-side only from here on
+            WagstaffDebug("=== ActivateSkill START (SERVER) ===")
             WagstaffDebug("ActivateSkill: skill=", tostring(skill), "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
             WagstaffDebug("ActivateSkill: available points=", tostring(self:GetAvailableSkillPoints()), "total=", tostring(self:GetTotalSkillPoints()))
             WagstaffDebug("ActivateSkill: already activated?", tostring(self:IsActivated(skill)))
@@ -1505,9 +1519,15 @@ local function WagstaffWilliamPostInit(inst)
             end
         end
 
-        -- 3. Intercepta a ativação: se o jogador tiver mais habilidades marcadas no 
-        -- perfil global do que o mundo permite, o servidor ignora os efeitos delas.
+        -- BUG FIX #5: IsActivated no cliente deve ser simples — apenas verificar se está em activatedskills
+        -- No servidor, usa a lógica com limite de pontos do mundo
         inst.components.skilltreeupdater.IsActivated = function(self, skill, ...)
+            -- No cliente: confiar no estado replicado pelo engine
+            if not GLOBAL.TheWorld.ismastersim then
+                return self.activatedskills and self.activatedskills[skill] == true
+            end
+            
+            -- No servidor: lógica com limite de pontos do mundo
             if not (self.activatedskills and self.activatedskills[skill]) then
                 return false
             end
@@ -1529,6 +1549,11 @@ local function WagstaffWilliamPostInit(inst)
     -- 4. Progressão Automática: Ganha +1 ponto a cada dia que passa (Ex: Dia 1 = 0, Dia 2 = 1...)
     -- A progressão é limitada por dias, não por pontos diretos
     inst:WatchWorldState("cycles", function(inst, cycles)
+        -- BUG FIX #2: Não rodar lógica de insights em shards de cave
+        if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave") then
+            return
+        end
+        
         -- Calcula o XP baseado nos dias sobrevividos (máximo 68 = 15 insights)
         -- Dia 1 = 0, Dia 3 = 1, Dia 6 = 2, etc., até Dia 68 = 15
         local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
@@ -2541,6 +2566,8 @@ AddPrefabPostInit("world", function(self)
     end
 
     -- SAVE: store boss flags + days survived + activated skills
+    -- BUG FIX #4: OnSave deve sempre copiar skills do player vivo antes de salvar
+    -- Isso previne perda de skills em reloads/rollbacks
     local old_OnSave = self.OnSave
     self.OnSave = function(self, ...)
         WagstaffDebug("=== World OnSave START ===")
@@ -2648,6 +2675,10 @@ AddPrefabPostInit("world", function(self)
         else
             -- New world (no wagstaff_days_survived key): stay at 0
             WagstaffDebug("New world detected, setting defaults")
+            
+            -- BUG FIX #2: Detectar se é cave e usar delay maior + lógica especial
+            local is_cave = GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave")
+            
             self.state.wagstaff_fuelweaver_killed = false
             self.state.wagstaff_celestial_killed  = false
             self._wagstaff_days_survived = 0
@@ -2655,13 +2686,29 @@ AddPrefabPostInit("world", function(self)
             
             -- Garante que novos mundos começam com 0 insights
             ForceZeroWagstaffXP()
-            if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
-                GLOBAL.TheWorld:DoTaskInTime(0.5, function()
-                    ForceZeroWagstaffXP()
+            
+            if is_cave then
+                -- Cave precisa de delay maior porque o shard sync chega depois
+                WagstaffDebug("[CAVE] New cave world detected, using delayed initialization")
+                for i = 1, 5 do
+                    GLOBAL.TheWorld:DoTaskInTime(i * 0.3, function()
+                        ForceZeroWagstaffXP()
+                    end)
+                end
+                GLOBAL.TheWorld:DoTaskInTime(1.5, function()
                     InjectWagstaffXP(0)
                     apply_world_skills_to_wagstaff()
                 end)
+            else
+                if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
+                    GLOBAL.TheWorld:DoTaskInTime(0.5, function()
+                        ForceZeroWagstaffXP()
+                        InjectWagstaffXP(0)
+                        apply_world_skills_to_wagstaff()
+                    end)
+                end
             end
+            
             if GLOBAL.AllPlayers then
                 for _, player in ipairs(GLOBAL.AllPlayers) do
                     if player.prefab == "wagstaff" then
@@ -2780,7 +2827,13 @@ end)
 -- in isolation (no cave-specific logic yet -- future work).
 AddPrefabPostInit("wagstaff", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
+    
     inst:ListenForEvent("daycomplete", function(inst)
+        -- BUG FIX #2: Ignorar caves para evitar problemas de sync de XP
+        if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave") then
+            return
+        end
+        
         if not inst:HasTag("playerghost") then
             -- Calcula o XP baseado nos dias sobrevividos
             local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
