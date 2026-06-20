@@ -1,6 +1,45 @@
 ```
 # Logs and temp files
+logs_temp
 *.log
-logs_temp/
-DontStarve-logs/
+*.tmp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+.eggs/
+
+# Dependencies
+.venv/
+venv/
+.env/
+node_modules/
+
+# Build artifacts
+dist/
+build/
+target/
+*.class
+*.jar
+*.war
+*.zip
+*.tar.gz
+
+# OS generated files
+.DS_Store
+Thumbs.db
 ```
