@@ -12,6 +12,7 @@ local function BuildSkillsData(SkillTreeFns)
     {
         -- ══ COLUMN 1: MECHANICAL ══
         wagstaff_mechanical_1 = {
+            name = "wagstaff_mechanical_1",
             title = "Mechanical Efficiency",
             desc = "30% chance repair, recharge, and upgrade costs no scrap",
             icon = "Wrench",
@@ -46,6 +47,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_sentry_mk2 = {
+            name = "wagstaff_sentry_mk2",
             title = "Sentry Mk.II",
             desc = "Increases Health\nRate of Fire",
             icon = "sentrymk2",
@@ -64,6 +66,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_dispenser_mk2 = {
+            name = "wagstaff_dispenser_mk2",
             title = "Dispenser MK.II",
             desc = "Provides more resources per the day segment\nProvides Health regen in a small aura\nDay and Dusk",
             icon = "disp2",
@@ -94,6 +97,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_sentry_mk3 = {
+            name = "wagstaff_sentry_mk3",
             title = "Sentry Mk.III",
             desc = "Increases Health\nAttack Range\nPeriodically shoot rockets that deal AOE damage",
             icon = "sentrymk3",
@@ -124,6 +128,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_x2_damage = {
+            name = "wagstaff_x2_damage",
             title = "x2-Damage",
             desc = "Chance to cause double damage",
             icon = "doubledamage",
@@ -154,6 +159,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_dispenser_mk3 = {
+            name = "wagstaff_dispenser_mk3",
             title = "Dispenser MK.III",
             desc = "Increase the fuel duration per day\nProvides Health regen in a small aura\nDay, Dusk, & Night",
             icon = "disp3",
@@ -184,6 +190,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_lucky_engineer = {
+            name = "wagstaff_lucky_engineer",
             title = "Lucky Engineer",
             desc = "Dispenser 15% rare drop chance",
             icon = "luckyenginer",
@@ -203,6 +210,7 @@ local function BuildSkillsData(SkillTreeFns)
 
         -- ══ COLUMN 2: ROBOTIC ══
         wagstaff_robotic_1 = {
+            name = "wagstaff_robotic_1",
             title = "Brute Bot MK. II",
             desc = "Increases Health\nIncreases Damage",
             icon = "brutemk2",
@@ -238,6 +246,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_robotic_1_parallel = {
+            name = "wagstaff_robotic_1_parallel",
             title = "Brute Bot MK. III",
             desc = "Add Storage",
             icon = "brutemk3",
@@ -273,6 +282,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_buster_evolve = {
+            name = "wagstaff_buster_evolve",
             title = "Buster Bot MK.II",
             desc = "Increases Health\nIncreases Damage",
             icon = "bustermk2",
@@ -308,6 +318,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_buster_parallel = {
+            name = "wagstaff_buster_parallel",
             title = "Buster Bot MK. III",
             desc = "Explosive Punch",
             icon = "bustermk3",
@@ -343,6 +354,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_ballistic_evolve = {
+            name = "wagstaff_ballistic_evolve",
             title = "Ballistic Bot MK. II",
             desc = "Powered by Lightning & Rain",
             icon = "balisticmk2",
@@ -378,6 +390,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_ballistic_parallel = {
+            name = "wagstaff_ballistic_parallel",
             title = "Ballistic Bot MK.III",
             desc = "Active Energy Orbe",
             icon = "balisticmk3",
@@ -413,6 +426,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_thermal_upgrade = {
+            name = "wagstaff_thermal_upgrade",
             title = "Butler MK. II",
             desc = "Unlocks wood chopping ability for Butler Bot",
             icon = "buttlermk2",
@@ -448,6 +462,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_thermal_upgrade_parallel = {
+            name = "wagstaff_thermal_upgrade_parallel",
             title = "Butler MK. III",
             desc = "Your Spirit Remains Bound into machine\nCost 30 Max HP",
             icon = "buttlermk3",
@@ -531,6 +546,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_shadow_possession = {
+            name = "wagstaff_shadow_possession",
             title = "Shadow Engineer Herald's Mark",
             desc = "The Void Masque recognizes the inventor as a kindred spirit.\nOne who also builds bodies to house other wills. Your bots now carry the mark of Tenebrae.\n\nButler: MK 2 can revive players (night only).\nBuster: Summons a Shadow Clone with 50% strength, immune to damage. Destroyed at day or when Buster dies.\nBouncer: Immune to planar damage + Bearger's Shovelwave. Shadow creatures target him as absolute priority.\nBattery: Chain lightning causes fear (2-3s)",
             icon = "wolfgang_allegiance_shadow_3",
@@ -548,6 +564,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_celestial_possession = {
+            name = "wagstaff_celestial_possession",
             title = "Celestial Engineer Gestalt Resonance",
             desc = "The Gestalt that inhabits the chassis during the day synchronizes its frequency with the inventor's own.\nPushing each bot beyond its mechanical limits. The warmth of lunar light radiates through cold metal.\n\nButler: Foods restore 40% HP based on hunger value (day only). MK 2 can revive players.\nBuster: Explosive punch gains AOE (light explosion)\nBouncer: Heat aura. When hit, deals 25 fire damage to all enemies in aggro radius.\nBattery: Light orb grants full sanity protection",
             icon = "wolfgang_allegiance_lunar_3",

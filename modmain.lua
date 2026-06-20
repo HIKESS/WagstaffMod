@@ -1588,20 +1588,33 @@ local function WagstaffWilliamPostInit(inst)
             end
             
             -- Debug RPC_LOOKUP antes de ativar
+            local rpc_id = nil
             if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
-                local rpc_id = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
-                WagstaffDebug("RPC_LOOKUP[", skill, "] =", rpc_id ~= nil and tostring(rpc_id) or "NIL (PROBLEMA!)")
+                -- Tentar formato direto {skill_name -> rpc_id}
+                rpc_id = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
+                
+                -- Se não encontrou, tentar formato invertido {rpc_id -> skill_name}
+                if rpc_id == nil then
+                    for id, name in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do
+                        if name == skill then
+                            rpc_id = id
+                            break
+                        end
+                    end
+                end
+                
+                WagstaffDebug("RPC_LOOKUP lookup for '", skill, "' = ", rpc_id ~= nil and tostring(rpc_id) or "NIL (PROBLEMA!)")
+                
                 if rpc_id == nil then
                     WagstaffDebug("ERROR: Skill '", skill, "' nao esta no RPC_LOOKUP! Skills disponiveis:")
                     local count = 0
                     for k, v in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do
+                        WagstaffDebug("  [", k, "] = ", v)
                         count = count + 1
-                        if count <= 10 then
-                            WagstaffDebug("  ", k, "=", v)
+                        if count >= 20 then
+                            WagstaffDebug("  ... (truncated)")
+                            break
                         end
-                    end
-                    if count > 10 then
-                        WagstaffDebug("  ... e mais ", count - 10, " skills")
                     end
                 end
             else
