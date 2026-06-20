@@ -299,6 +299,37 @@ local function WagstaffPublishRPCLookup()
         -- This ensures SetSkillActivatedState RPCs work correctly
         if not GLOBAL.TheWorld.ismastersim and GLOBAL.TheNet then
             WagstaffDebug("[CLIENT] RPC_LOOKUP received, count:", count)
+            
+            -- FIX CLIENTE: Intercepta ActivateSkill no cliente para garantir que envia o ID correto
+            if GLOBAL.ThePlayer and GLOBAL.ThePlayer.components and GLOBAL.ThePlayer.components.skilltreeupdater then
+                local old_ActivateSkill_client = GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill
+                GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
+                    WagstaffDebug("[CLIENTE] ActivateSkill chamado: skill=", tostring(skill), "type=", type(skill), "fromrpc=", tostring(fromrpc))
+                    
+                    -- Se skill for "RPC" ou nil, tentar resolver o ID correto
+                    if not skill or skill == "RPC" then
+                        WagstaffDebug("[CLIENTE] ERRO: skill é '", tostring(skill), "' - tentando corrigir")
+                        -- Não podemos corrigir sem saber qual skill o usuário quis ativar
+                        -- Isso indica um problema na UI que chama ActivateSkill
+                        return false
+                    end
+                    
+                    -- Se for string e fromrpc=true, precisamos converter para ID numérico
+                    if fromrpc and type(skill) == "string" then
+                        local rpc_id = WagstaffResolveSkillRPCID(skill)
+                        if rpc_id then
+                            WagstaffDebug("[CLIENTE] Convertendo skill '", skill, "' para ID RPC:", rpc_id)
+                            skill = rpc_id
+                        else
+                            WagstaffDebug("[CLIENTE] AVISO: Skill '", skill, "' nao encontrada no RPC_LOOKUP, enviando como string")
+                        end
+                    end
+                    
+                    WagstaffDebug("[CLIENTE] Enviando ActivateSkill com skill=", tostring(skill))
+                    return old_ActivateSkill_client(self, skill, prefab, fromrpc)
+                end
+                WagstaffDebug("[CLIENTE] Hook ActivateSkill instalado no skilltreeupdater")
+            end
         end
         
         return true
