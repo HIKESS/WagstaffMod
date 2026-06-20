@@ -1559,6 +1559,11 @@ local function WagstaffWilliamPostInit(inst)
         -- 3. Intercepta a ativação: salva a habilidade ao mundo
         local old_ActivateSkill = inst.components.skilltreeupdater.ActivateSkill
         inst.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
+            -- DEBUG CRÍTICO: Log completo para diagnosticar o bug "no skill with id RPC"
+            WagstaffDebug("[ActivateSkill] === INICIO ===")
+            WagstaffDebug("[ActivateSkill] skill=", tostring(skill), "type=", type(skill))
+            WagstaffDebug("[ActivateSkill] prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
+            
             -- BUG FIX #1: No client, NÃO interceptar — deixar o engine original processar
             -- O cliente usa UI do skilltreebuilder que tem seu próprio caminho para enviar RPC
             -- Se interceptarmos no cliente, quebramos o RPC_LOOKUP e a skill nunca é ativada
