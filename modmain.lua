@@ -2387,56 +2387,33 @@ local CreateSkillTree = function()
         
 
         if data then
-            -- Save skill definitions for later use
+            -- CRITICAL FIX: Must populate SkillTreeDefs.SKILLS["wagstaff"] BEFORE CreateSkillTreeFor!
+            -- The engine's SetSkillActivatedState validation checks SkillTreeDefs.SKILLS[charname]
+            -- to verify that a skill RPC is valid. If SKILLS["wagstaff"] is nil, ALL client skill
+            -- activation RPCs are rejected with "Invalid SetSkillActivatedState no skill with id".
+            -- This MUST happen before CreateSkillTreeFor to ensure RPC validation works.
+            if SkillTreeDefs.SKILLS == nil then
+                SkillTreeDefs.SKILLS = {}
+            end
             local skillCount = 0
             for _ in pairs(data.SKILLS) do
                 skillCount = skillCount + 1
             end
-            WagstaffDebug("Saving skill definitions to G.WagstaffSkillDefs, #skills:", skillCount)
-            G.WagstaffSkillDefs = data.SKILLS
+            SkillTreeDefs.SKILLS["wagstaff"] = data.SKILLS
+            WagstaffDebug("Set SkillTreeDefs.SKILLS.wagstaff with", skillCount, "skills for RPC validation")
+            print("[WAGSTAFF DEBUG] Skill tree registered with " .. skillCount .. " skills for wagstaff")
 
-            -- CLEAN ALL OLD SKILL TREE DATA FIRST
-            if SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS.wagstaff then
-                SkillTreeDefs.SKILLS.wagstaff = nil
-                WagstaffDebug("Cleared old SkillTreeDefs.SKILLS.wagstaff")
-            end
-            if SkillTreeDefs.SKILLTREE_ORDERS and SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] then
-                SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = nil
-                WagstaffDebug("Cleared old SkillTreeDefs.SKILLTREE_ORDERS.wagstaff")
-            end
-            if SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"] then
-                SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"] = nil
-                WagstaffDebug("Cleared old SkillTreeDefs.SKILLTREE_METAINFO.wagstaff")
-            end
-            
-            -- Register skills in SkillTreeDefs so the engine recognizes them
-            -- (engine checks SkillTreeDefs.SKILLS[charname] when validating RPCs)
-            if SkillTreeDefs.SKILLS == nil then
-                SkillTreeDefs.SKILLS = {}
-            end
+            -- Save skill definitions for later use (after registering in SkillTreeDefs)
+            G.WagstaffSkillDefs = data.SKILLS
+            WagstaffDebug("Saved skill definitions to G.WagstaffSkillDefs")
+
+            -- Registrar a skill tree ANTES de criar o RPC_LOOKUP
+            WagstaffDebug("[VERBOSE] Criando skill tree para wagstaff...")
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
                 WagstaffDebug("=== INICIANDO CreateSkillTreeFor ===")
                 WagstaffDebug("SkillTreeDefs antes:", type(SkillTreeDefs))
-                WagstaffDebug("SKILLS antes:", type(SkillTreeDefs.SKILLS))
-                local has_skills = false
-                if data.SKILLS ~= nil then
-                    for _ in pairs(data.SKILLS) do
-                        has_skills = true
-                        break
-                    end
-                end
-                WagstaffDebug("data.SKILLS count:", has_skills and "tem items" or "vazio")
+                WagstaffDebug("SKILLS antes: tem wagstaff?", SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS["wagstaff"] ~= nil)
                 
-                WagstaffDebug("[VERBOSE] Lista completa de skills sendo registradas:")
-                local skill_count = 0
-                for skill_id, skill_data in pairs(data.SKILLS) do
-                    WagstaffDebug("[VERBOSE]   Skill ID:", skill_id, "- Nome:", skill_data.name or "sem_nome")
-                    skill_count = skill_count + 1
-                end
-                WagstaffDebug("[VERBOSE] Total de skills:", skill_count)
-                
-                -- Registrar a skill tree ANTES de criar o RPC_LOOKUP
-                WagstaffDebug("[VERBOSE] Criando skill tree para wagstaff...")
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
                 if not ok then
                     WagstaffDebug("CreateSkillTreeFor FAILED:", tostring(err))
