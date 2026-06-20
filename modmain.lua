@@ -2562,9 +2562,13 @@ local CreateSkillTree = function()
                 print("[WAGSTAFF DEBUG] Using SkillTreeDefs.FN")
                 SkillTreeDefs.FN("wagstaff", data.SKILLS)
             end
-            -- NOTE: Do NOT set SkillTreeDefs.SKILLS["wagstaff"] here.
-            -- The engine uses SKILLTREE_DEFS (populated by CreateSkillTreeFor),
-            -- not SKILLS. Setting SKILLS is a no-op for RPC validation.
+            -- CRITICAL FIX: Must populate SkillTreeDefs.SKILLS["wagstaff"] here!
+            -- The engine's SetSkillActivatedState validation checks SkillTreeDefs.SKILLS[charname]
+            -- to verify that a skill RPC is valid. If SKILLS["wagstaff"] is nil, ALL client skill
+            -- activation RPCs are rejected with "Invalid SetSkillActivatedState no skill with id".
+            -- CreateSkillTreeFor does NOT populate SKILLS, only SKILLTREE_DEFS.
+            SkillTreeDefs.SKILLS["wagstaff"] = data.SKILLS
+            WagstaffDebug("Set SkillTreeDefs.SKILLS.wagstaff with", skillCount, "skills for RPC validation")
             print("[WAGSTAFF DEBUG] Skill tree registered with " .. skillCount .. " skills for wagstaff")
 
             SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
@@ -2581,35 +2585,28 @@ local CreateSkillTree = function()
             end
             SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"].BACKGROUND_SETTINGS = data.BACKGROUND_SETTINGS
 
-            -- FIX RPC_LOOKUP FORMAT: Engine creates {rpc_id -> skill_name} but DST expects
-            -- {skill_name -> rpc_id}. We must invert it after CreateSkillTreeFor.
+            -- CRITICAL FIX: NÃO inverter o RPC_LOOKUP!
+            -- O engine DST espera o formato {rpc_id -> skill_name} que o CreateSkillTreeFor cria.
+            -- Quando o cliente envia um RPC de ativação de skill, o engine faz:
+            --   GetSkillNameFromID(rpc_id) que procura no RPC_LOOKUP[rpc_id] para achar o nome.
+            -- Se invertermos para {skill_name -> rpc_id}, o engine não encontra o ID e retorna
+            -- "Invalid SetSkillActivatedState no skill with id".
+            -- O formato {skill_name -> rpc_id} é útil APENAS localmente para o helper
+            -- WagstaffResolveSkillRPCID, que já faz a busca reversa corretamente.
             if SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"] then
                 local meta = SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
                 if meta.RPC_LOOKUP then
-                    -- Invert: {id -> name} becomes {name -> id}
-                    local inverted = {}
-                    for rpc_id, skill_name in pairs(meta.RPC_LOOKUP) do
-                        if type(rpc_id) == "number" and type(skill_name) == "string" then
-                            inverted[skill_name] = rpc_id
-                        end
-                    end
-                    meta.RPC_LOOKUP = inverted
-                    WagstaffDebug("[FIX] RPC_LOOKUP invertido: {id->name} para {name->id}, count:", count_table(inverted))
+                    -- NÃO inverter! Manter {rpc_id -> skill_name} como o engine criou
+                    WagstaffDebug("[FIX] RPC_LOOKUP mantido no formato original {id->name}, count:", count_table(meta.RPC_LOOKUP))
                 end
             end
             
-            -- Also fix SKILLTREE_DEFS if it exists
+            -- Also fix SKILLTREE_DEFS if it exists — mesma lógica, NÃO inverter
             if SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
                 local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
                 if defs_meta and defs_meta.RPC_LOOKUP then
-                    local inverted2 = {}
-                    for rpc_id, skill_name in pairs(defs_meta.RPC_LOOKUP) do
-                        if type(rpc_id) == "number" and type(skill_name) == "string" then
-                            inverted2[skill_name] = rpc_id
-                        end
-                    end
-                    defs_meta.RPC_LOOKUP = inverted2
-                    WagstaffDebug("[FIX] SKILLTREE_DEFS RPC_LOOKUP invertido tambem")
+                    -- NÃO inverter! Manter {rpc_id -> skill_name} como o engine criou
+                    WagstaffDebug("[FIX] SKILLTREE_DEFS RPC_LOOKUP mantido no formato original {id->name}")
                 end
             end
 
