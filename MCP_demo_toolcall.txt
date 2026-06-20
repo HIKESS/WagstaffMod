@@ -1,8 +1,0 @@
-Tried to invoke MCP tool `sequential_thinking` via functions.use_mcp_tool.
-Result: MCP server not connected in this environment.
-Error observed: "MCP server \"sequential-thinking\" is not connected. Available servers: none"
-
-Server boot verified separately by running:
-  npx -y @modelcontextprotocol/server-sequential-thinking
-which prints: "Sequential Thinking MCP Server running on stdio".
-

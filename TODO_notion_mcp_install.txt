@@ -1,8 +1,0 @@
-Steps completed:
-- [x] Updated blackbox_mcp_settings.json to add Notion MCP server (server name: github.com/makenotion/notion-mcp-server) with stdio transport via npx.
-- [x] Added NOTION_TOKEN env var.
-- [x] Verified Notion MCP server can boot (boot test script).
-
-Remaining:
-- [ ] Demonstrate MCP tool call against Notion MCP via one of its tools (e.g., API-get-self) using blackbox MCP host / client tooling.
-
