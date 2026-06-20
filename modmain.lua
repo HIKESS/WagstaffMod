@@ -1635,6 +1635,12 @@ local function WagstaffWilliamPostInit(inst)
             -- Em mundo com caves, GLOBAL.TheSkillTree.RPC_LOOKUP pode ainda nao existir;
             -- por isso resolvemos tambem pelo SKILLTREE_METAINFO.wagstaff.RPC_LOOKUP.
             WagstaffPublishRPCLookup()
+            
+            -- DEBUG CRITICO: Log dos parametros recebidos
+            WagstaffDebug("=== PARAMETROS RECEBIDOS ===")
+            WagstaffDebug("skill=", tostring(skill), "type=", type(skill))
+            WagstaffDebug("prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
+            
             local skill_to_pass = skill
             if fromrpc and type(skill) == "string" then
                 local rpc_id = WagstaffResolveSkillRPCID(skill)
@@ -1645,6 +1651,11 @@ local function WagstaffWilliamPostInit(inst)
                     WagstaffDebug("ERRO: Skill '", skill, "' nao encontrada em nenhum RPC_LOOKUP; abortando ativacao")
                     return false
                 end
+            elseif fromrpc and type(skill) == "number" then
+                WagstaffDebug("Skill ja é um ID numerico:", skill)
+                skill_to_pass = skill
+            elseif not fromrpc then
+                WagstaffDebug("Activacao local (nao RPC), usando nome da skill:", skill)
             end
             
             local result = old_ActivateSkill(self, skill_to_pass, prefab, fromrpc)
