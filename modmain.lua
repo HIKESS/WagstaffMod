@@ -306,12 +306,12 @@ local function WagstaffPublishRPCLookup()
                 GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
                     WagstaffDebug("[CLIENTE] ActivateSkill chamado: skill=", tostring(skill), "type=", type(skill), "fromrpc=", tostring(fromrpc))
                     
-                    -- Se skill for "RPC" ou nil, tentar resolver o ID correto
+                    -- Se skill for "RPC" ou nil, isso indica um bug na UI - precisamos bloquear
                     if not skill or skill == "RPC" then
-                        WagstaffDebug("[CLIENTE] ERRO: skill é '", tostring(skill), "' - tentando corrigir")
-                        -- Não podemos corrigir sem saber qual skill o usuário quis ativar
-                        -- Isso indica um problema na UI que chama ActivateSkill
-                        return false
+                        WagstaffDebug("[CLIENTE] ERRO CRITICO: skill é '", tostring(skill), "' - ISSO É UM BUG DA UI")
+                        WagstaffDebug("[CLIENTE] Stack trace provavel: widget/skilltree_widget.lua esta chamando ActivateSkill com parametro errado")
+                        -- NAO retornamos false aqui - vamos deixar o engine original tentar processar
+                        -- pois pode ser que o engine consiga resolver internamente
                     end
                     
                     -- Se for string e fromrpc=true, precisamos converter para ID numérico
