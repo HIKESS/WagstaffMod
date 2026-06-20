@@ -1,18 +1,24 @@
-# TODO.md (blackboxai)
+# TODO.md (blackboxai) - Upgrade MK2/MK3 Fix
 
-## Objetivo
-Corrigir bug: upgrade de bots para MK2 falha em Cave Ativa devido a checagem de skills em `G.WagstaffHasSkill` retornar false quando `activatedskills`/world skills estão vazios.
+## Análise do Problema (Causa Raiz Final)
 
-## Ações planejadas
-1. Confirmar branch atual e garantir que alterações só ocorram no arquivo correto (`modmain.lua`) do repo correto.
-2. Aplicar patch mínimo em `G.WagstaffHasSkill` para: se `activatedskills` estiver vazio, consultar `TheWorld:GetWagstaffSkillsFromWorld()` e restaurar `activatedskills` + tag.
-3. Remover quaisquer alterações não relacionadas (ex.: workspaces/untracked pastas) antes de commitar.
-4. `git add modmain.lua` e commitar no branch `blackboxai/upgrade-mk2-fix`.
-5. Validar rapidamente via inspeção que o patch remove abort por skill não encontrada.
+O bug de upgrade MK2/MK3 tem **duas causas raiz**:
 
-## Progresso
-- [x] Identificada função `G.WagstaffHasSkill` em `modmain.lua`.
-- [ ] Aplicar/ajustar patch mínimo cirúrgico em `G.WagstaffHasSkill` (se necessário).
-- [ ] Limpar/evitar commits de arquivos untracked (.blackbox, workspaces, pastas extra).
-- [ ] Comitar no branch correto.
+### 1. SkillTreeDefs.SKILLS não populado (CORRIGIDO no commit 64b4d4c)
+**Sintoma nos logs:** `Invalid SetSkillActivatedState no skill with id RPC`
+**Causa:** O engine DST valida ativação de skills via `SkillTreeDefs.SKILLS[charname]`, mas o código original dizia "NOTE: Do NOT set SkillTreeDefs.SKILLS". Isso fazia o engine rejeitar TODOS os RPCs de ativação de skill do cliente.
+**Correção:** Adicionar `SkillTreeDefs.SKILLS["wagstaff"] = data.SKILLS` após `CreateSkillTreeFor`.
 
+### 2. activatedskills = nil no jogador (AINDA PERSISTE)
+**Sintoma nos logs:** `activatedskills: nil` e `ALL activatedskills keys: (empty)`
+**Causa:** Mesmo com RPCs funcionando, quando o jogador carrega o save:
+- O `World OnLoad` restaura `self._wagstaff_activated_skills`
+- Chama `apply_world_skills_to_wagstaff()` que percorre `GLOBAL.AllPlayers`
+- **Mas:** o jogador (`GLOBAL.AllPlayers[1]`) pode ainda não ter `skilltreeupdater` populado neste momento
+- O `DoTaskInTime(0.5)` tenta de novo mas nem sempre funciona dependendo do timing de carregamento
+
+## Status Atual
+- [x] Corrigir RPC_LOOKUP inversion bug (commit 866e307)
+- [x] Corrigir SkillTreeDefs.SKILLS não populado (commit 64b4d4c)
+- [x] Adicionar fallback no WagstaffHasSkill para activatedskills vazio
+- [ ] **Testar em servidor dedicado** - a correção 1 sozinha pode resolver todo o problema
