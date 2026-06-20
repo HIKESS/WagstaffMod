@@ -2562,9 +2562,13 @@ local CreateSkillTree = function()
                 print("[WAGSTAFF DEBUG] Using SkillTreeDefs.FN")
                 SkillTreeDefs.FN("wagstaff", data.SKILLS)
             end
-            -- NOTE: Do NOT set SkillTreeDefs.SKILLS["wagstaff"] here.
-            -- The engine uses SKILLTREE_DEFS (populated by CreateSkillTreeFor),
-            -- not SKILLS. Setting SKILLS is a no-op for RPC validation.
+            -- CRITICAL FIX: Must populate SkillTreeDefs.SKILLS["wagstaff"] here!
+            -- The engine's SetSkillActivatedState validation checks SkillTreeDefs.SKILLS[charname]
+            -- to verify that a skill RPC is valid. If SKILLS["wagstaff"] is nil, ALL client skill
+            -- activation RPCs are rejected with "Invalid SetSkillActivatedState no skill with id".
+            -- CreateSkillTreeFor does NOT populate SKILLS, only SKILLTREE_DEFS.
+            SkillTreeDefs.SKILLS["wagstaff"] = data.SKILLS
+            WagstaffDebug("Set SkillTreeDefs.SKILLS.wagstaff with", skillCount, "skills for RPC validation")
             print("[WAGSTAFF DEBUG] Skill tree registered with " .. skillCount .. " skills for wagstaff")
 
             SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
