@@ -1,0 +1,5 @@
+- Updated blackbox_mcp_settings.json to add filesystem server with serverName github.com/modelcontextprotocol/servers/tree/main/src/filesystem
+- filesystem server configured to start via cmd /c npx -y @modelcontextprotocol/server-filesystem and allow WagstaffPlus mod folder
+- Smoke-tested filesystem server boot via npx (@modelcontextprotocol/server-filesystem) (stdio)
+
+

@@ -1522,6 +1522,22 @@ local function WagstaffWilliamPostInit(inst)
     -- Depois, inicializa com 0 (padrão para novos mundos)
     inst.wagstaff_world_insights = 0
 
+    -- FIX XP INICIAL: Injeta 0 XP IMEDIATAMENTE no spawn para garantir que o jogador
+    -- comece com 0 insights (sem forçar delay). O ForceZeroWagstaffXP acima zera o XP
+    -- global, mas o player pode já ter XP do profile cache. Aqui forçamos 0 XP.
+    inst:DoTaskInTime(0, function()
+        if not inst:IsValid() then return end
+        _wagstaff_xp_injecting = true
+        if GLOBAL.TheSkillTree then
+            GLOBAL.TheSkillTree.skillxp["wagstaff"] = 0
+        end
+        _wagstaff_xp_injecting = false
+        if inst.components.skilltreeupdater then
+            SafeDirtySkillXP(inst.components.skilltreeupdater)
+        end
+        WagstaffDebug("[FIX] XP inicial forçado para 0 no spawn do jogador")
+    end)
+
     if inst.components.skilltreeupdater then
         -- 1. Força o servidor a reconhecer apenas os pontos permitidos por este mundo (do componente world)
         inst.components.skilltreeupdater.GetTotalSkillPoints = function(self)
@@ -2565,6 +2581,38 @@ local CreateSkillTree = function()
             end
             SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"].BACKGROUND_SETTINGS = data.BACKGROUND_SETTINGS
 
+            -- FIX RPC_LOOKUP FORMAT: Engine creates {rpc_id -> skill_name} but DST expects
+            -- {skill_name -> rpc_id}. We must invert it after CreateSkillTreeFor.
+            if SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"] then
+                local meta = SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
+                if meta.RPC_LOOKUP then
+                    -- Invert: {id -> name} becomes {name -> id}
+                    local inverted = {}
+                    for rpc_id, skill_name in pairs(meta.RPC_LOOKUP) do
+                        if type(rpc_id) == "number" and type(skill_name) == "string" then
+                            inverted[skill_name] = rpc_id
+                        end
+                    end
+                    meta.RPC_LOOKUP = inverted
+                    WagstaffDebug("[FIX] RPC_LOOKUP invertido: {id->name} para {name->id}, count:", count_table(inverted))
+                end
+            end
+            
+            -- Also fix SKILLTREE_DEFS if it exists
+            if SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
+                local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
+                if defs_meta and defs_meta.RPC_LOOKUP then
+                    local inverted2 = {}
+                    for rpc_id, skill_name in pairs(defs_meta.RPC_LOOKUP) do
+                        if type(rpc_id) == "number" and type(skill_name) == "string" then
+                            inverted2[skill_name] = rpc_id
+                        end
+                    end
+                    defs_meta.RPC_LOOKUP = inverted2
+                    WagstaffDebug("[FIX] SKILLTREE_DEFS RPC_LOOKUP invertido tambem")
+                end
+            end
+
             -- Publica o RPC_LOOKUP quando possivel. Em mundos com caves, TheSkillTree
             -- costuma ficar nil neste ponto e aparecer alguns frames depois.
             WagstaffScheduleRPCPublish()
@@ -2881,8 +2929,13 @@ AddPrefabPostInit("world", function(self)
             WagstaffMergeClusterSaveData(self)
             local _lac = 0; for _ in pairs(self._wagstaff_activated_skills) do _lac = _lac + 1 end; WagstaffDebug("Loaded _wagstaff_activated_skills count:", _lac)
             local days = data.wagstaff_days_survived
+            
+            -- CRITICAL: Apply skills IMMEDIATELY after load, not just on task delay.
+            -- This handles saves with many skills that would otherwise appear empty.
+            apply_world_skills_to_wagstaff()
+            
             if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
-                WagstaffDebug("DoTaskInTime scheduled for 0.5 seconds")
+                WagstaffDebug("DoTaskInTime scheduled for 0.5 seconds (redundant safety)")
                 GLOBAL.TheWorld:DoTaskInTime(0.5, function()
                     WagstaffDebug("DoTaskInTime callback executed")
                     ForceZeroWagstaffXP()

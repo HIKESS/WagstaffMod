@@ -1,0 +1,6 @@
+Planned filesystem MCP install steps (blackbox)
+- Install/configure filesystem MCP server (server name: github.com/modelcontextprotocol/servers/tree/main/src/filesystem)
+- Update c:/Users/edcfa/AppData/Roaming/Code/User/globalStorage/blackboxapp.blackboxagent/settings/blackbox_mcp_settings.json
+- Ensure server boots
+- Demonstrate capability via one tool call (list_allowed_directories)
+
