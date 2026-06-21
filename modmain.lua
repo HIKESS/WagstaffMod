@@ -2478,29 +2478,6 @@ local FLICKERTELEPORT = AddAction("WAGSTAFF_FLICKERTELEPORT", "Flicker", functio
 end)
 
 
--- Ballistic MK3 Star Caller Toggle action
-local BALLISTIC_STARCALLER = AddAction("BALLISTIC_STARCALLER", "Toggle Light Orb", function(act)
-    if act.target and act.target:HasTag("ballistic_mk2") then
-        act.target:PushEvent("starcaller_toggle_request", act.doer)
-        return true
-    end
-    return false
-end)
-BALLISTIC_STARCALLER.priority = 10
-BALLISTIC_STARCALLER.rmb = false
-BALLISTIC_STARCALLER.distance = 2
-
--- Add component action for Ballistic MK3
-AddComponentAction("SCENE", "combat", function(inst, doer, actions, right)
-    if not right and inst:HasTag("ballistic_mk2") and inst.components.combat then
-        table.insert(actions, GLOBAL.ACTIONS.BALLISTIC_STARCALLER)
-    end
-end)
-
-AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.BALLISTIC_STARCALLER, "doshortaction"))
-AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.BALLISTIC_STARCALLER, "doshortaction"))
-
-
 -- Single inventoryitem action handler for all standalone Miami Rick inventory items.
 
 -- Uses 'inventoryitem' component (always has replica) + tag checks so it works client-side.

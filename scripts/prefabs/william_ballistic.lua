@@ -84,17 +84,12 @@ local function ZapFX(inst)
 
         end
 
+-- Passive Light Orb: automatic lantern light for MK2+ Ballistic Bots
+-- No toggle needed - light is always on when bot has fuel
+-- Light varies between 1.5x and 3x lantern size every 0.5s with FX
 local function StartLightOrb(inst)
     if inst._lightorb_active then return end
-    if inst.components.fueled:IsEmpty() then
-        if inst.components.follower and inst.components.follower:GetLeader() then
-            local leader = inst.components.follower:GetLeader()
-            if leader.components.talker then
-                leader.components.talker:Say("Not enough fuel!")
-            end
-        end
-        return
-    end
+    if inst.components.fueled:IsEmpty() then return end
     inst._lightorb_active = true
 
     -- Add light entity and "lantern" tag
@@ -169,21 +164,8 @@ local function StartLightOrb(inst)
         end
     end)
 
-    -- Disable attacks while light orb is active
-    inst._lightorb_base_attackperiod = inst.components.combat.min_attack_period or TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD
-    inst.components.combat:SetAttackPeriod(999999)
-
-    -- Drain fuel continuously
-    inst._lightorb_fueltask = inst:DoPeriodicTask(1, function()
-        if inst.components.fueled:IsEmpty() then
-            StopLightOrb(inst)
-            return
-        end
-        inst.components.fueled:DoDelta(-inst.components.fueled.maxfuel * 0.001) -- 0.1% per second
-    end)
-
-    ZapFX(inst)
-    inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
+    -- No attack disable - passive light, bot can still fight
+    -- No extra fuel drain - bot consumes fuel normally
 end
 
 local function StopLightOrb(inst)
@@ -201,35 +183,10 @@ local function StopLightOrb(inst)
     end
     inst:RemoveTag("lantern")
 
-    -- Re-enable attacks
-    if inst._lightorb_base_attackperiod then
-        inst.components.combat:SetAttackPeriod(inst._lightorb_base_attackperiod)
-    end
-
-    -- Stop fuel drain
-    if inst._lightorb_fueltask ~= nil then
-        inst._lightorb_fueltask:Cancel()
-        inst._lightorb_fueltask = nil
-    end
-
     -- Stop tick
     if inst._lightorb_tick ~= nil then
         inst._lightorb_tick:Cancel()
         inst._lightorb_tick = nil
-    end
-end
-
-local function ToggleLightOrb(inst, doer)
-    if inst._lightorb_active then
-        StopLightOrb(inst)
-        if inst.components.talker then
-            inst.components.talker:Say("Light Orb OFF")
-        end
-    else
-        StartLightOrb(inst)
-        if inst.components.talker then
-            inst.components.talker:Say("Light Orb ON - Consuming fuel...")
-        end
     end
 end
 
@@ -1257,19 +1214,25 @@ end
             end
         end)
 
-        -- LIGHT ORB: manual toggle via left-click on deployed bot (MK2+)
+        -- PASSIVE LIGHT ORB: Automatic lantern light for MK2+ (always on when has fuel)
         inst._lightorb_active = false
         inst._lightorb_fx = nil
-        inst._lightorb_fueltask = nil
         inst._lightorb_tick = nil
-        inst._lightorb_base_attackperiod = TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD
 
-        -- Tag for left-click Light Orb toggle (enables BALLISTIC_STARCALLER action)
-        inst:AddTag("ballistic_mk2")
+        -- Auto-start the light orb when MK2+ is active and has fuel
+        inst:DoTaskInTime(0.5, function()
+            if inst:IsValid() and not inst.components.fueled:IsEmpty() then
+                StartLightOrb(inst)
+            end
+        end)
 
-        -- Listen for left-click Light Orb toggle request
-        inst:ListenForEvent("starcaller_toggle_request", function(inst, doer)
-            ToggleLightOrb(inst, doer)
+        -- Listen for fuel changes to auto-toggle light orb
+        inst:ListenForEvent("percentusedchange", function()
+            if inst.components.fueled:IsEmpty() and inst._lightorb_active then
+                StopLightOrb(inst)
+            elseif not inst.components.fueled:IsEmpty() and not inst._lightorb_active then
+                StartLightOrb(inst)
+            end
         end)
 
         -- Listen for world save event to disable Light Orb before exit
@@ -1586,10 +1549,16 @@ end
             if _OnLoad ~= nil then
                 _OnLoad(inst, data)
             end
-            -- Ensure light orb is off on load
+            -- Ensure light orb is off on load (will auto-restart via the 0.5s task)
             if inst._lightorb_active then
                 StopLightOrb(inst)
             end
+            -- Auto-restart light orb after load if has fuel
+            inst:DoTaskInTime(1, function()
+                if inst:IsValid() and not inst.components.fueled:IsEmpty() and not inst._lightorb_active then
+                    StartLightOrb(inst)
+                end
+            end)
             if data ~= nil and data.leader ~= nil then
                 inst:DoTaskInTime(0, function()
                     local leader = Ents[data.leader]
@@ -1621,12 +1590,9 @@ end
         -- DESATIVAR LIGHT ORB ao pegar de volta (haunt/right-click unploy)
         local old_OnHaunt = inst.components.hauntable.onhaunt
         inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
-            -- Se light orb ativo, desativa primeiro
+            -- Stop light orb before unploying
             if inst._lightorb_active then
                 StopLightOrb(inst)
-                if inst.components.talker then
-                    inst.components.talker:Say("Light Orb OFF - Unploying...")
-                end
             end
             -- Continua com o unploy normal (volta para inventário)
             if old_OnHaunt then
@@ -1677,10 +1643,8 @@ end
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
             local oc = inst._overcharge and "OVERCHARGED" or ""
-            local sc = inst._lightorb_active and "LIGHT ORB ON" or ""
             local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
             if oc ~= "" then name_str = name_str .. " | " .. oc end
-            if sc ~= "" then name_str = name_str .. " | " .. sc end
             inst.components.named:SetName(name_str)
             inst.name = name_str
             inst.GetDisplayName = function() return name_str end
@@ -1689,40 +1653,7 @@ end
         local task = inst:DoPeriodicTask(2, UpdateBallistic3Name)
         table.insert(inst._periodic_name_tasks, task)
 
-        -- ballistic_mk2 tag already added in active2() — no need to re-add here
-
-        -- No orphaned orb cleanup needed (new system uses entity light, not spawned prefabs)
-
-        -- Listen for world save event to disable Light Orb before exit
-        inst:ListenForEvent("ms_save", function()
-            if inst._lightorb_active then
-                StopLightOrb(inst)
-            end
-        end, TheWorld)
-
-        -- Clean up light orb and affinity FX on remove
-        inst:ListenForEvent("onremove", function()
-            if inst._lightorb_active then
-                StopLightOrb(inst)
-            end
-            if inst._aura_fx ~= nil and inst._aura_fx:IsValid() then
-                inst._aura_fx:Remove()
-                inst._aura_fx = nil
-            end
-            if inst._orbit_fx ~= nil and inst._orbit_fx:IsValid() then
-                inst._orbit_fx:Remove()
-                inst._orbit_fx = nil
-            end
-            if inst._shadow_fx ~= nil and inst._shadow_fx:IsValid() then
-                inst._shadow_fx:Remove()
-                inst._shadow_fx = nil
-            end
-        end)
-
-        -- Left-click: Toggle Light Orb via custom action
-        inst:ListenForEvent("starcaller_toggle_request", function(inst, doer)
-            ToggleLightOrb(inst, doer)
-        end)
+        -- Light orb is handled by active2() (auto-start passive light)
 
         -- Listen for stop_lightorb event from OnDismantle
         inst:ListenForEvent("stop_lightorb", function(inst)

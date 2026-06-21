@@ -274,7 +274,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_evolve = {
             name = "wagstaff_ballistic_evolve",
             title = "Ballistic Bot MK. II",
-            desc = "Powered by Lightning & Rain\nUnlocks Light Orb toggle (left-click)",
+            desc = "Walking Battery\nLightning overcharge, rain splash attacks\nAuto-recharge & passive lantern light",
             icon = "balisticmk2",
             icon_atlas = "images/skilltree/balisticmk2.xml",
             pos = { -36.9, 76.4 },
@@ -298,7 +298,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_parallel = {
             name = "wagstaff_ballistic_parallel",
             title = "Ballistic Bot MK.III",
-            desc = "Active Light Orb",
+            desc = "Enhanced stats + HP\nCelestial & Shadow affinity attacks",
             icon = "balisticmk3",
             icon_atlas = "images/skilltree/balisticmk3.xml",
             pos = { 38.6, 76.4 },

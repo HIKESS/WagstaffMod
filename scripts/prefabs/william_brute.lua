@@ -214,6 +214,7 @@ local function TurnOff(inst, doer, instant)
             MakeHauntableWork(inst)
         inst:RemoveTag("scarytoprey")
         inst:RemoveTag("alive")
+        inst:RemoveTag("ebuild_wrenchable")  -- Prevent wrench interaction when OFF
         inst:AddTag("notarget")
 
     -- Remover COMPLETAMENTE o componente container quando desativado (para não aparecer como chest)
@@ -249,35 +250,35 @@ local function TurnOff(inst, doer, instant)
     inst.components.combat:SetKeepTargetFunction(nil)
     inst.sg:GoToState("turn_off")
     
-    -- When OFF: hammering BREAKS the bot (like buster/ballistic behavior)
-    -- NOT ACTIVATE - to turn back on, player must add fuel first
-    if inst.components.workable == nil then
-        inst:AddComponent("workable")
-    end
-    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
-    inst.components.workable:SetWorkLeft(4)
-    inst.components.workable:SetOnFinishCallback(OnHammered)
-    inst.components.workable:SetOnWorkCallback(onworked)
-
-    -- Add fuel listener: when fuel is added while OFF, switch to ACTIVATE
-    inst._fuel_activate_listener = inst:ListenForEvent("percentusedchange", function()
-        if inst.on == false and not inst.components.fueled:IsEmpty() then
-            if inst.components.workable then
-                inst:RemoveComponent("workable")
-            end
+    -- When OFF with no fuel: hammering BREAKS the bot (like buster/ballistic behavior)
+    -- When OFF with fuel: no workable — WILLYRAISE action handles reactivation
+    if inst.components.fueled:IsEmpty() then
+        if inst.components.workable == nil then
             inst:AddComponent("workable")
-            inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-            inst.components.workable:SetWorkLeft(1)
-            inst.components.workable:SetOnFinishCallback(function(inst, doer)
-                TurnOn(inst, doer)
-            end)
-            -- Remove this listener once activated
-            if inst._fuel_activate_listener then
-                inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
-                inst._fuel_activate_listener = nil
-            end
         end
-    end)
+        inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+        inst.components.workable:SetWorkLeft(4)
+        inst.components.workable:SetOnFinishCallback(OnHammered)
+        inst.components.workable:SetOnWorkCallback(onworked)
+        -- Add fuel listener: when fuel is added while OFF, remove HAMMER so WILLYRAISE can activate
+        inst._fuel_activate_listener = inst:ListenForEvent("percentusedchange", function()
+            if inst.on == false and not inst.components.fueled:IsEmpty() then
+                if inst.components.workable then
+                    inst:RemoveComponent("workable")
+                end
+                -- WILLYRAISE action will now handle reactivation
+                if inst._fuel_activate_listener then
+                    inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
+                    inst._fuel_activate_listener = nil
+                end
+            end
+        end)
+    else
+        -- Has fuel: remove workable so WILLYRAISE "Activate" action is available
+        if inst.components.workable then
+            inst:RemoveComponent("workable")
+        end
+    end
 end
 
 
@@ -331,8 +332,8 @@ local function TurnOn(inst, doer, instant)
         end
     end
     
-    -- RESTORE HAMMER WORKABLE: When turning on, restore workable to HAMMER
-    -- (OnHammered returns early when on=true, so hammering does nothing while ON)
+    -- RESTORE: When turning on, remove workable entirely
+    -- The WILLYRAISE action (from william_acts.lua) handles right-click deactivation
     -- Remove fuel activate listener since we're turning on
     if inst._fuel_activate_listener then
         inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
@@ -341,11 +342,9 @@ local function TurnOn(inst, doer, instant)
     if inst.components.workable then
         inst:RemoveComponent("workable")
     end
-    inst:AddComponent("workable")
-    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
-    inst.components.workable:SetWorkLeft(4)
-    inst.components.workable:SetOnFinishCallback(OnHammered)
-    inst.components.workable:SetOnWorkCallback(onworked)
+
+    -- Re-add wrenchable tag so wrench works when ON
+    inst:AddTag("ebuild_wrenchable")
 
     inst.components.fueled:StartConsuming()
     -- Debug removed
@@ -372,12 +371,9 @@ end
 
 local function OnAddFuel(inst)
         inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
-    -- Debug removed
     if inst.on == false then
-        -- Debug removed
-        inst.components.willyraise:Rise(inst, nil)
+        inst.components.willyraise:Rise()
     else
-        -- Debug removed
         inst.sg:GoToState("fed")
     end
 end
@@ -721,7 +717,7 @@ inst.components.burnable.ignorefuel = true
                 -- Transfer ON state and turn on automatically if original was on
                 newbot.on = inst.on
                 if inst.on == true and newbot.components.willyraise ~= nil then
-                    newbot.components.willyraise:Rise(newbot, worker, true)
+                    newbot.components.willyraise:Rise(worker)
                 end
 
                 -- Set leader and reinit brain for MK2+
@@ -790,11 +786,24 @@ inst.components.burnable.ignorefuel = true
             return inst
         end
 
-        -- MK2: Add follower component (follows player, unlike MK1)
-        inst:AddComponent("follower")
-        inst.components.follower:KeepLeaderOnAttacked()
-        inst.components.follower.keepdeadleader = true
-        inst.components.follower.keepleaderduringminigame = true
+        -- MK2: Follower component already added by fn() - no need to add again
+        -- Just ensure leader is set if upgrading from MK1
+        if inst.components.follower:GetLeader() == nil then
+            local x, y, z = inst.Transform:GetWorldPosition()
+            local players = TheSim:FindEntities(x, y, z, 15, {"player"})
+            local closest = nil
+            local closest_dist = math.huge
+            for _, p in ipairs(players) do
+                local dist = inst:GetDistanceSqToInst(p)
+                if dist < closest_dist then
+                    closest = p
+                    closest_dist = dist
+                end
+            end
+            if closest ~= nil then
+                inst.components.follower:SetLeader(closest)
+            end
+        end
 
         -- Override base health and damage
         inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1000)
@@ -1106,7 +1115,7 @@ inst.components.burnable.ignorefuel = true
                         -- Transfer ON state and turn on automatically if original was on
                         newbot.on = inst.on
                         if inst.on == true and newbot.components.willyraise ~= nil then
-                            newbot.components.willyraise:Rise(newbot, worker, true)
+                            newbot.components.willyraise:Rise(worker)
                         end
 
                         -- Set leader and reinit brain
@@ -1203,32 +1212,33 @@ inst.components.burnable.ignorefuel = true
             end
             
             if inst.on == false then
-                if inst.components.workable == nil then
-                    inst:AddComponent("workable")
-                end
-                -- Same as TurnOff: when OFF, hammering BREAKS the bot
-                inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
-                inst.components.workable:SetWorkLeft(4)
-                inst.components.workable:SetOnFinishCallback(OnHammered)
-                inst.components.workable:SetOnWorkCallback(onworked)
-                -- Add fuel listener to enable ACTIVATE when refueled
-                inst._fuel_activate_listener = inst:ListenForEvent("percentusedchange", function()
-                    if inst.on == false and not inst.components.fueled:IsEmpty() then
-                        if inst.components.workable then
-                            inst:RemoveComponent("workable")
-                        end
+                -- Remove ebuild_wrenchable tag to prevent wrench on deactivated bot
+                inst:RemoveTag("ebuild_wrenchable")
+                -- Same as TurnOff: HAMMER only when no fuel, otherwise WILLYRAISE handles it
+                if inst.components.fueled:IsEmpty() then
+                    if inst.components.workable == nil then
                         inst:AddComponent("workable")
-                        inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-                        inst.components.workable:SetWorkLeft(1)
-                        inst.components.workable:SetOnFinishCallback(function(inst, doer)
-                            TurnOn(inst, doer)
-                        end)
-                        if inst._fuel_activate_listener then
-                            inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
-                            inst._fuel_activate_listener = nil
-                        end
                     end
-                end)
+                    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+                    inst.components.workable:SetWorkLeft(4)
+                    inst.components.workable:SetOnFinishCallback(OnHammered)
+                    inst.components.workable:SetOnWorkCallback(onworked)
+                    inst._fuel_activate_listener = inst:ListenForEvent("percentusedchange", function()
+                        if inst.on == false and not inst.components.fueled:IsEmpty() then
+                            if inst.components.workable then
+                                inst:RemoveComponent("workable")
+                            end
+                            if inst._fuel_activate_listener then
+                                inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
+                                inst._fuel_activate_listener = nil
+                            end
+                        end
+                    end)
+                else
+                    if inst.components.workable then
+                        inst:RemoveComponent("workable")
+                    end
+                end
             end
             
             inst:DoTaskInTime(0, function()
@@ -1431,8 +1441,9 @@ local function onbuilt(inst, builder)
         if robot ~= nil then
     robot.Transform:SetPosition(inst.Transform:GetWorldPosition())
     robot.components.knownlocations:RememberLocation("home", inst:GetPosition())
-    -- Pass builder so TurnOn can set leader immediately
-    robot.components.willyraise:Rise(robot, builder)
+    -- Pass builder as doer so TurnOn sets leader correctly
+    -- Rise(doer, instant) -> self.onrisefn(self.inst, doer)
+    robot.components.willyraise:Rise(builder)
         robot.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
                     local x, y, z = robot.Transform:GetWorldPosition()
     SpawnPrefab("maxwell_smoke").Transform:SetPosition(x, y, z)

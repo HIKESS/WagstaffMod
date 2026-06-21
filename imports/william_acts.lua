@@ -22,15 +22,12 @@ local WILLIAM_ACTION = AddAction("WILLIAM_ACTION", "Cook", function(act)
 end)
 
 --==================================================================================
--- WILLPACKUP (pack up portable bot) + WILLSTAR_TOGGLE (MK II Light Orb)
+-- WILLPACKUP (pack up portable bot)
 --==================================================================================
 AddComponentAction("SCENE", "portablewillybot", function(inst, doer, actions, right)
     if right and CrafterCheck(doer) then
         -- Right click: Pack Up (always available for portable bots)
         table.insert(actions, GLOBAL.ACTIONS.WILLPACKUP)
-    elseif not right and CrafterCheck(doer) and inst:HasTag("ballistic_mk2") then
-        -- Left click: Light Orb toggle (only for MK II)
-        table.insert(actions, GLOBAL.ACTIONS.WILLSTAR_TOGGLE)
     end
 end)
 
@@ -50,29 +47,6 @@ AddAction(WILLPACKUP)
 
 AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLPACKUP, "dolongaction"))
 AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLPACKUP, "dolongaction"))
-
---==================================================================================
--- WILLSTAR_TOGGLE (Ballistic MK II Light Orb - left click toggle)
---==================================================================================
-
-local WILLSTAR_TOGGLE = GLOBAL.Action({ rmb=false })
-WILLSTAR_TOGGLE.str = "Toggle Light Orb"
-WILLSTAR_TOGGLE.stroverridefn = function(act)
-    if act.target._starcaller_active then return "Deactivate Light Orb" end
-    return "Activate Light Orb"
-end
-WILLSTAR_TOGGLE.id = "WILLSTAR_TOGGLE"
-WILLSTAR_TOGGLE.fn = function(act)
-    if act.target ~= nil and CrafterCheck(act.doer) then
-        act.target:PushEvent("starcaller_toggle_request", act.doer)
-        return true
-    end
-    return false
-end
-AddAction(WILLSTAR_TOGGLE)
-
-AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLSTAR_TOGGLE, "doshortaction"))
-AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLSTAR_TOGGLE, "doshortaction"))
 
 --==================================================================================
 -- WILLYRAISE (activate / deactivate bot)
