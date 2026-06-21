@@ -3,7 +3,8 @@
 -- Merges the clean Hamlet Characters Wagstaff (character + assets + scripts)
 -- WITH the Wagstaff Integration Patch features (skill tree, XP progression,
 -- William Toymaker bots, Engineer sentry/dispenser/eteleporter, augment +
--- flicker actions, per-world persistence, boss kill tracking).
+-- flicker actions, boss kill tracking).
+-- Skill XP uses DST's standard skill tree persistence (per-character profile).
 -- ============================================================================
 
 
@@ -1218,95 +1219,7 @@ end)
 
 --==================================================================================
 
--- Internal flag: true while we are doing our own XP injection (to bypass the filter below)
-local _wagstaff_xp_injecting = false
 
-local WAGSTAFF_SKILL_THRESHOLDS = {3,6,10,14,18,23,28,33,38,43,48,53,58,63,68}
-
--- Cluster-aware days survived: reads from the Master/connected shard cluster save
--- data when available (via GetSharedSaveData), falling back to local state.cycles.
--- This prevents cave shards from reporting day 0 and zeroing out insights/skills.
-local function GetWagstaffDaysSurvived()
-    -- 1. Local cached value set by Master sync (highest priority)
-    if GLOBAL.TheWorld and GLOBAL.TheWorld._wagstaff_days_survived ~= nil then
-        return GLOBAL.TheWorld._wagstaff_days_survived
-    end
-    -- 2. Shared cluster save data (autoritativo do Master)
-    if GLOBAL.TheWorld and GLOBAL.TheWorld.network and GLOBAL.TheWorld.network.GetSharedSaveData then
-        local shared = GLOBAL.TheWorld.network:GetSharedSaveData()
-        if shared and shared.wagstaff_days_survived ~= nil then
-            return shared.wagstaff_days_survived
-        end
-    end
-    -- 3. Fallback to local world state (non-cave or pre-sync)
-    if GLOBAL.TheWorld and GLOBAL.TheWorld.state then
-        return GLOBAL.TheWorld.state.cycles or 0
-    end
-    return 0
-end
-
--- Merge cluster-shared skills into the local world table if available.
--- This is the Camada C bridge: reads from GetSharedSaveData and overrides
--- _wagstaff_activated_skills when the cluster data is more complete.
-local function WagstaffMergeClusterSaveData(self)
-    if self.network and self.network.GetSharedSaveData then
-        local shared = self.network:GetSharedSaveData()
-        if shared and type(shared) == "table" and shared.wagstaff_activated_skills then
-            WagstaffDebug("[CLUSTER] Merging cluster skills into local world, count:", shared.wagstaff_activated_skills)
-            self._wagstaff_activated_skills = CopyActivatedSkills(shared.wagstaff_activated_skills)
-            -- Also sync days if available
-            if shared.wagstaff_days_survived ~= nil then
-                self._wagstaff_days_survived = shared.wagstaff_days_survived
-            end
-            return true
-        end
-    end
-    return false
-end
-
-local function GetWagstaffMaxInsights(days)
-    days = days or GetWagstaffDaysSurvived()
-    local total = 0
-    for i, threshold in ipairs(WAGSTAFF_SKILL_THRESHOLDS) do
-        if days >= threshold then
-            total = i
-        else
-            break
-        end
-    end
-    return math.clamp(total, 0, 15)
-end
-
-local function GetWagstaffSkillXPFromDays(days)
-    return math.min(days or 0, 68)
-end
-
-local function SortedActivatedSkillKeys(skills_map)
-    local keys = {}
-    if skills_map == nil then
-        return keys
-    end
-    for skill, active in pairs(skills_map) do
-        if active and not string.find(skill, "_lock") then
-            table.insert(keys, skill)
-        end
-    end
-    table.sort(keys)
-    return keys
-end
-
-local function CopyActivatedSkills(source)
-    local copy = {}
-    if source == nil then
-        return copy
-    end
-    for skill, active in pairs(source) do
-        if active then
-            copy[skill] = true
-        end
-    end
-    return copy
-end
 
 -- Tabela de Tradução: { [Nome_da_Tag_que_o_bot_pede] = "ID_real_da_skill_no_arquivo_defs" }
 local TAG_TO_SKILL_ID = {
@@ -1332,24 +1245,24 @@ G.WagstaffHasSkill = function(worker, skill_id)
         return false
     end
 
-    -- 1. Se a tag física estiver lá, vitória rápida
+    -- 1. Quick check: physical tag
     if worker:HasTag(skill_id) then
         return true
     end
 
-    -- Descobre qual é o ID real da skill (Se a string passada já for o ID, ele mantém ela mesma)
+    -- Resolve the real skill ID from tag-to-skill mapping
     local real_skill = TAG_TO_SKILL_ID[skill_id] or skill_id
 
-    -- 2. Checagem Server-Side (Look-up na tabela de ativadas)
+    -- 2. Server-Side check (activatedskills table)
     if worker.components and worker.components.skilltreeupdater then
         local activated = worker.components.skilltreeupdater.activatedskills
         if activated and (activated[skill_id] or activated[real_skill]) then
-            worker:AddTag(skill_id) -- Re-aplica a tag perdida para otimizar o próximo frame
+            worker:AddTag(skill_id)
             return true
         end
     end
 
-    -- 3. Checagem Client-Side / Global Fallback (Lê direto da engine da Klei)
+    -- 3. Client-Side fallback (Klei engine)
     if GLOBAL.TheSkillTree then
         local client_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
         if client_skills then
@@ -1362,94 +1275,11 @@ G.WagstaffHasSkill = function(worker, skill_id)
         end
     end
 
-    -- 4. Fallback do World Save (Recuperação de desync pós-load)
-    if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
-        local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
-        if world_skills and type(world_skills) == "table" then
-            if world_skills[skill_id] or world_skills[real_skill] then
-                worker:AddTag(skill_id)
-                return true
-            end
-        end
-    end
-
+    WagstaffDebug("WagstaffHasSkill: skill not found:", skill_id)
     return false
 end
 
--- Helper: wipe XP via raw table write (bypasses all hooks)
-local function WipeWagstaffXP()
-    if GLOBAL.TheSkillTree then
-        if not GLOBAL.TheSkillTree.skillxp then
-            GLOBAL.TheSkillTree.skillxp = {}
-        end
-        GLOBAL.TheSkillTree.skillxp["wagstaff"] = 0
-    end
-end
 
--- Helper: force zero XP with multiple approaches to ensure it sticks
--- Helper: safely call DirtySkillXP on a skilltreeupdater (guards against nil method
--- during early component init or on clients where the method isn't replicated yet)
-local function SafeDirtySkillXP(updater)
-    if updater and updater.DirtySkillXP then
-        updater:DirtySkillXP()
-    end
-end
-
-local function ForceZeroWagstaffXP()
-    -- First, try the normal wipe
-    WipeWagstaffXP()
-
-    -- Replicate the zero to all clients via DirtySkillXP so the skill tree UI stops
-    -- showing stale profile XP (e.g. 68 XP = 15 insights on a brand-new world).
-    if GLOBAL.AllPlayers then
-        for _, player in ipairs(GLOBAL.AllPlayers) do
-            if player.prefab == "wagstaff" and player.components.skilltreeupdater then
-                SafeDirtySkillXP(player.components.skilltreeupdater)
-            end
-        end
-    end
-
-    -- Then, set it directly multiple times with delays to ensure it sticks
-    if GLOBAL.TheSkillTree and GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
-        for i = 1, 3 do
-            GLOBAL.TheWorld:DoTaskInTime(i * 0.1, function()
-                if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.skillxp then
-                    GLOBAL.TheSkillTree.skillxp["wagstaff"] = 0
-                end
-                -- Re-replicate after each delayed wipe so the client converges on 0.
-                if GLOBAL.AllPlayers then
-                    for _, player in ipairs(GLOBAL.AllPlayers) do
-                        if player.prefab == "wagstaff" and player.components.skilltreeupdater then
-                            SafeDirtySkillXP(player.components.skilltreeupdater)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end
-
--- Helper: inject XP via the normal path so the engine recalculates skill points
-local function InjectWagstaffXP(days)
-    -- BUG FIX #2: Não injetar XP em shards de cave
-    if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave") then
-        return
-    end
-    
-    days = days or 0
-    local xp = GetWagstaffSkillXPFromDays(days)
-    if not GLOBAL.TheSkillTree then return end
-    _wagstaff_xp_injecting = true
-    GLOBAL.TheSkillTree.skillxp["wagstaff"] = xp
-    _wagstaff_xp_injecting = false
-    if GLOBAL.AllPlayers then
-        for _, player in ipairs(GLOBAL.AllPlayers) do
-            if player.prefab == "wagstaff" and player.components.skilltreeupdater then
-                SafeDirtySkillXP(player.components.skilltreeupdater)
-            end
-        end
-    end
-end
 
 local function WagstaffWilliamPostInit(inst)
     inst:AddTag("william")
@@ -1464,279 +1294,54 @@ local function WagstaffWilliamPostInit(inst)
 
     if not GLOBAL.TheWorld.ismastersim then return end
 
-    -- Re-apply saved world skills whenever this Wagstaff activates (spawn/join/respawn).
-    -- This catches the dedicated-server case where the world loaded before the player
-    -- existed, so the DoTaskInTime-based restore in OnLoad found no one to restore,
-    -- leaving activatedskills empty and all bot/sentry/dispenser Mk2/Mk3 upgrades
-    -- blocked until the next world reload.
-    inst:ListenForEvent("playeractivated", function()
-        if GLOBAL.TheWorld and GLOBAL.TheWorld.ApplyWagstaffSkills then
-            GLOBAL.TheWorld:ApplyWagstaffSkills()
-        end
-    end)
-
-    -- ==============================================================================
-    -- SISTEMA DE SKILL TREE PERSISTENTE POR MUNDO (IMUNE A BUGS DE CAVERNAS)
-    -- ==============================================================================
-    -- Inicializa a variável de insights do mundo (sempre começa com 0 em novos mundos)
-    -- Primeiro, força o XP a ser zerado na engine (múltiplas vezes para garantir que pegue)
-    inst:DoTaskInTime(0, ForceZeroWagstaffXP)
-    
-    -- Depois, inicializa com 0 (padrão para novos mundos)
-    inst.wagstaff_world_insights = 0
-
-    -- FIX XP INICIAL: Injeta 0 XP IMEDIATAMENTE no spawn para garantir que o jogador
-    -- comece com 0 insights (sem forçar delay). O ForceZeroWagstaffXP acima zera o XP
-    -- global, mas o player pode já ter XP do profile cache. Aqui forçamos 0 XP.
-    inst:DoTaskInTime(0, function()
-        if not inst:IsValid() then return end
-        _wagstaff_xp_injecting = true
-        if GLOBAL.TheSkillTree then
-            GLOBAL.TheSkillTree.skillxp["wagstaff"] = 0
-        end
-        _wagstaff_xp_injecting = false
-        if inst.components.skilltreeupdater then
-            SafeDirtySkillXP(inst.components.skilltreeupdater)
-        end
-        WagstaffDebug("[FIX] XP inicial forçado para 0 no spawn do jogador")
-    end)
-
     if inst.components.skilltreeupdater then
-        -- 1. Força o servidor a reconhecer apenas os pontos permitidos por este mundo (do componente world)
-        inst.components.skilltreeupdater.GetTotalSkillPoints = function(self)
-            return GetWagstaffMaxInsights(GetWagstaffDaysSurvived())
-        end
-
-        -- 2. Ajusta o cálculo de pontos disponíveis para gastar
-        inst.components.skilltreeupdater.GetAvailableSkillPoints = function(self)
-            local total = self:GetTotalSkillPoints()
-            local spent = 0
-            if self.activatedskills then
-                for _ in pairs(self.activatedskills) do
-                    spent = spent + 1
-                end
-            end
-            return math.max(0, total - spent)
-        end
-
-        -- 3. Intercepta a ativação: salva a habilidade ao mundo
+        -- Intercept ActivateSkill to call onactivate callback (adds tags)
         local old_ActivateSkill = inst.components.skilltreeupdater.ActivateSkill
         inst.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
-            -- DEBUG CRÍTICO: Log completo para diagnosticar o bug "no skill with id RPC"
-            WagstaffDebug("[ActivateSkill] === INICIO ===")
-            WagstaffDebug("[ActivateSkill] skill=", tostring(skill), "type=", type(skill))
-            WagstaffDebug("[ActivateSkill] prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
-            
-            -- BUG FIX #1: No client, NÃO interceptar — deixar o engine original processar
-            -- O cliente usa UI do skilltreebuilder que tem seu próprio caminho para enviar RPC
-            -- Se interceptarmos no cliente, quebramos o RPC_LOOKUP e a skill nunca é ativada
+            WagstaffDebug("[ActivateSkill] skill=", tostring(skill), "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
+
+            -- On client, let engine handle it
             if not GLOBAL.TheWorld.ismastersim then
-                WagstaffDebug("[CLIENT] ActivateSkill: bypassing override, calling original")
                 return old_ActivateSkill(self, skill, prefab, fromrpc)
             end
-            
-            -- Server-side only from here on
-            WagstaffDebug("=== ActivateSkill START (SERVER) ===")
-            WagstaffDebug("ActivateSkill: skill=", tostring(skill), "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
-            WagstaffDebug("ActivateSkill: available points=", tostring(self:GetAvailableSkillPoints()), "total=", tostring(self:GetTotalSkillPoints()))
-            WagstaffDebug("ActivateSkill: already activated?", tostring(self:IsActivated(skill)))
-            
-            -- Verbose debug: verifica RPC_LOOKUP detalhadamente
-            WagstaffDebug("[VERBOSE] Verificando RPC_LOOKUP para skill:", skill)
-            if SkillTreeDefs and SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
-                local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
-                if defs_meta and defs_meta.RPC_LOOKUP then
-                    local found_in_defs = defs_meta.RPC_LOOKUP[skill]
-                    WagstaffDebug("[VERBOSE]   Em SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP:", found_in_defs ~= nil and "ENCONTRADA (ID="..tostring(found_in_defs)..")" or "NAO ENCONTRADA")
-                end
-            end
-            if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
-                local found_in_global = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
-                WagstaffDebug("[VERBOSE]   Em TheSkillTree.RPC_LOOKUP:", found_in_global ~= nil and "ENCONTRADA (ID="..tostring(found_in_global)..")" or "NAO ENCONTRADA")
-            end
-            
-            -- Debug RPC_LOOKUP antes de ativar
-            local rpc_id = nil
-            if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
-                -- Tentar formato direto {skill_name -> rpc_id}
-                rpc_id = GLOBAL.TheSkillTree.RPC_LOOKUP[skill]
-                
-                -- Se não encontrou, tentar formato invertido {rpc_id -> skill_name}
-                if rpc_id == nil then
-                    for id, name in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do
-                        if name == skill then
-                            rpc_id = id
-                            break
-                        end
-                    end
-                end
-                
-                WagstaffDebug("RPC_LOOKUP lookup for '", skill, "' = ", rpc_id ~= nil and tostring(rpc_id) or "NIL (PROBLEMA!)")
-                
-                if rpc_id == nil then
-                    WagstaffDebug("ERROR: Skill '", skill, "' nao esta no RPC_LOOKUP! Skills disponiveis:")
-                    local count = 0
-                    for k, v in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do
-                        WagstaffDebug("  [", k, "] = ", v)
-                        count = count + 1
-                        if count >= 20 then
-                            WagstaffDebug("  ... (truncated)")
-                            break
-                        end
-                    end
-                end
-            else
-                WagstaffDebug("WARNING: TheSkillTree.RPC_LOOKUP is NIL!")
-            end
-            
-            if self:GetAvailableSkillPoints() <= 0 and not self:IsActivated(skill) then
-                WagstaffDebug("ActivateSkill BLOCKED: no available insight points")
-                return false
-            end
-            
-            -- CORRECAO CRITICA: Quando fromrpc=true, o jogo espera um ID numerico, nao um nome.
-            -- Em mundo com caves, GLOBAL.TheSkillTree.RPC_LOOKUP pode ainda nao existir;
-            -- por isso resolvemos tambem pelo SKILLTREE_METAINFO.wagstaff.RPC_LOOKUP.
+
+            -- Resolve RPC ID for string skills received via RPC
             WagstaffPublishRPCLookup()
-            
-            -- DEBUG CRITICO: Log dos parametros recebidos
-            WagstaffDebug("=== PARAMETROS RECEBIDOS ===")
-            WagstaffDebug("skill=", tostring(skill), "type=", type(skill))
-            WagstaffDebug("prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
-            
             local skill_to_pass = skill
             if fromrpc and type(skill) == "string" then
                 local rpc_id = WagstaffResolveSkillRPCID(skill)
                 if rpc_id ~= nil then
-                    WagstaffDebug("CORRECAO: Convertendo skill string '", skill, "' para ID RPC:", rpc_id)
                     skill_to_pass = rpc_id
                 else
-                    WagstaffDebug("ERRO: Skill '", skill, "' nao encontrada em nenhum RPC_LOOKUP; abortando ativacao")
+                    WagstaffDebug("ActivateSkill: skill '", skill, "' not found in RPC_LOOKUP")
                     return false
                 end
-            elseif fromrpc and type(skill) == "number" then
-                WagstaffDebug("Skill ja é um ID numerico:", skill)
-                skill_to_pass = skill
-            elseif not fromrpc then
-                WagstaffDebug("Activacao local (nao RPC), usando nome da skill:", skill)
             end
-            
+
             local result = old_ActivateSkill(self, skill_to_pass, prefab, fromrpc)
-            WagstaffDebug("ActivateSkill: old_ActivateSkill returned:", tostring(result))
             if result then
-                WagstaffDebug("ActivateSkill: skill activated successfully!")
-                WagstaffDebug("ActivateSkill: self.activatedskills now contains:", skill, "?", self.activatedskills and self.activatedskills[skill] or "NOT FOUND")
                 -- Apply onactivate callback (adds tag)
                 if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].onactivate then
-                    WagstaffDebug("ActivateSkill: calling onactivate for", skill)
                     G.WagstaffSkillDefs[skill].onactivate(inst, false)
-                    WagstaffDebug("ActivateSkill: tag now present?", tostring(inst:HasTag(skill)))
                 else
-                    WagstaffDebug("ActivateSkill: no onactivate defined, adding tag directly")
                     inst:AddTag(skill)
                 end
-                -- Save to world
-                if GLOBAL.TheWorld and GLOBAL.TheWorld.SaveWagstaffSkillsToWorld then
-                    WagstaffDebug("ActivateSkill: saving to world")
-                    GLOBAL.TheWorld:SaveWagstaffSkillsToWorld(self.activatedskills)
-                else
-                    WagstaffDebug("ActivateSkill: WARNING - SaveWagstaffSkillsToWorld not available on TheWorld!")
-                end
-                -- Log current activatedskills
-                local count = 0
-                if self.activatedskills then
-                    for k, v in pairs(self.activatedskills) do count = count + 1 end
-                end
-                WagstaffDebug("ActivateSkill: total activated skills now =", count)
-            else
-                WagstaffDebug("ActivateSkill: FAILED - old_ActivateSkill returned false")
             end
-            WagstaffDebug("=== ActivateSkill END ===")
             return result
         end
 
-        -- 4. Intercepta a desativação: salva ao mundo também
+        -- Intercept DeactivateSkill to call ondeactivate callback
         local old_DeactivateSkill = inst.components.skilltreeupdater.DeactivateSkill
         if old_DeactivateSkill then
             inst.components.skilltreeupdater.DeactivateSkill = function(self, skill, prefab, fromrpc)
-                WagstaffDebug("DeactivateSkill called with skill:", skill)
                 local result = old_DeactivateSkill(self, skill, prefab, fromrpc)
-                WagstaffDebug("old_DeactivateSkill returned result:", result)
                 if result and G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].ondeactivate then
                     G.WagstaffSkillDefs[skill].ondeactivate(inst, false)
-                end
-                if result and GLOBAL.TheWorld and GLOBAL.TheWorld.SaveWagstaffSkillsToWorld then
-                    WagstaffDebug("Calling GLOBAL.TheWorld:SaveWagstaffSkillsToWorld")
-                    GLOBAL.TheWorld:SaveWagstaffSkillsToWorld(self.activatedskills)
                 end
                 return result
             end
         end
-
-        -- BUG FIX #5: IsActivated no cliente deve ser simples — apenas verificar se está em activatedskills
-        -- No servidor, usa a lógica com limite de pontos do mundo
-        inst.components.skilltreeupdater.IsActivated = function(self, skill, ...)
-            -- No cliente: confiar no estado replicado pelo engine
-            if not GLOBAL.TheWorld.ismastersim then
-                return self.activatedskills and self.activatedskills[skill] == true
-            end
-            
-            -- No servidor: lógica com limite de pontos do mundo
-            if not (self.activatedskills and self.activatedskills[skill]) then
-                return false
-            end
-            local sorted_skills = SortedActivatedSkillKeys(self.activatedskills)
-            local index = 0
-            for i, s in ipairs(sorted_skills) do
-                if s == skill then
-                    index = i
-                    break
-                end
-            end
-            local total = self:GetTotalSkillPoints()
-            -- NOTE: IsActivated is called many times per second by the skill tree UI.
-            -- Do NOT WagstaffDebug here — it would flood the buffer and freeze the game.
-            return index > 0 and index <= total
-        end
     end
-
-    -- 4. Progressão Automática: Ganha +1 ponto a cada dia que passa (Ex: Dia 1 = 0, Dia 2 = 1...)
-    -- A progressão é limitada por dias, não por pontos diretos
-    inst:WatchWorldState("cycles", function(inst, cycles)
-        -- BUG FIX #2: Não rodar lógica de insights em shards de cave
-        if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave") then
-            return
-        end
-        
-        -- Calcula o XP baseado nos dias sobrevividos (máximo 68 = 15 insights)
-        -- Dia 1 = 0, Dia 3 = 1, Dia 6 = 2, etc., até Dia 68 = 15
-        local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
-        local new_insights = 0
-        
-        -- Limites para cada insight (baseado em TUNING.SKILL_THRESHOLDS)
-        local thresholds = TUNING.SKILL_THRESHOLDS.wagstaff or {3,6,10,14,18,23,28,33,38,43,48,53,58,63,68}
-        
-        -- Calcula quantos insights o jogador deveria ter
-        for i, threshold in ipairs(thresholds) do
-            if days >= threshold then
-                new_insights = i
-            else
-                break -- Não precisa verificar mais thresholds
-            end
-        end
-        
-        -- Atualiza apenas se o valor mudou
-        if new_insights > inst.wagstaff_world_insights then
-            inst.wagstaff_world_insights = new_insights
-            if inst.components.talker then
-                inst.components.talker:Say("Minhas pesquisas avançaram! Agora tenho " .. new_insights .. " Insights neste mundo.")
-            end
-            -- Inject XP to match days
-            inst:DoTaskInTime(0, function()
-                InjectWagstaffXP(days)
-            end)
-        end
-    end)
 
     if inst.components.petleash == nil then
         inst:AddComponent("petleash")
@@ -1797,34 +1402,13 @@ local function WagstaffWilliamPostInit(inst)
         if old_OnLoad then
             old_OnLoad(inst, data)
         end
-        
-        -- Primeiro, força o XP a ser zerado na engine (múltiplas vezes para garantir que pegue)
-        WagstaffDebug("Scheduling ForceZeroWagstaffXP in 0 seconds")
-        inst:DoTaskInTime(0, ForceZeroWagstaffXP)
-        
+
         if data then
             if data.wagstaff_received_starting_items then
                 inst.wagstaff_received_starting_items = true
-                WagstaffDebug("Set wagstaff_received_starting_items to true")
+                WagstaffDebug("Restored wagstaff_received_starting_items")
             end
         end
-
-        -- Aplicar habilidades salvas no mundo, depois que o mundo estiver carregado
-        WagstaffDebug("Scheduling ApplyWagstaffSkills in 0.6 seconds")
-        inst:DoTaskInTime(0.6, function()
-            WagstaffDebug("ApplyWagstaffSkills DoTaskInTime callback executing")
-            if GLOBAL.TheWorld and GLOBAL.TheWorld.ApplyWagstaffSkills then
-                WagstaffDebug("Calling GLOBAL.TheWorld:ApplyWagstaffSkills")
-                GLOBAL.TheWorld:ApplyWagstaffSkills()
-                -- Also set inst.wagstaff_world_insights correctly
-                if inst.components.skilltreeupdater then
-                    inst.wagstaff_world_insights = inst.components.skilltreeupdater:GetTotalSkillPoints()
-                    WagstaffDebug("Set inst.wagstaff_world_insights to:", inst.wagstaff_world_insights)
-                end
-            else
-                WagstaffDebug("WARNING: GLOBAL.TheWorld or GLOBAL.TheWorld.ApplyWagstaffSkills not found!")
-            end
-        end)
     end
 end
 
@@ -2656,33 +2240,23 @@ end)
 -- ==================================================================================
 -- INSIGHT (XP) PROGRESSION SYSTEM FOR WAGSTAFF
 -- ==================================================================================
--- Design: XP is per-world, based entirely on days survived.
---   - New world always starts at 0 XP.
---   - On save: number of days survived is stored in the world save file.
---   - On load: XP is ALWAYS reset to 0 first (to block mod/engine injection),
---     then re-injected as (days_survived * 1 XP) capped at 68.
---   - Cave: treated as a separate world with XP = 0 (no cave logic yet).
---   - The engine/original mod may inject 68 XP silently; we neutralize this by
---     always overwriting via AddSkillXP after load, not just setting skillxp directly.
---
--- Thresholds: {3,6,10,14,18,23,28,33,38,43,48,53,58,63,68} (15 points max)
--- Day 1 starts at 0. After day 3 = 1st insight. After day 68 = 15th (max).
+-- Design: XP is managed by DST's standard skill tree persistence (per-character profile).
+--   - Day 1 grants the first skill point (threshold 0).
+--   - Subsequent thresholds at days 3, 6, 10, 14, 18, 23, 28, 33, 38, 43, 48, 53, 58, 63, 68.
+--   - Each daycomplete event adds +1 XP via TheSkillTree:AddSkillXP(1, "wagstaff").
+--   - Boss kills are tracked per-world via world save flags.
 -- ==================================================================================
 
 if TUNING.SKILL_THRESHOLDS == nil then
     TUNING.SKILL_THRESHOLDS = {}
 end
-TUNING.SKILL_THRESHOLDS.wagstaff = {3,6,10,14,18,23,28,33,38,43,48,53,58,63,68}
+TUNING.SKILL_THRESHOLDS.wagstaff = {0,3,6,10,14,18,23,28,33,38,43,48,53,58,63,68}
 
--- Per-world persistence: boss kills + days_survived + activated skills (XP source of truth)
--- NOTE: "world" is a PREFAB (TheWorld), not a component. Must use AddPrefabPostInit
--- (AddComponentPostInit("world") never fires because there's no component named "world").
+-- Per-world persistence: boss kills only.
+-- Skill XP/activation is handled by DST's standard skill tree persistence.
 WagstaffDebug("Registering AddPrefabPostInit('world')")
 AddPrefabPostInit("world", function(self)
-    print("[Wagstaff Standalone] AddPrefabPostInit('world') FIRED — self=", tostring(self))
-    WagstaffDebug("AddPrefabPostInit('world') called, self=", tostring(self))
-    WagstaffDebug("TheWorld.state exists?", tostring(self.state ~= nil))
-    WagstaffDebug("TheWorld.ismastersim=", tostring(self.ismastersim))
+    WagstaffDebug("AddPrefabPostInit('world') called")
     -- Initialize worldstate boss flags
     if self.state.wagstaff_fuelweaver_killed == nil then
         self.state.wagstaff_fuelweaver_killed = false
@@ -2690,402 +2264,29 @@ AddPrefabPostInit("world", function(self)
     if self.state.wagstaff_celestial_killed == nil then
         self.state.wagstaff_celestial_killed = false
     end
-    -- Internal: days survived saved in this world (nil = new world)
-    self._wagstaff_days_survived = nil
-    self._wagstaff_activated_skills = {} -- Store activated skills per world
 
-    -- Camada C: Persistência cluster-wide via shared save data.
-    -- Em clusters (Master + Caves), cada shard tem seu próprio world save.
-    -- Usamos GetSharedSaveData/SetSharedSaveData para compartilhar o estado
-    -- autoritativo (dias + skills) entre todos os shards.
-    -- NOTA: GetSharedSaveData retorna uma VIEW SOMENTE-LEITURA do cluster save.
-    -- O engine aceita que mods retornem tabelas customizadas de lá; não chamamos
-    -- SetSharedSaveData diretamente (API não existe publicamente).
-    local function WagstaffGetClusterSaveData()
-        if self.network and self.network.GetSharedSaveData then
-            local shared = self.network:GetSharedSaveData()
-            if shared and type(shared) == "table" then
-                return shared
-            end
-        end
-        return nil
-    end
-
-    -- Function to apply world skills to all Wagstaff players
-    local function apply_world_skills_to_wagstaff()
-        local _sk_count = 0; for _ in pairs(self._wagstaff_activated_skills) do _sk_count = _sk_count + 1 end; WagstaffDebug("apply_world_skills_to_wagstaff called, skills count:", _sk_count)
-        WagstaffDebug("self._wagstaff_days_survived:", self._wagstaff_days_survived)
-        if not GLOBAL.AllPlayers then
-            WagstaffDebug("GLOBAL.AllPlayers is nil, returning")
-            return
-        end
-
-        local days = self._wagstaff_days_survived or 0
-        local max_insights = GetWagstaffMaxInsights(days)
-        local sorted_saved = SortedActivatedSkillKeys(self._wagstaff_activated_skills)
-        WagstaffDebug("max_insights:", max_insights, "sorted_saved count:", #sorted_saved)
-
-        -- Camada B (autoritativo): Usar o maior valor entre os insights calculados
-        -- localmente e o número de skills salvas. Isso NUNCA poda skills que existem
-        -- no save. O motivo: o shard de cave pode ter max_insights=0 (day 0 local)
-        -- enquanto o Master tem skills salvas de dias > 0. O #sorted_saved é a fonte
-        -- de verdade autoritativa para "quantas skills existem".
-        local effective_max = math.max(max_insights, #sorted_saved)
-        if effective_max ~= max_insights then
-            WagstaffDebug("[CLUSTER B] max_insights expandido de", max_insights, "para", effective_max, "(#sorted_saved=", #sorted_saved, ")")
-        end
-
-        local keep_set = {}
-        for i = 1, math.min(#sorted_saved, effective_max) do
-            keep_set[sorted_saved[i]] = true
-        end
-
-        for _, player in ipairs(GLOBAL.AllPlayers) do
-            WagstaffDebug("Checking player:", player.prefab)
-            if player.prefab == "wagstaff" and player.components.skilltreeupdater then
-                WagstaffDebug("Found Wagstaff player")
-                local updater = player.components.skilltreeupdater
-                
-                -- CRITICAL FIX: Ensure activatedskills table exists before using it
-                if not updater.activatedskills then
-                    updater.activatedskills = {}
-                    WagstaffDebug("Created empty activatedskills table for player")
-                end
-                
-                local oldActivatedSkills = updater.activatedskills or {}
-                local _oc = 0; for _ in pairs(oldActivatedSkills or {}) do _oc = _oc + 1 end; WagstaffDebug("Old activated skills count:", _oc)
-
-                for skill, _ in pairs(oldActivatedSkills) do
-                    if not keep_set[skill] then
-                        WagstaffDebug("Deactivating skill:", skill)
-                        if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].ondeactivate then
-                            G.WagstaffSkillDefs[skill].ondeactivate(player, true)
-                        end
-                    end
-                end
-
-                -- Clear and rebuild activatedskills (usa effective_max da Camada B)
-                updater.activatedskills = {}
-                local applied_count = 0
-                for i = 1, math.min(#sorted_saved, effective_max) do
-                    local skill = sorted_saved[i]
-                    WagstaffDebug("Activating skill:", skill)
-                    updater.activatedskills[skill] = true
-                    applied_count = applied_count + 1
-                    if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].onactivate then
-                        G.WagstaffSkillDefs[skill].onactivate(player, true)
-                    end
-                end
-                WagstaffDebug("Final activated skills count:", applied_count)
-                
-                -- CRITICAL: Force dirty the skills to ensure they're replicated
-                SafeDirtySkillXP(updater)
-                player.wagstaff_world_insights = effective_max
-                
-                -- EXTRA DEBUG: Verify skills were actually set
-                local verify_count = 0
-                for _ in pairs(updater.activatedskills) do verify_count = verify_count + 1 end
-                WagstaffDebug("VERIFICATION: activatedskills now has", verify_count, "skills")
-            elseif player.prefab == "wagstaff" then
-                WagstaffDebug("Player is wagstaff but MISSING skilltreeupdater component!")
-            end
-        end
-    end
-
-    -- SAVE: store boss flags + days survived + activated skills
-    -- BUG FIX #4: OnSave deve sempre copiar skills do player vivo antes de salvar
-    -- Isso previne perda de skills em reloads/rollbacks
+    -- SAVE: store boss flags only
     local old_OnSave = self.OnSave
     self.OnSave = function(self, ...)
-        WagstaffDebug("=== World OnSave START ===")
-        WagstaffDebug("World OnSave called")
         local data = old_OnSave and old_OnSave(self, ...) or {}
         data.wagstaff_fuelweaver_killed = self.state.wagstaff_fuelweaver_killed
         data.wagstaff_celestial_killed  = self.state.wagstaff_celestial_killed
-        -- Save days survived so we can reconstruct XP on load
-        local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
-        data.wagstaff_days_survived = days
-        
-        WagstaffDebug("=== SALVANDO SKILLS ===")
-        WagstaffDebug("self._wagstaff_activated_skills type:", type(self._wagstaff_activated_skills))
-        
-        -- Debug: mostrar TODAS as skills salvas em self._wagstaff_activated_skills
-        WagstaffDebug("Conteudo de self._wagstaff_activated_skills:")
-        local skill_count = 0
-        if self._wagstaff_activated_skills then
-            for k, v in pairs(self._wagstaff_activated_skills) do
-                WagstaffDebug("  ", k, "=", v)
-                skill_count = skill_count + 1
-            end
-        else
-            WagstaffDebug("  (nil)")
-        end
-        WagstaffDebug("Total skills em self._wagstaff_activated_skills:", skill_count)
-        
-        data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
-        
-        WagstaffDebug("data.wagstaff_activated_skills apos CopyActivatedSkills type:", type(data.wagstaff_activated_skills))
-        if data.wagstaff_activated_skills then
-            WagstaffDebug("Conteudo de data.wagstaff_activated_skills:")
-            local data_skill_count = 0
-            for k, v in pairs(data.wagstaff_activated_skills) do
-                WagstaffDebug("  ", k, "=", v)
-                data_skill_count = data_skill_count + 1
-            end
-            WagstaffDebug("Total skills em data.wagstaff_activated_skills:", data_skill_count)
-        else
-            WagstaffDebug("data.wagstaff_activated_skills is nil!")
-        end
-        
-        local has_skills = false
-        if data.wagstaff_activated_skills ~= nil then
-            for _ in pairs(data.wagstaff_activated_skills) do
-                has_skills = true
-                break
-            end
-        end
-        if not has_skills then
-            WagstaffDebug("No skills in world data, checking live players")
-            if GLOBAL.AllPlayers then
-                for _, player in ipairs(GLOBAL.AllPlayers) do
-                    if player.prefab == "wagstaff" and player.components.skilltreeupdater then
-                        WagstaffDebug("Found live Wagstaff player, checking activatedskills type:", type(player.components.skilltreeupdater.activatedskills))
-                        data.wagstaff_activated_skills = CopyActivatedSkills(player.components.skilltreeupdater.activatedskills)
-                        local _lc = 0
-                        if data.wagstaff_activated_skills ~= nil then
-                            for _ in pairs(data.wagstaff_activated_skills) do _lc = _lc + 1 end
-                        end
-                        WagstaffDebug("Saved wagstaff_activated_skills from live player, count:", _lc)
-                        break
-                    end
-                end
-            end
-        else
-            local _wc = 0
-            if data.wagstaff_activated_skills ~= nil then
-                for _ in pairs(data.wagstaff_activated_skills) do _wc = _wc + 1 end
-            end
-            WagstaffDebug("Saved wagstaff_activated_skills to world data, count:", _wc)
-        end
-        WagstaffDebug("=== World OnSave END ===")
+        WagstaffDebug("World OnSave done")
         return data
     end
 
-    -- LOAD: restore boss flags, days survived, and activated skills
+    -- LOAD: restore boss flags only
     local old_OnLoad = self.OnLoad
     self.OnLoad = function(self, data, ...)
         WagstaffDebug("World OnLoad called")
         if old_OnLoad then old_OnLoad(self, data, ...) end
-
-        -- Always wipe first — blocks the engine/mod injecting 68 XP
-        ForceZeroWagstaffXP()
-
-        if data and data.wagstaff_days_survived ~= nil then
-            -- Existing world: reconstruct XP from days survived
+        if data then
             self.state.wagstaff_fuelweaver_killed = data.wagstaff_fuelweaver_killed or false
             self.state.wagstaff_celestial_killed  = data.wagstaff_celestial_killed  or false
-            self._wagstaff_days_survived = data.wagstaff_days_survived
-            WagstaffDebug("Loading wagstaff_activated_skills, data type:", type(data), "data.wagstaff_activated_skills type:", type(data.wagstaff_activated_skills))
-            self._wagstaff_activated_skills = CopyActivatedSkills(data.wagstaff_activated_skills)
-            WagstaffDebug("Loaded _wagstaff_days_survived:", self._wagstaff_days_survived)
-
-            -- Camada C: merge cluster-shared data (Master → Caves) se disponível.
-            -- Isso garante que um shard de cave novo leia skills/dias do Master
-            -- mesmo quando seu próprio world save está vazio.
-            WagstaffMergeClusterSaveData(self)
-            local _lac = 0; for _ in pairs(self._wagstaff_activated_skills) do _lac = _lac + 1 end; WagstaffDebug("Loaded _wagstaff_activated_skills count:", _lac)
-            local days = data.wagstaff_days_survived
-            
-            -- CRITICAL: Apply skills IMMEDIATELY after load, not just on task delay.
-            -- This handles saves with many skills that would otherwise appear empty.
-            apply_world_skills_to_wagstaff()
-            
-            if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
-                WagstaffDebug("DoTaskInTime scheduled for 0.5 seconds (redundant safety)")
-                GLOBAL.TheWorld:DoTaskInTime(0.5, function()
-                    WagstaffDebug("DoTaskInTime callback executed")
-                    ForceZeroWagstaffXP()
-                    InjectWagstaffXP(days)
-                    apply_world_skills_to_wagstaff()
-                end)
-            end
         else
-            -- New world (no wagstaff_days_survived key): stay at 0
-            WagstaffDebug("New world detected, setting defaults")
-            
-            -- BUG FIX #2: Detectar se é cave e usar delay maior + lógica especial
-            local is_cave = GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave")
-            
             self.state.wagstaff_fuelweaver_killed = false
             self.state.wagstaff_celestial_killed  = false
-            self._wagstaff_days_survived = 0
-            self._wagstaff_activated_skills = {}
-            
-            -- Garante que novos mundos começam com 0 insights
-            ForceZeroWagstaffXP()
-            
-            if is_cave then
-                -- Cave precisa de delay maior porque o shard sync chega depois
-                WagstaffDebug("[CAVE] New cave world detected, using delayed initialization")
-                for i = 1, 5 do
-                    GLOBAL.TheWorld:DoTaskInTime(i * 0.3, function()
-                        ForceZeroWagstaffXP()
-                    end)
-                end
-                GLOBAL.TheWorld:DoTaskInTime(1.5, function()
-                    InjectWagstaffXP(0)
-                    apply_world_skills_to_wagstaff()
-                end)
-            else
-                if GLOBAL.TheWorld and GLOBAL.TheWorld.DoTaskInTime then
-                    GLOBAL.TheWorld:DoTaskInTime(0.5, function()
-                        ForceZeroWagstaffXP()
-                        InjectWagstaffXP(0)
-                        apply_world_skills_to_wagstaff()
-                    end)
-                end
-            end
-            
-            if GLOBAL.AllPlayers then
-                for _, player in ipairs(GLOBAL.AllPlayers) do
-                    if player.prefab == "wagstaff" then
-                        player.wagstaff_world_insights = 0
-                        if player.components.skilltreeupdater then
-                            player.components.skilltreeupdater.activatedskills = {}
-                            SafeDirtySkillXP(player.components.skilltreeupdater)
-                        end
-                    end
-                end
-            end
         end
-    end
-
-    -- Camada C (escrita): Propagar dias+skills para o cluster save quando o
-    -- shard Master persistir. Usa SetSharedSaveData quando disponível, senão
-    -- propaga via eventos de rede. Isso garante que caves recebam o estado
-    -- autoritativo sem depender apenas do world save local.
-    local function WagstaffPropagateToCluster(self)
-        if not self.network then return end
-        local ok_write, write_fn = pcall(function()
-            return self.network.SetSharedSaveData
-        end)
-        if ok_write and write_fn then
-            -- SetSharedSaveData existe: propagar diretamente.
-            local payload = {
-                wagstaff_days_survived = self._wagstaff_days_survived or 0,
-                wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills),
-            }
-            -- Usar pcall para evitar crash se a API mudar no futuro.
-            local ok_set, err = pcall(write_fn, self.network, payload)
-            if not ok_set then
-                WagstaffDebug("[CLUSTER] SetSharedSaveData falhou:", tostring(err))
-            else
-                WagstaffDebug("[CLUSTER] Propagado para cluster save, days:", payload.wagstaff_days_survived)
-            end
-        else
-            -- Fallback: broadcast via evento de rede (menos confiável, mas melhor que nada).
-            -- O Master e caves podem escutar esse evento e atualizar seu estado local.
-            if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("master") then
-                self:PushEvent("wagstaff_cluster_sync", {
-                    days = self._wagstaff_days_survived or 0,
-                    skills = CopyActivatedSkills(self._wagstaff_activated_skills),
-                })
-                WagstaffDebug("[CLUSTER] Broadcast sync via PushEvent (fallback)")
-            end
-        end
-    end
-
-    -- Intercepta OnSave do world para também propagar ao cluster.
-    local old_OnSave = self.OnSave
-    self.OnSave = function(self, ...)
-        local data = old_OnSave and old_OnSave(self, ...) or {}
-        data.wagstaff_fuelweaver_killed = self.state.wagstaff_fuelweaver_killed
-        data.wagstaff_celestial_killed  = self.state.wagstaff_celestial_killed
-        local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
-        data.wagstaff_days_survived = days
-        data.wagstaff_activated_skills = CopyActivatedSkills(self._wagstaff_activated_skills)
-        -- Camada C: propagar para o cluster após salvar localmente.
-        WagstaffPropagateToCluster(self)
-        return data
-    end
-    -- Expose function to save activated skills to world
-    self.SaveWagstaffSkillsToWorld = function(self, activatedskills)
-        WagstaffDebug("SaveWagstaffSkillsToWorld called, activatedskills type:", type(activatedskills))
-        activatedskills = activatedskills or {}
-        local _sc = 0; for _ in pairs(activatedskills) do _sc = _sc + 1 end; WagstaffDebug("SaveWagstaffSkillsToWorld called, skills count:", _sc)
-        self._wagstaff_activated_skills = CopyActivatedSkills(activatedskills)
-    end
-
-    -- Expose function to get saved activated skills
-    self.GetWagstaffSkillsFromWorld = function(self)
-        return self._wagstaff_activated_skills or {}
-    end
-
-    -- Expose function to apply world skills to all Wagstaff players
-    self.ApplyWagstaffSkills = apply_world_skills_to_wagstaff
-    print("[Wagstaff Standalone] World persistence installed: ApplyWagstaffSkills, SaveWagstaffSkillsToWorld, GetWagstaffSkillsFromWorld are now on TheWorld")
-    WagstaffDebug("World persistence functions installed on TheWorld")
-end)
-
-
-AddComponentPostInit("skilltreeupdater", function(self)
-    local old_SaveActivatedSkills = self.SaveActivatedSkills
-    self.SaveActivatedSkills = function(self2, ...)
-        if self2.inst and self2.inst.prefab == "wagstaff" then
-            if GLOBAL.TheWorld and GLOBAL.TheWorld.SaveWagstaffSkillsToWorld then
-                GLOBAL.TheWorld:SaveWagstaffSkillsToWorld(self2.activatedskills)
-            end
-            return
-        end
-        if old_SaveActivatedSkills then
-            return old_SaveActivatedSkills(self2, ...)
-        end
-    end
-end)
-
-
--- Block any external AddSkillXP calls for wagstaff EXCEPT our own injection
--- and the legitimate +1/day from daycomplete below.
--- This kills the 68-XP injection from the original workshop mod.
-AddSimPostInit(function()
-    if GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.AddSkillXP then
-        local old_AddSkillXP = GLOBAL.TheSkillTree.AddSkillXP
-        GLOBAL.TheSkillTree.AddSkillXP = function(self, amount, prefab)
-            if prefab == "wagstaff" and not _wagstaff_xp_injecting then
-                if amount ~= 1 then
-                    return
-                end
-            end
-            return old_AddSkillXP(self, amount, prefab)
-        end
-    end
-end)
-
-AddSimPostInit(function()
-    if not GLOBAL.TheWorld or not GLOBAL.TheWorld.ismastersim then
-        return
-    end
-    local function ClampWagstaffXPToWorldProgress()
-        if not GLOBAL.TheSkillTree or not GLOBAL.TheSkillTree.skillxp or _wagstaff_xp_injecting then
-            return
-        end
-        local expected = GetWagstaffSkillXPFromDays(GetWagstaffDaysSurvived())
-        local current = GLOBAL.TheSkillTree.skillxp["wagstaff"] or 0
-        if current > expected then
-            _wagstaff_xp_injecting = true
-            GLOBAL.TheSkillTree.skillxp["wagstaff"] = expected
-            _wagstaff_xp_injecting = false
-            if GLOBAL.AllPlayers then
-                for _, player in ipairs(GLOBAL.AllPlayers) do
-                    if player.prefab == "wagstaff" and player.components.skilltreeupdater then
-                        SafeDirtySkillXP(player.components.skilltreeupdater)
-                    end
-                end
-            end
-        end
-    end
-    if GLOBAL.TheWorld.DoPeriodicTask then
-        GLOBAL.TheWorld:DoPeriodicTask(2, ClampWagstaffXPToWorldProgress)
     end
 end)
 
@@ -3106,44 +2307,14 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
 end)
 
 
--- Each day survived: Update XP based on days survived (not +1 per day)
--- Our filter above allows only controlled XP injection, so this is safe.
--- Cave: TheWorld.ismastersim is true in cave too, but the world save is separate
--- and has no wagstaff_days_survived key, so it starts at 0. Cave XP accrues
--- in isolation (no cave-specific logic yet -- future work).
+-- Each day survived: +1 XP via standard DST skill tree persistence
 AddPrefabPostInit("wagstaff", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
-    
+
     inst:ListenForEvent("daycomplete", function(inst)
-        -- BUG FIX #2: Ignorar caves para evitar problemas de sync de XP
-        if GLOBAL.TheWorld and GLOBAL.TheWorld:HasTag("cave") then
-            return
-        end
-        
         if not inst:HasTag("playerghost") then
-            -- Calcula o XP baseado nos dias sobrevividos
-            local days = (GLOBAL.TheWorld and GLOBAL.TheWorld.state and GLOBAL.TheWorld.state.cycles) or 0
-            local thresholds = TUNING.SKILL_THRESHOLDS.wagstaff or {3,6,10,14,18,23,28,33,38,43,48,53,58,63,68}
-            
-            -- Calcula quantos insights o jogador deveria ter
-            local new_insights = 0
-            for i, threshold in ipairs(thresholds) do
-                if days >= threshold then
-                    new_insights = i
-                else
-                    break -- Não precisa verificar mais thresholds
-                end
-            end
-            
-            -- Atualiza apenas se o valor mudou
-            if new_insights > inst.wagstaff_world_insights then
-                inst.wagstaff_world_insights = new_insights
-                -- Injeta o XP correspondente ao número de dias
-                InjectWagstaffXP(days)
-                
-                if inst.components.talker then
-                    inst.components.talker:Say("Minhas pesquisas avançaram! Agora tenho " .. new_insights .. " Insights neste mundo.")
-                end
+            if GLOBAL.TheSkillTree then
+                GLOBAL.TheSkillTree:AddSkillXP(1, "wagstaff")
             end
         end
     end)
@@ -3195,45 +2366,13 @@ AddPlayerPostInit(function(inst)
             
 
             if needs_cleanup then
-                if inst.prefab == "wagstaff" and GLOBAL.TheWorld and GLOBAL.TheWorld.SaveWagstaffSkillsToWorld then
-                    GLOBAL.TheWorld:SaveWagstaffSkillsToWorld(activated)
-                end
+                WagstaffDebug("Cleaned up invalid lock activations")
             end
 
         end
 
     end)
 
-end)
-
-
--- Fix: Prevent fake skill points injection on cave-enabled worlds
--- When starting a new world with caves, the server may inject ~3 skill points
--- before our mod can calculate the correct value based on days survived.
--- This fix FORCIBLY resets points on frame 0, BEFORE any cave system logic runs.
-AddPlayerPostInit(function(inst)
-    if not GLOBAL.TheWorld.ismastersim then return end
-    if inst.prefab ~= "wagstaff" then return end
-
-    -- Frame 0: executar ANTES de qualquer outra logica do jogo
-    inst:DoTaskInTime(0, function()
-        if not inst:IsValid() or not inst.components.skilltreeupdater then return end
-
-        print("[Wagstaff Fix] Resetando pontos de skill para 0 (frame 0)")
-
-        -- Reaplica as skills válidas do mundo (que foram salvas corretamente)
-        if GLOBAL.TheWorld and GLOBAL.TheWorld.ApplyWagstaffSkills then
-            GLOBAL.TheWorld:ApplyWagstaffSkills()
-        end
-
-        -- Força zero XP para bloquear qualquer injecao do engine de cavernas
-        ForceZeroWagstaffXP()
-        local days = GetWagstaffDaysSurvived()
-        GLOBAL.TheWorld:DoTaskInTime(0.5, function()
-            ForceZeroWagstaffXP()
-            InjectWagstaffXP(days)
-        end)
-    end)
 end)
 
 
