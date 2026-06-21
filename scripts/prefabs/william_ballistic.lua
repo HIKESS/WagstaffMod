@@ -1033,12 +1033,23 @@ end
 
 
         -- OVERCHARGE system: triggered by lightning strike while deployed
+        -- Daily limit: 1 overcharge per day, resets each new cycle
         inst._overcharge = false
         inst._overchargetask = nil
+        inst._overcharge_daily_count = 0
+        inst._overcharge_daily_limit = 1
+
+        -- Reset daily counter on new day
+        inst:WatchWorldState("cycles", function()
+            inst._overcharge_daily_count = 0
+            UpdateBallistic2Name(inst)
+        end)
 
         local function ApplyOvercharge(inst)
             if inst._overcharge then return end
+            if inst._overcharge_daily_count >= inst._overcharge_daily_limit then return end
             inst._overcharge = true
+            inst._overcharge_daily_count = inst._overcharge_daily_count + 1
             inst:AddTag("overcharged")
 
             -- 3x boost: Attack Rate, DMG, HP, Regen
