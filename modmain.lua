@@ -2429,6 +2429,13 @@ local CreateSkillTree = function()
             end
             WagstaffDebug("Wrapped lock_open functions with tag-based activatedskills fallback")
 
+            -- CRITICAL: Set ORDERS BEFORE CreateSkillTreeFor — the engine reads
+            -- SKILLTREE_ORDERS during registration to assign tier/level to each skill.
+            -- Without this, skills beyond the 2nd in each branch get no order and
+            -- become permanently unavailable in the skill tree UI.
+            SkillTreeDefs.SKILLTREE_ORDERS = SkillTreeDefs.SKILLTREE_ORDERS or {}
+            SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
+
             -- Register skill tree with the engine
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
@@ -2445,8 +2452,6 @@ local CreateSkillTree = function()
             -- aliases to SKILLS["wagstaff"] so the engine's SetSkillActivatedState
             -- RPC handler can validate skills by their numeric ID.
             WagstaffAddNumericSkillAliases(SkillTreeDefs)
-
-            SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
 
             -- Merge BACKGROUND_SETTINGS into METAINFO without overwriting RPC_LOOKUP
             if SkillTreeDefs.SKILLTREE_METAINFO == nil then

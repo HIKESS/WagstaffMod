@@ -5,9 +5,9 @@ local prefabs =
 
     local assets =
     {
-	Asset("ANIM", "anim/william_brute.zip"),
-	Asset("ANIM", "anim/william_upgrades.zip"),
-	Asset("ANIM", "anim/william_garyhat_swap.zip"),
+        Asset("ANIM", "anim/william_brute.zip"),
+        Asset("ANIM", "anim/william_upgrades.zip"),
+        Asset("ANIM", "anim/william_garyhat_swap.zip"),
     Asset("ANIM", "anim/merm_actions.zip"),
     Asset("ANIM", "anim/merm_guard_transformation.zip"),    
     Asset("ANIM", "anim/ds_pig_boat_jump.zip"),
@@ -45,14 +45,14 @@ end
 local function lootsetfn(lootdropper)
     local loot = {}
     local amount = lootdropper.inst.level*0.75
-	if amount < 1 then amount = 1 end
+        if amount < 1 then amount = 1 end
 
-		if lootdropper.inst.level > 0 then
-    		for k = 1, amount do
+                if lootdropper.inst.level > 0 then
+                for k = 1, amount do
             table.insert(loot, "gears")
-		end
-		end
-		
+                end
+                end
+                
 
     lootdropper:SetLoot(loot)
 end
@@ -132,9 +132,9 @@ local function OnAttacked(inst, data)
     if data.attacker ~= nil then
 if data.attacker.components.combat ~= nil then
             inst.components.combat:SuggestTarget(data.attacker)
-		if not data.attacker:HasTag("william") then
+                if not data.attacker:HasTag("william") then
     inst.components.combat:ShareTarget(data.attacker, 15, _ShareTargetFn, 5)
-		end
+                end
         end
     end
 end
@@ -143,10 +143,10 @@ end
 
 
 local function retargetfn(inst)
-	local exclude_tags = { "playerghost", "INLIMBO", "abigail", "playermonster" }
-	if inst.components.minigame_spectator ~= nil then
-		table.insert(exclude_tags, "player") -- prevent spectators from auto-targeting webber
-	end
+        local exclude_tags = { "playerghost", "INLIMBO", "abigail", "playermonster" }
+        if inst.components.minigame_spectator ~= nil then
+                table.insert(exclude_tags, "player") -- prevent spectators from auto-targeting webber
+        end
 
     local playertargets = {}
     for i, v in ipairs(AllPlayers) do
@@ -164,7 +164,7 @@ local function retargetfn(inst)
                 function(guy)
                     return inst.components.combat:CanTarget(guy) and playertargets[guy] or
                     (guy.components.combat.target ~= nil and (guy.components.combat.target:HasTag("player") or guy.components.combat.target:HasTag("willminion")))
-			--inst.components.combat:CanTarget(guy)
+                        --inst.components.combat:CanTarget(guy)
                 end,
                 { "_combat" }, -- see entityreplica.lua
                 exclude_tags
@@ -180,7 +180,7 @@ end
 
 local function getstatus(inst, viewer)
             return inst.components.fueled:IsEmpty() and "EMPTY"
-	    or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .3 and "CRITICALFUEL"
+            or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .3 and "CRITICALFUEL"
             or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .6 and "LOWFUEL"
             or "FINE"
 end
@@ -198,9 +198,9 @@ local function CanInteract(inst)
 end
 
 local function onworked(inst)
-	if inst:HasTag("alive") then
-	inst.sg:GoToState("hit")
-	end
+        if inst:HasTag("alive") then
+        inst.sg:GoToState("hit")
+        end
 end
 
 local function TurnOff(inst, doer, instant)
@@ -208,14 +208,14 @@ local function TurnOff(inst, doer, instant)
     inst.on = false
     -- Debug removed
 
-		if inst._task ~= nil then
-	            inst._task:Cancel()
+                if inst._task ~= nil then
+                    inst._task:Cancel()
             inst._task = nil
         end
-	    MakeHauntableWork(inst)
-	inst:RemoveTag("scarytoprey")
-	inst:RemoveTag("alive")
-	inst:AddTag("notarget")
+            MakeHauntableWork(inst)
+        inst:RemoveTag("scarytoprey")
+        inst:RemoveTag("alive")
+        inst:AddTag("notarget")
 
     -- Remover COMPLETAMENTE o componente container quando desativado (para não aparecer como chest)
     -- Só executa no servidor para evitar problemas com réplica
@@ -250,10 +250,10 @@ local function TurnOff(inst, doer, instant)
     end
 
     inst.components.fueled:StopConsuming()
-	inst.components.combat:SetTarget(nil)
+        inst.components.combat:SetTarget(nil)
     inst.components.combat:SetRetargetFunction(nil)
     inst.components.combat:SetKeepTargetFunction(nil)
---	inst.components.health:SetInvincible(true)
+--      inst.components.health:SetInvincible(true)
     inst.sg:GoToState("turn_off")
     
     -- ADD ACTIVATION WORKABLE: Allow clicking to turn on when deactivated
@@ -303,12 +303,12 @@ local function TurnOn(inst, doer, instant)
 
     if inst._task == nil then
     inst._taunttask = inst:DoPeriodicTask(2, TauntCreatures, 0)
-	end
+        end
 
     MakeHauntablePanic(inst)
-	inst:AddTag("scarytoprey")
-	inst:AddTag("alive")
-	inst:RemoveTag("notarget")
+        inst:AddTag("scarytoprey")
+        inst:AddTag("alive")
+        inst:RemoveTag("notarget")
 
     -- Restaurar tag container quando ativado
     if inst._had_container_tag then
@@ -335,7 +335,7 @@ local function TurnOn(inst, doer, instant)
 
     inst.components.fueled:StartConsuming()
     -- Debug removed
-	inst.components.health:SetInvincible(false)
+        inst.components.health:SetInvincible(false)
     inst.components.combat:SetRetargetFunction(2, retargetfn) --Look for leader's target.
     inst.components.combat:SetKeepTargetFunction(keeptargetfn) --Keep attacking while leader is near.
 
@@ -353,7 +353,7 @@ local function OnFuelEmpty(inst)
 end
 
 local function OnAddFuel(inst)
-	inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
+        inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
     -- Debug removed
     if inst.on == false then
         -- Debug removed
@@ -365,26 +365,26 @@ local function OnAddFuel(inst)
 end
 
 local function LevelUp(inst, amount)
-	if inst.level < 3 and amount ~= nil then
-	inst.level = inst.level + amount
-	if inst.on == true then
-	inst.sg:GoToState("upgraded")
-	end
+        if inst.level < 3 and amount ~= nil then
+        inst.level = inst.level + amount
+        if inst.on == true then
+        inst.sg:GoToState("upgraded")
+        end
 end
 
-	if inst.level > 3 then inst.level = 3 end
+        if inst.level > 3 then inst.level = 3 end
 
-	inst:DoTaskInTime(0, function()
+        inst:DoTaskInTime(0, function()
 
     local health_percent = inst.components.health:GetPercent()
 
-		inst:AddTag("level"..inst.level)
+                inst:AddTag("level"..inst.level)
 --            inst.AnimState:OverrideSymbol("swap_hat", "william_upgrades", "swap_brute"..inst.level)
 
     inst.components.health:StopRegen()
     inst.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN+(inst.level*5), TUNING.WILLIAM_ROBOT_REGENPERIOD)
         inst.components.health:SetAbsorptionAmount(0+inst.level*0.08)
-	end)
+        end)
 
 end
 
@@ -441,7 +441,7 @@ local PLACER_SCALE = 1.5
         inst.entity:AddMiniMapEntity()
         inst.entity:AddNetwork()
 
-	inst.level = 0
+        inst.level = 0
 
         inst.DynamicShadow:SetSize(2, 1.25)
         inst.MiniMapEntity:SetIcon("williambrute.tex")
@@ -455,7 +455,7 @@ local PLACER_SCALE = 1.5
     MakeCharacterPhysics(inst, 0.9, .5)
     inst.Transform:SetScale(1.7, 1.7, 1.7)
 
-	inst:AddTag("alive")
+        inst:AddTag("alive")
         inst:AddTag("tiddlevirusimmune")
         inst:AddTag("willminion")
         inst:AddTag("companion")
@@ -495,7 +495,7 @@ inst.components.burnable.ignorefuel = true
 
         inst:ListenForEvent("attacked", OnAttacked)
 
-	inst:AddComponent("willyraise")
+        inst:AddComponent("willyraise")
     inst.components.willyraise:SetOnRiseFn(TurnOn)
     inst.components.willyraise:SetOnLowerFn(TurnOff)
 
@@ -1063,7 +1063,13 @@ inst.components.burnable.ignorefuel = true
             local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_brute_mk3")
             print("[DEBUG] Tem skill MK3?", has_mk3_skill)
             print("[DEBUG] upgradelevel_mk3 atual:", inst.upgradelevel_mk3)
-            if has_mk3_skill and inst.upgradelevel_mk3 < 40 then
+            if not has_mk3_skill then
+                if worker.components.talker then
+                    worker.components.talker:Say("Requires Brute Bot MK.III skill!\n(Activate it in the skill tree!)")
+                end
+                return
+            end
+            if inst.upgradelevel_mk3 < 40 then
                 print("[DEBUG] Tentando upgrade para MK3...")
                 -- Try to upgrade
                 local function IsScrap(item)
@@ -1394,9 +1400,9 @@ inst.components.burnable.ignorefuel = true
 
 
 local function onbuilt(inst, builder)
-	local type = math.random(1, 100) == 100 and "williambrute_gary" or "williambrute"
+        local type = math.random(1, 100) == 100 and "williambrute_gary" or "williambrute"
     local robot = SpawnPrefab(type)
-	if robot ~= nil then
+        if robot ~= nil then
     robot.Transform:SetPosition(inst.Transform:GetWorldPosition())
     robot.components.knownlocations:RememberLocation("home", inst:GetPosition())
     robot.components.willyraise:Rise()
@@ -1404,8 +1410,8 @@ local function onbuilt(inst, builder)
                     local x, y, z = robot.Transform:GetWorldPosition()
     SpawnPrefab("maxwell_smoke").Transform:SetPosition(x, y, z)
     robot.maker = builder and builder.name or "unknown"
-	inst:Remove()
-	end
+        inst:Remove()
+        end
 end
 
     local function builder()
@@ -1466,7 +1472,7 @@ end
     Prefab("williambrute3", fn3, assets, prefabs),
     Prefab("williambrute_gary", gary, assets, prefabs),
     MakePlacer("williambrute_placer", "william_brute", "william_brute", "sit_idle", false, nil, nil, 1.7),
-	Prefab("williambrute_builder", builder, assets, prefabs)
+        Prefab("williambrute_builder", builder, assets, prefabs)
 
 
 

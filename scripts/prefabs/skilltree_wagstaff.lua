@@ -1,10 +1,12 @@
 -- Wagstaff Skill Tree
 local GAP = 38
+-- ORDERS: one entry per non-root, non-lock skill in each branch (insertion order).
+-- Value 1 = available from first skill point (day 1). Lock system handles actual progression.
 local ORDERS =
 {
-    {"mechanical", { 9999, 9999 }},
-    {"robotic",    { 9999, 9999 }},
-    {"allegiance", { 9999, 9999 }},
+    {"mechanical", { 1, 1, 1, 1, 1, 1 }},
+    {"robotic",    { 1, 1, 1, 1, 1, 1, 1 }},
+    {"allegiance", { 1, 1 }},
 }
 
 local function BuildSkillsData(SkillTreeFns)
