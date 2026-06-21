@@ -5,7 +5,7 @@ local prefabs =
 
     local assets =
     {
-	Asset("ANIM", "anim/william_ballistic.zip"),
+        Asset("ANIM", "anim/william_ballistic.zip"),
         Asset("SOUND", "sound/maxwell.fsb"),
     }
 SetSharedLootTable("ballistic",
@@ -23,35 +23,35 @@ SetSharedLootTable("ballisticgadget",
 local function lootsetfn(lootdropper)
     local loot = {}
     local amount = lootdropper.inst.level*0.75
-	if amount < 1 then amount = 1 end
+        if amount < 1 then amount = 1 end
 
-		if lootdropper.inst.level > 0 then
-    		for k = 1, amount do
+                if lootdropper.inst.level > 0 then
+                for k = 1, amount do
             table.insert(loot, "gears")
-		end
-		end
-		
+                end
+                end
+                
 
     lootdropper:SetLoot(loot)
 end
 
 local function LevelUp(inst, amount)
-	if inst.level < 3 and amount ~= nil then
-	inst.level = inst.level + amount
-	if inst.sg ~= nil then
-	inst.sg:GoToState("fed")
-	end
+        if inst.level < 3 and amount ~= nil then
+        inst.level = inst.level + amount
+        if inst.sg ~= nil then
+        inst.sg:GoToState("fed")
+        end
 end
 
-	if inst.level > 3 then inst.level = 3 end
+        if inst.level > 3 then inst.level = 3 end
 
-	inst:DoTaskInTime(0, function()
-		inst:AddTag("level"..inst.level)
+        inst:DoTaskInTime(0, function()
+                inst:AddTag("level"..inst.level)
 
-	if inst.components.combat ~= nil then
+        if inst.components.combat ~= nil then
     inst.components.combat:SetAttackPeriod(TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD/(1+inst.level*0.3))
-	end
-	end)
+        end
+        end)
 end
 
 local brain = require "brains/williamballisticbrain"
@@ -82,7 +82,7 @@ local function ZapFX(inst)
             fx.entity:AddFollower()
             fx.Follower:FollowSymbol(inst.GUID, "body", 5, -120, 0)
 
-	end
+        end
 
 local function CleanupStarcallerOrbs(inst, radius)
     radius = radius or 10
@@ -185,12 +185,12 @@ local function ToggleStarCaller(inst, doer)
     if inst._starcaller_active then
         StopStarCaller(inst)
         if inst.components.talker then
-            inst.components.talker:Say("Star Caller OFF")
+            inst.components.talker:Say("Light Orb OFF")
         end
     else
         StartStarCaller(inst)
         if inst.components.talker then
-            inst.components.talker:Say("Star Caller ON - Consuming fuel...")
+            inst.components.talker:Say("Light Orb ON - Consuming fuel...")
         end
     end
 end
@@ -218,20 +218,20 @@ local function maketurret(inst, pt, charge)
 end
 
 local function MakeAlive(inst)
-	local pt = Vector3(inst.Transform:GetWorldPosition())
-	maketurret(inst, pt)	
+        local pt = Vector3(inst.Transform:GetWorldPosition())
+        maketurret(inst, pt)    
 end
 
 
 local function OnAddFuel(inst)
-	inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
-	if inst.components.inventoryitem == nil then 
+        inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
+        if inst.components.inventoryitem == nil then 
     inst.sg:GoToState("fed")
---	elseif inst.components.inventoryitem ~= nil and inst.components.inventoryitem.owner == nil then
---	local pt = Vector3(inst.Transform:GetWorldPosition())
---	maketurret(inst, pt)
-	end
-	
+--      elseif inst.components.inventoryitem ~= nil and inst.components.inventoryitem.owner == nil then
+--      local pt = Vector3(inst.Transform:GetWorldPosition())
+--      maketurret(inst, pt)
+        end
+        
 end
 
 local function fuelupdate(inst)
@@ -312,31 +312,31 @@ end
 
 
 local function onlightning(inst)
-	local pt = Vector3(inst.Transform:GetWorldPosition())
-	inst.components.fueled:SetPercent(1)
-	ZapFX(inst)
-	if inst.sg ~= nil then
-	inst.sg:GoToState("hit")
-	elseif inst.components.inventoryitem ~= nil and inst.components.inventoryitem.owner == nil then
+        local pt = Vector3(inst.Transform:GetWorldPosition())
+        inst.components.fueled:SetPercent(1)
+        ZapFX(inst)
+        if inst.sg ~= nil then
+        inst.sg:GoToState("hit")
+        elseif inst.components.inventoryitem ~= nil and inst.components.inventoryitem.owner == nil then
 --    inst.AnimState:PlayAnimation("hit")
     inst.AnimState:PlayAnimation("hit_shield", false)
-	end
+        end
 end
 
 local function onworked(inst)
-	if inst.sg~= nil then
-	inst.sg:GoToState("hit")
-	else
+        if inst.sg~= nil then
+        inst.sg:GoToState("hit")
+        else
     inst.AnimState:PlayAnimation("hit_shield")
-	end
+        end
 end
 
 local function OnHammered(inst, worker)
-	if inst:HasTag("alive") then
+        if inst:HasTag("alive") then
     inst.components.lootdropper:SetChanceLootTable("ballisticgadget")
-	else
-	    inst.components.lootdropper:SetChanceLootTable(nil)
-	end
+        else
+            inst.components.lootdropper:SetChanceLootTable(nil)
+        end
     inst.components.lootdropper:DropLoot()
         local fx = SpawnPrefab("collapse_small")
         fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
@@ -346,9 +346,9 @@ end
 
 
 local function onsave(inst, data)
-	if inst.level ~= nil then
+        if inst.level ~= nil then
     data.level = inst.level
-	end
+        end
     if inst.upgrade_progress ~= nil then
         data.upgrade_progress = inst.upgrade_progress
     end
@@ -360,8 +360,8 @@ end
 
 local function onload(inst, data)
     if data ~= nil and data.level ~= nil then
-	inst.level = data.level 
-	if inst.level > 0 then inst:DoTaskInTime(0,LevelUp) end
+        inst.level = data.level 
+        if inst.level > 0 then inst:DoTaskInTime(0,LevelUp) end
     end
     if data ~= nil and data.upgrade_progress ~= nil then
         inst.upgrade_progress = data.upgrade_progress
@@ -432,7 +432,7 @@ end
         inst.AnimState:PlayAnimation("idle", true)
    inst.Transform:SetScale(0.9, 0.9, 0.9)
 
-	inst:AddTag("lightningrod")
+        inst:AddTag("lightningrod")
         inst:AddTag("tiddlevirusimmune")
         inst:AddTag("willminion")
         inst:AddTag("companion")
@@ -443,7 +443,7 @@ end
     inst:SetPrefabNameOverride("williamballistic")
     inst:AddTag("_named")
 
-	inst.level = 0
+        inst.level = 0
 
 
         inst.entity:SetPristine()
@@ -454,7 +454,7 @@ end
 
 
         inst:AddComponent("health")
-	inst.components.health.canmurder = false
+        inst.components.health.canmurder = false
         inst.components.health:SetMaxHealth(TUNING.WILLIAM_BALLISTIC_HEALTH)
        -- inst.components.health.nofadeout = true
     inst.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN, TUNING.WILLIAM_ROBOT_REGENPERIOD)
@@ -496,14 +496,14 @@ end
         return inst
     end
 
-	--ACTIVE-------------
+        --ACTIVE-------------
 
 
 local function OnDismantle(inst, doer)
     -- print("[DEBUG] OnDismantle called for", inst.prefab, "starcaller_active:", inst._starcaller_active)
-    -- IMPORTANT: Stop Star Caller BEFORE anything else to ensure orb is removed
+    -- IMPORTANT: Stop Light Orb BEFORE anything else to ensure orb is removed
     if inst._starcaller_active or inst._starcaller_light ~= nil then
-        -- print("[DEBUG] Force stopping Star Caller in OnDismantle")
+        -- print("[DEBUG] Force stopping Light Orb in OnDismantle")
         -- Directly remove orb if it exists
         if inst._starcaller_light ~= nil and inst._starcaller_light:IsValid() then
             -- print("[DEBUG] Directly removing orb in OnDismantle")
@@ -549,7 +549,7 @@ end
             return inst
         end
 
-	inst:AddTag("alive")
+        inst:AddTag("alive")
         inst:AddTag("scarytoprey")
         inst:AddTag("ebuild_wrenchable")
 
@@ -1235,8 +1235,8 @@ end
 
 
 
-        -- Listen for world save event to disable Star Caller before exit
-        -- Auto-disable Star Caller on world save to prevent orb persistence
+        -- Listen for world save event to disable Light Orb before exit
+        -- Auto-disable Light Orb on world save to prevent orb persistence
         inst:ListenForEvent("ms_save", function()
             if inst._starcaller_active then
                 StopStarCaller(inst)
@@ -1537,7 +1537,7 @@ end
         local _OnLoad = inst.OnLoad
 
         local function OnSaveBallistic2(inst, data)
-            -- CRITICAL: Disable Star Caller before saving to ensure orb is removed
+            -- CRITICAL: Disable Light Orb before saving to ensure orb is removed
             if inst._starcaller_active then
                 StopStarCaller(inst)
                 CleanupStarcallerOrbs(inst, 20)
@@ -1610,7 +1610,7 @@ end
             if inst._starcaller_active then
                 StopStarCaller(inst)
                 if inst.components.talker then
-                    inst.components.talker:Say("Star Caller OFF - Unploying...")
+                    inst.components.talker:Say("Light Orb OFF - Unploying...")
                 end
             end
             -- Continua com o unploy normal (volta para inventário)
@@ -1663,7 +1663,7 @@ end
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
             local oc = inst._overcharge and "OVERCHARGED" or ""
-            local sc = inst._starcaller_active and "STAR CALLER ON" or ""
+            local sc = inst._starcaller_active and "LIGHT ORB ON" or ""
             local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
             if oc ~= "" then name_str = name_str .. " | " .. oc end
             if sc ~= "" then name_str = name_str .. " | " .. sc end
@@ -1675,7 +1675,7 @@ end
         local task = inst:DoPeriodicTask(2, UpdateBallistic3Name)
         table.insert(inst._periodic_name_tasks, task)
 
-        inst:AddTag("ballistic_mk2")  -- Tag for left-click Star Caller toggle (agora no MK3)
+        inst:AddTag("ballistic_mk2")  -- Tag for left-click Light Orb toggle (agora no MK3)
         
         -- Initial cleanup: remove any orphaned orbs near this bot
         inst:DoTaskInTime(0, function()
@@ -1689,8 +1689,8 @@ end
             end
         end)
 
-        -- Listen for world save event to disable Star Caller before exit
-        -- Auto-disable Star Caller on world save to prevent orb persistence
+        -- Listen for world save event to disable Light Orb before exit
+        -- Auto-disable Light Orb on world save to prevent orb persistence
         inst:ListenForEvent("ms_save", function()
             if inst._starcaller_active then
                 StopStarCaller(inst)
@@ -1724,7 +1724,7 @@ end
             end
         end)
 
-        -- CLIQUE ESQUERDO: Toggle Star Caller via custom action (ativar/desativar orbe)
+        -- CLIQUE ESQUERDO: Toggle Light Orb via custom action (ativar/desativar orbe)
         -- CLIQUE DIREITO: Unpack/Recolher (via portablewillybot - já configurado automaticamente)
         -- REMOVIDO: activatable component que conflitava com RMB Pack Up
         inst:ListenForEvent("starcaller_toggle_request", function(inst, doer)
@@ -1819,12 +1819,12 @@ end
 
 
 local function ondeploy(inst, pt, deployer)
-	if not inst.components.fueled:IsEmpty() then
-	maketurret(inst, pt, false)
-	else
+        if not inst.components.fueled:IsEmpty() then
+        maketurret(inst, pt, false)
+        else
         inst.Physics:Teleport(pt.x, 0, pt.z)
-	end
-	end
+        end
+        end
 
     local function empty(inst)
         local inst = fn(inst)

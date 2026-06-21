@@ -22,14 +22,14 @@ local WILLIAM_ACTION = AddAction("WILLIAM_ACTION", "Cook", function(act)
 end)
 
 --==================================================================================
--- WILLPACKUP (pack up portable bot) + WILLSTAR_TOGGLE (MK II Star Caller)
+-- WILLPACKUP (pack up portable bot) + WILLSTAR_TOGGLE (MK II Light Orb)
 --==================================================================================
 AddComponentAction("SCENE", "portablewillybot", function(inst, doer, actions, right)
     if right and CrafterCheck(doer) then
         -- Right click: Pack Up (always available for portable bots)
         table.insert(actions, GLOBAL.ACTIONS.WILLPACKUP)
     elseif not right and CrafterCheck(doer) and inst:HasTag("ballistic_mk2") then
-        -- Left click: Star Caller toggle (only for MK II)
+        -- Left click: Light Orb toggle (only for MK II)
         table.insert(actions, GLOBAL.ACTIONS.WILLSTAR_TOGGLE)
     end
 end)
@@ -52,14 +52,14 @@ AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLPAC
 AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLPACKUP, "dolongaction"))
 
 --==================================================================================
--- WILLSTAR_TOGGLE (Ballistic MK II Star Caller - left click toggle)
+-- WILLSTAR_TOGGLE (Ballistic MK II Light Orb - left click toggle)
 --==================================================================================
 
 local WILLSTAR_TOGGLE = GLOBAL.Action({ rmb=false })
-WILLSTAR_TOGGLE.str = "Toggle Star Caller"
+WILLSTAR_TOGGLE.str = "Toggle Light Orb"
 WILLSTAR_TOGGLE.stroverridefn = function(act)
-    if act.target._starcaller_active then return "Deactivate Star Caller" end
-    return "Activate Star Caller"
+    if act.target._starcaller_active then return "Deactivate Light Orb" end
+    return "Activate Light Orb"
 end
 WILLSTAR_TOGGLE.id = "WILLSTAR_TOGGLE"
 WILLSTAR_TOGGLE.fn = function(act)

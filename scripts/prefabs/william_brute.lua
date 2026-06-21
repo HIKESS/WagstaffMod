@@ -318,7 +318,7 @@ local function TurnOn(inst, doer, instant)
         -- RE-ADICIONAR O COMPONENTE CONTAINER
         if not inst.components.container then
             inst:AddComponent("container")
-            inst.components.container:WidgetSetup("treasurechest")
+            inst.components.container:WidgetSetup("williambrute3")
             inst.components.container.onopenfn = OnOpen
             inst.components.container.onclosefn = OnClose
             inst.components.container.skipopensnd = true
@@ -349,6 +349,10 @@ end
 
 
 local function OnFuelEmpty(inst)
+    -- Immediately mark as off to prevent interaction during turn-off animation
+    inst.on = false
+    inst:AddTag("notarget")
+    inst:RemoveTag("scarytoprey")
     inst.components.willyraise:Lower()
 end
 
@@ -588,6 +592,7 @@ inst.components.burnable.ignorefuel = true
         end
     end)
     inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+        if inst.on == false then return end
         print("[DEBUG] ==============================================")
         print("[DEBUG] OnFinishCallback chamado para Brute Bot")
         print("[DEBUG] inst.prefab:", inst.prefab)
@@ -1044,6 +1049,7 @@ inst.components.burnable.ignorefuel = true
             end
         end)
         inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+            if inst.on == false then return end
             print("[DEBUG] ==============================================")
             print("[DEBUG] OnFinishCallback chamado para Brute Bot MK2")
             print("[DEBUG] inst.prefab:", inst.prefab)
@@ -1165,6 +1171,15 @@ inst.components.burnable.ignorefuel = true
             end
         end)
 
+        -- Workable for hammer deactivation (same as MK1)
+        if inst.components.workable == nil then
+            inst:AddComponent("workable")
+        end
+        inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+        inst.components.workable:SetWorkLeft(4)
+        inst.components.workable:SetOnFinishCallback(OnHammered)
+        inst.components.workable:SetOnWorkCallback(onworked)
+
         -- Save/load for brute2 upgrade progress
         local old_OnSaveBrute2 = inst.OnSave
         local function OnSaveBrute2WithUpgrade(inst, data)
@@ -1278,7 +1293,7 @@ inst.components.burnable.ignorefuel = true
         -- Container (chest) for MK3 - ÚNICA adição do MK.III
         inst:AddTag("container")
         inst:AddComponent("container")
-        inst.components.container:WidgetSetup("treasurechest")
+        inst.components.container:WidgetSetup("williambrute3")
         inst.components.container.onopenfn = OnOpen
         inst.components.container.onclosefn = OnClose
         inst.components.container.skipopensnd = true
@@ -1286,6 +1301,7 @@ inst.components.burnable.ignorefuel = true
 
         -- Override engieworkable to only do repair (no more upgrades)
         inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+            if inst.on == false then return end
             inst.components.engieworkable:SetWorkLeft(1)
             -- Use wrench durability
             local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
@@ -1318,7 +1334,16 @@ inst.components.burnable.ignorefuel = true
                 end
             end
         end)
-        
+
+        -- Workable for hammer deactivation (same as MK1)
+        if inst.components.workable == nil then
+            inst:AddComponent("workable")
+        end
+        inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+        inst.components.workable:SetWorkLeft(4)
+        inst.components.workable:SetOnFinishCallback(OnHammered)
+        inst.components.workable:SetOnWorkCallback(onworked)
+
         -- Override OnSave/OnLoad to ensure MK3 state is preserved
         local old_OnSaveBrute3 = inst.OnSave
         local function OnSaveBrute3(inst, data)
@@ -1338,7 +1363,7 @@ inst.components.burnable.ignorefuel = true
                 inst:AddTag("container")
                 if inst.components.container == nil then
                     inst:AddComponent("container")
-                    inst.components.container:WidgetSetup("treasurechest")
+                    inst.components.container:WidgetSetup("williambrute3")
                     inst.components.container.onopenfn = OnOpen
                     inst.components.container.onclosefn = OnClose
                     inst.components.container.skipopensnd = true

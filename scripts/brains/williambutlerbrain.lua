@@ -152,6 +152,15 @@ local function FindGrassTwigsToPickAction(inst)
 end
 
 local function StartMiningCondition(inst)
+    -- Mining ONLY on MK.II (when leader has skill) — same as chopping
+    local leader = inst.components.follower.leader
+    if not leader or not leader:HasTag("wagstaff_thermal_upgrade") then
+        return false
+    end
+    -- Check if this is MK.II butler (not base MK.I)
+    if inst.prefab ~= "williambutler2" and not inst:HasTag("butler_thermal_upgraded") then
+        return false
+    end
     return inst.tree_target ~= nil
         or (inst.components.follower.leader ~= nil and
             inst.components.follower.leader.sg ~= nil and
@@ -203,30 +212,30 @@ local function ShouldKite(target, inst)
 end
 
 local function ShouldWatchMinigame(inst)
-	if inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil then
-		if inst.components.combat.target == nil or inst.components.combat.target.components.minigame_participator ~= nil then
-			return true
-		end
-	end
-	return false
+        if inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil then
+                if inst.components.combat.target == nil or inst.components.combat.target.components.minigame_participator ~= nil then
+                        return true
+                end
+        end
+        return false
 end
 
 local function WatchingMinigame(inst)
-	return (inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil) and inst.components.follower.leader.components.minigame_participator:GetMinigame() or nil
+        return (inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil) and inst.components.follower.leader.components.minigame_participator:GetMinigame() or nil
 end
 
 function WilliamButlerBrain:OnStart()
 
-	local watch_game = WhileNode( function() return ShouldWatchMinigame(self.inst) end, "Watching Game",
+        local watch_game = WhileNode( function() return ShouldWatchMinigame(self.inst) end, "Watching Game",
         PriorityNode({
             Follow(self.inst, WatchingMinigame, TUNING.MINIGAME_CROWD_DIST_MIN, TUNING.MINIGAME_CROWD_DIST_TARGET, TUNING.MINIGAME_CROWD_DIST_MAX),
             RunAway(self.inst, "minigame_participator", 5, 7),
             FaceEntity(self.inst, WatchingMinigame, WatchingMinigame),
-		}, 0.25))
+                }, 0.25))
 
     local root = PriorityNode(
     {
-		watch_game,
+                watch_game,
 
         --#1 priority is dancing beside your leader. Obviously.
         WhileNode(function() return ShouldDanceParty(self.inst) end, "Dance Party",
