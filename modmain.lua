@@ -2429,24 +2429,16 @@ local CreateSkillTree = function()
             end
             WagstaffDebug("Wrapped lock_open functions with tag-based activatedskills fallback")
 
-            -- CRITICAL: Set ORDERS BEFORE CreateSkillTreeFor — the engine reads
-            -- SKILLTREE_ORDERS during registration to assign tier/level to each skill.
-            -- Without this, skills beyond the 2nd in each branch get no order and
-            -- become permanently unavailable in the skill tree UI.
-            SkillTreeDefs.SKILLTREE_ORDERS = SkillTreeDefs.SKILLTREE_ORDERS or {}
-            SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
-
-            -- Register skill tree with the engine
+            -- Register skill tree with the engine (matches reference mod pattern)
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
-                local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
-                if not ok then
-                    WagstaffDebug("CreateSkillTreeFor FAILED:", tostring(err))
-                else
-                    WagstaffDebug("CreateSkillTreeFor succeeded")
-                end
+                SkillTreeDefs.CreateSkillTreeFor("wagstaff", data.SKILLS)
+                WagstaffDebug("CreateSkillTreeFor succeeded")
             elseif type(SkillTreeDefs.FN) == "function" then
                 SkillTreeDefs.FN("wagstaff", data.SKILLS)
             end
+
+            -- Set ORDERS AFTER CreateSkillTreeFor (matches reference mod pattern)
+            SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
 
             -- CRITICAL: After CreateSkillTreeFor assigns numeric RPC IDs, add numeric-key
             -- aliases to SKILLS["wagstaff"] so the engine's SetSkillActivatedState

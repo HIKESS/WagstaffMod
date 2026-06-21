@@ -1,12 +1,13 @@
 -- Wagstaff Skill Tree
 local GAP = 38
--- ORDERS: one entry per non-root, non-lock skill in each branch (insertion order).
--- Value 1 = available from first skill point (day 1). Lock system handles actual progression.
+-- ORDERS: one entry per branch with {x, y} header position in the skill tree UI.
+-- Format matches DST's standard: {branch_name, {x_offset, y_offset}}.
+-- x = horizontal center of the branch column, y = vertical position of branch header.
 local ORDERS =
 {
-    {"mechanical", { 1, 1, 1, 1, 1, 1 }},
-    {"robotic",    { 1, 1, 1, 1, 1, 1, 1 }},
-    {"allegiance", { 1, 1 }},
+    {"mechanical", { -169, 202 }},
+    {"robotic",    {    1, 202 }},
+    {"allegiance", {  178, 130 }},
 }
 
 local function BuildSkillsData(SkillTreeFns)
