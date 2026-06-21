@@ -1253,165 +1253,71 @@ local function CopyActivatedSkills(source)
     return copy
 end
 
--- Used by bot/sentry/dispenser upgrade checks: tag OR activated skill (re-applies tag if missing)
+-- Tabela de Tradução: { [Nome_da_Tag_que_o_bot_pede] = "ID_real_da_skill_no_arquivo_defs" }
+local TAG_TO_SKILL_ID = {
+    ["wagstaff_butler_evolve"]    = "wagstaff_thermal_upgrade", -- Butler MK.II
+    ["wagstaff_buster_evolve"]    = "wagstaff_buster_evolve",
+    ["wagstaff_brute_evolve"]     = "wagstaff_robotic_1", -- Brute MK.II
+    ["wagstaff_ballistic_evolve"] = "wagstaff_ballistic_evolve",
+    ["wagstaff_butler_mk3"]       = "wagstaff_thermal_upgrade_parallel", -- Butler MK.III
+    ["wagstaff_buster_mk3"]       = "wagstaff_buster_parallel",
+    ["wagstaff_brute_mk3"]        = "wagstaff_robotic_1_parallel", -- Brute MK.III
+    ["wagstaff_ballistic_mk3"]    = "wagstaff_ballistic_parallel",
+    
+    -- Mapeamento das Sentinelas e Dispensers:
+    ["sentry_mk2"]                = "wagstaff_sentry_mk2",
+    ["sentry_mk3"]                = "wagstaff_sentry_mk3",
+    ["dispenser_mk2"]             = "wagstaff_dispenser_mk2",
+    ["dispenser_mk3"]             = "wagstaff_dispenser_mk3",
+    ["wagstaff_wrench_heal"]       = "wagstaff_wrench_heal",
+}
+
 G.WagstaffHasSkill = function(worker, skill_id)
-    print("[DEBUG WagstaffHasSkill] === CHAMADA DE WagstaffHasSkill ===")
-    print("[DEBUG WagstaffHasSkill] worker:", worker, worker and worker.prefab or "NIL")
-    print("[DEBUG WagstaffHasSkill] skill_id:", skill_id)
-    
-    if not worker or not skill_id then
-        print("[DEBUG WagstaffHasSkill] worker ou skill_id nil, retornando false")
+    if not worker or not skill_id or worker.prefab ~= "wagstaff" then
         return false
     end
-    
-    -- CRITICAL FIX #1: Check if the TAG exists FIRST (before checking activatedskills)
-    -- Many skills add tags with DIFFERENT names than their skill_id
-    -- Example: wagstaff_robotic_1 adds tag wagstaff_brute_evolve
-    local has_tag = worker:HasTag(skill_id)
-    print("[DEBUG WagstaffHasSkill] === INICIANDO VERIFICACAO ===")
-    print("[DEBUG WagstaffHasSkill] skill_id:", skill_id)
-    print("[DEBUG WagstaffHasSkill] worker.prefab:", worker.prefab)
-    print("[DEBUG WagstaffHasSkill] worker:HasTag(skill_id):", has_tag)
-    
-    if has_tag then
-        print("[DEBUG WagstaffHasSkill] Tag encontrada! Retornando true IMEDIATAMENTE")
+
+    -- 1. Se a tag física estiver lá, vitória rápida
+    if worker:HasTag(skill_id) then
         return true
     end
-    
-    print("[DEBUG WagstaffHasSkill] worker.components.skilltreeupdater:", worker.components.skilltreeupdater)
-    
-    if worker.prefab ~= "wagstaff" or not worker.components.skilltreeupdater then
-        print("[DEBUG WagstaffHasSkill] Nao e wagstaff ou nao tem skilltreeupdater, retornando false")
-        return false
-    end
-    
-    local activated = worker.components.skilltreeupdater.activatedskills
-    print("[DEBUG WagstaffHasSkill] activatedskills:", activated)
-    print("[DEBUG WagstaffHasSkill] activatedskills[skill_id]:", activated and activated[skill_id])
-    
-    -- Dump ALL keys in activatedskills to see what's actually there
-    local all_skills = ""
-    if activated then
-        for k, v in GLOBAL.pairs(activated) do
-            all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
+
+    -- Descobre qual é o ID real da skill (Se a string passada já for o ID, ele mantém ela mesma)
+    local real_skill = TAG_TO_SKILL_ID[skill_id] or skill_id
+
+    -- 2. Checagem Server-Side (Look-up na tabela de ativadas)
+    if worker.components and worker.components.skilltreeupdater then
+        local activated = worker.components.skilltreeupdater.activatedskills
+        if activated and (activated[skill_id] or activated[real_skill]) then
+            worker:AddTag(skill_id) -- Re-aplica a tag perdida para otimizar o próximo frame
+            return true
         end
     end
-    print("[DEBUG WagstaffHasSkill] ALL activatedskills keys:", all_skills ~= "" and all_skills or "(empty)")
-    
-    if activated and activated[skill_id] then
-        print("[DEBUG WagstaffHasSkill] Skill esta em activatedskills mas tag faltando, re-aplicando tag...")
-        -- Skill is recorded as activated but the tag is missing (common right after a
-        -- reload, before apply_world_skills_to_wagstaff re-runs). Re-apply the tag now.
-        if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_id] and G.WagstaffSkillDefs[skill_id].onactivate then
-            print("[DEBUG WagstaffHasSkill] Chamando onactivate da skill")
-            G.WagstaffSkillDefs[skill_id].onactivate(worker, true)
-        else
-            print("[DEBUG WagstaffHasSkill] Adicionando tag manualmente")
-            worker:AddTag(skill_id)
-        end
-        print("[DEBUG WagstaffHasSkill] Tag re-aplicada, retornando true")
-        return true
-    end
-    
-    -- CRITICAL FIX: If activatedskills is empty, try to load from world save immediately
-    -- This handles the case where skills were saved but not restored to the player
-    if not activated or GLOBAL.next(activated) == nil then
-        print("[DEBUG WagstaffHasSkill] activatedskills está VAZIO! Tentando carregar do world save...")
-        if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
-            local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
-            print("[DEBUG WagstaffHasSkill] world_skills do GetWagstaffSkillsFromWorld:", world_skills)
-            if world_skills and type(world_skills) == "table" then
-                local found_in_world = false
-                for k, v in GLOBAL.pairs(world_skills) do
-                    print("[DEBUG WagstaffHasSkill]   world_skill:", k, "=", v)
-                    if k == skill_id and v then
-                        found_in_world = true
-                        break
-                    end
-                end
-                if found_in_world then
-                    print("[DEBUG WagstaffHasSkill] Skill encontrada no world save! Restaurando para activatedskills...")
-                    -- Initialize activatedskills if needed
-                    if not worker.components.skilltreeupdater.activatedskills then
-                        worker.components.skilltreeupdater.activatedskills = {}
-                    end
-                    -- Restore the skill
-                    worker.components.skilltreeupdater.activatedskills[skill_id] = true
-                    -- Apply the tag
-                    if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_id] and G.WagstaffSkillDefs[skill_id].onactivate then
-                        G.WagstaffSkillDefs[skill_id].onactivate(worker, true)
-                    else
-                        worker:AddTag(skill_id)
-                    end
-                    print("[DEBUG WagstaffHasSkill] Skill restaurada com sucesso! Retornando true")
+
+    -- 3. Checagem Client-Side / Global Fallback (Lê direto da engine da Klei)
+    if GLOBAL.TheSkillTree then
+        local client_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+        if client_skills then
+            for _, s_name in GLOBAL.ipairs(client_skills) do
+                if s_name == skill_id or s_name == real_skill then
+                    worker:AddTag(skill_id)
                     return true
                 end
             end
         end
     end
-    
-    -- Fallback: consult the per-world saved skills. If the skill is saved in the world
-    -- but not yet restored onto this player (transient desync after a reload), restore
-    -- it on the fly. This prevents bot/sentry/dispenser Mk2/Mk3 upgrades from being
-    -- blocked with "Requires ... skill!" right after loading a save.
-    print("[DEBUG WagstaffHasSkill] Verificando world skills...")
-    WagstaffDebug("[WagstaffHasSkill] Verificando world skills para:", skill_id)
+
+    -- 4. Fallback do World Save (Recuperação de desync pós-load)
     if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
         local world_skills = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
-        print("[DEBUG WagstaffHasSkill] world_skills:", world_skills)
-        WagstaffDebug("[WagstaffHasSkill] world_skills type:", type(world_skills))
-        if world_skills then
-            WagstaffDebug("[WagstaffHasSkill] world_skills keys:")
-            for k, v in GLOBAL.pairs(world_skills) do
-                WagstaffDebug("  ", k, "=", v)
-            end
-        end
-        if world_skills and world_skills[skill_id] then
-            print("[DEBUG WagstaffHasSkill] Skill encontrada no world data, restaurando...")
-            WagstaffDebug("[WagstaffHasSkill] Skill", skill_id, "encontrada no world data! Restaurando...")
-            if worker.components.skilltreeupdater.activatedskills then
-                worker.components.skilltreeupdater.activatedskills[skill_id] = true
-            end
-            if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_id] and G.WagstaffSkillDefs[skill_id].onactivate then
-                G.WagstaffSkillDefs[skill_id].onactivate(worker, true)
-            else
+        if world_skills and type(world_skills) == "table" then
+            if world_skills[skill_id] or world_skills[real_skill] then
                 worker:AddTag(skill_id)
+                return true
             end
-            print("[DEBUG WagstaffHasSkill] Skill restaurada do world data, retornando true")
-            WagstaffDebug("[WagstaffHasSkill] Skill restaurada com sucesso, retornando true")
-            return true
-        else
-            WagstaffDebug("[WagstaffHasSkill] Skill", skill_id, "NAO encontrada no world data")
-        end
-    else
-        print("[DEBUG WagstaffHasSkill] TheWorld ou GetWagstaffSkillsFromWorld nao disponivel")
-        WagstaffDebug("[WagstaffHasSkill] TheWorld ou GetWagstaffSkillsFromWorld nao disponivel")
-    end
-    
-    -- Detailed diagnostic: dump all activatedskills keys
-    local all_skills = ""
-    if worker.components.skilltreeupdater and worker.components.skilltreeupdater.activatedskills then
-        for k, v in GLOBAL.pairs(worker.components.skilltreeupdater.activatedskills) do
-            all_skills = all_skills .. tostring(k) .. "=" .. tostring(v) .. ", "
         end
     end
-    
-    print("[DEBUG WagstaffHasSkill] === DIAGNOSTICO COMPLETO ===")
-    print("[DEBUG WagstaffHasSkill] Skill procurada:", skill_id, "- NAO ENCONTRADA")
-    print("[DEBUG WagstaffHasSkill] worker.prefab=", tostring(worker.prefab))
-    print("[DEBUG WagstaffHasSkill] HasTag=", tostring(has_tag))
-    print("[DEBUG WagstaffHasSkill] has skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
-    print("[DEBUG WagstaffHasSkill] activatedskills[skill_id]=", tostring(activated and activated[skill_id] or "NIL"))
-    print("[DEBUG WagstaffHasSkill] ALL activatedskills: ", all_skills ~= "" and all_skills or "(empty)")
-    if GLOBAL.TheWorld and GLOBAL.TheWorld.GetWagstaffSkillsFromWorld then
-        local ws = GLOBAL.TheWorld:GetWagstaffSkillsFromWorld()
-        local ws_str = ""
-        for k, v in GLOBAL.pairs(ws) do ws_str = ws_str .. tostring(k) .. "=" .. tostring(v) .. ", " end
-        print("[DEBUG WagstaffHasSkill] world saved skills: ", ws_str ~= "" and ws_str or "(empty)")
-    else
-        print("[DEBUG WagstaffHasSkill] world saved skills: GetWagstaffSkillsFromWorld NOT AVAILABLE")
-    end
-    print("[DEBUG WagstaffHasSkill] Retornando false")
+
     return false
 end
 
