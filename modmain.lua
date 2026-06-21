@@ -349,6 +349,74 @@ end
 rawset(G, "strict", false)
 G.WagstaffDebug("Standalone Wagstaff Integration mod is loading!")
 
+--==================================================================================
+-- CUSTOM MOD RPC FOR WAGSTAFF SKILL ACTIVATION
+--==================================================================================
+-- The DST engine's built-in skill tree RPC fails for mod characters with
+-- "Invalid SetSkillActivatedState no skill with id RPC". This custom MOD RPC
+-- bypasses the engine's validation and handles skill activation directly.
+--
+-- CLIENT flow:  skilltreeupdater:ActivateSkill() → sends THIS MOD RPC → server
+-- SERVER flow:  MOD RPC handler → updates activatedskills + calls onactivate
+--==================================================================================
+G._wagstaff_skill_rpc_handle = nil  -- lazily resolved by GetModRPC
+
+AddModRPCHandler("wagstaff_standalone", "WagstaffSkillActivate", function(player, skill_name, activated)
+    if not player or not player.components or not player.components.skilltreeupdater then return end
+    if type(skill_name) ~= "string" then return end
+
+    WagstaffDebug("[MOD RPC] WagstaffSkillActivate:", skill_name, "activated=", tostring(activated),
+        "from player:", player and player:GetDisplayName() or "nil")
+
+    local updater = player.components.skilltreeupdater
+    updater.activatedskills = updater.activatedskills or {}
+
+    if activated then
+        updater.activatedskills[skill_name] = true
+        -- Call onactivate callback (adds the correct tag)
+        if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_name] then
+            local def = G.WagstaffSkillDefs[skill_name]
+            if def.onactivate then
+                def.onactivate(player, false)
+            else
+                player:AddTag(skill_name)
+            end
+        else
+            player:AddTag(skill_name)
+        end
+    else
+        updater.activatedskills[skill_name] = nil
+        if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_name] then
+            local def = G.WagstaffSkillDefs[skill_name]
+            if def.ondeactivate then
+                def.ondeactivate(player, false)
+            else
+                player:RemoveTag(skill_name)
+            end
+        else
+            player:RemoveTag(skill_name)
+        end
+    end
+
+    -- Dirty network variables for client-server sync
+    if updater.DirtySkillTree then
+        updater:DirtySkillTree()
+    end
+end)
+
+-- Lazy resolver for the MOD RPC handle (safe to call anytime)
+local function WagstaffGetSkillRPCHandle()
+    if G._wagstaff_skill_rpc_handle then return G._wagstaff_skill_rpc_handle end
+    if G.GetModRPC then
+        local ok, handle = G.pcall(G.GetModRPC, "wagstaff_standalone", "WagstaffSkillActivate")
+        if ok and handle then
+            G._wagstaff_skill_rpc_handle = handle
+            return handle
+        end
+    end
+    return nil
+end
+
 
 local TUNING = GLOBAL.TUNING
 
@@ -1243,21 +1311,87 @@ local function WagstaffWilliamPostInit(inst)
         inst.GetNumFreeShadowDrone_Harvesters = function() return 0 end
     end
 
-    if not GLOBAL.TheWorld.ismastersim then return end
-
+    --==================================================================================
+    -- CLIENT + SERVER: Intercept ActivateSkill
+    --==================================================================================
+    -- CRITICAL FIX: The DST engine's built-in RPC for skill activation calls
+    -- SetSkillActivatedState DIRECTLY, bypassing ActivateSkill entirely.
+    -- So we wrap ActivateSkill on BOTH client and server:
+    --   CLIENT: sends our custom MOD RPC (reliable) + calls original (for UI)
+    --   SERVER: handles MOD RPC directly, plus wraps SetSkillActivatedState as backup
+    --==================================================================================
     if inst.components.skilltreeupdater then
-        -- Intercept ActivateSkill to call onactivate callback (adds tags)
+        -- Explicitly set prefabname (safety: some DST versions may not set it)
+        if not inst.components.skilltreeupdater.prefabname then
+            inst.components.skilltreeupdater.prefabname = "wagstaff"
+        end
+
         local old_ActivateSkill = inst.components.skilltreeupdater.ActivateSkill
         inst.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
-            WagstaffDebug("[ActivateSkill] skill=", tostring(skill), "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc))
+            WagstaffDebug("[ActivateSkill] skill=", tostring(skill), "type=", type(skill),
+                "prefab=", tostring(prefab), "fromrpc=", tostring(fromrpc),
+                "ismaster=", tostring(GLOBAL.TheWorld and GLOBAL.TheWorld.ismastersim))
 
-            -- On client, let engine handle it
+            -- CLIENT-SIDE: send our custom MOD RPC for reliable server activation
             if not GLOBAL.TheWorld.ismastersim then
+                if not fromrpc and type(skill) == "string" then
+                    local rpc_handle = WagstaffGetSkillRPCHandle()
+                    if rpc_handle then
+                        G.SendModRPCToServer(rpc_handle, skill, true)
+                        WagstaffDebug("[ActivateSkill] CLIENT: Sent custom MOD RPC for", skill)
+                    else
+                        WagstaffDebug("[ActivateSkill] CLIENT: MOD RPC handle not available yet")
+                    end
+                end
+                -- Always call original so the client UI updates correctly
                 return old_ActivateSkill(self, skill, prefab, fromrpc)
             end
 
-            -- Resolve RPC ID for string skills received via RPC
+            -- SERVER-SIDE: try to activate directly via MOD RPC logic
             WagstaffPublishRPCLookup()
+
+            -- Resolve skill name (handle both string names and numeric RPC IDs)
+            local skill_name = skill
+            if type(skill) == "number" then
+                local lookup = WagstaffGetRPCLookup()
+                if lookup then
+                    for rpc_id, name in pairs(lookup) do
+                        if rpc_id == skill then
+                            skill_name = name
+                            break
+                        end
+                    end
+                end
+            end
+
+            -- Directly activate the skill in activatedskills (bypass engine validation)
+            if type(skill_name) == "string" then
+                self.activatedskills = self.activatedskills or {}
+                self.activatedskills[skill_name] = true
+
+                -- Call onactivate callback
+                if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_name] and G.WagstaffSkillDefs[skill_name].onactivate then
+                    G.WagstaffSkillDefs[skill_name].onactivate(inst, false)
+                else
+                    inst:AddTag(skill_name)
+                end
+
+                WagstaffDebug("[ActivateSkill] SERVER: Directly activated", skill_name)
+
+                -- Also try the original for network sync (ignore if it fails)
+                local skill_to_pass = skill
+                if fromrpc and type(skill) == "string" then
+                    local rpc_id = WagstaffResolveSkillRPCID(skill)
+                    if rpc_id ~= nil then
+                        skill_to_pass = rpc_id
+                    end
+                end
+                G.pcall(old_ActivateSkill, self, skill_to_pass, prefab, fromrpc)
+
+                return true
+            end
+
+            -- Fallback: try original engine path
             local skill_to_pass = skill
             if fromrpc and type(skill) == "string" then
                 local rpc_id = WagstaffResolveSkillRPCID(skill)
@@ -1271,7 +1405,6 @@ local function WagstaffWilliamPostInit(inst)
 
             local result = old_ActivateSkill(self, skill_to_pass, prefab, fromrpc)
             if result then
-                -- Apply onactivate callback (adds tag)
                 if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].onactivate then
                     G.WagstaffSkillDefs[skill].onactivate(inst, false)
                 else
@@ -1281,16 +1414,131 @@ local function WagstaffWilliamPostInit(inst)
             return result
         end
 
-        -- Intercept DeactivateSkill to call ondeactivate callback
+        -- Intercept DeactivateSkill
         local old_DeactivateSkill = inst.components.skilltreeupdater.DeactivateSkill
         if old_DeactivateSkill then
             inst.components.skilltreeupdater.DeactivateSkill = function(self, skill, prefab, fromrpc)
-                local result = old_DeactivateSkill(self, skill, prefab, fromrpc)
-                if result and G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill] and G.WagstaffSkillDefs[skill].ondeactivate then
-                    G.WagstaffSkillDefs[skill].ondeactivate(inst, false)
+                -- CLIENT: send MOD RPC for deactivation
+                if not GLOBAL.TheWorld.ismastersim then
+                    if not fromrpc and type(skill) == "string" then
+                        local rpc_handle = WagstaffGetSkillRPCHandle()
+                        if rpc_handle then
+                            G.SendModRPCToServer(rpc_handle, skill, false)
+                        end
+                    end
+                    return old_DeactivateSkill(self, skill, prefab, fromrpc)
                 end
-                return result
+
+                -- SERVER: deactivate directly
+                local skill_name = skill
+                if type(skill) == "number" then
+                    local lookup = WagstaffGetRPCLookup()
+                    if lookup then
+                        for rpc_id, name in pairs(lookup) do
+                            if rpc_id == skill then
+                                skill_name = name
+                                break
+                            end
+                        end
+                    end
+                end
+
+                if type(skill_name) == "string" then
+                    self.activatedskills = self.activatedskills or {}
+                    self.activatedskills[skill_name] = nil
+                    if G.WagstaffSkillDefs and G.WagstaffSkillDefs[skill_name] and G.WagstaffSkillDefs[skill_name].ondeactivate then
+                        G.WagstaffSkillDefs[skill_name].ondeactivate(inst, false)
+                    else
+                        inst:RemoveTag(skill_name)
+                    end
+                end
+
+                local result = G.pcall(old_DeactivateSkill, self, skill, prefab, fromrpc)
+                return true
             end
+        end
+    end
+
+    if not GLOBAL.TheWorld.ismastersim then return end
+
+    --==================================================================================
+    -- SERVER-ONLY: Wrap SetSkillActivatedState
+    --==================================================================================
+    -- The DST engine's RPC handler calls this DIRECTLY (not through ActivateSkill).
+    -- We wrap it to: (1) handle wagstaff skills directly, (2) suppress error spam.
+    --==================================================================================
+    if inst.components.skilltreeupdater and inst.components.skilltreeupdater.SetSkillActivatedState then
+        local old_SetSkillActivatedState = inst.components.skilltreeupdater.SetSkillActivatedState
+        inst.components.skilltreeupdater.SetSkillActivatedState = function(self, prefab, skill_id, activated)
+            WagstaffDebug("[SetSkillActivatedState] prefab=", tostring(prefab),
+                "skill_id=", tostring(skill_id), "type=", type(skill_id),
+                "activated=", tostring(activated))
+
+            -- For wagstaff skills: resolve and handle directly
+            if G.WagstaffSkillDefs and (prefab == "wagstaff" or self.prefabname == "wagstaff") then
+                local resolved_name = nil
+
+                -- Try 1: skill_id is a direct skill name string
+                if type(skill_id) == "string" and G.WagstaffSkillDefs[skill_id] then
+                    resolved_name = skill_id
+                end
+
+                -- Try 2: skill_id is a numeric RPC ID
+                if not resolved_name and type(skill_id) == "number" then
+                    local lookup = WagstaffGetRPCLookup()
+                    if lookup then
+                        for rpc_id, name in pairs(lookup) do
+                            if rpc_id == skill_id and G.WagstaffSkillDefs[name] then
+                                resolved_name = name
+                                break
+                            end
+                        end
+                    end
+                end
+
+                -- Try 3: skill_id is a string but might be the skill's tag name
+                if not resolved_name and type(skill_id) == "string" then
+                    for name, def in pairs(G.WagstaffSkillDefs) do
+                        if name == skill_id then
+                            resolved_name = name
+                            break
+                        end
+                    end
+                end
+
+                if resolved_name then
+                    WagstaffDebug("[SetSkillActivatedState] Resolved to:", resolved_name, "activated=", tostring(activated))
+                    self.activatedskills = self.activatedskills or {}
+                    if activated then
+                        self.activatedskills[resolved_name] = true
+                        local def = G.WagstaffSkillDefs[resolved_name]
+                        if def and def.onactivate then
+                            def.onactivate(inst, false)
+                        else
+                            inst:AddTag(resolved_name)
+                        end
+                    else
+                        self.activatedskills[resolved_name] = nil
+                        local def = G.WagstaffSkillDefs[resolved_name]
+                        if def and def.ondeactivate then
+                            def.ondeactivate(inst, false)
+                        else
+                            inst:RemoveTag(resolved_name)
+                        end
+                    end
+                    if self.DirtySkillTree then
+                        self:DirtySkillTree()
+                    end
+                    return  -- Skill handled, don't call original (avoids error)
+                end
+
+                -- Could not resolve — silently skip (don't spam "Invalid SetSkillActivatedState")
+                WagstaffDebug("[SetSkillActivatedState] Could not resolve skill_id, skipping silently")
+                return
+            end
+
+            -- Non-wagstaff: pass through to original
+            return old_SetSkillActivatedState(self, prefab, skill_id, activated)
         end
     end
 
@@ -1358,6 +1606,26 @@ local function WagstaffWilliamPostInit(inst)
             if data.wagstaff_received_starting_items then
                 inst.wagstaff_received_starting_items = true
                 WagstaffDebug("Restored wagstaff_received_starting_items")
+            end
+        end
+
+        -- Re-apply skill tags from activatedskills (profile save) after load.
+        -- DST's skilltreeupdater loads skills from the profile, but the onactivate
+        -- callbacks (which add tags) are NOT called on load. We must re-apply them.
+        if inst.components and inst.components.skilltreeupdater then
+            local activated = inst.components.skilltreeupdater.activatedskills
+            if activated and G.WagstaffSkillDefs then
+                local count = 0
+                for skill_name, _ in pairs(activated) do
+                    local def = G.WagstaffSkillDefs[skill_name]
+                    if def and def.onactivate then
+                        def.onactivate(inst, true)  -- fromload = true
+                        count = count + 1
+                    end
+                end
+                if count > 0 then
+                    WagstaffDebug("Player OnLoad: re-applied onactivate for", count, "skills")
+                end
             end
         end
     end
@@ -1958,9 +2226,50 @@ local CreateSkillTree = function()
             end
 
             -- CRITICAL: Re-set SKILLS after CreateSkillTreeFor (engine may overwrite it)
-            -- and add numeric-key aliases so the engine's SetSkillActivatedState RPC
-            -- handler can validate: SkillTreeDefs.SKILLS["wagstaff"][numeric_rpc_id]
-            SkillTreeDefs.SKILLS["wagstaff"] = data.SKILLS
+            -- Use a PROXY table with __index so ANY key (string name, numeric RPC ID,
+            -- or unknown format) resolves correctly via the RPC_LOOKUP.
+            -- This is a belt-and-suspenders fix for the engine's SetSkillActivatedState validation.
+            local _rpc_lookup_cache = nil
+            local _original_skills = data.SKILLS
+            local skills_proxy = setmetatable({}, {
+                __index = function(t, key)
+                    -- 1. Direct string key (skill name)
+                    if _original_skills[key] then return _original_skills[key] end
+                    -- 2. Numeric key: resolve via RPC_LOOKUP
+                    if type(key) == "number" then
+                        if not _rpc_lookup_cache then
+                            local meta = SkillTreeDefs.SKILLTREE_METAINFO
+                                and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
+                            if not meta or not meta.RPC_LOOKUP then
+                                if SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
+                                    meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
+                                end
+                            end
+                            _rpc_lookup_cache = meta and meta.RPC_LOOKUP or nil
+                        end
+                        if _rpc_lookup_cache then
+                            local name = _rpc_lookup_cache[key]
+                            if name and _original_skills[name] then
+                                return _original_skills[name]
+                            end
+                        end
+                    end
+                    return nil
+                end,
+                __pairs = function(t)
+                    return pairs(_original_skills)
+                end,
+                __len = function(t)
+                    local count = 0
+                    for _ in pairs(_original_skills) do count = count + 1 end
+                    return count
+                end,
+                __newindex = function(t, k, v)
+                    -- Allow numeric alias writes (from WagstaffAddNumericSkillAliases)
+                    rawset(t, k, v)
+                end,
+            })
+            SkillTreeDefs.SKILLS["wagstaff"] = skills_proxy
             WagstaffAddNumericSkillAliases(SkillTreeDefs)
 
             SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
