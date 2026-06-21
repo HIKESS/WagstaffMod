@@ -2225,51 +2225,9 @@ local CreateSkillTree = function()
                 SkillTreeDefs.FN("wagstaff", data.SKILLS)
             end
 
-            -- CRITICAL: Re-set SKILLS after CreateSkillTreeFor (engine may overwrite it)
-            -- Use a PROXY table with __index so ANY key (string name, numeric RPC ID,
-            -- or unknown format) resolves correctly via the RPC_LOOKUP.
-            -- This is a belt-and-suspenders fix for the engine's SetSkillActivatedState validation.
-            local _rpc_lookup_cache = nil
-            local _original_skills = data.SKILLS
-            local skills_proxy = setmetatable({}, {
-                __index = function(t, key)
-                    -- 1. Direct string key (skill name)
-                    if _original_skills[key] then return _original_skills[key] end
-                    -- 2. Numeric key: resolve via RPC_LOOKUP
-                    if type(key) == "number" then
-                        if not _rpc_lookup_cache then
-                            local meta = SkillTreeDefs.SKILLTREE_METAINFO
-                                and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
-                            if not meta or not meta.RPC_LOOKUP then
-                                if SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
-                                    meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
-                                end
-                            end
-                            _rpc_lookup_cache = meta and meta.RPC_LOOKUP or nil
-                        end
-                        if _rpc_lookup_cache then
-                            local name = _rpc_lookup_cache[key]
-                            if name and _original_skills[name] then
-                                return _original_skills[name]
-                            end
-                        end
-                    end
-                    return nil
-                end,
-                __pairs = function(t)
-                    return pairs(_original_skills)
-                end,
-                __len = function(t)
-                    local count = 0
-                    for _ in pairs(_original_skills) do count = count + 1 end
-                    return count
-                end,
-                __newindex = function(t, k, v)
-                    -- Allow numeric alias writes (from WagstaffAddNumericSkillAliases)
-                    rawset(t, k, v)
-                end,
-            })
-            SkillTreeDefs.SKILLS["wagstaff"] = skills_proxy
+            -- CRITICAL: After CreateSkillTreeFor assigns numeric RPC IDs, add numeric-key
+            -- aliases to SKILLS["wagstaff"] so the engine's SetSkillActivatedState
+            -- RPC handler can validate skills by their numeric ID.
             WagstaffAddNumericSkillAliases(SkillTreeDefs)
 
             SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
