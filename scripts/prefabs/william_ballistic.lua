@@ -84,23 +84,8 @@ local function ZapFX(inst)
 
         end
 
-local function CleanupStarcallerOrbs(inst, radius)
-    radius = radius or 10
-    if inst.Transform == nil then
-        return
-    end
-    local x, y, z = inst.Transform:GetWorldPosition()
-    local orbs = TheSim:FindEntities(x, y, z, radius, {"williamballistic_orb"})
-    for _, orb in ipairs(orbs) do
-        if orb._parent_bot == nil or orb._parent_bot == inst then
-                    orb:Remove()
-        end
-    end
-end
-
-local function StartStarCaller(inst)
-    -- print("[DEBUG] StartStarCaller called, starcaller_active:", inst._starcaller_active, "fuel empty:", inst.components.fueled:IsEmpty(), "inst.on:", inst.on)
-    if inst._starcaller_active then return end
+local function StartLightOrb(inst)
+    if inst._lightorb_active then return end
     if inst.components.fueled:IsEmpty() then
         if inst.components.follower and inst.components.follower:GetLeader() then
             local leader = inst.components.follower:GetLeader()
@@ -110,85 +95,138 @@ local function StartStarCaller(inst)
         end
         return
     end
-    inst._starcaller_active = true
-    -- Spawn orb
-    inst._starcaller_light = SpawnPrefab("stafflight")
-    if inst._starcaller_light ~= nil then
-        local x, y, z = inst.Transform:GetWorldPosition()
-        inst._starcaller_light.Transform:SetPosition(x, y, z)
-        -- IMPORTANT: Mark orb as attached to this bot so it gets removed when bot is removed
-        inst._starcaller_light._parent_bot = inst
-        inst._starcaller_light:AddTag("williamballistic_orb")
-        -- Remove sanity aura, heat and fire propagation - orb is purely a light source
-        if inst._starcaller_light.components.sanityaura ~= nil then
-            inst._starcaller_light:RemoveComponent("sanityaura")
-        end
-        if inst._starcaller_light.components.heater ~= nil then
-            inst._starcaller_light:RemoveComponent("heater")
-        end
-        if inst._starcaller_light.components.propagator ~= nil then
-            inst._starcaller_light:RemoveComponent("propagator")
-        end
-        -- Remove stafflight's auto-removal timer - bot controls lifetime
-        if inst._starcaller_light.components.perishable ~= nil then
-            inst._starcaller_light.components.perishable:StopPerishing()
-        end
-        -- Add periodic check on orb to remove itself if parent bot é gone
-        inst._starcaller_light:DoPeriodicTask(1, function(orb)
-            if orb._parent_bot == nil or not orb._parent_bot:IsValid() then
-                    orb:Remove()
-            end
-        end)
-        -- Orbe padrão stafflight - sem variações celestiais ou shadow
-        -- REMOVIDO: listener que só zerava ponteiro sem remover orbe
-        -- Orbe será sempre removido por StopStarCaller em onremove/OnDismantle
+    inst._lightorb_active = true
+
+    -- Add light entity and "lantern" tag
+    if not inst.Light then
+        inst.entity:AddLight()
     end
-    -- Disable attacks while channeling
-    inst._starcaller_base_attackperiod = inst.components.combat.min_attack_period or TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD
-    inst.components.combat:SetAttackPeriod(999999)
-    -- Drain fuel continuously
-    inst._starcaller_fueltask = inst:DoPeriodicTask(1, function()
+    inst:AddTag("lantern")
+
+    -- Lantern base values (lantern radius ~= 2.5, intensity ~= 0.8)
+    local BASE_RADIUS = 2.5 * 3      -- 3x lantern = 7.5 max
+    local MIN_RADIUS = 2.5 * 1.5     -- 1.5x lantern = 3.75 min
+    local BASE_INTENSITY = 0.8 * 3    -- 3x intensity max
+    local MIN_INTENSITY = 0.8 * 1.5  -- 1.5x intensity min
+    local BASE_FALLOFF = 0.6
+    local R, G, B = 1, 0.95, 0.8    -- Warm lantern color
+
+    local _is_bright = false
+
+    -- Initial light setup (bright state)
+    inst.Light:SetRadius(BASE_RADIUS)
+    inst.Light:SetIntensity(BASE_INTENSITY)
+    inst.Light:SetFalloff(BASE_FALLOFF)
+    inst.Light:SetColour(R, G, B)
+    inst.Light:Enable(true)
+
+    -- Spawn initial FX for bright state
+    local fx = SpawnPrefab("wx78_big_spark")
+    if fx then
+        fx.entity:SetParent(inst.entity)
+        fx.Transform:SetPosition(0, 1, 0)
+        inst._lightorb_fx = fx
+    end
+
+    -- Tick every 0.5s: toggle between 3x (bright) and 1.5x (dim)
+    inst._lightorb_tick = inst:DoPeriodicTask(0.5, function()
+        if not inst._lightorb_active then return end
         if inst.components.fueled:IsEmpty() then
-            StopStarCaller(inst)
+            StopLightOrb(inst)
+            return
+        end
+
+        _is_bright = not _is_bright
+
+        if _is_bright then
+            -- 3x lantern size - BRIGHT
+            inst.Light:SetRadius(BASE_RADIUS)
+            inst.Light:SetIntensity(BASE_INTENSITY)
+            -- FX: wx78_big_spark for 3x
+            if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
+                inst._lightorb_fx:Remove()
+            end
+            local newfx = SpawnPrefab("wx78_big_spark")
+            if newfx then
+                newfx.entity:SetParent(inst.entity)
+                newfx.Transform:SetPosition(0, 1, 0)
+                inst._lightorb_fx = newfx
+            end
+        else
+            -- 1.5x lantern size - DIM
+            inst.Light:SetRadius(MIN_RADIUS)
+            inst.Light:SetIntensity(MIN_INTENSITY)
+            -- FX: hitsparks_fx for 1.5x
+            if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
+                inst._lightorb_fx:Remove()
+            end
+            local newfx = SpawnPrefab("hitsparks_fx")
+            if newfx then
+                newfx.entity:SetParent(inst.entity)
+                newfx.Transform:SetPosition(0, 1, 0)
+                inst._lightorb_fx = newfx
+            end
+        end
+    end)
+
+    -- Disable attacks while light orb is active
+    inst._lightorb_base_attackperiod = inst.components.combat.min_attack_period or TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD
+    inst.components.combat:SetAttackPeriod(999999)
+
+    -- Drain fuel continuously
+    inst._lightorb_fueltask = inst:DoPeriodicTask(1, function()
+        if inst.components.fueled:IsEmpty() then
+            StopLightOrb(inst)
             return
         end
         inst.components.fueled:DoDelta(-inst.components.fueled.maxfuel * 0.001) -- 0.1% per second
     end)
+
     ZapFX(inst)
     inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
 end
 
-local function StopStarCaller(inst)
-    inst._starcaller_active = false
-    -- Remove orb - try multiple times to ensure it's gone
-    if inst._starcaller_light ~= nil then
-        if inst._starcaller_light:IsValid() then
-            inst._starcaller_light:Remove()
-        end
-        inst._starcaller_light = nil
+local function StopLightOrb(inst)
+    inst._lightorb_active = false
+
+    -- Remove FX
+    if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
+        inst._lightorb_fx:Remove()
     end
-    CleanupStarcallerOrbs(inst, 10)
-    -- Remove planar damage bonus
-    inst:RemoveTag("planar_damage")
-    inst._planar_bonus = nil
+    inst._lightorb_fx = nil
+
+    -- Disable light
+    if inst.Light then
+        inst.Light:Enable(false)
+    end
+    inst:RemoveTag("lantern")
+
     -- Re-enable attacks
-    inst.components.combat:SetAttackPeriod(inst._starcaller_base_attackperiod)
+    if inst._lightorb_base_attackperiod then
+        inst.components.combat:SetAttackPeriod(inst._lightorb_base_attackperiod)
+    end
+
     -- Stop fuel drain
-    if inst._starcaller_fueltask ~= nil then
-        inst._starcaller_fueltask:Cancel()
-        inst._starcaller_fueltask = nil
+    if inst._lightorb_fueltask ~= nil then
+        inst._lightorb_fueltask:Cancel()
+        inst._lightorb_fueltask = nil
+    end
+
+    -- Stop tick
+    if inst._lightorb_tick ~= nil then
+        inst._lightorb_tick:Cancel()
+        inst._lightorb_tick = nil
     end
 end
 
-local function ToggleStarCaller(inst, doer)
-    -- print("[DEBUG] ToggleStarCaller called, starcaller_active:", inst._starcaller_active, "doer:", doer and doer.name or "nil")
-    if inst._starcaller_active then
-        StopStarCaller(inst)
+local function ToggleLightOrb(inst, doer)
+    if inst._lightorb_active then
+        StopLightOrb(inst)
         if inst.components.talker then
             inst.components.talker:Say("Light Orb OFF")
         end
     else
-        StartStarCaller(inst)
+        StartLightOrb(inst)
         if inst.components.talker then
             inst.components.talker:Say("Light Orb ON - Consuming fuel...")
         end
@@ -441,7 +479,6 @@ end
         inst:AddTag("ballistic")
 
     inst:SetPrefabNameOverride("williamballistic")
-    inst:AddTag("_named")
 
         inst.level = 0
 
@@ -500,20 +537,12 @@ end
 
 
 local function OnDismantle(inst, doer)
-    -- print("[DEBUG] OnDismantle called for", inst.prefab, "starcaller_active:", inst._starcaller_active)
-    -- IMPORTANT: Stop Light Orb BEFORE anything else to ensure orb is removed
-    if inst._starcaller_active or inst._starcaller_light ~= nil then
-        -- print("[DEBUG] Force stopping Light Orb in OnDismantle")
-        -- Directly remove orb if it exists
-        if inst._starcaller_light ~= nil and inst._starcaller_light:IsValid() then
-            -- print("[DEBUG] Directly removing orb in OnDismantle")
-            inst._starcaller_light:Remove()
-        end
-        inst._starcaller_light = nil
-        inst._starcaller_active = false
+    -- Stop Light Orb BEFORE anything else
+    if inst._lightorb_active then
+        StopLightOrb(inst)
     end
     -- Also push event for any other cleanup
-    inst:PushEvent("stop_starcaller")
+    inst:PushEvent("stop_lightorb")
     
     local item = SpawnPrefab("williamballistic_empty")
     if item ~= nil then
@@ -755,7 +784,7 @@ end
                 if inst.upgradelevel >= 90 then
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     if worker.components.talker then
-                        worker.components.talker:Say("Mobile Artillery upgrade complete!")
+                        worker.components.talker:Say("Ballistic Bot MK. II upgrade complete!")
                     end
 
                     local pt = inst:GetPosition()
@@ -821,7 +850,6 @@ end
     local function active2(inst)
         local inst = active(inst)
 
-        inst:AddTag("_named")
         inst:AddTag("ballistic_upgraded")
 
         -- Electric blue tint for Mk.II
@@ -902,7 +930,9 @@ end
         local task = inst:DoPeriodicTask(2, UpdateBallistic2Name)
         table.insert(inst._periodic_name_tasks, task)
         -- Mk.II: Repair + Upgrade in one engieworkable callback
-        inst:AddComponent("engieworkable")
+        if inst.components.engieworkable == nil then
+            inst:AddComponent("engieworkable")
+        end
         inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
         inst.components.engieworkable:SetMaxWork(1)
         inst.components.engieworkable:SetWorkLeft(1)
@@ -961,7 +991,7 @@ end
                 if inst.upgradelevel_mk3 >= 85 then
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     if worker.components.talker then
-                        worker.components.talker:Say("Active Energy Orb upgrade complete!")
+                        worker.components.talker:Say("Ballistic Bot MK. III upgrade complete!")
                     end
 
                     local pt = inst:GetPosition()
@@ -1227,41 +1257,33 @@ end
             end
         end)
 
-        -- STAR CALLER ORB: manual toggle via left-click on deployed bot (MK2+)
-        inst._starcaller_active = false
-        inst._starcaller_light = nil
-        inst._starcaller_fueltask = nil
-        inst._starcaller_base_attackperiod = TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD
+        -- LIGHT ORB: manual toggle via left-click on deployed bot (MK2+)
+        inst._lightorb_active = false
+        inst._lightorb_fx = nil
+        inst._lightorb_fueltask = nil
+        inst._lightorb_tick = nil
+        inst._lightorb_base_attackperiod = TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD
 
-        -- Tag for left-click Light Orb toggle (enables WILLSTAR_TOGGLE action)
+        -- Tag for left-click Light Orb toggle (enables BALLISTIC_STARCALLER action)
         inst:AddTag("ballistic_mk2")
 
         -- Listen for left-click Light Orb toggle request
         inst:ListenForEvent("starcaller_toggle_request", function(inst, doer)
-            ToggleStarCaller(inst, doer)
+            ToggleLightOrb(inst, doer)
         end)
 
         -- Listen for world save event to disable Light Orb before exit
-        -- Auto-disable Light Orb on world save to prevent orb persistence
         inst:ListenForEvent("ms_save", function()
-            if inst._starcaller_active then
-                StopStarCaller(inst)
-                CleanupStarcallerOrbs(inst, 20)
+            if inst._lightorb_active then
+                StopLightOrb(inst)
             end
         end, TheWorld)
 
-        -- Clean up starcaller and affinity FX on remove
+        -- Clean up light orb and affinity FX on remove
         inst:ListenForEvent("onremove", function()
-            -- Force remove orb directly first
-            if inst._starcaller_light ~= nil and inst._starcaller_light:IsValid() then
-                inst._starcaller_light:Remove()
+            if inst._lightorb_active then
+                StopLightOrb(inst)
             end
-            inst._starcaller_light = nil
-            inst._starcaller_active = false
-            -- Then call StopStarCaller for any additional cleanup
-            StopStarCaller(inst)
-            CleanupStarcallerOrbs(inst, 20)
-            -- Clean up celestial and shadow FX
             if inst._aura_fx ~= nil and inst._aura_fx:IsValid() then
                 inst._aura_fx:Remove()
                 inst._aura_fx = nil
@@ -1543,10 +1565,9 @@ end
         local _OnLoad = inst.OnLoad
 
         local function OnSaveBallistic2(inst, data)
-            -- CRITICAL: Disable Light Orb before saving to ensure orb is removed
-            if inst._starcaller_active then
-                StopStarCaller(inst)
-                CleanupStarcallerOrbs(inst, 20)
+            -- Disable Light Orb before saving
+            if inst._lightorb_active then
+                StopLightOrb(inst)
             end
             if _OnSave ~= nil then
                 _OnSave(inst, data)
@@ -1556,7 +1577,6 @@ end
             end
             data.overcharge = inst._overcharge
             data.upgradelevel = inst.upgradelevel or 0
-            data.starcaller = false  -- Always save as disabled
             if inst.components.fueled ~= nil then
                 data.currentfuel = inst.components.fueled.currentfuel
             end
@@ -1566,19 +1586,9 @@ end
             if _OnLoad ~= nil then
                 _OnLoad(inst, data)
             end
-            -- Clean up any orphaned orbs from previous session
-            CleanupStarcallerOrbs(inst, 20)
-            -- Also clean up any tracked orb reference
-            if inst._starcaller_light ~= nil and inst._starcaller_light:IsValid() then
-                inst._starcaller_light:Remove()
-            end
-            inst._starcaller_light = nil
-            inst._starcaller_active = false
-            -- Only restore if save data says it was active
-            if data ~= nil and data.starcaller == true then
-                inst:DoTaskInTime(0.1, function()
-                    StartStarCaller(inst)
-                end)
+            -- Ensure light orb is off on load
+            if inst._lightorb_active then
+                StopLightOrb(inst)
             end
             if data ~= nil and data.leader ~= nil then
                 inst:DoTaskInTime(0, function()
@@ -1608,13 +1618,12 @@ end
         -- PERMITIR PEGAR DE VOLTA COM LEFT-CLICK (haunt)
         MakeHauntableWork(inst)
 
-        -- DESATIVAR STAR CALLER ao pegar de volta (haunt/right-click unploy)
-        -- Isso garante que o orbe seja removido antes do unploy
+        -- DESATIVAR LIGHT ORB ao pegar de volta (haunt/right-click unploy)
         local old_OnHaunt = inst.components.hauntable.onhaunt
         inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
-            -- Se orbe ativo, desativa primeiro
-            if inst._starcaller_active then
-                StopStarCaller(inst)
+            -- Se light orb ativo, desativa primeiro
+            if inst._lightorb_active then
+                StopLightOrb(inst)
                 if inst.components.talker then
                     inst.components.talker:Say("Light Orb OFF - Unploying...")
                 end
@@ -1633,7 +1642,6 @@ end
     local function active3(inst)
         local inst = active2(inst)
 
-        inst:AddTag("_named")
         inst:AddTag("ballistic_upgraded_mk3")
 
         -- Golden tint
@@ -1669,7 +1677,7 @@ end
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
             local oc = inst._overcharge and "OVERCHARGED" or ""
-            local sc = inst._starcaller_active and "LIGHT ORB ON" or ""
+            local sc = inst._lightorb_active and "LIGHT ORB ON" or ""
             local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
             if oc ~= "" then name_str = name_str .. " | " .. oc end
             if sc ~= "" then name_str = name_str .. " | " .. sc end
@@ -1682,40 +1690,21 @@ end
         table.insert(inst._periodic_name_tasks, task)
 
         -- ballistic_mk2 tag already added in active2() — no need to re-add here
-        
-        -- Initial cleanup: remove any orphaned orbs near this bot
-        inst:DoTaskInTime(0, function()
-            local x, y, z = inst.Transform:GetWorldPosition()
-            local nearby = TheSim:FindEntities(x, y, z, 2, {"stafflight"})
-            for _, ent in ipairs(nearby) do
-                if ent._parent_bot == nil or ent._parent_bot == inst then
-                    -- print("[DEBUG] Initial cleanup: removing orphaned orb")
-                    ent:Remove()
-                end
-            end
-        end)
+
+        -- No orphaned orb cleanup needed (new system uses entity light, not spawned prefabs)
 
         -- Listen for world save event to disable Light Orb before exit
-        -- Auto-disable Light Orb on world save to prevent orb persistence
         inst:ListenForEvent("ms_save", function()
-            if inst._starcaller_active then
-                StopStarCaller(inst)
-                CleanupStarcallerOrbs(inst, 20)
+            if inst._lightorb_active then
+                StopLightOrb(inst)
             end
         end, TheWorld)
 
-        -- Clean up starcaller and affinity FX on remove
+        -- Clean up light orb and affinity FX on remove
         inst:ListenForEvent("onremove", function()
-            -- Force remove orb directly first
-            if inst._starcaller_light ~= nil and inst._starcaller_light:IsValid() then
-                inst._starcaller_light:Remove()
+            if inst._lightorb_active then
+                StopLightOrb(inst)
             end
-            inst._starcaller_light = nil
-            inst._starcaller_active = false
-            -- Then call StopStarCaller for any additional cleanup
-            StopStarCaller(inst)
-            CleanupStarcallerOrbs(inst, 20)
-            -- Clean up celestial and shadow FX
             if inst._aura_fx ~= nil and inst._aura_fx:IsValid() then
                 inst._aura_fx:Remove()
                 inst._aura_fx = nil
@@ -1730,17 +1719,14 @@ end
             end
         end)
 
-        -- CLIQUE ESQUERDO: Toggle Light Orb via custom action (ativar/desativar orbe)
-        -- CLIQUE DIREITO: Unpack/Recolher (via portablewillybot - já configurado automaticamente)
-        -- REMOVIDO: activatable component que conflitava com RMB Pack Up
+        -- Left-click: Toggle Light Orb via custom action
         inst:ListenForEvent("starcaller_toggle_request", function(inst, doer)
-            ToggleStarCaller(inst, doer)
+            ToggleLightOrb(inst, doer)
         end)
 
-        -- Listen for stop_starcaller event from OnDismantle
-        inst:ListenForEvent("stop_starcaller", function(inst)
-            -- print("[DEBUG] stop_starcaller event received")
-            StopStarCaller(inst)
+        -- Listen for stop_lightorb event from OnDismantle
+        inst:ListenForEvent("stop_lightorb", function(inst)
+            StopLightOrb(inst)
         end)
 
         -- Repair system for MK3
