@@ -398,6 +398,7 @@ G.c_wagstaff_profile = function()
             end
         else
             print("  (GetTags not available on server)")
+        end
     end
     print("=== End Profile Debug ===")
 end
