@@ -3149,42 +3149,29 @@ end)
 -- Fix: Prevent fake skill points injection on cave-enabled worlds
 -- When starting a new world with caves, the server may inject ~3 skill points
 -- before our mod can calculate the correct value based on days survived.
--- This fix detects and corrects the injected points on player spawn.
+-- This fix FORCIBLY resets points on frame 0, BEFORE any cave system logic runs.
 AddPlayerPostInit(function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
     if inst.prefab ~= "wagstaff" then return end
 
+    -- Frame 0: executar ANTES de qualquer outra logica do jogo
     inst:DoTaskInTime(0, function()
         if not inst:IsValid() or not inst.components.skilltreeupdater then return end
 
-        local real_points = GetWagstaffMaxInsights(GetWagstaffDaysSurvived())
-        local current_points = inst.components.skilltreeupdater:GetTotalSkillPoints()
+        print("[Wagstaff Fix] Resetando pontos de skill para 0 (frame 0)")
 
-        if current_points ~= real_points then
-            print("[Wagstaff Fix] Pontos falsos detectados (atual=" .. tostring(current_points) .. ", esperado=" .. tostring(real_points) .. "). Corrigindo...")
-
-            -- Reset skills que foram comprados com pontos falsos
-            if inst.components.skilltreeupdater:GetAvailableSkillPoints() < 0 then
-                -- Se pontos foram gastos indevidamente, reseta a arvore inteira e reaplica skills do mundo
-                inst.components.skilltreeupdater:ResetSkillTree()
-                GLOBAL.WagstaffDebug("[FIX] Skill tree resetada devido a pontos negativos")
-
-                -- Reaplica as skills salvas no mundo (que sao validas)
-                if GLOBAL.TheWorld and GLOBAL.TheWorld.ApplyWagstaffSkills then
-                    GLOBAL.TheWorld:ApplyWagstaffSkills()
-                end
-            end
-
-            -- Força zero XP para bloquear qualquer injecao do engine
-            if GLOBAL.TheWorld and GLOBAL.TheWorld.ismastersim then
-                ForceZeroWagstaffXP()
-                local days = GetWagstaffDaysSurvived()
-                GLOBAL.TheWorld:DoTaskInTime(0.5, function()
-                    ForceZeroWagstaffXP()
-                    InjectWagstaffXP(days)
-                end)
-            end
+        -- Reaplica as skills válidas do mundo (que foram salvas corretamente)
+        if GLOBAL.TheWorld and GLOBAL.TheWorld.ApplyWagstaffSkills then
+            GLOBAL.TheWorld:ApplyWagstaffSkills()
         end
+
+        -- Força zero XP para bloquear qualquer injecao do engine de cavernas
+        ForceZeroWagstaffXP()
+        local days = GetWagstaffDaysSurvived()
+        GLOBAL.TheWorld:DoTaskInTime(0.5, function()
+            ForceZeroWagstaffXP()
+            InjectWagstaffXP(days)
+        end)
     end)
 end)
 
