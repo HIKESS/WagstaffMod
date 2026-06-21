@@ -1,5 +1,18 @@
 -- Wagstaff Skill Tree
+-- Based on reference implementation pattern from working DST mod skill trees.
+-- Key rules:
+--   - root = true: marks entry-point skills (available immediately)
+--   - connects: chains skills forward (parent -> child). Engine follows this graph.
+--   - locks: only for prerequisite back-references to lock nodes with lock_open functions
+--   - NO (9999,9999) hidden locks needed — connects chains handle progression
+--
+-- Branches:
+--   mechanical: Fork (sentry path + dispenser path)
+--   robotic:    Linear chain (brute mk2 -> brute mk3 -> buster mk2 -> buster mk3 -> ballistic mk2 -> ballistic mk3 -> butler mk2 -> butler mk3)
+--   allegiance: Boss-locked with mutual exclusion (shadow vs lunar)
+
 local GAP = 38
+
 -- ORDERS: one entry per branch with {x, y} header position in the skill tree UI.
 -- Format matches DST's standard: {branch_name, {x_offset, y_offset}}.
 -- x = horizontal center of the branch column, y = vertical position of branch header.
@@ -13,7 +26,10 @@ local ORDERS =
 local function BuildSkillsData(SkillTreeFns)
     local skills =
     {
-        -- ══ COLUMN 1: MECHANICAL ══
+        -- ════════════════════════════════════════════════════════════════
+        -- COLUMN 1: MECHANICAL (Fork: sentry path + dispenser path)
+        -- ════════════════════════════════════════════════════════════════
+
         wagstaff_mechanical_1 = {
             name = "wagstaff_mechanical_1",
             title = "Mechanical Efficiency",
@@ -26,6 +42,7 @@ local function BuildSkillsData(SkillTreeFns)
             root = true,
             defaultfocus = true,
             cost = 1,
+            connects = {"wagstaff_sentry_mk2", "wagstaff_dispenser_mk2"},
             IsActivated = function(inst, skillsdata)
                 return skillsdata ~= nil and skillsdata["wagstaff_mechanical_1"] == true
             end,
@@ -37,18 +54,7 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_mechanical_1_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "mechanical",
-            tags = {"mechanical", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_mechanical_1"] == true
-            end,
-            connects = {"wagstaff_sentry_mk2", "wagstaff_dispenser_mk2"},
-        },
-
+        -- Sentry path (left column of mechanical)
         wagstaff_sentry_mk2 = {
             name = "wagstaff_sentry_mk2",
             title = "Sentry Mk.II",
@@ -59,44 +65,13 @@ local function BuildSkillsData(SkillTreeFns)
             group = "mechanical",
             tags = {"mechanical"},
             cost = 1,
-            locks = {"wagstaff_mechanical_1_lock"},
+            connects = {"wagstaff_sentry_mk3"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_sentry_mk2")
             end,
             ondeactivate = function(inst, fromload)
                 inst:RemoveTag("wagstaff_sentry_mk2")
             end,
-        },
-
-        wagstaff_dispenser_mk2 = {
-            name = "wagstaff_dispenser_mk2",
-            title = "Dispenser MK.II",
-            desc = "Provides more resources per the day segment\nProvides Health regen in a small aura\nDay and Dusk",
-            icon = "disp2",
-            icon_atlas = "images/skilltree/disp2.xml",
-            pos = { -131.2, 120.7 },
-            group = "mechanical",
-            tags = {"mechanical"},
-            cost = 1,
-            locks = {"wagstaff_mechanical_1_lock"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_dispenser_mk2")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_dispenser_mk2")
-            end,
-        },
-
-        wagstaff_sentry_2_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "mechanical",
-            tags = {"mechanical", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_sentry_mk2"] == true
-            end,
-            connects = {"wagstaff_sentry_mk3"},
         },
 
         wagstaff_sentry_mk3 = {
@@ -109,25 +84,13 @@ local function BuildSkillsData(SkillTreeFns)
             group = "mechanical",
             tags = {"mechanical"},
             cost = 1,
-            locks = {"wagstaff_sentry_2_lock"},
+            connects = {"wagstaff_x2_damage"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_sentry_mk3")
             end,
             ondeactivate = function(inst, fromload)
                 inst:RemoveTag("wagstaff_sentry_mk3")
             end,
-        },
-
-        wagstaff_sentry_3_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "mechanical",
-            tags = {"mechanical", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_sentry_mk3"] == true
-            end,
-            connects = {"wagstaff_x2_damage"},
         },
 
         wagstaff_x2_damage = {
@@ -140,7 +103,6 @@ local function BuildSkillsData(SkillTreeFns)
             group = "mechanical",
             tags = {"mechanical"},
             cost = 1,
-            locks = {"wagstaff_sentry_3_lock"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_x2_damage")
             end,
@@ -149,16 +111,24 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_dispenser_2_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
+        -- Dispenser path (right column of mechanical)
+        wagstaff_dispenser_mk2 = {
+            name = "wagstaff_dispenser_mk2",
+            title = "Dispenser MK.II",
+            desc = "Provides more resources per the day segment\nProvides Health regen in a small aura\nDay and Dusk",
+            icon = "disp2",
+            icon_atlas = "images/skilltree/disp2.xml",
+            pos = { -131.2, 120.7 },
             group = "mechanical",
-            tags = {"mechanical", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_dispenser_mk2"] == true
-            end,
+            tags = {"mechanical"},
+            cost = 1,
             connects = {"wagstaff_dispenser_mk3"},
+            onactivate = function(inst, fromload)
+                inst:AddTag("wagstaff_dispenser_mk2")
+            end,
+            ondeactivate = function(inst, fromload)
+                inst:RemoveTag("wagstaff_dispenser_mk2")
+            end,
         },
 
         wagstaff_dispenser_mk3 = {
@@ -171,25 +141,13 @@ local function BuildSkillsData(SkillTreeFns)
             group = "mechanical",
             tags = {"mechanical"},
             cost = 1,
-            locks = {"wagstaff_dispenser_2_lock"},
+            connects = {"wagstaff_lucky_engineer"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_dispenser_mk3")
             end,
             ondeactivate = function(inst, fromload)
                 inst:RemoveTag("wagstaff_dispenser_mk3")
             end,
-        },
-
-        wagstaff_dispenser_3_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "mechanical",
-            tags = {"mechanical", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_dispenser_mk3"] == true
-            end,
-            connects = {"wagstaff_lucky_engineer"},
         },
 
         wagstaff_lucky_engineer = {
@@ -202,7 +160,6 @@ local function BuildSkillsData(SkillTreeFns)
             group = "mechanical",
             tags = {"mechanical"},
             cost = 1,
-            locks = {"wagstaff_dispenser_3_lock"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_lucky_engineer")
             end,
@@ -211,7 +168,12 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        -- ══ COLUMN 2: ROBOTIC ══
+        -- ════════════════════════════════════════════════════════════════
+        -- COLUMN 2: ROBOTIC (Linear chain: brute->buster->ballistic->butler)
+        -- ════════════════════════════════════════════════════════════════
+        -- Chain: brute_mk2 -> brute_mk3 -> buster_mk2 -> buster_mk3 ->
+        --        ballistic_mk2 -> ballistic_mk3 -> butler_mk2 -> butler_mk3
+
         wagstaff_robotic_1 = {
             name = "wagstaff_robotic_1",
             title = "Brute Bot MK. II",
@@ -223,6 +185,7 @@ local function BuildSkillsData(SkillTreeFns)
             tags = {"robotic"},
             root = true,
             cost = 1,
+            connects = {"wagstaff_robotic_1_parallel"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_robotic_1 onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -236,18 +199,6 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_robotic_1_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "robotic",
-            tags = {"robotic", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_robotic_1"] == true
-            end,
-            connects = {"wagstaff_robotic_1_parallel"},
-        },
-
         wagstaff_robotic_1_parallel = {
             name = "wagstaff_robotic_1_parallel",
             title = "Brute Bot MK. III",
@@ -258,7 +209,7 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            locks = {"wagstaff_robotic_1_lock"},
+            connects = {"wagstaff_buster_evolve"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_robotic_1_parallel onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -272,18 +223,6 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_robotic_2_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "robotic",
-            tags = {"robotic", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_robotic_1_parallel"] == true
-            end,
-            connects = {"wagstaff_buster_evolve"},
-        },
-
         wagstaff_buster_evolve = {
             name = "wagstaff_buster_evolve",
             title = "Buster Bot MK.II",
@@ -294,7 +233,7 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            locks = {"wagstaff_robotic_2_lock"},
+            connects = {"wagstaff_buster_parallel"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_buster_evolve onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -308,18 +247,6 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_robotic_3_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "robotic",
-            tags = {"robotic", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_buster_evolve"] == true
-            end,
-            connects = {"wagstaff_buster_parallel"},
-        },
-
         wagstaff_buster_parallel = {
             name = "wagstaff_buster_parallel",
             title = "Buster Bot MK. III",
@@ -330,7 +257,7 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            locks = {"wagstaff_robotic_3_lock"},
+            connects = {"wagstaff_ballistic_evolve"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_buster_parallel onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -344,18 +271,6 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_robotic_4_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "robotic",
-            tags = {"robotic", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_buster_parallel"] == true
-            end,
-            connects = {"wagstaff_ballistic_evolve"},
-        },
-
         wagstaff_ballistic_evolve = {
             name = "wagstaff_ballistic_evolve",
             title = "Ballistic Bot MK. II",
@@ -366,7 +281,7 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            locks = {"wagstaff_robotic_4_lock"},
+            connects = {"wagstaff_ballistic_parallel"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_ballistic_evolve onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -380,18 +295,6 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_robotic_5_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "robotic",
-            tags = {"robotic", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_ballistic_evolve"] == true
-            end,
-            connects = {"wagstaff_ballistic_parallel"},
-        },
-
         wagstaff_ballistic_parallel = {
             name = "wagstaff_ballistic_parallel",
             title = "Ballistic Bot MK.III",
@@ -402,7 +305,7 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            locks = {"wagstaff_robotic_5_lock"},
+            connects = {"wagstaff_thermal_upgrade"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_ballistic_parallel onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -416,18 +319,6 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_robotic_6_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "robotic",
-            tags = {"robotic", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_ballistic_parallel"] == true
-            end,
-            connects = {"wagstaff_thermal_upgrade"},
-        },
-
         wagstaff_thermal_upgrade = {
             name = "wagstaff_thermal_upgrade",
             title = "Butler MK. II",
@@ -438,7 +329,7 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            locks = {"wagstaff_robotic_6_lock"},
+            connects = {"wagstaff_thermal_upgrade_parallel"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_thermal_upgrade onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -452,18 +343,6 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        wagstaff_robotic_7_lock = {
-            desc = "",
-            pos = { 9999, 9999 },
-            group = "robotic",
-            tags = {"robotic", "lock", "invisible_lock"},
-            root = true,
-            lock_open = function(prefabname, activatedskills, readonly)
-                return activatedskills and activatedskills["wagstaff_thermal_upgrade"] == true
-            end,
-            connects = {"wagstaff_thermal_upgrade_parallel"},
-        },
-
         wagstaff_thermal_upgrade_parallel = {
             name = "wagstaff_thermal_upgrade_parallel",
             title = "Butler MK. III",
@@ -474,7 +353,6 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            locks = {"wagstaff_robotic_7_lock"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_thermal_upgrade_mk3")
             end,
@@ -483,16 +361,19 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        -- ══ ALLEGIANCE ══
-        -- Boss kill locks: exactly like Wilson's
+        -- ════════════════════════════════════════════════════════════════
+        -- ALLEGIANCE (Boss-locked with mutual exclusion: shadow vs lunar)
+        -- ════════════════════════════════════════════════════════════════
+        -- These lock nodes use real positions and lock_open functions,
+        -- matching the pattern from reference mods (kodi, sdf).
+
         wagstaff_allegiance_lock_shadow_boss = {
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_2_DESC or "Defeat Ancient Fuelweaver to unlock",
             pos = { 205.8, 91.9 + GAP*2 },
             group = "allegiance",
             tags = {"allegiance","lock"},
             root = true,
-            lock_open = function(prefabname, activatedskills, readonly) 
-                -- print("[WagstaffMod] wagstaff_allegiance_lock_shadow_boss lock_open called! readonly:", readonly, "TheWorld:", TheWorld, "TheWorld.state:", TheWorld and TheWorld.state, "wagstaff_fuelweaver_killed:", TheWorld and TheWorld.state and TheWorld.state.wagstaff_fuelweaver_killed)
+            lock_open = function(prefabname, activatedskills, readonly)
                 if readonly then
                     return "question"
                 end
@@ -507,8 +388,7 @@ local function BuildSkillsData(SkillTreeFns)
             group = "allegiance",
             tags = {"allegiance","lock"},
             root = true,
-            lock_open = function(prefabname, activatedskills, readonly) 
-                -- print("[WagstaffMod] wagstaff_allegiance_lock_lunar_boss lock_open called! readonly:", readonly, "TheWorld:", TheWorld, "TheWorld.state:", TheWorld and TheWorld.state, "wagstaff_celestial_killed:", TheWorld and TheWorld.state and TheWorld.state.wagstaff_celestial_killed)
+            lock_open = function(prefabname, activatedskills, readonly)
                 if readonly then
                     return "question"
                 end
@@ -517,7 +397,7 @@ local function BuildSkillsData(SkillTreeFns)
             connects = {"wagstaff_celestial_possession"},
         },
 
-        -- Exclusion locks: bloqueiam o lado oposto se uma afinidade já foi escolhida
+        -- Exclusion locks: block the opposite path if an affinity was chosen
         wagstaff_allegiance_lock_shadow_path = {
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_4_DESC or "Cannot choose if Celestial path taken",
             pos = { 205.8, 91.9 + GAP },
