@@ -345,6 +345,60 @@ local WagstaffVerboseDebug = function(...)
     end
 end
 
+-- Debug command to inspect TheSkillTree profile state
+G.c_wagstaff_profile = function()
+    print("=== Wagstaff TheSkillTree Profile Debug ===")
+    if not GLOBAL.TheSkillTree then
+        print("TheSkillTree is NIL!")
+        return
+    end
+    -- Get XP
+    local xp = nil
+    G.pcall(function() xp = GLOBAL.TheSkillTree:GetSkillXP("wagstaff") end)
+    print("XP:", tostring(xp))
+    -- Get activated skills
+    local skills = nil
+    G.pcall(function() skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff") end)
+    if not skills then
+        print("GetActivatedSkills returned NIL")
+    else
+        print("Activated skills (raw):")
+        if type(skills) == "table" then
+            for i, v in GLOBAL.ipairs(skills) do
+                print("  ["..tostring(i).."] type="..type(v).." value="..tostring(v))
+            end
+            -- Also check non-integer keys
+            for k, v in pairs(skills) do
+                if type(k) ~= "number" then
+                    print("  [key="..tostring(k).."] type="..type(v).." value="..tostring(v))
+                end
+            end
+        else
+            print("  type="..type(skills).." value="..tostring(skills))
+        end
+    end
+    -- Check player activatedskills
+    local player = G.ThePlayer
+    if player and player.components and player.components.skilltreeupdater then
+        local activated = player.components.skilltreeupdater.activatedskills
+        print("\nPlayer activatedskills table:")
+        if activated then
+            for k, v in pairs(activated) do
+                print("  ["..tostring(k).."] = "..tostring(v))
+            end
+        else
+            print("  NIL")
+        end
+        print("\nPlayer tags containing 'wagstaff_':")
+        for i, tag in ipairs(player:GetTags()) do
+            if type(tag) == "string" and tag:find("wagstaff_") then
+                print("  "..tag)
+            end
+        end
+    end
+    print("=== End Profile Debug ===")
+end
+
 -- Bypass strict mode for our variables
 rawset(G, "strict", false)
 G.WagstaffDebug("Standalone Wagstaff Integration mod is loading!")
@@ -401,6 +455,28 @@ AddModRPCHandler("wagstaff_standalone", "WagstaffSkillActivate", function(player
     -- Dirty network variables for client-server sync
     if updater.DirtySkillTree then
         updater:DirtySkillTree()
+    end
+
+    -- CRITICAL: Also persist to TheSkillTree profile so skills survive rejoins.
+    -- The engine's built-in RPC fails for mod characters, so we must do this manually.
+    if GLOBAL.TheSkillTree then
+        local rpc_id = WagstaffResolveSkillRPCID(skill_name)
+        -- Try numeric ID first (engine's preferred format)
+        if rpc_id ~= nil then
+            local ok, err = G.pcall(function()
+                GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", rpc_id, activated)
+            end)
+            if not ok then
+                WagstaffDebug("[MOD RPC] TheSkillTree:SetSkillActivatedState(numeric) failed:", tostring(err))
+            end
+        end
+        -- Also try string name as fallback
+        local ok2, err2 = G.pcall(function()
+            GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", skill_name, activated)
+        end)
+        if not ok2 then
+            WagstaffDebug("[MOD RPC] TheSkillTree:SetSkillActivatedState(string) failed:", tostring(err2))
+        end
     end
 end)
 
@@ -1281,14 +1357,43 @@ G.WagstaffHasSkill = function(worker, skill_id)
         end
     end
 
-    -- 3. Client-Side fallback (Klei engine)
+    -- 3. Client-Side / Profile fallback (Klei engine)
+    --    This checks TheSkillTree which reads from the player's PROFILE data.
+    --    Skills activated via the skill tree UI are persisted here by the engine.
     if GLOBAL.TheSkillTree then
-        local client_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
-        if client_skills then
-            for _, s_name in GLOBAL.ipairs(client_skills) do
+        local profile_skills = nil
+        G.pcall(function()
+            profile_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+        end)
+        if profile_skills then
+            for _, s_name in GLOBAL.ipairs(profile_skills) do
                 if s_name == skill_id or s_name == real_skill then
+                    -- Re-add to activatedskills for future fast lookups
+                    if worker.components and worker.components.skilltreeupdater then
+                        worker.components.skilltreeupdater.activatedskills = worker.components.skilltreeupdater.activatedskills or {}
+                        worker.components.skilltreeupdater.activatedskills[s_name] = true
+                    end
                     worker:AddTag(skill_id)
+                    WagstaffDebug("WagstaffHasSkill: found", skill_id, "via TheSkillTree profile")
                     return true
+                end
+            end
+            -- Also check by iterating numeric RPC IDs (TheSkillTree may store by numeric ID)
+            local lookup = WagstaffGetRPCLookup()
+            if lookup then
+                for s_name, _ in pairs(profile_skills) do
+                    if type(s_name) == "number" then
+                        local resolved = lookup[s_name]
+                        if resolved == skill_id or resolved == real_skill then
+                            if worker.components and worker.components.skilltreeupdater then
+                                worker.components.skilltreeupdater.activatedskills = worker.components.skilltreeupdater.activatedskills or {}
+                                worker.components.skilltreeupdater.activatedskills[resolved] = true
+                            end
+                            worker:AddTag(skill_id)
+                            WagstaffDebug("WagstaffHasSkill: found", skill_id, "via TheSkillTree numeric ID")
+                            return true
+                        end
+                    end
                 end
             end
         end
@@ -1378,6 +1483,19 @@ local function WagstaffWilliamPostInit(inst)
 
                 WagstaffDebug("[ActivateSkill] SERVER: Directly activated", skill_name)
 
+                -- Persist to TheSkillTree profile so skills survive rejoins
+                if GLOBAL.TheSkillTree then
+                    local rpc_id = WagstaffResolveSkillRPCID(skill_name)
+                    if rpc_id ~= nil then
+                        G.pcall(function()
+                            GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", rpc_id, true)
+                        end)
+                    end
+                    G.pcall(function()
+                        GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", skill_name, true)
+                    end)
+                end
+
                 -- Also try the original for network sync (ignore if it fails)
                 local skill_to_pass = skill
                 if fromrpc and type(skill) == "string" then
@@ -1451,6 +1569,18 @@ local function WagstaffWilliamPostInit(inst)
                     else
                         inst:RemoveTag(skill_name)
                     end
+                    -- Persist deactivation to TheSkillTree profile
+                    if GLOBAL.TheSkillTree then
+                        local rpc_id = WagstaffResolveSkillRPCID(skill_name)
+                        if rpc_id ~= nil then
+                            G.pcall(function()
+                                GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", rpc_id, false)
+                            end)
+                        end
+                        G.pcall(function()
+                            GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", skill_name, false)
+                        end)
+                    end
                 end
 
                 local result = G.pcall(old_DeactivateSkill, self, skill, prefab, fromrpc)
@@ -1460,6 +1590,58 @@ local function WagstaffWilliamPostInit(inst)
     end
 
     if not GLOBAL.TheWorld.ismastersim then return end
+
+    --==================================================================================
+    -- SERVER-ONLY: Delayed load from TheSkillTree profile
+    --==================================================================================
+    -- TheSkillTree may not be fully initialized when OnLoad fires.
+    -- Schedule a delayed check to load any missing skills from the profile.
+    --==================================================================================
+    inst:DoTaskInTime(1, function()
+        if inst.components and inst.components.skilltreeupdater then
+            local activated = inst.components.skilltreeupdater.activatedskills
+            if not activated or next(activated) == nil then
+                if GLOBAL.TheSkillTree then
+                    local profile_skills = nil
+                    G.pcall(function()
+                        profile_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+                    end)
+                    if profile_skills and next(profile_skills) ~= nil then
+                        activated = {}
+                        inst.components.skilltreeupdater.activatedskills = activated
+                        local lookup = WagstaffGetRPCLookup()
+                        for _, s_name in GLOBAL.ipairs(profile_skills) do
+                            if type(s_name) == "string" then
+                                activated[s_name] = true
+                            elseif type(s_name) == "number" and lookup then
+                                local resolved = lookup[s_name]
+                                if resolved then
+                                    activated[resolved] = true
+                                end
+                            end
+                        end
+                        local skill_count = 0
+                        for _ in pairs(activated) do skill_count = skill_count + 1 end
+                        if skill_count > 0 then
+                            WagstaffDebug("Delayed load: loaded", skill_count, "skills from TheSkillTree profile")
+                            -- Re-apply onactivate callbacks
+                            if G.WagstaffSkillDefs then
+                                for skill_name, _ in pairs(activated) do
+                                    local def = G.WagstaffSkillDefs[skill_name]
+                                    if def and def.onactivate then
+                                        def.onactivate(inst, true)
+                                    end
+                                end
+                            end
+                            if inst.components.skilltreeupdater.DirtySkillTree then
+                                inst.components.skilltreeupdater:DirtySkillTree()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
 
     --==================================================================================
     -- SERVER-ONLY: Wrap SetSkillActivatedState
@@ -1614,6 +1796,43 @@ local function WagstaffWilliamPostInit(inst)
         -- callbacks (which add tags) are NOT called on load. We must re-apply them.
         if inst.components and inst.components.skilltreeupdater then
             local activated = inst.components.skilltreeupdater.activatedskills
+            local loaded_any = false
+
+            -- CRITICAL: If activatedskills is empty, try loading from TheSkillTree profile.
+            -- The engine may fail to load mod character skills into activatedskills.
+            if (not activated or next(activated) == nil) and GLOBAL.TheSkillTree then
+                local profile_skills = nil
+                G.pcall(function()
+                    profile_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+                end)
+                if profile_skills then
+                    activated = {}
+                    inst.components.skilltreeupdater.activatedskills = activated
+                    local lookup = WagstaffGetRPCLookup()
+                    for _, s_name in GLOBAL.ipairs(profile_skills) do
+                        if type(s_name) == "string" then
+                            activated[s_name] = true
+                            loaded_any = true
+                        elseif type(s_name) == "number" and lookup then
+                            local resolved = lookup[s_name]
+                            if resolved then
+                                activated[resolved] = true
+                                loaded_any = true
+                            end
+                        end
+                    end
+                    if loaded_any then
+                        local skill_count = 0
+                        for _ in pairs(activated) do skill_count = skill_count + 1 end
+                        WagstaffDebug("Player OnLoad: loaded", skill_count, "skills from TheSkillTree profile")
+                        -- Dirty to sync to client
+                        if inst.components.skilltreeupdater.DirtySkillTree then
+                            inst.components.skilltreeupdater:DirtySkillTree()
+                        end
+                    end
+                end
+            end
+
             if activated and G.WagstaffSkillDefs then
                 local count = 0
                 for skill_name, _ in pairs(activated) do
