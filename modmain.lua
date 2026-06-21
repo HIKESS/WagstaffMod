@@ -301,34 +301,50 @@ local function WagstaffPublishRPCLookup()
             WagstaffDebug("[CLIENT] RPC_LOOKUP received, count:", count)
             
             -- FIX CLIENTE: Intercepta ActivateSkill no cliente para garantir que envia o ID correto
-            if GLOBAL.ThePlayer and GLOBAL.ThePlayer.components and GLOBAL.ThePlayer.components.skilltreeupdater then
-                local old_ActivateSkill_client = GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill
-                GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
-                    WagstaffDebug("[CLIENTE] ActivateSkill chamado: skill=", tostring(skill), "type=", type(skill), "fromrpc=", tostring(fromrpc))
-                    
-                    -- Se skill for "RPC" ou nil, isso indica um bug na UI - precisamos bloquear
-                    if not skill or skill == "RPC" then
-                        WagstaffDebug("[CLIENTE] ERRO CRITICO: skill é '", tostring(skill), "' - ISSO É UM BUG DA UI")
-                        WagstaffDebug("[CLIENTE] Stack trace provavel: widget/skilltree_widget.lua esta chamando ActivateSkill com parametro errado")
-                        -- NAO retornamos false aqui - vamos deixar o engine original tentar processar
-                        -- pois pode ser que o engine consiga resolver internamente
-                    end
-                    
-                    -- Se for string e fromrpc=true, precisamos converter para ID numérico
-                    if fromrpc and type(skill) == "string" then
-                        local rpc_id = WagstaffResolveSkillRPCID(skill)
-                        if rpc_id then
-                            WagstaffDebug("[CLIENTE] Convertendo skill '", skill, "' para ID RPC:", rpc_id)
-                            skill = rpc_id
-                        else
-                            WagstaffDebug("[CLIENTE] AVISO: Skill '", skill, "' nao encontrada no RPC_LOOKUP, enviando como string")
+            local function installClientHook()
+                if GLOBAL.ThePlayer and GLOBAL.ThePlayer.components and GLOBAL.ThePlayer.components.skilltreeupdater then
+                    local old_ActivateSkill_client = GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill
+                    GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
+                        WagstaffDebug("[CLIENTE] ActivateSkill chamado: skill=", tostring(skill), "type=", type(skill), "fromrpc=", tostring(fromrpc))
+                        
+                        -- Se skill for "RPC" ou nil, isso indica um bug na UI - precisamos bloquear
+                        if not skill or skill == "RPC" then
+                            WagstaffDebug("[CLIENTE] ERRO CRITICO: skill é '", tostring(skill), "' - ISSO É UM BUG DA UI")
+                            WagstaffDebug("[CLIENTE] Stack trace provavel: widget/skilltree_widget.lua esta chamando ActivateSkill com parametro errado")
+                            -- NAO retornamos false aqui - vamos deixar o engine original tentar processar
+                            -- pois pode ser que o engine consiga resolver internamente
                         end
+                        
+                        -- Se for string e fromrpc=true, precisamos converter para ID numérico
+                        if fromrpc and type(skill) == "string" then
+                            local rpc_id = WagstaffResolveSkillRPCID(skill)
+                            if rpc_id then
+                                WagstaffDebug("[CLIENTE] Convertendo skill '", skill, "' para ID RPC:", rpc_id)
+                                skill = rpc_id
+                            else
+                                WagstaffDebug("[CLIENTE] AVISO: Skill '", skill, "' nao encontrada no RPC_LOOKUP, enviando como string")
+                            end
+                        end
+                        
+                        WagstaffDebug("[CLIENTE] Enviando ActivateSkill com skill=", tostring(skill))
+                        return old_ActivateSkill_client(self, skill, prefab, fromrpc)
                     end
-                    
-                    WagstaffDebug("[CLIENTE] Enviando ActivateSkill com skill=", tostring(skill))
-                    return old_ActivateSkill_client(self, skill, prefab, fromrpc)
+                    WagstaffDebug("[CLIENTE] Hook ActivateSkill instalado no skilltreeupdater")
+                    return true
                 end
-                WagstaffDebug("[CLIENTE] Hook ActivateSkill instalado no skilltreeupdater")
+                return false
+            end
+            
+            -- Tenta instalar imediatamente
+            if not installClientHook() then
+                -- Se falhar, tenta novamente após 0.5s e 1s (caso o jogador ainda esteja carregando)
+                GLOBAL.TheWorld:DoTaskInTime(0.5, function()
+                    if not installClientHook() then
+                        GLOBAL.TheWorld:DoTaskInTime(1.0, function()
+                            installClientHook()
+                        end)
+                    end
+                end)
             end
         end
         
