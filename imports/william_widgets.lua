@@ -93,15 +93,45 @@ end
 -- Butler2 uses same button functions
 params.williambutler2.widget.buttoninfo = params.williambutler.widget.buttoninfo
 
+--==================================================================================
+-- BRUTE BOT LVL 3: Storage container - 9 slots (3x3)
+--==================================================================================
+params.williambrute3 =
+{
+    widget =
+    {
+        slotpos =
+        {
+            -- 3x3 grid, same positions as treasurechest
+            Vector3(-162, 75, 0),
+            Vector3(-81, 75, 0),
+            Vector3(0, 75, 0),
+            Vector3(-162, -4, 0),
+            Vector3(-81, -4, 0),
+            Vector3(0, -4, 0),
+            Vector3(-162, -83, 0),
+            Vector3(-81, -83, 0),
+            Vector3(0, -83, 0),
+        },
+        animbank = "ui_chest_3x3",
+        animbuild = "ui_chest_3x3",
+        pos = Vector3(0, 200, 0),
+        side_align_tip = 160,
+    },
+    acceptsstacks = false,
+    type = "chest",
+}
+
 containers.MAXITEMSLOTS = math.max(containers.MAXITEMSLOTS,
     params.williambutler.widget.slotpos ~= nil and #params.williambutler.widget.slotpos or 0,
-    params.williambutler2.widget.slotpos ~= nil and #params.williambutler2.widget.slotpos or 0)
+    params.williambutler2.widget.slotpos ~= nil and #params.williambutler2.widget.slotpos or 0,
+    params.williambrute3.widget.slotpos ~= nil and #params.williambrute3.widget.slotpos or 0)
 
 local containers_widgetsetup = containers.widgetsetup
 
 function containers.widgetsetup(container, prefab, data)
     local t = prefab or container.inst.prefab
-    if t == "williambutler" or t == "williambutler2" then
+    if t == "williambutler" or t == "williambutler2" or t == "williambrute3" then
         local t = params[t]
         if t ~= nil then
             for k, v in pairs(t) do
@@ -121,16 +151,16 @@ local _GetAdjectivedName = GLOBAL.EntityScript.GetAdjectivedName
 function GLOBAL.EntityScript:GetAdjectivedName()
     local name = self:GetBasicDisplayName()
     if self:HasTag("willminion") then
-	if self:HasTag("level3") then
+        if self:HasTag("level3") then
         return GLOBAL.ConstructAdjectivedName(self, name, "Brilliant")
-	elseif self:HasTag("level2") then
+        elseif self:HasTag("level2") then
         return GLOBAL.ConstructAdjectivedName(self, name, "Boastful")
-	elseif self:HasTag("level1") then
+        elseif self:HasTag("level1") then
         return GLOBAL.ConstructAdjectivedName(self, name, "Bolstered")
-	else
+        else
     return _GetAdjectivedName(self)
-	end
-	else
+        end
+        else
     return _GetAdjectivedName(self)
     end
 end

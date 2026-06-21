@@ -5,8 +5,8 @@ local prefabs =
 
     local assets =
     {
-	Asset("ANIM", "anim/william_buster.zip"),
-	Asset("ANIM", "anim/william_buster_empty.zip"),
+        Asset("ANIM", "anim/william_buster.zip"),
+        Asset("ANIM", "anim/william_buster_empty.zip"),
         Asset("SOUND", "sound/maxwell.fsb"),
     }
 
@@ -27,14 +27,14 @@ SetSharedLootTable("bustergadget",
 local function lootsetfn(lootdropper)
     local loot = {}
     local amount = lootdropper.inst.level*0.75
-	if amount < 1 then amount = 1 end
+        if amount < 1 then amount = 1 end
 
-		if lootdropper.inst.level > 0 then
-    		for k = 1, amount do
+                if lootdropper.inst.level > 0 then
+                for k = 1, amount do
             table.insert(loot, "gears")
-		end
-		end
-		
+                end
+                end
+                
 
     lootdropper:SetLoot(loot)
 end
@@ -188,22 +188,22 @@ local function SpawnShadowClone(parent_buster)
 end
 
 local function LevelUp(inst, amount)
-	if inst.level < 3 and amount ~= nil then
-	inst.level = inst.level + amount
-	if inst.sg ~= nil then
-	inst.sg:GoToState("upgraded")
-	end
+        if inst.level < 3 and amount ~= nil then
+        inst.level = inst.level + amount
+        if inst.sg ~= nil then
+        inst.sg:GoToState("upgraded")
+        end
 end
-	if inst.level > 3 then inst.level = 3 end
+        if inst.level > 3 then inst.level = 3 end
 
-	inst:DoTaskInTime(0, function()
-		inst:AddTag("level"..inst.level)
+        inst:DoTaskInTime(0, function()
+                inst:AddTag("level"..inst.level)
 
         inst.components.health:SetAbsorptionAmount(0+inst.level*0.05)
-	if inst.components.combat ~= nil then
+        if inst.components.combat ~= nil then
     inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BUSTER_DAMAGE+(inst.level*3))
-	end
-	end)
+        end
+        end)
 end
 
 local function OnAttacked(inst, data)
@@ -240,10 +240,10 @@ local function OnAddFuel(inst, doer, fuelitem)
         end
     end
     
-	inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
-	if inst.sg ~= nil then
+        inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
+        if inst.sg ~= nil then
     inst.sg:GoToState("fed")
-	end
+        end
     inst:AddTag("alive")
     return true  -- Accept the fuel
 end
@@ -253,9 +253,9 @@ local function fuelupdate(inst)
             and inst.components.fueled.currentfuel <= inst.components.fueled.maxfuel*0.1  then
     inst.AnimState:AddOverrideBuild("william_buster_empty")
                 --inst.AnimState:SetBuild("william_buster_empty")
-		else
+                else
     inst.AnimState:ClearOverrideBuild("william_buster_empty")
-	end
+        end
     end
 
 local function retargetfn(inst)
@@ -282,12 +282,12 @@ local function keeptargetfn(inst, target)
     --Match KEEP_WORKING_DIST in brain
     return inst.components.follower:IsNearLeader(14)
         and inst.components.combat:CanTarget(target)
-		and target.components.minigame_participator == nil
+                and target.components.minigame_participator == nil
 end
 
 local function getstatus(inst, viewer)
             return inst.components.fueled:IsEmpty() and "EMPTY"
-	    or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .3 and "CRITICALFUEL"
+            or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .3 and "CRITICALFUEL"
             or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .6 and "LOWFUEL"
             or "FINE"
 end
@@ -344,9 +344,9 @@ local function MakeAlive(inst, doer)
 end
 
 local function onworked(inst)
-	if inst.sg ~= nil then
-	inst.sg:GoToState("hit")
-	end
+        if inst.sg ~= nil then
+        inst.sg:GoToState("hit")
+        end
 end
 
 local function OnHammered(inst, worker)
@@ -359,9 +359,9 @@ local function OnHammered(inst, worker)
 end
 
 local function onsave(inst, data)
-	if inst.level ~= nil then
+        if inst.level ~= nil then
     data.level = inst.level
-	end
+        end
     data.upgradelevel = inst.upgradelevel or 0
     data.saved_upgradelevel = inst.saved_upgradelevel or 0
     data.saved_upgradelevel_mk3 = inst.saved_upgradelevel_mk3 or 0
@@ -370,15 +370,15 @@ local function onsave(inst, data)
     -- BUG FIX 3: Save exact prefab name
     data.saved_prefab_name = inst.prefab
     -- Save leader GUID for persistence
-    if inst.components.follower and inst.components.follower.leader then
-        data.leader_guid = inst.components.follower.leader.GUID
+    if inst.components.follower and inst.components.follower:GetLeader() then
+        data.leader_guid = inst.components.follower:GetLeader().GUID
     end
 end
 
 local function onload(inst, data)
     if data ~= nil and data.level ~= nil then
-	inst.level = data.level 
-	if inst.level > 0 then inst:DoTaskInTime(0,LevelUp) end
+        inst.level = data.level 
+        if inst.level > 0 then inst:DoTaskInTime(0,LevelUp) end
     end
     if data ~= nil and data.upgradelevel ~= nil then
         inst.upgradelevel = data.upgradelevel
@@ -465,10 +465,10 @@ end
 
     MakeCharacterPhysics(inst, 50, .5)
 
-	inst.level = 0
+        inst.level = 0
 
         inst.Physics:SetCollides(false)
-	inst:DoTaskInTime(0, function() inst.Physics:SetCollides(true) end)
+        inst:DoTaskInTime(0, function() inst.Physics:SetCollides(true) end)
 
     inst.AnimState:SetBank("knight")
     inst.AnimState:SetBuild("william_buster")
@@ -492,7 +492,7 @@ end
         end
 
 
-	inst:AddComponent("willyraise")
+        inst:AddComponent("willyraise")
     inst.components.willyraise:SetOnRiseFn(MakeAlive)
     inst.components.willyraise:SetOnLowerFn(OnFuelEmpty)
 
@@ -521,8 +521,8 @@ end
         return inst
     end
 
-	--ACTIVE BUSTER-----------
-	
+        --ACTIVE BUSTER-----------
+        
     local function active(inst)
         local inst = fn(inst)
 
@@ -532,7 +532,7 @@ end
             return inst
         end
 
-	inst:AddTag("alive")
+        inst:AddTag("alive")
         inst:AddTag("scarytoprey")
         inst:AddTag("buster")
         inst:AddTag("ebuild_wrenchable")
@@ -697,7 +697,7 @@ inst.components.burnable.ignorefuel = true
                         newbot.upgradelevel = inst.upgradelevel or 0
 
                         if inst.components.follower ~= nil and inst.components.follower:GetLeader() ~= nil then
-                            newbot.components.follower.leader = inst.components.follower:GetLeader()
+                            newbot.components.follower:SetLeader(inst.components.follower:GetLeader())
                         end
 
                         local fx = SpawnPrefab("small_puff")
@@ -874,7 +874,7 @@ inst.components.burnable.ignorefuel = true
 
                         -- Set leader
                         if inst.components.follower ~= nil and inst.components.follower:GetLeader() ~= nil then
-                            newbot.components.follower.leader = inst.components.follower:GetLeader()
+                            newbot.components.follower:SetLeader(inst.components.follower:GetLeader())
                         end
 
                         -- Spawn FX
@@ -1206,12 +1206,12 @@ end
 
 
 local function revivetest(newsection, oldsection, inst, doer)
-	if newsection >= 0 then
+        if newsection >= 0 then
     local pt = inst:GetPosition()
-	if doer ~= nil and doer:HasTag("williamcrafter") then
-		MakeAlive(inst, doer)
-		end
-	end
+        if doer ~= nil and doer:HasTag("williamcrafter") then
+                MakeAlive(inst, doer)
+                end
+        end
 end
 
     local function empty(inst)
@@ -1225,7 +1225,7 @@ end
     inst.Transform:SetScale(0.8, 0.8, 0.8)
 
     MakeCharacterPhysics(inst, 80, .25)
-	inst.Physics:SetFriction(1)
+        inst.Physics:SetFriction(1)
 
         if not TheWorld.ismastersim then
             return inst
@@ -1277,17 +1277,17 @@ local function onbuilt(inst, builder)
         pt.z = pt.z + offset.z
     end
    local pet = builder:HasTag("williamcrafter") and builder.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambuster") or SpawnPrefab("williambuster_empty")
-	if pet ~= nil then
-	    if pet.sg ~= nil then
-         	pet.sg:GoToState("spawn") 
-	    else
-		pet.Transform:SetPosition(pt.x, 0, pt.z)
-	pet.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
-	SpawnPrefab("small_puff").Transform:SetPosition(pt.x, 0, pt.z)
-	    end
-	pet.components.fueled.currentfuel = pet.components.fueled.currentfuel*0.9
+        if pet ~= nil then
+            if pet.sg ~= nil then
+                pet.sg:GoToState("spawn") 
+            else
+                pet.Transform:SetPosition(pt.x, 0, pt.z)
+        pet.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
+        SpawnPrefab("small_puff").Transform:SetPosition(pt.x, 0, pt.z)
+            end
+        pet.components.fueled.currentfuel = pet.components.fueled.currentfuel*0.9
     inst:Remove()
-	end
+        end
 end
 
     local function builder()
