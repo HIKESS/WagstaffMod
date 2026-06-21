@@ -2213,6 +2213,65 @@ local CreateSkillTree = function()
             G.WagstaffSkillDefs = data.SKILLS
             WagstaffDebug("Saved skill definitions to G.WagstaffSkillDefs")
 
+            -- CRITICAL FIX: Wrap all lock_open functions to fall back to player tags.
+            -- The DST engine's SetSkillActivatedState RPC fails for mod characters
+            -- ("Invalid SetSkillActivatedState no skill with id RPC"), so the client's
+            -- TheSkillTree never gets updated. lock_open functions receive a stale/empty
+            -- activatedskills table. Our MOD RPC correctly activates skills and adds tags
+            -- to the player, and tags ARE synced via the network. So we rebuild
+            -- activatedskills from the player's tags and re-run the original lock_open.
+            local SKILL_ID_TO_TAG = {
+                ["wagstaff_mechanical_1"]           = "wagstaff_mechanical_efficiency",
+                ["wagstaff_sentry_mk2"]             = "wagstaff_sentry_mk2",
+                ["wagstaff_dispenser_mk2"]          = "wagstaff_dispenser_mk2",
+                ["wagstaff_sentry_mk3"]             = "wagstaff_sentry_mk3",
+                ["wagstaff_x2_damage"]              = "wagstaff_x2_damage",
+                ["wagstaff_dispenser_mk3"]          = "wagstaff_dispenser_mk3",
+                ["wagstaff_lucky_engineer"]         = "wagstaff_lucky_engineer",
+                ["wagstaff_robotic_1"]              = "wagstaff_brute_evolve",
+                ["wagstaff_robotic_1_parallel"]     = "wagstaff_brute_mk3",
+                ["wagstaff_buster_evolve"]          = "wagstaff_buster_evolve",
+                ["wagstaff_buster_parallel"]        = "wagstaff_buster_mk3",
+                ["wagstaff_ballistic_evolve"]       = "wagstaff_ballistic_evolve",
+                ["wagstaff_ballistic_parallel"]     = "wagstaff_ballistic_mk3",
+                ["wagstaff_thermal_upgrade"]        = "wagstaff_thermal_upgrade",
+                ["wagstaff_thermal_upgrade_parallel"] = "wagstaff_thermal_upgrade_mk3",
+                ["wagstaff_shadow_possession"]      = "wagstaff_shadow_possession",
+                ["wagstaff_celestial_possession"]   = "wagstaff_celestial_possession",
+            }
+            for skill_id, def in pairs(data.SKILLS) do
+                if def.lock_open then
+                    local original_lock_open = def.lock_open
+                    def.lock_open = function(prefabname, activatedskills, readonly)
+                        -- Standard path: engine's activatedskills
+                        local result = original_lock_open(prefabname, activatedskills, readonly)
+                        if result then
+                            return result  -- Preserve special values like "question"
+                        end
+                        -- Fallback: rebuild activatedskills from player tags
+                        -- (synced via MOD RPC's onactivate callbacks)
+                        local player = GLOBAL.ThePlayer
+                        if player and player:HasTag("wagstaff") then
+                            local enriched = {}
+                            if activatedskills then
+                                for k, v in pairs(activatedskills) do enriched[k] = v end
+                            end
+                            for sid, tag in pairs(SKILL_ID_TO_TAG) do
+                                if player:HasTag(tag) then
+                                    enriched[sid] = true
+                                end
+                            end
+                            result = original_lock_open(prefabname, enriched, readonly)
+                            if result then
+                                return result
+                            end
+                        end
+                        return false
+                    end
+                end
+            end
+            WagstaffDebug("Wrapped lock_open functions with tag-based activatedskills fallback")
+
             -- Register skill tree with the engine
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
