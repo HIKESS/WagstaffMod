@@ -287,71 +287,21 @@ end
 
 local function WagstaffPublishRPCLookup()
     local lookup = WagstaffGetRPCLookup()
-    if lookup and GLOBAL.TheSkillTree then
-        GLOBAL.TheSkillTree.RPC_LOOKUP = lookup
-        local count = 0
-        for _ in pairs(lookup) do
-            count = count + 1
-        end
-        WagstaffDebug("Published Wagstaff RPC_LOOKUP to TheSkillTree, count:", count)
-        
-        -- CRITICAL FIX: Replicate RPC_LOOKUP to clients
-        -- When caves are enabled, clients need to receive the RPC_LOOKUP table
-        -- This ensures SetSkillActivatedState RPCs work correctly
-        if not GLOBAL.TheWorld.ismastersim and GLOBAL.TheNet then
-            WagstaffDebug("[CLIENT] RPC_LOOKUP received, count:", count)
-            
-            -- FIX CLIENTE: Intercepta ActivateSkill no cliente para garantir que envia o ID correto
-            local function installClientHook()
-                if GLOBAL.ThePlayer and GLOBAL.ThePlayer.components and GLOBAL.ThePlayer.components.skilltreeupdater then
-                    local old_ActivateSkill_client = GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill
-                    GLOBAL.ThePlayer.components.skilltreeupdater.ActivateSkill = function(self, skill, prefab, fromrpc)
-                        WagstaffDebug("[CLIENTE] ActivateSkill chamado: skill=", tostring(skill), "type=", type(skill), "fromrpc=", tostring(fromrpc))
-                        
-                        -- Se skill for "RPC" ou nil, isso indica um bug na UI - precisamos bloquear
-                        if not skill or skill == "RPC" then
-                            WagstaffDebug("[CLIENTE] ERRO CRITICO: skill é '", tostring(skill), "' - ISSO É UM BUG DA UI")
-                            WagstaffDebug("[CLIENTE] Stack trace provavel: widget/skilltree_widget.lua esta chamando ActivateSkill com parametro errado")
-                            -- NAO retornamos false aqui - vamos deixar o engine original tentar processar
-                            -- pois pode ser que o engine consiga resolver internamente
-                        end
-                        
-                        -- Se for string e fromrpc=true, precisamos converter para ID numérico
-                        if fromrpc and type(skill) == "string" then
-                            local rpc_id = WagstaffResolveSkillRPCID(skill)
-                            if rpc_id then
-                                WagstaffDebug("[CLIENTE] Convertendo skill '", skill, "' para ID RPC:", rpc_id)
-                                skill = rpc_id
-                            else
-                                WagstaffDebug("[CLIENTE] AVISO: Skill '", skill, "' nao encontrada no RPC_LOOKUP, enviando como string")
-                            end
-                        end
-                        
-                        WagstaffDebug("[CLIENTE] Enviando ActivateSkill com skill=", tostring(skill))
-                        return old_ActivateSkill_client(self, skill, prefab, fromrpc)
-                    end
-                    WagstaffDebug("[CLIENTE] Hook ActivateSkill instalado no skilltreeupdater")
-                    return true
-                end
-                return false
-            end
-            
-            -- Tenta instalar imediatamente
-            if not installClientHook() then
-                -- Se falhar, tenta novamente após 0.5s e 1s (caso o jogador ainda esteja carregando)
-                GLOBAL.TheWorld:DoTaskInTime(0.5, function()
-                    if not installClientHook() then
-                        GLOBAL.TheWorld:DoTaskInTime(1.0, function()
-                            installClientHook()
-                        end)
-                    end
-                end)
-            end
-        end
-        
-        return true
+    if not lookup or not GLOBAL.TheSkillTree then return false end
+
+    -- MERGE wagstaff entries into the existing RPC_LOOKUP instead of replacing.
+    -- Replacing would wipe out vanilla character entries and break their skills.
+    if GLOBAL.TheSkillTree.RPC_LOOKUP == nil then
+        GLOBAL.TheSkillTree.RPC_LOOKUP = {}
     end
-    return false
+    local merged_count = 0
+    for rpc_id, skill_name in pairs(lookup) do
+        GLOBAL.TheSkillTree.RPC_LOOKUP[rpc_id] = skill_name
+        merged_count = merged_count + 1
+    end
+    WagstaffDebug("Merged Wagstaff RPC_LOOKUP into TheSkillTree, count:", merged_count)
+
+    return true
 end
 
 local function WagstaffScheduleRPCPublish()
@@ -991,8 +941,9 @@ local PortalAffinity = nil
 
 modimport("imports/william_dispenser_tint")
 
--- Skill helper functions - MUST be loaded before prefabs that use them
-modimport("wagstaff_skill_helpers")
+-- Skill helper functions are defined inline in this file (G.WagstaffHasSkill, G.WagstaffMechanicalEfficiencyRoll)
+-- The old wagstaff_skill_helpers.lua used a broken GetSkillTree() method that doesn't exist.
+-- Do NOT modimport it here.
 
 -- Affinity pulse module: exposed as global so prefabs can use it
 
@@ -1928,6 +1879,37 @@ local SkillTreeDefs = require("prefabs/skilltree_defs")
 -- Store the skill definitions for later use
 G.WagstaffSkillDefs = nil
 
+-- Helper: after CreateSkillTreeFor assigns numeric RPC IDs, add numeric-key
+-- aliases to SkillTreeDefs.SKILLS["wagstaff"] so the engine's SetSkillActivatedState
+-- RPC handler can validate skills by their numeric ID.
+-- The engine validates: SkillTreeDefs.SKILLS[charname][numeric_rpc_id]
+-- But our SKILLS table uses string keys (skill names). Without these aliases,
+-- the lookup always returns nil and ALL skill activation RPCs are rejected.
+local function WagstaffAddNumericSkillAliases(SkillTreeDefs)
+    if not SkillTreeDefs or not SkillTreeDefs.SKILLS or not SkillTreeDefs.SKILLS["wagstaff"] then
+        return
+    end
+    local meta = SkillTreeDefs.SKILLTREE_METAINFO
+        and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
+    if not meta or not meta.RPC_LOOKUP then
+        -- Try SKILLTREE_DEFS fallback
+        if SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
+            meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
+        end
+    end
+    if not meta or not meta.RPC_LOOKUP then return end
+
+    local skills = SkillTreeDefs.SKILLS["wagstaff"]
+    local alias_count = 0
+    for numeric_id, skill_name in pairs(meta.RPC_LOOKUP) do
+        if type(numeric_id) == "number" and skills[skill_name] then
+            skills[numeric_id] = skills[skill_name]
+            alias_count = alias_count + 1
+        end
+    end
+    WagstaffDebug("Added", alias_count, "numeric-key aliases to SKILLS.wagstaff for RPC validation")
+end
+
 local CreateSkillTree = function()
     WagstaffDebug("CreateSkillTree called")
 
@@ -1963,173 +1945,27 @@ local CreateSkillTree = function()
             G.WagstaffSkillDefs = data.SKILLS
             WagstaffDebug("Saved skill definitions to G.WagstaffSkillDefs")
 
-            -- Registrar a skill tree ANTES de criar o RPC_LOOKUP
-            WagstaffDebug("[VERBOSE] Criando skill tree para wagstaff...")
+            -- Register skill tree with the engine
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
-                WagstaffDebug("=== INICIANDO CreateSkillTreeFor ===")
-                WagstaffDebug("SkillTreeDefs antes:", type(SkillTreeDefs))
-                WagstaffDebug("SKILLS antes: tem wagstaff?", SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS["wagstaff"] ~= nil)
-                
                 local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
                 if not ok then
                     WagstaffDebug("CreateSkillTreeFor FAILED:", tostring(err))
                 else
                     WagstaffDebug("CreateSkillTreeFor succeeded")
                 end
-                
-                -- DEBUG AGRESSIVO: Verificar se RPC_LOOKUP foi criado corretamente
-                WagstaffDebug("=== VERIFICACAO DO RPC_LOOKUP ===")
-                local rpc_lookup_to_use = nil
-                if SkillTreeDefs and SkillTreeDefs.RPC_LOOKUP then
-                    rpc_lookup_to_use = SkillTreeDefs.RPC_LOOKUP
-                    WagstaffDebug("RPC_LOOKUP existe em SkillTreeDefs!")
-                elseif GLOBAL.TheSkillTree and GLOBAL.TheSkillTree.RPC_LOOKUP then
-                    rpc_lookup_to_use = GLOBAL.TheSkillTree.RPC_LOOKUP
-                    WagstaffDebug("RPC_LOOKUP existe em GLOBAL.TheSkillTree!")
-                else
-                    WagstaffDebug("RPC_LOOKUP NAO EXISTE EM LUGAR NENHUM!")
-                end
-                
-                if rpc_lookup_to_use then
-                    local rpc_count = 0
-                    for k, v in pairs(rpc_lookup_to_use) do
-                        rpc_count = rpc_count + 1
-                        if rpc_count <= 20 then
-                            WagstaffDebug("  RPC_LOOKUP[", k, "] =", v)
-                        end
-                    end
-                    WagstaffDebug("Total entries in RPC_LOOKUP:", rpc_count)
-                    
-                    -- Verificar especificamente as skills dos bots
-                    WagstaffDebug("=== VERIFICANDO SKILLS DOS BOTS NO RPC_LOOKUP ===")
-                    local bot_skills = {"wagstaff_brute_evolve", "wagstaff_buster_evolve", "wagstaff_ballistic_evolve", "wagstaff_butler_evolve", "wagstaff_brute_mk3", "wagstaff_buster_mk3", "wagstaff_ballistic_mk3", "wagstaff_butler_mk3"}
-                    for _, skill_name in ipairs(bot_skills) do
-                        local found = false
-                        for k, v in pairs(rpc_lookup_to_use) do
-                            if v == skill_name then
-                                WagstaffDebug("  [OK]", skill_name, "-> ID:", k)
-                                found = true
-                                break
-                            end
-                        end
-                        if not found then
-                            WagstaffDebug("  [ERRO]", skill_name, "NAO ENCONTRADO NO RPC_LOOKUP!")
-                        end
-                    end
-                end
-                
-                WagstaffDebug("=== POS CreateSkillTreeFor ===")
-                WagstaffDebug("SKILLS depois:", type(SkillTreeDefs.SKILLS), "wagstaff exists?", SkillTreeDefs.SKILLS and SkillTreeDefs.SKILLS["wagstaff"] ~= nil)
-                
-                -- DEBUG AGRESSIVO: Verificar TODAS as estruturas do SkillTreeDefs
-                WagstaffDebug("=== VERIFICACAO COMPLETA DO SKILLTREEDEFS ===")
-                WagstaffDebug("SkillTreeDefs keys:", dump_table_keys(SkillTreeDefs))
-                
-                -- Verificar se TheSkillTree.RPC_LOOKUP foi criado
-                if GLOBAL.TheSkillTree then
-                    WagstaffDebug("GLOBAL.TheSkillTree EXISTS")
-                    if GLOBAL.TheSkillTree.RPC_LOOKUP then
-                        local rpc_count = 0
-                        for k, v in pairs(GLOBAL.TheSkillTree.RPC_LOOKUP) do 
-                            rpc_count = rpc_count + 1
-                            if rpc_count <= 20 then
-                                WagstaffDebug("TheSkillTree.RPC_LOOKUP[\"" .. tostring(k) .. "\"] = " .. tostring(v))
-                            end
-                        end
-                        WagstaffDebug("TheSkillTree.RPC_LOOKUP TOTAL COUNT: " .. rpc_count)
-                        
-                        -- Verbose: procura especificamente pelas skills dos bots
-                        WagstaffDebug("[VERBOSE] Procurando skills dos bots no RPC_LOOKUP global:")
-                        local bot_skills = {"wagstaff_brute_evolve", "wagstaff_buster_evolve", "wagstaff_ballistic_evolve", "wagstaff_butler_evolve", "wagstaff_brute_mk3", "wagstaff_buster_mk3", "wagstaff_ballistic_mk3", "wagstaff_butler_mk3"}
-                        for _, skill_name in ipairs(bot_skills) do
-                            if GLOBAL.TheSkillTree.RPC_LOOKUP[skill_name] then
-                                WagstaffDebug("[VERBOSE]   ENCONTRADA:", skill_name, "-> ID:", GLOBAL.TheSkillTree.RPC_LOOKUP[skill_name])
-                            else
-                                WagstaffDebug("[VERBOSE]   NAO ENCONTRADA:", skill_name)
-                            end
-                        end
-                    else
-                        WagstaffDebug("ERROR: TheSkillTree.RPC_LOOKUP is NIL!")
-                    end
-                else
-                    WagstaffDebug("ERROR: GLOBAL.TheSkillTree is NIL!")
-                end
-                
-                -- Verify RPC_LOOKUP was created
-                local meta = SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
-                WagstaffDebug("SKILLTREE_METAINFO.wagstaff:", type(meta))
-                if meta then
-                    local rpc_count = 0
-                    if meta.RPC_LOOKUP then
-                        for k, v in pairs(meta.RPC_LOOKUP) do 
-                            rpc_count = rpc_count + 1
-                            if rpc_count <= 5 then
-                                WagstaffDebug("  RPC_LOOKUP[", k, "] =", v)
-                            end
-                        end
-                    end
-                    WagstaffDebug("SKILLTREE_METAINFO.wagstaff EXISTS, RPC_LOOKUP count:", rpc_count, "TOTAL_SKILLS_COUNT:", tostring(meta.TOTAL_SKILLS_COUNT))
-                    
-                    -- Verbose: lista todo o RPC_LOOKUP do meta
-                    WagstaffDebug("[VERBOSE] RPC_LOOKUP completo do meta wagstaff:")
-                    if meta.RPC_LOOKUP then
-                        for k, v in pairs(meta.RPC_LOOKUP) do
-                            WagstaffDebug("[VERBOSE]   ", k, "->", v)
-                        end
-                    else
-                        WagstaffDebug("[VERBOSE]   meta.RPC_LOOKUP é NIL!")
-                    end
-                    
-                    -- Check SKILLTREE_DEFS (engine usa isso!)
-                    if SkillTreeDefs and SkillTreeDefs.SKILLTREE_DEFS then
-                        WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS existe!")
-                        if SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
-                            WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS.wagstaff existe!")
-                            local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
-                            if defs_meta and defs_meta.RPC_LOOKUP then
-                                local defs_rpc_count = 0
-                                for _ in pairs(defs_meta.RPC_LOOKUP) do defs_rpc_count = defs_rpc_count + 1 end
-                                WagstaffDebug("SkillTreeDefs.SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP count:", defs_rpc_count)
-                                
-                                -- Verbose: verifica skills dos bots no SKILLTREE_DEFS
-                                WagstaffDebug("[VERBOSE] Verificando skills dos bots em SKILLTREE_DEFS.wagstaff.meta.RPC_LOOKUP:")
-                                local bot_skills = {"wagstaff_brute_evolve", "wagstaff_buster_evolve", "wagstaff_ballistic_evolve", "wagstaff_butler_evolve", "wagstaff_brute_mk3", "wagstaff_buster_mk3", "wagstaff_ballistic_mk3", "wagstaff_butler_mk3"}
-                                for _, skill_name in ipairs(bot_skills) do
-                                    if defs_meta.RPC_LOOKUP[skill_name] then
-                                        WagstaffDebug("[VERBOSE]   ENCONTRADA em DEFS:", skill_name, "-> ID:", defs_meta.RPC_LOOKUP[skill_name])
-                                    else
-                                        WagstaffDebug("[VERBOSE]   NAO ENCONTRADA em DEFS:", skill_name)
-                                    end
-                                end
-                            end
-                        else
-                            WagstaffDebug("ERROR: SkillTreeDefs.SKILLTREE_DEFS.wagstaff NAO EXISTE!")
-                        end
-                    else
-                        WagstaffDebug("ERROR: SkillTreeDefs.SKILLTREE_DEFS global NAO EXISTE!")
-                    end
-                else
-                    WagstaffDebug("WARNING: SKILLTREE_METAINFO.wagstaff is NIL after CreateSkillTreeFor!")
-                end
             elseif type(SkillTreeDefs.FN) == "function" then
-                print("[WAGSTAFF DEBUG] Using SkillTreeDefs.FN")
                 SkillTreeDefs.FN("wagstaff", data.SKILLS)
             end
-            -- CRITICAL FIX: Must populate SkillTreeDefs.SKILLS["wagstaff"] here!
-            -- The engine's SetSkillActivatedState validation checks SkillTreeDefs.SKILLS[charname]
-            -- to verify that a skill RPC is valid. If SKILLS["wagstaff"] is nil, ALL client skill
-            -- activation RPCs are rejected with "Invalid SetSkillActivatedState no skill with id".
-            -- CreateSkillTreeFor does NOT populate SKILLS, only SKILLTREE_DEFS.
+
+            -- CRITICAL: Re-set SKILLS after CreateSkillTreeFor (engine may overwrite it)
+            -- and add numeric-key aliases so the engine's SetSkillActivatedState RPC
+            -- handler can validate: SkillTreeDefs.SKILLS["wagstaff"][numeric_rpc_id]
             SkillTreeDefs.SKILLS["wagstaff"] = data.SKILLS
-            WagstaffDebug("Set SkillTreeDefs.SKILLS.wagstaff with", skillCount, "skills for RPC validation")
-            print("[WAGSTAFF DEBUG] Skill tree registered with " .. skillCount .. " skills for wagstaff")
+            WagstaffAddNumericSkillAliases(SkillTreeDefs)
 
             SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
-            print("[WAGSTAFF DEBUG] Set SkillTreeDefs.SKILLTREE_ORDERS.wagstaff")
-            
-            -- Merge BACKGROUND_SETTINGS into existing METAINFO - don't overwrite
-            -- CreateSkillTreeFor already set RPC_LOOKUP, TOTAL_SKILLS_COUNT etc.
-            -- Overwriting the whole table would destroy RPC_LOOKUP and break skill activation.
+
+            -- Merge BACKGROUND_SETTINGS into METAINFO without overwriting RPC_LOOKUP
             if SkillTreeDefs.SKILLTREE_METAINFO == nil then
                 SkillTreeDefs.SKILLTREE_METAINFO = {}
             end
@@ -2138,36 +1974,9 @@ local CreateSkillTree = function()
             end
             SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"].BACKGROUND_SETTINGS = data.BACKGROUND_SETTINGS
 
-            -- CRITICAL FIX: NÃO inverter o RPC_LOOKUP!
-            -- O engine DST espera o formato {rpc_id -> skill_name} que o CreateSkillTreeFor cria.
-            -- Quando o cliente envia um RPC de ativação de skill, o engine faz:
-            --   GetSkillNameFromID(rpc_id) que procura no RPC_LOOKUP[rpc_id] para achar o nome.
-            -- Se invertermos para {skill_name -> rpc_id}, o engine não encontra o ID e retorna
-            -- "Invalid SetSkillActivatedState no skill with id".
-            -- O formato {skill_name -> rpc_id} é útil APENAS localmente para o helper
-            -- WagstaffResolveSkillRPCID, que já faz a busca reversa corretamente.
-            if SkillTreeDefs.SKILLTREE_METAINFO and SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"] then
-                local meta = SkillTreeDefs.SKILLTREE_METAINFO["wagstaff"]
-                if meta.RPC_LOOKUP then
-                    -- NÃO inverter! Manter {rpc_id -> skill_name} como o engine criou
-                    WagstaffDebug("[FIX] RPC_LOOKUP mantido no formato original {id->name}, count:", count_table(meta.RPC_LOOKUP))
-                end
-            end
-            
-            -- Also fix SKILLTREE_DEFS if it exists — mesma lógica, NÃO inverter
-            if SkillTreeDefs.SKILLTREE_DEFS and SkillTreeDefs.SKILLTREE_DEFS["wagstaff"] then
-                local defs_meta = SkillTreeDefs.SKILLTREE_DEFS["wagstaff"].meta
-                if defs_meta and defs_meta.RPC_LOOKUP then
-                    -- NÃO inverter! Manter {rpc_id -> skill_name} como o engine criou
-                    WagstaffDebug("[FIX] SKILLTREE_DEFS RPC_LOOKUP mantido no formato original {id->name}")
-                end
-            end
-
-            -- Publica o RPC_LOOKUP quando possivel. Em mundos com caves, TheSkillTree
-            -- costuma ficar nil neste ponto e aparecer alguns frames depois.
+            -- Publish RPC_LOOKUP to TheSkillTree (merge, don't replace)
             WagstaffScheduleRPCPublish()
 
-            -- Created wagstaff skill tree
             WagstaffDebug("Successfully created wagstaff skill tree")
         end
     end
