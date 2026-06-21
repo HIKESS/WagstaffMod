@@ -1786,6 +1786,7 @@ local function WagstaffWilliamPostInit(inst)
             end
         end
     end
+end
 
 
 AddPrefabPostInit("wagstaff", WagstaffWilliamPostInit)
