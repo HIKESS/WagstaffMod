@@ -1,10 +1,13 @@
 -- Wagstaff Skill Tree
 local GAP = 38
+-- ORDERS: one entry per branch with {x, y} header position in the skill tree UI.
+-- Format matches DST's standard: {branch_name, {x_offset, y_offset}}.
+-- x = horizontal center of the branch column, y = vertical position of branch header.
 local ORDERS =
 {
-    {"mechanical", { 9999, 9999 }},
-    {"robotic",    { 9999, 9999 }},
-    {"allegiance", { 9999, 9999 }},
+    {"mechanical", { -169, 202 }},
+    {"robotic",    {    1, 202 }},
+    {"allegiance", {  178, 130 }},
 }
 
 local function BuildSkillsData(SkillTreeFns)

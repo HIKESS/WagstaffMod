@@ -1786,6 +1786,7 @@ local function WagstaffWilliamPostInit(inst)
             end
         end
     end
+end
 
 
 AddPrefabPostInit("wagstaff", WagstaffWilliamPostInit)
@@ -2428,24 +2429,21 @@ local CreateSkillTree = function()
             end
             WagstaffDebug("Wrapped lock_open functions with tag-based activatedskills fallback")
 
-            -- Register skill tree with the engine
+            -- Register skill tree with the engine (matches reference mod pattern)
             if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
-                local ok, err = GLOBAL.pcall(SkillTreeDefs.CreateSkillTreeFor, "wagstaff", data.SKILLS)
-                if not ok then
-                    WagstaffDebug("CreateSkillTreeFor FAILED:", tostring(err))
-                else
-                    WagstaffDebug("CreateSkillTreeFor succeeded")
-                end
+                SkillTreeDefs.CreateSkillTreeFor("wagstaff", data.SKILLS)
+                WagstaffDebug("CreateSkillTreeFor succeeded")
             elseif type(SkillTreeDefs.FN) == "function" then
                 SkillTreeDefs.FN("wagstaff", data.SKILLS)
             end
+
+            -- Set ORDERS AFTER CreateSkillTreeFor (matches reference mod pattern)
+            SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
 
             -- CRITICAL: After CreateSkillTreeFor assigns numeric RPC IDs, add numeric-key
             -- aliases to SKILLS["wagstaff"] so the engine's SetSkillActivatedState
             -- RPC handler can validate skills by their numeric ID.
             WagstaffAddNumericSkillAliases(SkillTreeDefs)
-
-            SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
 
             -- Merge BACKGROUND_SETTINGS into METAINFO without overwriting RPC_LOOKUP
             if SkillTreeDefs.SKILLTREE_METAINFO == nil then
