@@ -206,7 +206,6 @@ end
 local function TurnOff(inst, doer, instant)
     local GLOBAL = _G
     inst.on = false
-    -- Debug removed
 
                 if inst._task ~= nil then
                     inst._task:Cancel()
@@ -222,7 +221,6 @@ local function TurnOff(inst, doer, instant)
     if not GLOBAL.TheWorld.ismastersim then return end
     
     if inst:HasTag("container") then
-        -- Debug removed
         inst._had_container_tag = true
         inst:RemoveTag("container")
         -- FECHAR O CONTAINER PRIMEIRO para evitar crash (protegido com pcall)
@@ -231,9 +229,7 @@ local function TurnOff(inst, doer, instant)
                 inst.components.container:Close()
             end)
             if not ok then
-                -- Debug removed
             else
-                -- Debug removed
             end
         end
         -- REMOVER O COMPONENTE COMPLETAMENTE (isso evita que pareça um baú)
@@ -242,9 +238,7 @@ local function TurnOff(inst, doer, instant)
                 inst:RemoveComponent("container")
             end)
             if not ok then
-                -- Debug removed
             else
-                -- Debug removed
             end
         end
     end
@@ -253,21 +247,37 @@ local function TurnOff(inst, doer, instant)
         inst.components.combat:SetTarget(nil)
     inst.components.combat:SetRetargetFunction(nil)
     inst.components.combat:SetKeepTargetFunction(nil)
---      inst.components.health:SetInvincible(true)
     inst.sg:GoToState("turn_off")
     
-    -- ADD ACTIVATION WORKABLE: Allow clicking to turn on when deactivated
+    -- When OFF: hammering BREAKS the bot (like buster/ballistic behavior)
+    -- NOT ACTIVATE - to turn back on, player must add fuel first
     if inst.components.workable == nil then
         inst:AddComponent("workable")
     end
-    inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-    inst.components.workable:SetOnFinishCallback(function(inst, doer)
-        -- Debug removed
-        TurnOn(inst, doer)
+    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+    inst.components.workable:SetWorkLeft(4)
+    inst.components.workable:SetOnFinishCallback(OnHammered)
+    inst.components.workable:SetOnWorkCallback(onworked)
+
+    -- Add fuel listener: when fuel is added while OFF, switch to ACTIVATE
+    inst._fuel_activate_listener = inst:ListenForEvent("percentusedchange", function()
+        if inst.on == false and not inst.components.fueled:IsEmpty() then
+            if inst.components.workable then
+                inst:RemoveComponent("workable")
+            end
+            inst:AddComponent("workable")
+            inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
+            inst.components.workable:SetWorkLeft(1)
+            inst.components.workable:SetOnFinishCallback(function(inst, doer)
+                TurnOn(inst, doer)
+            end)
+            -- Remove this listener once activated
+            if inst._fuel_activate_listener then
+                inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
+                inst._fuel_activate_listener = nil
+            end
+        end
     end)
-    inst.components.workable:SetWorkLeft(1)
-    
-    -- Debug removed
 end
 
 
@@ -321,11 +331,21 @@ local function TurnOn(inst, doer, instant)
         end
     end
     
-    -- REMOVE ACTIVATION WORKABLE: Remove the activation click when turning on
-    if inst.components.workable and inst.components.workable.action == ACTIONS.ACTIVATE then
-        -- Debug removed
+    -- RESTORE HAMMER WORKABLE: When turning on, restore workable to HAMMER
+    -- (OnHammered returns early when on=true, so hammering does nothing while ON)
+    -- Remove fuel activate listener since we're turning on
+    if inst._fuel_activate_listener then
+        inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
+        inst._fuel_activate_listener = nil
+    end
+    if inst.components.workable then
         inst:RemoveComponent("workable")
     end
+    inst:AddComponent("workable")
+    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+    inst.components.workable:SetWorkLeft(4)
+    inst.components.workable:SetOnFinishCallback(OnHammered)
+    inst.components.workable:SetOnWorkCallback(onworked)
 
     inst.components.fueled:StartConsuming()
     -- Debug removed
@@ -389,7 +409,7 @@ end
 local function onsave(inst, data)
     data.on = inst.on
     data.level = inst.level
-    -- Only save leader for MK2+ (which have follower component)
+    -- Save leader for all versions (MK1 now has follower too)
     if inst.components.follower and inst.components.follower:GetLeader() then
         data.leader_guid = inst.components.follower:GetLeader().GUID
     end
@@ -410,7 +430,7 @@ local function onload(inst, data)
         inst.upgradelevel = data.upgradelevel
     end
 
-    -- Restore leader (only for MK2+ which have follower component)
+    -- Restore leader (MK1 now has follower too)
     if data.leader_guid ~= nil and inst.components.follower ~= nil then
         inst:DoTaskInTime(0, function()
             local leader = Ents[data.leader_guid]
@@ -552,8 +572,11 @@ inst.components.burnable.ignorefuel = true
     inst.components.workable:SetOnFinishCallback(OnHammered)
     inst.components.workable:SetOnWorkCallback(onworked)
 
-    -- MK1: NO follower component (original mod behavior - stationary guard)
-    -- Follower is added in MK2 (fn2) when upgraded
+    -- MK1: Add follower component so brute follows player after craft
+    inst:AddComponent("follower")
+    inst.components.follower:KeepLeaderOnAttacked()
+    inst.components.follower.keepdeadleader = true
+    inst.components.follower.keepleaderduringminigame = true
 
     -- Named component for status display
     inst:AddComponent("named")
@@ -1183,11 +1206,29 @@ inst.components.burnable.ignorefuel = true
                 if inst.components.workable == nil then
                     inst:AddComponent("workable")
                 end
-                inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-                inst.components.workable:SetOnFinishCallback(function(inst, doer)
-                    TurnOn(inst, doer)
+                -- Same as TurnOff: when OFF, hammering BREAKS the bot
+                inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+                inst.components.workable:SetWorkLeft(4)
+                inst.components.workable:SetOnFinishCallback(OnHammered)
+                inst.components.workable:SetOnWorkCallback(onworked)
+                -- Add fuel listener to enable ACTIVATE when refueled
+                inst._fuel_activate_listener = inst:ListenForEvent("percentusedchange", function()
+                    if inst.on == false and not inst.components.fueled:IsEmpty() then
+                        if inst.components.workable then
+                            inst:RemoveComponent("workable")
+                        end
+                        inst:AddComponent("workable")
+                        inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
+                        inst.components.workable:SetWorkLeft(1)
+                        inst.components.workable:SetOnFinishCallback(function(inst, doer)
+                            TurnOn(inst, doer)
+                        end)
+                        if inst._fuel_activate_listener then
+                            inst:RemoveEventCallback("percentusedchange", inst._fuel_activate_listener)
+                            inst._fuel_activate_listener = nil
+                        end
+                    end
                 end)
-                inst.components.workable:SetWorkLeft(1)
             end
             
             inst:DoTaskInTime(0, function()
@@ -1390,7 +1431,8 @@ local function onbuilt(inst, builder)
         if robot ~= nil then
     robot.Transform:SetPosition(inst.Transform:GetWorldPosition())
     robot.components.knownlocations:RememberLocation("home", inst:GetPosition())
-    robot.components.willyraise:Rise()
+    -- Pass builder so TurnOn can set leader immediately
+    robot.components.willyraise:Rise(robot, builder)
         robot.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
                     local x, y, z = robot.Transform:GetWorldPosition()
     SpawnPrefab("maxwell_smoke").Transform:SetPosition(x, y, z)

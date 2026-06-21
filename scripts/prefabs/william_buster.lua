@@ -483,7 +483,6 @@ end
         inst:AddTag("mech")
 
     inst:SetPrefabNameOverride("williambuster")
-    inst:AddTag("_named")
 
         inst.entity:SetPristine()
 
@@ -744,7 +743,7 @@ inst.components.burnable.ignorefuel = true
     local function active2(inst)
         local inst = active(inst)
 
-        inst:AddTag("_named")
+        -- _named tag removed (causes on-hover display issues)
         inst:AddTag("buster_upgraded")
 
         if not TheWorld.ismastersim then
@@ -1017,7 +1016,7 @@ inst.components.burnable.ignorefuel = true
     local function active3(inst)
         local inst = active2(inst)
 
-        inst:AddTag("_named")
+        -- _named tag removed (causes on-hover display issues)
         inst:AddTag("buster_upgraded_mk3")
 
         if not TheWorld.ismastersim then

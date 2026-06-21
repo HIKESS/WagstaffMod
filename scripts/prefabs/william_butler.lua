@@ -57,16 +57,9 @@ local function UpdateButlerName(inst)
         inst.components.named:SetName(name_str)
     end
     
-    -- Directly set inst.name for hover display
+    -- Directly set inst.name and GetDisplayName for hover display
     inst.name = name_str
-    
-    -- Override GetDisplayName if available
-    if inst.GetDisplayName ~= nil then
-        local old_fn = inst.GetDisplayName
-        inst.GetDisplayName = function(self)
-            return name_str
-        end
-    end
+    inst.GetDisplayName = function() return name_str end
 end
 
 -- Helper function to check if bot's owner has affinity skills

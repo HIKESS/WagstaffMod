@@ -102,16 +102,16 @@ params.williambrute3 =
     {
         slotpos =
         {
-            -- 3x3 grid, same positions as treasurechest
-            Vector3(-162, 75, 0),
-            Vector3(-81, 75, 0),
-            Vector3(0, 75, 0),
-            Vector3(-162, -4, 0),
-            Vector3(-81, -4, 0),
-            Vector3(0, -4, 0),
-            Vector3(-162, -83, 0),
-            Vector3(-81, -83, 0),
-            Vector3(0, -83, 0),
+            -- 3x3 grid matching standard treasurechest layout
+            Vector3(-81 - 76, 32 + 36, 0),
+            Vector3(-81, 32 + 36, 0),
+            Vector3(-81 + 76, 32 + 36, 0),
+            Vector3(-81 - 76, 32 - 36 - 8, 0),
+            Vector3(-81, 32 - 36 - 8, 0),
+            Vector3(-81 + 76, 32 - 36 - 8, 0),
+            Vector3(-81 - 76, 32 - 36 - 8 - 72, 0),
+            Vector3(-81, 32 - 36 - 8 - 72, 0),
+            Vector3(-81 + 76, 32 - 36 - 8 - 72, 0),
         },
         animbank = "ui_chest_3x3",
         animbuild = "ui_chest_3x3",
