@@ -390,11 +390,14 @@ G.c_wagstaff_profile = function()
             print("  NIL")
         end
         print("\nPlayer tags containing 'wagstaff_':")
-        for i, tag in ipairs(player:GetTags()) do
-            if type(tag) == "string" and tag:find("wagstaff_") then
-                print("  "..tag)
+        if player.GetTags then
+            for i, tag in ipairs(player:GetTags()) do
+                if type(tag) == "string" and tag:find("wagstaff_") then
+                    print("  "..tag)
+                end
             end
-        end
+        else
+            print("  (GetTags not available on server)")
     end
     print("=== End Profile Debug ===")
 end
@@ -457,27 +460,8 @@ AddModRPCHandler("wagstaff_standalone", "WagstaffSkillActivate", function(player
         updater:DirtySkillTree()
     end
 
-    -- CRITICAL: Also persist to TheSkillTree profile so skills survive rejoins.
-    -- The engine's built-in RPC fails for mod characters, so we must do this manually.
-    if GLOBAL.TheSkillTree then
-        local rpc_id = WagstaffResolveSkillRPCID(skill_name)
-        -- Try numeric ID first (engine's preferred format)
-        if rpc_id ~= nil then
-            local ok, err = G.pcall(function()
-                GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", rpc_id, activated)
-            end)
-            if not ok then
-                WagstaffDebug("[MOD RPC] TheSkillTree:SetSkillActivatedState(numeric) failed:", tostring(err))
-            end
-        end
-        -- Also try string name as fallback
-        local ok2, err2 = G.pcall(function()
-            GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", skill_name, activated)
-        end)
-        if not ok2 then
-            WagstaffDebug("[MOD RPC] TheSkillTree:SetSkillActivatedState(string) failed:", tostring(err2))
-        end
-    end
+    -- NOTE: TheSkillTree:SetSkillActivatedState does NOT exist on the server.
+    -- Skills are persisted via world save (OnSave/OnLoad) as a reliable fallback.
 end)
 
 -- Lazy resolver for the MOD RPC handle (safe to call anytime)
@@ -1483,19 +1467,6 @@ local function WagstaffWilliamPostInit(inst)
 
                 WagstaffDebug("[ActivateSkill] SERVER: Directly activated", skill_name)
 
-                -- Persist to TheSkillTree profile so skills survive rejoins
-                if GLOBAL.TheSkillTree then
-                    local rpc_id = WagstaffResolveSkillRPCID(skill_name)
-                    if rpc_id ~= nil then
-                        G.pcall(function()
-                            GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", rpc_id, true)
-                        end)
-                    end
-                    G.pcall(function()
-                        GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", skill_name, true)
-                    end)
-                end
-
                 -- Also try the original for network sync (ignore if it fails)
                 local skill_to_pass = skill
                 if fromrpc and type(skill) == "string" then
@@ -1569,18 +1540,6 @@ local function WagstaffWilliamPostInit(inst)
                     else
                         inst:RemoveTag(skill_name)
                     end
-                    -- Persist deactivation to TheSkillTree profile
-                    if GLOBAL.TheSkillTree then
-                        local rpc_id = WagstaffResolveSkillRPCID(skill_name)
-                        if rpc_id ~= nil then
-                            G.pcall(function()
-                                GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", rpc_id, false)
-                            end)
-                        end
-                        G.pcall(function()
-                            GLOBAL.TheSkillTree:SetSkillActivatedState("wagstaff", skill_name, false)
-                        end)
-                    end
                 end
 
                 local result = G.pcall(old_DeactivateSkill, self, skill, prefab, fromrpc)
@@ -1592,56 +1551,36 @@ local function WagstaffWilliamPostInit(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
 
     --==================================================================================
-    -- SERVER-ONLY: Delayed load from TheSkillTree profile
+    -- SERVER-ONLY: Fix EncodeSkillTreeData crash (mixed number/string keys)
     --==================================================================================
-    -- TheSkillTree may not be fully initialized when OnLoad fires.
-    -- Schedule a delayed check to load any missing skills from the profile.
+    -- The engine's EncodeSkillTreeData sorts activatedskillsarray, which crashes
+    -- if numeric keys (from engine RPC) are mixed with string keys (from our MOD RPC).
+    -- Wrap DirtySkillTree to strip non-string keys before syncing.
     --==================================================================================
-    inst:DoTaskInTime(1, function()
-        if inst.components and inst.components.skilltreeupdater then
-            local activated = inst.components.skilltreeupdater.activatedskills
-            if not activated or next(activated) == nil then
-                if GLOBAL.TheSkillTree then
-                    local profile_skills = nil
-                    G.pcall(function()
-                        profile_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
-                    end)
-                    if profile_skills and next(profile_skills) ~= nil then
-                        activated = {}
-                        inst.components.skilltreeupdater.activatedskills = activated
-                        local lookup = WagstaffGetRPCLookup()
-                        for _, s_name in GLOBAL.ipairs(profile_skills) do
-                            if type(s_name) == "string" then
-                                activated[s_name] = true
-                            elseif type(s_name) == "number" and lookup then
-                                local resolved = lookup[s_name]
-                                if resolved then
-                                    activated[resolved] = true
-                                end
-                            end
-                        end
-                        local skill_count = 0
-                        for _ in pairs(activated) do skill_count = skill_count + 1 end
-                        if skill_count > 0 then
-                            WagstaffDebug("Delayed load: loaded", skill_count, "skills from TheSkillTree profile")
-                            -- Re-apply onactivate callbacks
-                            if G.WagstaffSkillDefs then
-                                for skill_name, _ in pairs(activated) do
-                                    local def = G.WagstaffSkillDefs[skill_name]
-                                    if def and def.onactivate then
-                                        def.onactivate(inst, true)
-                                    end
-                                end
-                            end
-                            if inst.components.skilltreeupdater.DirtySkillTree then
-                                inst.components.skilltreeupdater:DirtySkillTree()
-                            end
+    if inst.components.skilltreeupdater then
+        local old_DirtySkillTree = inst.components.skilltreeupdater.DirtySkillTree
+        if old_DirtySkillTree then
+            inst.components.skilltreeupdater.DirtySkillTree = function(self)
+                -- Clean activatedskills: remove any non-string keys (numeric IDs from engine RPC)
+                if self.activatedskills then
+                    for k, _ in pairs(self.activatedskills) do
+                        if type(k) ~= "string" then
+                            self.activatedskills[k] = nil
                         end
                     end
                 end
+                -- Also clean the skilltree object's activatedskills if accessible
+                if self.skilltree and self.skilltree.activatedskills then
+                    for k, _ in pairs(self.skilltree.activatedskills) do
+                        if type(k) ~= "string" then
+                            self.skilltree.activatedskills[k] = nil
+                        end
+                    end
+                end
+                return old_DirtySkillTree(self)
             end
         end
-    end)
+    end
 
     --==================================================================================
     -- SERVER-ONLY: Wrap SetSkillActivatedState
@@ -1773,6 +1712,23 @@ local function WagstaffWilliamPostInit(inst)
         end
         data = data or {}
         data.wagstaff_received_starting_items = inst.wagstaff_received_starting_items
+        -- Save activated skill names to world save as reliable fallback.
+        -- The engine's profile-based sync fails for mod characters, so we
+        -- save to the player entity's world save data. OnLoad restores them.
+        if inst.components and inst.components.skilltreeupdater then
+            local activated = inst.components.skilltreeupdater.activatedskills
+            if activated and next(activated) ~= nil then
+                local saved_skills = {}
+                for skill_name, v in pairs(activated) do
+                    if type(skill_name) == "string" then
+                        table.insert(saved_skills, skill_name)
+                    end
+                end
+                if #saved_skills > 0 then
+                    data.wagstaff_activated_skills = saved_skills
+                end
+            end
+        end
         WagstaffDebug("Player OnSave done")
         return data
     end
@@ -1789,66 +1745,47 @@ local function WagstaffWilliamPostInit(inst)
                 inst.wagstaff_received_starting_items = true
                 WagstaffDebug("Restored wagstaff_received_starting_items")
             end
-        end
-
-        -- Re-apply skill tags from activatedskills (profile save) after load.
-        -- DST's skilltreeupdater loads skills from the profile, but the onactivate
-        -- callbacks (which add tags) are NOT called on load. We must re-apply them.
-        if inst.components and inst.components.skilltreeupdater then
-            local activated = inst.components.skilltreeupdater.activatedskills
-            local loaded_any = false
-
-            -- CRITICAL: If activatedskills is empty, try loading from TheSkillTree profile.
-            -- The engine may fail to load mod character skills into activatedskills.
-            if (not activated or next(activated) == nil) and GLOBAL.TheSkillTree then
-                local profile_skills = nil
-                G.pcall(function()
-                    profile_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
-                end)
-                if profile_skills then
-                    activated = {}
-                    inst.components.skilltreeupdater.activatedskills = activated
-                    local lookup = WagstaffGetRPCLookup()
-                    for _, s_name in GLOBAL.ipairs(profile_skills) do
-                        if type(s_name) == "string" then
-                            activated[s_name] = true
-                            loaded_any = true
-                        elseif type(s_name) == "number" and lookup then
-                            local resolved = lookup[s_name]
-                            if resolved then
-                                activated[resolved] = true
-                                loaded_any = true
-                            end
-                        end
-                    end
-                    if loaded_any then
-                        local skill_count = 0
-                        for _ in pairs(activated) do skill_count = skill_count + 1 end
-                        WagstaffDebug("Player OnLoad: loaded", skill_count, "skills from TheSkillTree profile")
-                        -- Dirty to sync to client
-                        if inst.components.skilltreeupdater.DirtySkillTree then
-                            inst.components.skilltreeupdater:DirtySkillTree()
-                        end
+            -- Restore activated skills from world save fallback
+            if data.wagstaff_activated_skills and inst.components and inst.components.skilltreeupdater then
+                local restored = 0
+                inst.components.skilltreeupdater.activatedskills = inst.components.skilltreeupdater.activatedskills or {}
+                for _, skill_name in ipairs(data.wagstaff_activated_skills) do
+                    if type(skill_name) == "string" then
+                        inst.components.skilltreeupdater.activatedskills[skill_name] = true
+                        restored = restored + 1
                     end
                 end
+                if restored > 0 then
+                    WagstaffDebug("Player OnLoad: restored", restored, "skills from world save")
+                end
             end
+        end
 
+        -- Re-apply skill tags from activatedskills after load.
+        -- DST's skilltreeupdater does NOT call onactivate callbacks on load.
+        -- We must re-apply them so tags are correct.
+        if inst.components and inst.components.skilltreeupdater then
+            local activated = inst.components.skilltreeupdater.activatedskills
             if activated and G.WagstaffSkillDefs then
                 local count = 0
                 for skill_name, _ in pairs(activated) do
-                    local def = G.WagstaffSkillDefs[skill_name]
-                    if def and def.onactivate then
-                        def.onactivate(inst, true)  -- fromload = true
-                        count = count + 1
+                    if type(skill_name) == "string" then
+                        local def = G.WagstaffSkillDefs[skill_name]
+                        if def and def.onactivate then
+                            def.onactivate(inst, true)
+                            count = count + 1
+                        end
                     end
                 end
                 if count > 0 then
                     WagstaffDebug("Player OnLoad: re-applied onactivate for", count, "skills")
+                    if inst.components.skilltreeupdater.DirtySkillTree then
+                        inst.components.skilltreeupdater:DirtySkillTree()
+                    end
                 end
             end
         end
     end
-end
 
 
 AddPrefabPostInit("wagstaff", WagstaffWilliamPostInit)
