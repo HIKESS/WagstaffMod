@@ -9,7 +9,7 @@ local prefabs =
 
     local assets =
     {
-	Asset("ANIM", "anim/william_butler.zip"),
+        Asset("ANIM", "anim/william_butler.zip"),
     Asset("ANIM", "anim/ui_chest_3x2.zip"),
     Asset("ANIM", "anim/ui_chest_3x1.zip"),
         Asset("SOUND", "sound/maxwell.fsb"),
@@ -130,24 +130,24 @@ local function MakeAlive(inst, doer)
 end
 
 local function onfuelchange(newsection, oldsection, inst, doer)
-	if newsection >= 0 then
+        if newsection >= 0 then
     local pt = inst:GetPosition()
-	-- BUG FIX: Check petleash before reviving
-	if doer ~= nil and doer:HasTag("williamcrafter") and doer.components.petleash then
-		MakeAlive(inst, doer)
-		end
-	end
+        -- BUG FIX: Check petleash before reviving
+        if doer ~= nil and doer:HasTag("williamcrafter") and doer.components.petleash then
+                MakeAlive(inst, doer)
+                end
+        end
 end
 
 local function OnAddFuel(inst)
-	inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
+        inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
 
-	if inst.sg ~= nil and not inst.sg:HasStateTag("busy") then
+        if inst.sg ~= nil and not inst.sg:HasStateTag("busy") then
     inst.sg:GoToState("fed")
-	end
-	
-	-- Update fuel display when refueled
-	UpdateButlerName(inst)
+        end
+        
+        -- Update fuel display when refueled
+        UpdateButlerName(inst)
     inst:AddTag("alive")
 end
 
@@ -175,9 +175,9 @@ local function OnHammered(inst, worker)
 end
 
 local function onworked(inst)
-	if inst.sg ~= nil then
-	inst.sg:GoToState("hit")
-	end
+        if inst.sg ~= nil then
+        inst.sg:GoToState("hit")
+        end
 end
 
 local function OnFuelEmpty(inst)
@@ -189,22 +189,22 @@ end
 local function oncook(inst, doer)
 
 for k, v in pairs (inst.components.container.slots) do
-			if v.components.cookable ~= nil then
-		local leader = inst.components.follower.leader
-		local cook_pos = inst:GetPosition()
-			inst.sg:GoToState("cook")
-	inst:DoTaskInTime(0.9, function()
+                        if v.components.cookable ~= nil then
+                local leader = inst.components.follower:GetLeader()
+                local cook_pos = inst:GetPosition()
+                        inst.sg:GoToState("cook")
+        inst:DoTaskInTime(0.9, function()
 
 if inst.components.fueled ~= nil then
         inst.components.fueled:DoDelta(-.01 * inst.components.fueled.maxfuel)
     end
 
-	if inst.components.fueled ~= nil and not inst.components.fueled:IsEmpty() then
+        if inst.components.fueled ~= nil and not inst.components.fueled:IsEmpty() then
 
         local ingredient = inst.components.container:RemoveItem(v)
 
 
-	--if ingredient ~= nil then  end
+        --if ingredient ~= nil then  end
 
         v.Transform:SetPosition(cook_pos:Get())
 
@@ -270,22 +270,22 @@ if inst.components.fueled ~= nil then
             inst.components.container:GiveItem(ingredient, nil, cook_pos)
         end
 
-	end
+        end
 
-	end)
-		end
-	end
+        end)
+                end
+        end
 end
 
 local function fuelupdate(inst)
         if inst.components.fueled ~= nil
             and inst.components.fueled.currentfuel <= inst.components.fueled.maxfuel*0.2  then
                 inst:AddTag("lowfuel")
-		else
-	if inst:HasTag("lowfuel") then
+                else
+        if inst:HasTag("lowfuel") then
     inst:RemoveTag("lowfuel")
-	end
-	end
+        end
+        end
     -- Update name with current fuel (now one function handles all versions!)
     UpdateButlerName(inst)
 end
@@ -398,8 +398,8 @@ end
 
 local function onload(inst)
    if inst.components.fueled:IsEmpty() then
-		OnFuelEmpty(inst)
-	end
+                OnFuelEmpty(inst)
+        end
 end
 
 
@@ -424,7 +424,7 @@ end
 
     MakeCharacterPhysics(inst, 50, .5)
         --inst.Physics:SetCollides(true)
-	--inst:DoTaskInTime(0, function() inst.Physics:SetCollides(true) end)
+        --inst:DoTaskInTime(0, function() inst.Physics:SetCollides(true) end)
 
         inst.AnimState:OverrideSymbol("fx_wipe", "wilson_fx", "fx_wipe")
         inst.AnimState:OverrideSymbol("fx_liquid", "wilson_fx", "fx_liquid")
@@ -466,7 +466,7 @@ end
     
     inst:AddComponent("named")
 
-	inst:AddComponent("willyraise")
+        inst:AddComponent("willyraise")
     inst.components.willyraise:SetOnRiseFn(MakeAlive)
     inst.components.willyraise:SetOnLowerFn(OnFuelEmpty)
 
@@ -479,8 +479,8 @@ end
         return inst
     end
 
-	--ACTIVE butler
-	
+        --ACTIVE butler
+        
     local function active(inst)
         local inst = fn(inst)
     MakeCharacterPhysics(inst, 50, .5)
@@ -489,18 +489,18 @@ end
 
         inst.Transform:SetFourFaced()
 
-	inst:AddTag("alive")
+        inst:AddTag("alive")
         inst:AddTag("scarytoprey")
         inst:AddTag("willminion")
         inst:AddTag("companion")
         inst:AddTag("NOBLOCK")
         inst:AddTag("mech")
         inst:AddTag("butler")
-	inst:AddTag("dangerouscooker")
-	inst:AddTag("expertchef")
+        inst:AddTag("dangerouscooker")
+        inst:AddTag("expertchef")
         inst:AddTag("tiddlevirusimmune")
-	inst:AddTag("ebuild_wrenchable")
-	inst.AnimState:Hide("swap_body")
+        inst:AddTag("ebuild_wrenchable")
+        inst.AnimState:Hide("swap_body")
 
         if not TheWorld.ismastersim then
             return inst
@@ -572,6 +572,8 @@ inst.components.burnable.ignorefuel = true
     UpdateButlerName(inst)
     inst:ListenForEvent("fuelchange", function() UpdateButlerName(inst) end)
     inst:ListenForEvent("healthdelta", function() UpdateButlerName(inst) end)
+    -- Periodic update to ensure hover display stays current (matches other bots)
+    inst:DoPeriodicTask(2, function() UpdateButlerName(inst) end)
 
     --==================================================================================
     -- BUTLER UPGRADE: Wrench upgrade spawns williambutler2 with 3 cook slots
@@ -736,7 +738,7 @@ inst.components.burnable.ignorefuel = true
                         local leader = inst.components.follower:GetLeader()
                         if leader ~= nil then
                             print("[DEBUG UPGRADE] Transferindo leader:", leader.prefab)
-                            newbot.components.follower.leader = leader
+                            newbot.components.follower:SetLeader(leader)
                         end
                     end
 
@@ -755,8 +757,8 @@ inst.components.burnable.ignorefuel = true
     local function OnSaveButler(inst, data)
         data.upgradelevel = inst.upgradelevel
         -- Save leader GUID for persistence
-        if inst.components.follower and inst.components.follower.leader then
-            data.leader_guid = inst.components.follower.leader.GUID
+        if inst.components.follower and inst.components.follower:GetLeader() then
+            data.leader_guid = inst.components.follower:GetLeader().GUID
         end
     end
 
@@ -816,7 +818,7 @@ inst.components.burnable.ignorefuel = true
         inst:AddTag("expertchef")
         inst:AddTag("tiddlevirusimmune")
         inst:AddTag("butler_thermal_upgraded")
-	inst:AddTag("ebuild_wrenchable")
+        inst:AddTag("ebuild_wrenchable")
         inst.AnimState:Hide("swap_body")
 
         if not TheWorld.ismastersim then
@@ -999,7 +1001,7 @@ inst.components.burnable.ignorefuel = true
                     if inst.components.follower and newbot.components.follower then
                         local leader = inst.components.follower:GetLeader()
                         if leader ~= nil then
-                            newbot.components.follower.leader = leader
+                            newbot.components.follower:SetLeader(leader)
                             newbot.components.follower:SetLeader(leader)
                         end
                     end
@@ -1221,8 +1223,8 @@ inst.components.burnable.ignorefuel = true
 
         inst.AnimState:PlayAnimation("sleep_loop", false)
         inst.AnimState:Pause()
-    	MakeCharacterPhysics(inst, 80, .25)
-	inst.Physics:SetFriction(1)
+        MakeCharacterPhysics(inst, 80, .25)
+        inst.Physics:SetFriction(1)
 
         inst:AddTag("NOBLOCK")
         inst:AddTag("Notarget")
@@ -1300,17 +1302,17 @@ local function onbuilt(inst, builder)
         pt.z = pt.z + offset.z
     end
    local pet = builder:HasTag("williamcrafter") and builder.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambutler") or SpawnPrefab("williambutler_empty")
-	if pet ~= nil then
-	    if pet.sg ~= nil then
-         	pet.sg:GoToState("spawn") 
-	    else
-		pet.Transform:SetPosition(pt.x, 0, pt.z)
-	pet.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
-	SpawnPrefab("small_puff").Transform:SetPosition(pt.x, 0, pt.z)
-	    end
+        if pet ~= nil then
+            if pet.sg ~= nil then
+                pet.sg:GoToState("spawn") 
+            else
+                pet.Transform:SetPosition(pt.x, 0, pt.z)
+        pet.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
+        SpawnPrefab("small_puff").Transform:SetPosition(pt.x, 0, pt.z)
+            end
 pet.components.fueled.currentfuel = pet.components.fueled.currentfuel*0.9
     inst:Remove()
-	end
+        end
 end
 
     local function builder()

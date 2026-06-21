@@ -274,7 +274,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_evolve = {
             name = "wagstaff_ballistic_evolve",
             title = "Ballistic Bot MK. II",
-            desc = "Powered by Lightning & Rain",
+            desc = "Powered by Lightning & Rain\nUnlocks Light Orb toggle (left-click)",
             icon = "balisticmk2",
             icon_atlas = "images/skilltree/balisticmk2.xml",
             pos = { -36.9, 76.4 },

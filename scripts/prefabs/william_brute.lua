@@ -281,24 +281,18 @@ local function TurnOn(inst, doer, instant)
     end
 
     inst.on = true
-    -- Debug removed
 
     -- Set leader to whoever turned the bot on, or nearest player if none
+    -- Only for MK2+ which have the follower component
     if inst.components.follower ~= nil then
         if doer ~= nil then
-            inst.components.follower.leader = doer
-            -- Debug removed
-        elseif inst.components.follower.leader == nil then
+            inst.components.follower:SetLeader(doer)
+        elseif inst.components.follower:GetLeader() == nil then
             local player = FindClosestPlayerToInst(inst, 20, true)
             if player ~= nil then
-                inst.components.follower.leader = player
-                -- Debug removed
-            else
-                -- Debug removed
+                inst.components.follower:SetLeader(player)
             end
         end
-    else
-        -- Debug removed
     end
 
     if inst._task == nil then
@@ -395,9 +389,11 @@ end
 local function onsave(inst, data)
     data.on = inst.on
     data.level = inst.level
-    if inst.components.follower and inst.components.follower.leader then
-        data.leader_guid = inst.components.follower.leader.GUID
+    -- Only save leader for MK2+ (which have follower component)
+    if inst.components.follower and inst.components.follower:GetLeader() then
+        data.leader_guid = inst.components.follower:GetLeader().GUID
     end
+    data.upgradelevel = inst.upgradelevel or 0
 end
 
 local function onload(inst, data)
@@ -409,12 +405,17 @@ local function onload(inst, data)
         if inst.level > 0 then inst:DoTaskInTime(0, LevelUp) end
     end
 
-    -- Restore leader
-    if data.leader_guid ~= nil then
+    -- Restore upgradelevel
+    if data.upgradelevel ~= nil then
+        inst.upgradelevel = data.upgradelevel
+    end
+
+    -- Restore leader (only for MK2+ which have follower component)
+    if data.leader_guid ~= nil and inst.components.follower ~= nil then
         inst:DoTaskInTime(0, function()
             local leader = Ents[data.leader_guid]
-            if leader ~= nil and leader:IsValid() and inst.components.follower ~= nil then
-                inst.components.follower.leader = leader
+            if leader ~= nil and leader:IsValid() then
+                inst.components.follower:SetLeader(leader)
             end
         end)
     end
@@ -551,11 +552,8 @@ inst.components.burnable.ignorefuel = true
     inst.components.workable:SetOnFinishCallback(OnHammered)
     inst.components.workable:SetOnWorkCallback(onworked)
 
-    -- Follower (follows player by default)
-    inst:AddComponent("follower")
-    inst.components.follower:KeepLeaderOnAttacked()
-    inst.components.follower.keepdeadleader = true
-    inst.components.follower.keepleaderduringminigame = true
+    -- MK1: NO follower component (original mod behavior - stationary guard)
+    -- Follower is added in MK2 (fn2) when upgraded
 
     -- Named component for status display
     inst:AddComponent("named")
@@ -703,9 +701,9 @@ inst.components.burnable.ignorefuel = true
                     newbot.components.willyraise:Rise(newbot, worker, true)
                 end
 
-                -- Set leader and reinit brain
+                -- Set leader and reinit brain for MK2+
                 if newbot.components.follower ~= nil then
-                    newbot.components.follower.leader = worker
+                    newbot.components.follower:SetLeader(worker)
                     newbot:SetBrain(brain)
                 end
 
@@ -719,54 +717,10 @@ inst.components.burnable.ignorefuel = true
         end
     end)
 
-    -- Save/load upgrade progress
-    local function OnSaveBrute(inst, data)
-        data.upgradelevel = inst.upgradelevel
-        -- Save leader GUID for persistence
-        if inst.components.follower and inst.components.follower.leader then
-            data.leader_guid = inst.components.follower.leader.GUID
-        end
-    end
-
-    local function OnLoadBrute(inst, data)
-        if data then
-            inst.upgradelevel = data.upgradelevel or 0
-            UpdateBruteName(inst)
-        end
-        -- Restore follower after save/load
-        if data ~= nil and data.leader_guid ~= nil then
-            inst:DoTaskInTime(1, function()
-                local leader = nil
-                -- Try TheSim:FindEntity if available
-                if TheSim and TheSim.FindEntity then
-                    local ok, result = pcall(function() return TheSim:FindEntity(data.leader_guid) end)
-                    if ok and result then leader = result end
-                end
-                -- Fallback: search Ents table
-                if not leader and Ents then
-                    leader = Ents[data.leader_guid]
-                end
-                -- Fallback: iterate Ents
-                if not leader and Ents then
-                    for k, v in pairs(Ents) do
-                        if k == data.leader_guid then
-                            leader = v
-                            break
-                        end
-                    end
-                end
-                if leader and leader:IsValid() and inst:IsValid() then
-                    if inst.components.follower then
-                        inst.components.follower:SetLeader(leader)
-                    end
-                end
-            end)
-        end
-    end
+    -- Save/load upgrade progress is now handled by base onsave/onload
 
     inst.OnSave = onsave
     inst.OnLoad = onload
-    inst.OnPreLoad = onload
 
         return inst
     end
@@ -812,6 +766,12 @@ inst.components.burnable.ignorefuel = true
         if not TheWorld.ismastersim then
             return inst
         end
+
+        -- MK2: Add follower component (follows player, unlike MK1)
+        inst:AddComponent("follower")
+        inst.components.follower:KeepLeaderOnAttacked()
+        inst.components.follower.keepdeadleader = true
+        inst.components.follower.keepleaderduringminigame = true
 
         -- Override base health and damage
         inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1000)

@@ -665,7 +665,7 @@ end
             inst.components.follower:KeepLeaderOnAttacked()
             inst.components.follower.keepdeadleader = true
             inst.components.follower.keepleaderduringminigame = true
-            inst.components.follower.leader = worker
+            inst.components.follower:SetLeader(worker)
 
             -- Switch to follow brain
             inst:SetBrain(require "brains/williamballisticbrain")
@@ -774,7 +774,7 @@ end
                         newbot.upgradelevel = inst.upgradelevel or 0
 
                         if inst.components.follower ~= nil and inst.components.follower:GetLeader() ~= nil then
-                            newbot.components.follower.leader = inst.components.follower:GetLeader()
+                            newbot.components.follower:SetLeader(inst.components.follower:GetLeader())
                         end
 
                         local fx = SpawnPrefab("small_puff")
@@ -867,7 +867,7 @@ end
                     end
                 end
                 if closest ~= nil then
-                    inst.components.follower.leader = closest
+                    inst.components.follower:SetLeader(closest)
                 end
             end
         end)
@@ -981,7 +981,7 @@ end
 
                         -- Set leader
                         if inst.components.follower ~= nil and inst.components.follower:GetLeader() ~= nil then
-                            newbot.components.follower.leader = inst.components.follower:GetLeader()
+                            newbot.components.follower:SetLeader(inst.components.follower:GetLeader())
                         end
 
                         -- Spawn fx
@@ -1227,13 +1227,19 @@ end
             end
         end)
 
-        -- STAR CALLER ORB: manual toggle via left-click on deployed bot
+        -- STAR CALLER ORB: manual toggle via left-click on deployed bot (MK2+)
         inst._starcaller_active = false
         inst._starcaller_light = nil
         inst._starcaller_fueltask = nil
         inst._starcaller_base_attackperiod = TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD
 
+        -- Tag for left-click Light Orb toggle (enables WILLSTAR_TOGGLE action)
+        inst:AddTag("ballistic_mk2")
 
+        -- Listen for left-click Light Orb toggle request
+        inst:ListenForEvent("starcaller_toggle_request", function(inst, doer)
+            ToggleStarCaller(inst, doer)
+        end)
 
         -- Listen for world save event to disable Light Orb before exit
         -- Auto-disable Light Orb on world save to prevent orb persistence
@@ -1578,7 +1584,7 @@ end
                 inst:DoTaskInTime(0, function()
                     local leader = Ents[data.leader]
                     if leader ~= nil and inst.components.follower ~= nil then
-                        inst.components.follower.leader = leader
+                        inst.components.follower:SetLeader(leader)
                     end
                 end)
             end
@@ -1675,7 +1681,7 @@ end
         local task = inst:DoPeriodicTask(2, UpdateBallistic3Name)
         table.insert(inst._periodic_name_tasks, task)
 
-        inst:AddTag("ballistic_mk2")  -- Tag for left-click Light Orb toggle (agora no MK3)
+        -- ballistic_mk2 tag already added in active2() — no need to re-add here
         
         -- Initial cleanup: remove any orphaned orbs near this bot
         inst:DoTaskInTime(0, function()
