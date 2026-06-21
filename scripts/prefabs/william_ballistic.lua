@@ -1214,39 +1214,10 @@ end
             end
         end)
 
-        -- PASSIVE LIGHT ORB: Automatic lantern light for MK2+ (always on when has fuel)
-        inst._lightorb_active = false
-        inst._lightorb_fx = nil
-        inst._lightorb_tick = nil
+        -- PASSIVE LIGHT ORB: Moved to MK3 only (active3)
 
-        -- Auto-start the light orb when MK2+ is active and has fuel
-        inst:DoTaskInTime(0.5, function()
-            if inst:IsValid() and not inst.components.fueled:IsEmpty() then
-                StartLightOrb(inst)
-            end
-        end)
-
-        -- Listen for fuel changes to auto-toggle light orb
-        inst:ListenForEvent("percentusedchange", function()
-            if inst.components.fueled:IsEmpty() and inst._lightorb_active then
-                StopLightOrb(inst)
-            elseif not inst.components.fueled:IsEmpty() and not inst._lightorb_active then
-                StartLightOrb(inst)
-            end
-        end)
-
-        -- Listen for world save event to disable Light Orb before exit
-        inst:ListenForEvent("ms_save", function()
-            if inst._lightorb_active then
-                StopLightOrb(inst)
-            end
-        end, TheWorld)
-
-        -- Clean up light orb and affinity FX on remove
+        -- Clean up affinity FX on remove
         inst:ListenForEvent("onremove", function()
-            if inst._lightorb_active then
-                StopLightOrb(inst)
-            end
             if inst._aura_fx ~= nil and inst._aura_fx:IsValid() then
                 inst._aura_fx:Remove()
                 inst._aura_fx = nil
@@ -1528,10 +1499,6 @@ end
         local _OnLoad = inst.OnLoad
 
         local function OnSaveBallistic2(inst, data)
-            -- Disable Light Orb before saving
-            if inst._lightorb_active then
-                StopLightOrb(inst)
-            end
             if _OnSave ~= nil then
                 _OnSave(inst, data)
             end
@@ -1549,16 +1516,6 @@ end
             if _OnLoad ~= nil then
                 _OnLoad(inst, data)
             end
-            -- Ensure light orb is off on load (will auto-restart via the 0.5s task)
-            if inst._lightorb_active then
-                StopLightOrb(inst)
-            end
-            -- Auto-restart light orb after load if has fuel
-            inst:DoTaskInTime(1, function()
-                if inst:IsValid() and not inst.components.fueled:IsEmpty() and not inst._lightorb_active then
-                    StartLightOrb(inst)
-                end
-            end)
             if data ~= nil and data.leader ~= nil then
                 inst:DoTaskInTime(0, function()
                     local leader = Ents[data.leader]
@@ -1587,24 +1544,10 @@ end
         -- PERMITIR PEGAR DE VOLTA COM LEFT-CLICK (haunt)
         MakeHauntableWork(inst)
 
-        -- DESATIVAR LIGHT ORB ao pegar de volta (haunt/right-click unploy)
-        local old_OnHaunt = inst.components.hauntable.onhaunt
-        inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
-            -- Stop light orb before unploying
-            if inst._lightorb_active then
-                StopLightOrb(inst)
-            end
-            -- Continua com o unploy normal (volta para inventário)
-            if old_OnHaunt then
-                return old_OnHaunt(inst, haunter)
-            end
-            return true
-        end)
-
         return inst
     end
 
--- BALLISTIC BOT MK.III: Active Energy Orb
+-- BALLISTIC BOT MK.III: Passive Lantern Light + Enhanced Stats
     local function active3(inst)
         local inst = active2(inst)
 
@@ -1653,11 +1596,56 @@ end
         local task = inst:DoPeriodicTask(2, UpdateBallistic3Name)
         table.insert(inst._periodic_name_tasks, task)
 
-        -- Light orb is handled by active2() (auto-start passive light)
+        -- PASSIVE LANTERN LIGHT: MK3 only - auto lantern light when has fuel
+        inst._lightorb_active = false
+        inst._lightorb_fx = nil
+        inst._lightorb_tick = nil
+
+        -- Auto-start the light when MK3 is active and has fuel
+        inst:DoTaskInTime(0.5, function()
+            if inst:IsValid() and not inst.components.fueled:IsEmpty() then
+                StartLightOrb(inst)
+            end
+        end)
+
+        -- Listen for fuel changes to auto-toggle light
+        inst:ListenForEvent("percentusedchange", function()
+            if inst.components.fueled:IsEmpty() and inst._lightorb_active then
+                StopLightOrb(inst)
+            elseif not inst.components.fueled:IsEmpty() and not inst._lightorb_active then
+                StartLightOrb(inst)
+            end
+        end)
+
+        -- Listen for world save event to disable light before exit
+        inst:ListenForEvent("ms_save", function()
+            if inst._lightorb_active then
+                StopLightOrb(inst)
+            end
+        end, TheWorld)
 
         -- Listen for stop_lightorb event from OnDismantle
         inst:ListenForEvent("stop_lightorb", function(inst)
             StopLightOrb(inst)
+        end)
+
+        -- Clean up light on remove
+        inst:ListenForEvent("onremove", function()
+            if inst._lightorb_active then
+                StopLightOrb(inst)
+            end
+        end)
+
+        -- Hauntable: stop light orb when picked up
+        local old_OnHaunt = inst.components.hauntable.onhaunt
+        inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
+            if inst._lightorb_active then
+                StopLightOrb(inst)
+            end
+            if old_OnHaunt then
+                return old_OnHaunt(inst, haunter)
+            end
+            return true
         end)
 
         -- Repair system for MK3
@@ -1708,13 +1696,27 @@ end
             end
         end)
 
-        -- MK3 reload resync: re-aplica FX celestial/shadow imediatamente após save->reload
+        -- MK3 reload resync: re-aplica FX celestial/shadow + light orb after save->reload
         local old_OnLoad3 = inst.OnLoad
+        local old_OnSave3 = inst.OnSave
+
+        -- Save: stop light orb before saving
+        inst.OnSave = function(inst2, data)
+            if inst2._lightorb_active then
+                StopLightOrb(inst2)
+            end
+            if old_OnSave3 then old_OnSave3(inst2, data) end
+        end
+
         inst.OnLoad = function(inst2, data)
             if old_OnLoad3 then old_OnLoad3(inst2, data) end
             if not TheWorld.ismastersim then return end
             inst2:DoTaskInTime(0, function()
                 if not inst2:IsValid() then return end
+                -- Restart passive lantern light if has fuel
+                if not inst2.components.fueled:IsEmpty() and not inst2._lightorb_active then
+                    StartLightOrb(inst2)
+                end
                 local owner = inst2.components.follower and inst2.components.follower:GetLeader()
                 local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
                 local shadow = owner and owner:HasTag("wagstaff_shadow_possession")
