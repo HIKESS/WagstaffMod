@@ -85,11 +85,13 @@ local function ZapFX(inst)
         end
 
 -- Passive Lantern Light for MK3 Ballistic Bot
--- Base light: 1.5x lantern size, always on, no FX (fixed)
--- Pulses to 3x lantern size with wx78_big_spark FX every 0.5s, then back to 1.5x
+-- Fixed light: ~0.6x lantern size, only at night
+-- Pulse: ~3x lantern size with wx78_big_spark FX every 0.5s, only at night
+-- Both light and FX only active at night (auto-toggle)
 local function StartLightOrb(inst)
     if inst._lightorb_active then return end
     if inst.components.fueled:IsEmpty() then return end
+    if not TheWorld.state.isnight then return end
     inst._lightorb_active = true
 
     -- Add light entity and "lantern" tag
@@ -98,24 +100,25 @@ local function StartLightOrb(inst)
     end
     inst:AddTag("lantern")
 
-    -- Lantern base values (lantern radius ~= 2.5, intensity ~= 0.8)
-    local FIX_RADIUS = 5.0          -- Fixed base: ~2x lantern, always visible
-    local PULSE_RADIUS = 12.0       -- Pulse: ~4.8x lantern, very far
-    local FIX_INTENSITY = 0.9
-    local PULSE_INTENSITY = 1.5
-    local BASE_FALLOFF = 0.4         -- Lower falloff = light reaches further
+    -- Lantern reference: radius ~= 2.5, intensity ~= 0.8, falloff ~= 0.5
+    local FIX_RADIUS = 1.5          -- Fixed base: ~0.6x lantern
+    local PULSE_RADIUS = 7.5        -- Pulse: ~3x lantern
+    local FIX_INTENSITY = 0.8
+    local PULSE_INTENSITY = 1.2
+    local FIX_FALLOFF = 0.5
+    local PULSE_FALLOFF = 0.35      -- Lower falloff so pulse reaches further
     local R, G, B = 1, 0.95, 0.8    -- Warm lantern color
 
     local _is_pulsing = false
 
-    -- Initial light setup: 1.5x fixed (no FX)
+    -- Initial light setup: fixed (no FX)
     inst.Light:SetRadius(FIX_RADIUS)
     inst.Light:SetIntensity(FIX_INTENSITY)
-    inst.Light:SetFalloff(BASE_FALLOFF)
+    inst.Light:SetFalloff(FIX_FALLOFF)
     inst.Light:SetColour(R, G, B)
     inst.Light:Enable(true)
 
-    -- Tick every 0.5s: toggle between 1.5x (fixed, no FX) and 3x (pulse, wx78_big_spark)
+    -- Tick every 0.5s: pulse with FX, then back to fixed
     inst._lightorb_tick = inst:DoPeriodicTask(0.5, function()
         if not inst._lightorb_active then return end
         if inst.components.fueled:IsEmpty() then
@@ -126,9 +129,10 @@ local function StartLightOrb(inst)
         _is_pulsing = not _is_pulsing
 
         if _is_pulsing then
-            -- 3x lantern size - PULSE with wx78_big_spark FX
+            -- Pulse with wx78_big_spark FX
             inst.Light:SetRadius(PULSE_RADIUS)
             inst.Light:SetIntensity(PULSE_INTENSITY)
+            inst.Light:SetFalloff(PULSE_FALLOFF)
             if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
                 inst._lightorb_fx:Remove()
             end
@@ -139,9 +143,10 @@ local function StartLightOrb(inst)
                 inst._lightorb_fx = newfx
             end
         else
-            -- 1.5x lantern size - FIXED base, no FX
+            -- Fixed base, no FX
             inst.Light:SetRadius(FIX_RADIUS)
             inst.Light:SetIntensity(FIX_INTENSITY)
+            inst.Light:SetFalloff(FIX_FALLOFF)
             if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
                 inst._lightorb_fx:Remove()
             end
@@ -1461,15 +1466,24 @@ end
 
         end)
 
-        -- PASSIVE LANTERN LIGHT: MK3 only - auto lantern light when has fuel
+        -- PASSIVE LANTERN LIGHT: MK3 only - auto lantern light at night when has fuel
         inst._lightorb_active = false
         inst._lightorb_fx = nil
         inst._lightorb_tick = nil
 
-        -- Auto-start the light when MK3 is active and has fuel
+        -- Auto-start the light when MK3 is active and has fuel (only if night)
         inst:DoTaskInTime(0.5, function()
             if inst:IsValid() and not inst.components.fueled:IsEmpty() then
                 StartLightOrb(inst)
+            end
+        end)
+
+        -- Night/Day auto-toggle: light and FX only at night
+        inst:WatchWorldState("isnight", function(inst, isnight)
+            if isnight and not inst.components.fueled:IsEmpty() then
+                StartLightOrb(inst)
+            elseif not isnight and inst._lightorb_active then
+                StopLightOrb(inst)
             end
         end)
 
