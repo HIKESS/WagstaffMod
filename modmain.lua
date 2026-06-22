@@ -1868,13 +1868,24 @@ AddPrefabPostInit("world", function(self)
     end
 
     -- Networked variables: these sync from server to client automatically.
-    -- net_bool is created on both server and client during entity construction.
-    self.wagstaff_fuelweaver_killed_net = net_bool(self.GUID, "wagstaff_fuelweaver_killed_net")
-    self.wagstaff_fuelweaver_killed_net:set(false)
-    self.wagstaff_celestial_killed_net = net_bool(self.GUID, "wagstaff_celestial_killed_net")
-    self.wagstaff_celestial_killed_net:set(false)
-    self.wagstaff_needs_xp_reset_net = net_bool(self.GUID, "wagstaff_needs_xp_reset_net")
-    self.wagstaff_needs_xp_reset_net:set(false)
+    -- IMPORTANT: net_bool must be accessed via GLOBAL here. In the DST mod
+    -- environment net_bool is NOT exposed as a bare global — it is only
+    -- auto-injected into prefab fn contexts (e.g. scripts/prefabs/*.lua).
+    -- Calling bare net_bool here crashed during world generation with:
+    --   "attempt to call global 'net_bool' (a nil value)"
+    -- (Compare scripts/prefabs/wagstaff.lua:215, where bare net_bool IS valid
+    -- because it runs inside the prefab fn environment.)
+    if GLOBAL.net_bool then
+        self.wagstaff_fuelweaver_killed_net = GLOBAL.net_bool(self.GUID, "wagstaff_fuelweaver_killed_net")
+        self.wagstaff_celestial_killed_net  = GLOBAL.net_bool(self.GUID, "wagstaff_celestial_killed_net")
+        self.wagstaff_needs_xp_reset_net    = GLOBAL.net_bool(self.GUID, "wagstaff_needs_xp_reset_net")
+        -- net_bool defaults to false, so no initial :set() is required. Also,
+        -- :set() may only be called on the master sim — calling it on a client
+        -- (when the client constructs its local world entity) is invalid. The
+        -- real values are pushed from the master sim via OnLoad below and via
+        -- the boss-kill/XP-reset callbacks; clients receive them through net
+        -- variable replication automatically.
+    end
 
     -- SAVE: store boss flags + profile reset flag
     local old_OnSave = self.OnSave
@@ -1903,7 +1914,10 @@ AddPrefabPostInit("world", function(self)
             self.state.wagstaff_profile_reset     = false
         end
         -- Sync loaded state to networked variables (so client lock_open can read them)
-        if TheWorld.ismastersim then
+        -- `self` here is TheWorld (this is the world's OnLoad method). Use
+        -- self.ismastersim instead of bare TheWorld (which is not in the mod
+        -- env) and guard the net vars in case creation was skipped.
+        if self.ismastersim and self.wagstaff_fuelweaver_killed_net then
             self.wagstaff_fuelweaver_killed_net:set(self.state.wagstaff_fuelweaver_killed)
             self.wagstaff_celestial_killed_net:set(self.state.wagstaff_celestial_killed)
         end
@@ -1916,7 +1930,9 @@ AddPrefabPostInit("stalker_atrium", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
     inst:ListenForEvent("death", function()
         GLOBAL.TheWorld.state.wagstaff_fuelweaver_killed = true
-        GLOBAL.TheWorld.wagstaff_fuelweaver_killed_net:set(true)
+        if GLOBAL.TheWorld.wagstaff_fuelweaver_killed_net then
+            GLOBAL.TheWorld.wagstaff_fuelweaver_killed_net:set(true)
+        end
         print("[Wagstaff] Ancient Fuelweaver killed — affinity lock unlocked (networked)")
     end)
 end)
@@ -1925,7 +1941,9 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
     inst:ListenForEvent("death", function()
         GLOBAL.TheWorld.state.wagstaff_celestial_killed = true
-        GLOBAL.TheWorld.wagstaff_celestial_killed_net:set(true)
+        if GLOBAL.TheWorld.wagstaff_celestial_killed_net then
+            GLOBAL.TheWorld.wagstaff_celestial_killed_net:set(true)
+        end
         print("[Wagstaff] Celestial Champion killed — affinity lock unlocked (networked)")
     end)
 end)
@@ -1948,7 +1966,9 @@ AddPrefabPostInit("wagstaff", function(inst)
 
         -- Signal the CLIENT to reset TheSkillTree via NETWORKED boolean
         -- (rawset GLOBAL doesn't work — server and client have separate Lua environments)
-        GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:set(true)
+        if GLOBAL.TheWorld.wagstaff_needs_xp_reset_net then
+            GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:set(true)
+        end
 
         -- Zero boss kill stats in the player profile (affinity-gating bosses)
         local profile = inst.profile
