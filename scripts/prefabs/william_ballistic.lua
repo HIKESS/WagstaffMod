@@ -88,26 +88,23 @@ local function ZapFX(inst)
 -- Fixed light: ~0.6x lantern size, only at night
 -- Pulse: ~3x lantern size with wx78_big_spark FX every 0.5s, only at night
 -- Both light and FX only active at night (auto-toggle)
+local FIX_RADIUS = 1.5          -- Fixed base: ~0.6x lantern
+local PULSE_RADIUS = 7.5        -- Pulse: ~3x lantern
+local FIX_INTENSITY = 0.8
+local PULSE_INTENSITY = 1.2
+local FIX_FALLOFF = 0.5
+local PULSE_FALLOFF = 0.35      -- Lower falloff so pulse reaches further
+local LIGHT_R, LIGHT_G, LIGHT_B = 1, 0.95, 0.8    -- Warm lantern color
+
 local function StartLightOrb(inst)
     if inst._lightorb_active then return end
     if inst.components.fueled:IsEmpty() then return end
     if not TheWorld.state.isnight then return end
     inst._lightorb_active = true
 
-    -- Add light entity and "lantern" tag
-    if not inst.Light then
-        inst.entity:AddLight()
-    end
+    -- Light entity is already added in active3() common section (before is_mastersim)
+    -- so it is properly networked to clients for rendering.
     inst:AddTag("lantern")
-
-    -- Lantern reference: radius ~= 2.5, intensity ~= 0.8, falloff ~= 0.5
-    local FIX_RADIUS = 1.5          -- Fixed base: ~0.6x lantern
-    local PULSE_RADIUS = 7.5        -- Pulse: ~3x lantern
-    local FIX_INTENSITY = 0.8
-    local PULSE_INTENSITY = 1.2
-    local FIX_FALLOFF = 0.5
-    local PULSE_FALLOFF = 0.35      -- Lower falloff so pulse reaches further
-    local R, G, B = 1, 0.95, 0.8    -- Warm lantern color
 
     local _is_pulsing = false
 
@@ -115,7 +112,7 @@ local function StartLightOrb(inst)
     inst.Light:SetRadius(FIX_RADIUS)
     inst.Light:SetIntensity(FIX_INTENSITY)
     inst.Light:SetFalloff(FIX_FALLOFF)
-    inst.Light:SetColour(R, G, B)
+    inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
     inst.Light:Enable(true)
 
     -- Tick every 0.5s: pulse with FX, then back to fixed
@@ -133,6 +130,7 @@ local function StartLightOrb(inst)
             inst.Light:SetRadius(PULSE_RADIUS)
             inst.Light:SetIntensity(PULSE_INTENSITY)
             inst.Light:SetFalloff(PULSE_FALLOFF)
+            inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
             if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
                 inst._lightorb_fx:Remove()
             end
@@ -147,6 +145,7 @@ local function StartLightOrb(inst)
             inst.Light:SetRadius(FIX_RADIUS)
             inst.Light:SetIntensity(FIX_INTENSITY)
             inst.Light:SetFalloff(FIX_FALLOFF)
+            inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
             if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
                 inst._lightorb_fx:Remove()
             end
@@ -999,6 +998,16 @@ end
         -- Slightly larger
         inst.Transform:SetScale(1.1, 1.1, 1.1)
 
+        -- LIGHT ENTITY: Must be added BEFORE is_mastersim check so it is
+        -- networked to clients for rendering. In DST, Light is a client-side
+        -- visual component — adding it server-only makes it invisible.
+        inst.entity:AddLight()
+        inst.Light:Enable(false)
+        inst.Light:SetRadius(FIX_RADIUS)
+        inst.Light:SetIntensity(FIX_INTENSITY)
+        inst.Light:SetFalloff(FIX_FALLOFF)
+        inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
+
         if not TheWorld.ismastersim then
             return inst
         end
@@ -1127,19 +1136,25 @@ end
             UpdateBallistic3Name(inst)
         end
 
-        -- Override lightning handler for overcharge
+        -- Lightning handler: differentiates NATURAL rain lightning vs INVOKED (tempest) lightning
+        -- Natural rain lightning: recharges battery ONLY (unlimited, no overcharge)
+        -- Invoked lightning (tempest call): recharges battery + overcharge (1/day limit)
+        inst._invoked_lightning = false
         local old_onlightning = onlightning
         inst:RemoveEventCallback("lightningstrike", onlightning)
         inst:ListenForEvent("lightningstrike", function(inst)
-            -- Refuel battery
+            local was_invoked = inst._invoked_lightning
+            inst._invoked_lightning = false  -- Reset flag immediately
+
+            -- ALWAYS: Refuel battery (natural or invoked)
             inst.components.fueled:SetPercent(1)
             ZapFX(inst)
             inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
 
-            -- Only overcharge if deployed (MK3 is always a turret)
-            if not inst.components.inventoryitem then
+            -- OVERCHARGE: only from INVOKED lightning (tempest call), limited to 1/day
+            -- Natural rain lightning only recharges, does NOT trigger overcharge
+            if was_invoked and not inst.components.inventoryitem then
                 ApplyOvercharge(inst)
-                -- Overcharge lasts 60 seconds
                 if inst._overchargetask ~= nil then
                     inst._overchargetask:Cancel()
                 end
@@ -1271,18 +1286,9 @@ end
 
         -- TEMPEST CALL: Auto lightning strike during rain combat for overcharge
         inst._tempest_cooldown = false
-        
-        -- Auto-lightning attraction during rain (lightning rod behavior)
+
+        -- Lightning rod tag: attracts natural rain lightning (recharge only, NO overcharge)
         inst:AddTag("lightningrod")
-        inst:ListenForEvent("lightningstrike", function(inst, data)
-            -- Only overcharge if deployed and rain is active
-            if not inst.components.inventoryitem and TheWorld.state.israining then
-                if not inst._overcharge then
-                    ApplyOvercharge(inst)
-                    inst._overchargetask = inst:DoTaskInTime(60, RemoveOvercharge)
-                end
-            end
-        end)
 
         -- Affinity pulse (shared module)
         AffinityPulse.Setup(inst, GetOwner)
@@ -1298,7 +1304,8 @@ end
                     
                     local x, y, z = inst.Transform:GetWorldPosition()
                     
-                    -- Call lightning on self (auto overcharge)
+                    -- Mark as invoked lightning so the handler knows to overcharge
+                    inst._invoked_lightning = true
                     TheWorld:PushEvent("ms_sendlightningstrike", Vector3(x, y, z))
                     
                     -- Reset cooldown after 60 seconds

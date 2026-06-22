@@ -1850,10 +1850,12 @@ TUNING.SKILL_THRESHOLDS.wagstaff = {0,3,6,10,14,18,23,28,33,38,43,48,53,58,63,68
 
 -- Per-world persistence: boss kills only.
 -- Skill XP/activation is handled by DST's standard skill tree persistence.
+-- NETWORKING: Boss kill flags and XP reset signal use net_bool so clients can read them.
+-- (Custom world.state fields are NOT networked in DST — they only exist on the server.)
 WagstaffDebug("Registering AddPrefabPostInit('world')")
 AddPrefabPostInit("world", function(self)
     WagstaffDebug("AddPrefabPostInit('world') called")
-    -- Initialize worldstate boss flags
+    -- Initialize worldstate boss flags (server-side persistence for save/load)
     if self.state.wagstaff_fuelweaver_killed == nil then
         self.state.wagstaff_fuelweaver_killed = false
     end
@@ -1864,6 +1866,15 @@ AddPrefabPostInit("world", function(self)
     if self.state.wagstaff_profile_reset == nil then
         self.state.wagstaff_profile_reset = false
     end
+
+    -- Networked variables: these sync from server to client automatically.
+    -- net_bool is created on both server and client during entity construction.
+    self.wagstaff_fuelweaver_killed_net = net_bool(self.GUID, "wagstaff_fuelweaver_killed_net")
+    self.wagstaff_fuelweaver_killed_net:set(false)
+    self.wagstaff_celestial_killed_net = net_bool(self.GUID, "wagstaff_celestial_killed_net")
+    self.wagstaff_celestial_killed_net:set(false)
+    self.wagstaff_needs_xp_reset_net = net_bool(self.GUID, "wagstaff_needs_xp_reset_net")
+    self.wagstaff_needs_xp_reset_net:set(false)
 
     -- SAVE: store boss flags + profile reset flag
     local old_OnSave = self.OnSave
@@ -1876,7 +1887,7 @@ AddPrefabPostInit("world", function(self)
         return data
     end
 
-    -- LOAD: restore boss flags + profile reset flag
+    -- LOAD: restore boss flags + profile reset flag + sync to net_bool
     local old_OnLoad = self.OnLoad
     self.OnLoad = function(self, data, ...)
         WagstaffDebug("World OnLoad called")
@@ -1891,15 +1902,22 @@ AddPrefabPostInit("world", function(self)
             self.state.wagstaff_celestial_killed  = false
             self.state.wagstaff_profile_reset     = false
         end
+        -- Sync loaded state to networked variables (so client lock_open can read them)
+        if TheWorld.ismastersim then
+            self.wagstaff_fuelweaver_killed_net:set(self.state.wagstaff_fuelweaver_killed)
+            self.wagstaff_celestial_killed_net:set(self.state.wagstaff_celestial_killed)
+        end
     end
 end)
 
 
--- Listen for boss kills
+-- Listen for boss kills — set BOTH server state AND networked variable
 AddPrefabPostInit("stalker_atrium", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
     inst:ListenForEvent("death", function()
         GLOBAL.TheWorld.state.wagstaff_fuelweaver_killed = true
+        GLOBAL.TheWorld.wagstaff_fuelweaver_killed_net:set(true)
+        print("[Wagstaff] Ancient Fuelweaver killed — affinity lock unlocked (networked)")
     end)
 end)
 
@@ -1907,6 +1925,8 @@ AddPrefabPostInit("alterguardian_phase3", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
     inst:ListenForEvent("death", function()
         GLOBAL.TheWorld.state.wagstaff_celestial_killed = true
+        GLOBAL.TheWorld.wagstaff_celestial_killed_net:set(true)
+        print("[Wagstaff] Celestial Champion killed — affinity lock unlocked (networked)")
     end)
 end)
 
@@ -1924,10 +1944,11 @@ AddPrefabPostInit("wagstaff", function(inst)
         -- Skip if already reset for this world (reload)
         if GLOBAL.TheWorld.state.wagstaff_profile_reset then return end
 
-        print("[Wagstaff] Fresh world detected — setting reset flag for client...")
+        print("[Wagstaff] Fresh world detected — signaling client via net_bool...")
 
-        -- Signal the CLIENT to reset TheSkillTree (TheSkillTree is client-side API)
-        rawset(GLOBAL, "_wagstaff_needs_xp_reset", true)
+        -- Signal the CLIENT to reset TheSkillTree via NETWORKED boolean
+        -- (rawset GLOBAL doesn't work — server and client have separate Lua environments)
+        GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:set(true)
 
         -- Zero boss kill stats in the player profile (affinity-gating bosses)
         local profile = inst.profile
@@ -1961,17 +1982,21 @@ end)
 
 --==================================================================================
 -- CLIENT-SIDE: Reset TheSkillTree on fresh world
--- TheSkillTree is a client-side API; server-side pcall was silently failing.
+-- Uses net_bool on the world entity for server→client communication.
+-- (rawset/rawget GLOBAL doesn't work — DST server and client have separate environments.)
 --==================================================================================
 AddPrefabPostInit("wagstaff", function(inst)
     if GLOBAL.TheWorld.ismastersim then return end -- Client only
 
-    inst:DoTaskInTime(2, function()
-        -- Use rawget to bypass DST strict mode (variable set by server, may not exist on client)
-        if not rawget(GLOBAL, "_wagstaff_needs_xp_reset") then return end
-        rawset(GLOBAL, "_wagstaff_needs_xp_reset", false)
+    inst:DoTaskInTime(3, function()
+        -- Check the NETWORKED flag on TheWorld (synced from server)
+        local needs_reset = false
+        pcall(function()
+            needs_reset = GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:value()
+        end)
+        if not needs_reset then return end
 
-        print("[Wagstaff CLIENT] Resetting TheSkillTree XP and skills...")
+        print("[Wagstaff CLIENT] Net flag detected — resetting TheSkillTree XP and skills...")
 
         local TheSkillTree = rawget(GLOBAL, "TheSkillTree")
         if not TheSkillTree then
