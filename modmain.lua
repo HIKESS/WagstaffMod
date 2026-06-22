@@ -14,11 +14,36 @@ local G = GLOBAL
 local rawset = G.rawset
 local rawget = G.rawget
 
--- Safe aliases for Lua base iteration functions (they may not be in the global
--- environment during certain mod-load phases in DST).
-local pairs = G.pairs or pairs
-local ipairs = G.ipairs or ipairs
-local next = G.next or next
+-- Safe aliases for Lua base functions.
+--
+-- In DST mods, `modmain.lua` runs inside a sandbox environment (a copy of _G).
+-- Closures passed to DoTaskInTime / ListenForEvent / scheduler callbacks may,
+-- in certain runtime contexts, execute with an _ENV that does NOT expose the
+-- standard Lua builtins, causing `attempt to call global '<fn>' (a nil value)`
+-- crashes. Binding these functions as upvalues (captured at mod-load time, when
+-- the environment is still intact) makes every closure in this file immune to
+-- that problem. `G.<fn>` resolves against the real game `_G`, which always has
+-- these builtins; the `or <fn>` fallback preserves the previous behavior in the
+-- (theoretical) case where even `G.<fn>` is unavailable.
+--
+-- This fixes the crash at modmain.lua:2014:
+--   "attempt to call global 'pcall' (a nil value)"
+-- reported in a client-side DoTaskInTime callback.
+local pairs        = G.pairs        or pairs
+local ipairs       = G.ipairs       or ipairs
+local next         = G.next         or next
+local pcall        = G.pcall        or pcall
+local xpcall      = G.xpcall      or xpcall
+local tostring     = G.tostring     or tostring
+local tonumber     = G.tonumber     or tonumber
+local type         = G.type         or type
+local select       = G.select       or select
+local print        = G.print        or print
+local error        = G.error        or error
+local assert       = G.assert       or assert
+local setmetatable = G.setmetatable or setmetatable
+local getmetatable = G.getmetatable or getmetatable
+local unpack       = G.unpack       or unpack
 
 -- Safe table printer (circular-ref aware, depth-limited)
 local function tableToString(t, indent, depth, visited)
