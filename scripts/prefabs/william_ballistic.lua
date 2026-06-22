@@ -231,9 +231,19 @@ local function retargetfn(inst)
 
     return FindEntity(inst, PLACER_SCALE*10,
         function(guy)
-            return inst.components.combat:CanTarget(guy)
-                and (playertargets[guy] or
-                    (guy.components.combat.target ~= nil and (guy.components.combat.target:HasTag("player") or guy.components.combat.target:HasTag("willminion"))))
+            if not inst.components.combat:CanTarget(guy) then return false end
+            -- Target enemies already fighting the player/minions
+            if playertargets[guy] then return true end
+            -- Also target any hostile creature (monster) in range
+            if guy:HasTag("monster") and not guy:HasTag("player") and not guy:HasTag("companion") then
+                return true
+            end
+            -- Target creatures attacking players or willminion
+            if guy.components.combat.target ~= nil
+                and (guy.components.combat.target:HasTag("player") or guy.components.combat.target:HasTag("willminion")) then
+                return true
+            end
+            return false
         end,
         { "_combat" }, --see entityreplica.lua
         { "INLIMBO", "player" }
@@ -995,6 +1005,7 @@ end
 
         -- MK3 inherits MK2 stats (+250 HP, +12 DMG) — no additional stat bonus
         -- MK3 is a TURRET (not mobile), keeps turret physics and brain
+        inst:AddTag("ballistic_turret")
 
         -- Add follower for owner tracking only (affinity, save/load)
         inst:AddComponent("follower")

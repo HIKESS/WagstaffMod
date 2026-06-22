@@ -1918,65 +1918,36 @@ AddPrefabPostInit("wagstaff", function(inst)
     --==================================================================================
     -- FRESH WORLD PROFILE RESET (XP + boss kill stats)
     -- Only runs once per world creation, never on reload.
-    -- Prevents XP/skills from a previous save from carrying over to a new world,
-    -- and zeros boss kill stats for affinity-gating bosses (Fuelweaver, Celestial).
     --==================================================================================
     inst:DoTaskInTime(0, function()
         if not inst:IsValid() then return end
         -- Skip if already reset for this world (reload)
         if GLOBAL.TheWorld.state.wagstaff_profile_reset then return end
 
-        print("[Wagstaff] Fresh world detected — resetting profile XP and boss kill stats...")
+        print("[Wagstaff] Fresh world detected — setting reset flag for client...")
 
-        -- 1. Deactivate all wagstaff skills and zero XP in the profile
-        if GLOBAL.TheSkillTree then
-            -- Deactivate each activated skill individually (safe fallback)
-            local ok, skills = G.pcall(function()
-                return GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
-            end)
-            if ok and skills and type(skills) == "table" then
-                for _, skill_name in G.ipairs(skills) do
-                    G.pcall(function()
-                        GLOBAL.TheSkillTree:DeactivateSkill("wagstaff", skill_name)
-                    end)
-                end
-            end
+        -- Signal the CLIENT to reset TheSkillTree (TheSkillTree is client-side API)
+        GLOBAL._wagstaff_needs_xp_reset = true
 
-            -- Zero out residual XP
-            local ok2, xp = G.pcall(function()
-                return GLOBAL.TheSkillTree:GetSkillXP("wagstaff")
-            end)
-            if ok2 and xp and xp > 0 then
-                G.pcall(function()
-                    GLOBAL.TheSkillTree:AddSkillXP(-xp, "wagstaff")
-                end)
-                print("[Wagstaff] Reset XP: " .. tostring(xp) .. " -> 0")
-            end
-        end
-
-        -- 2. Zero boss kill stats in the player profile (affinity-gating bosses)
-        --    DST persists these across saves; zeroing prevents carry-over.
+        -- Zero boss kill stats in the player profile (affinity-gating bosses)
         local profile = inst.profile
         if profile and profile.stats then
             local bosses = {
-                "stalker",
-                "stalker_atrium",
-                "alterguardian_phase3",
-                "alterguardian_phase2",
-                "alterguardian_phase1",
+                "stalker", "stalker_atrium",
+                "alterguardian_phase3", "alterguardian_phase2", "alterguardian_phase1",
             }
-            for _, boss in G.ipairs(bosses) do
+            for _, boss in ipairs(bosses) do
                 profile.stats["killed_" .. boss] = 0
             end
             if profile.Save then
-                G.pcall(function() profile:Save() end)
+                pcall(function() profile:Save() end)
             end
             print("[Wagstaff] Reset boss kill stats for affinity bosses")
         end
 
         -- Mark this world as reset — will NOT trigger again on reload
         GLOBAL.TheWorld.state.wagstaff_profile_reset = true
-        print("[Wagstaff] Profile reset complete for this world.")
+        print("[Wagstaff] Server-side reset done. Waiting for client to reset TheSkillTree...")
     end)
 
     inst:ListenForEvent("daycomplete", function(inst)
@@ -1985,6 +1956,51 @@ AddPrefabPostInit("wagstaff", function(inst)
                 GLOBAL.TheSkillTree:AddSkillXP(1, "wagstaff")
             end
         end
+    end)
+end)
+
+--==================================================================================
+-- CLIENT-SIDE: Reset TheSkillTree on fresh world
+-- TheSkillTree is a client-side API; server-side pcall was silently failing.
+--==================================================================================
+AddPrefabPostInit("wagstaff", function(inst)
+    if GLOBAL.TheWorld.ismastersim then return end -- Client only
+
+    inst:DoTaskInTime(2, function()
+        if not GLOBAL._wagstaff_needs_xp_reset then return end
+        GLOBAL._wagstaff_needs_xp_reset = false
+
+        print("[Wagstaff CLIENT] Resetting TheSkillTree XP and skills...")
+
+        if not GLOBAL.TheSkillTree then
+            print("[Wagstaff CLIENT] ERROR: TheSkillTree is NIL!")
+            return
+        end
+
+        -- Deactivate all activated wagstaff skills
+        local ok1, err1 = pcall(function()
+            local skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+            if skills and type(skills) == "table" then
+                print("[Wagstaff CLIENT] Found " .. #skills .. " activated skills to deactivate")
+                for _, skill_name in ipairs(skills) do
+                    GLOBAL.TheSkillTree:DeactivateSkill("wagstaff", skill_name)
+                end
+            end
+        end)
+        if not ok1 then print("[Wagstaff CLIENT] Deactivate error: " .. tostring(err1)) end
+
+        -- Zero out residual XP
+        local ok2, err2 = pcall(function()
+            local xp = GLOBAL.TheSkillTree:GetSkillXP("wagstaff")
+            print("[Wagstaff CLIENT] Current XP: " .. tostring(xp))
+            if xp and xp > 0 then
+                GLOBAL.TheSkillTree:AddSkillXP(-xp, "wagstaff")
+                print("[Wagstaff CLIENT] Reset XP: " .. tostring(xp) .. " -> 0")
+            end
+        end)
+        if not ok2 then print("[Wagstaff CLIENT] XP reset error: " .. tostring(err2)) end
+
+        print("[Wagstaff CLIENT] TheSkillTree reset complete.")
     end)
 end)
 

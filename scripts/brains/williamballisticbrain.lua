@@ -119,7 +119,8 @@ local function CanAttackNow(inst)
 end
 
 function WilliamBallisticBrain:OnStart()
-    local has_leader = self.inst.components.follower ~= nil and self.inst.components.follower:GetLeader() ~= nil
+    local is_turret = self.inst:HasTag("ballistic_turret")
+    local has_leader = not is_turret and self.inst.components.follower ~= nil and self.inst.components.follower:GetLeader() ~= nil
 
     local root
     if has_leader then
