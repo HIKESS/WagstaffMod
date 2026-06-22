@@ -1,6 +1,6 @@
 # WAGSTAFF MOD — GUIA COMPLETO DE BOTS, SENTRIES & DISPENSERS
 
-> Dados extraidos diretamente do codigo-fonte do mod (branch `refactor/remove-world-skill-save`).
+> Dados extraidos diretamente do codigo-fonte do mod (v2.0.14, branch `GLM-5.1-Fixes`).
 > Valores sujeitos a mudancas em futuras atualizacoes.
 
 ---
@@ -194,21 +194,25 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 | | **LVL 1** | **LVL 2** | **LVL 3** |
 |---|---|---|---|
-| **Fuel** | 4 ciclos | 4 ciclos | 8 ciclos (dobrado) |
+| **Fuel max** | 4 ciclos | 6 ciclos (+50%) | 10 ciclos (+150%) |
+| **Autonomia** | 4 dias (1 ciclo/dia) | 3 dias (2 ciclos/dia) | 3,3 dias (3 ciclos/dia) |
 | **Custo Upgrade** | — | 30 Scrap (1/hit) | 40 Scrap (1/hit) |
 | **Skill Necessaria** | — | Dispenser MK.II | Dispenser MK.III |
 | **Custo Total** | — | 30 Scrap | 70 Scrap total |
 | **Horarios ativos** | Dia | Dia + Dusk | Dia + Dusk + Noite |
 
-**Output por ciclo (a cada ~5s):**
+**Output por ciclo (a cada ~5s) — v2.0.14 (Option B):**
 
 | Recurso | LVL 1 (Dia) | LVL 2 (Dia/Dusk) | LVL 3 (Dia/Dusk/Noite) |
 |---------|-------------|-------------------|------------------------|
-| Scrap | 2 (+33% -> +1) | 3 (+33% -> +2) | 2 (+33% -> +1) |
-| Fuel items* | 1 | 3 | 2 |
-| Mineral items* | 1 | 2 | 2 |
+| Scrap | 3 (flat) | 4 (flat) | 4 (flat) |
+| Fuel items* | 2 | 3 | 3 |
+| Mineral items* | 2 | 3 | 3 |
+| Rare items* | — | — | 2 (flat, sempre) |
 | Night items* | — | — | Noite: 2 (33% chance) |
-| Rare items* | — | — | Dia/Dusk: 1 (33%) / Noite: 1 (33%) |
+| Affinity drop | — | — | Dia/Dusk: 1 (33%) — ver tabela abaixo |
+| **Total/ciclo** | **7 itens** | **10 itens** | **12+ itens** |
+| **Total/dia** | **7** | **20** | **36+** |
 
 *\*Tabelas de drop ponderadas:*
 - **Fuel:** Twigs (28.6%), Cut Grass (28.6%), Log (28.6%), Charcoal (14.3%)
@@ -216,9 +220,16 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 - **Night:** Light Bulb (50%), Wormlight (25%), Nightmare Fuel (25%)
 - **Rare:** Gold Nugget (52.6%), Gunpowder (26.3%), Gears (15.8%), Living Log (5.3%)
 
-**MK3 Affinity Auras:**
-- **Celestial (dia):** Sanity aura (+SANITYAURA_SMALL/tick a cada 0.5s) + FX azul-branco
-- **Shadow (dusk):** Cura 1 HP/tick em jogadores proximos (raio 4 tiles) + FX roxo
+**MK3 Affinity Auras (v2.0.14 — Level 2, sem bonus de afinidade dupla):**
+
+Cada afinidade ativa apenas na sua fase (Celestial=dia, Shadow=dusk). Ter as duas afinidades simultaneamente **nao** da bonus extra — cada ciclo so dispara a afinidade da fase atual.
+
+| Afinidade | Fase | Aura passiva | Luz | Drop ativo (33%/ciclo) |
+|-----------|------|--------------|-----|------------------------|
+| **Celestial** | Dia | **Sanity +100/min** (SANITYAURA_MED, era 50/min) | Forte, raio 2.5, azul-prata | **Moonglass (60%)** ou **Moon Moth (40%)** |
+| **Shadow** | Dusk | **Heal 4 HP/s** (2 HP/0.5s) — **builder-only**, raio 4 | Media, raio 1.5, roxa | **Nightmare Fuel (50%)**, **Pure Horror (30%)** ou **Dark Tatters (20%)** |
+
+*FX:* pulso de luz azul-prata durante o dia (celestial) e pulso roxo ao dusk (shadow). O ehealfx existente e reaproveitado com tint por afinidade.
 
 ---
 
@@ -241,10 +252,10 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 | **Skill** | Lucky Engineer |
 | **Custo de Insight** | 1 |
 | **Requisito** | Dispenser MK.III |
-| **Efeito** | 15% de chance de drop raro adicional por ciclo do Dispenser |
+| **Efeito** | **20% de chance** (era 15%) de drop raro adicional por ciclo do Dispenser + **FX dourado visivel** quando ativa |
 | **Funciona** | Todos os niveis e horarios (se o dispenser tem a tag) |
 
-### TABELA DE DROP — LUCKY ENGINEER (15% chance por ciclo)
+### TABELA DE DROP — LUCKY ENGINEER (20% chance por ciclo, v2.0.14)
 
 | Item | Peso | **Chance %** |
 |------|------|-------------|
@@ -260,7 +271,8 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 | Opal Precious Gem | 1 | **1.00%** |
 | **Total** | **100** | **100%** |
 
-*Drop efetivo por ciclo = 15% (chance de trigger) x % do item acima*
+*Drop efetivo por ciclo = 20% (chance de trigger) x % do item acima*
+*FX: pulso dourado (ehealfx com tint gold) + som `dontstarve/common/gemsparkle`*
 
 ---
 
@@ -316,7 +328,7 @@ MECHANICAL (Root)
   │
   └── Dispenser MK.II (1 insight)
       └── Dispenser MK.III (1 insight)
-          └── Lucky Engineer (1 insight)  [Dispenser 15% rare drop]
+          └── Lucky Engineer (1 insight)  [Dispenser 20% rare drop + golden FX]
 
 ROBOTIC (Root, linear chain)
   Brute MK.II (1 insight)
@@ -334,3 +346,29 @@ ALLEGIANCE (Boss-locked, mutual exclusion)
 ```
 
 **Total de insights para tudo:** 6 Mechanical + 9 Robotic + 1 Allegiance = **16 insights**
+
+---
+
+## CHANGELOG
+
+### v2.0.14 — Balanceamento do Dispenser (Option B) + Afinidade Level 2
+
+**Balanceamento (Option B — rescale da curva de progressao):**
+- **MK1:** fuel 4 (igual), drops flat 3 scrap / 2 fuel / 2 mineral por ciclo (era 2+33%/1/1)
+- **MK2:** fuel **6** (era 4), drops flat 4 scrap / 3 fuel / 3 mineral por ciclo (era 3+33%/3/2)
+- **MK3:** fuel **10** (era 8), drops 4 scrap / 3 fuel / 3 mineral / **2 rare flat** (era 2/2/2/33%-chance-1)
+- Progressao corrigida: MK1→MK2 agora +186% items/dia (era +302%), MK2→MK3 +80% (era +16%)
+- Autonomia alinhada: 4 → 3 → 3,3 dias (MK1→MK2→MK3)
+
+**Afinidade Level 2 (sem bonus de afinidade dupla):**
+- **Celestial (dia):** Sanity aura **+100/min** (era 50/min), luz forte azul-prata raio 2.5
+- **Celestial drop ativo:** 33%/ciclo — Moonglass (60%) ou Moon Moth (40%)
+- **Shadow (dusk):** Heal **4 HP/s** (era 2 HP/s), builder-only, luz media roxa raio 1.5
+- **Shadow drop ativo:** 33%/ciclo — Nightmare Fuel (50%), Pure Horror (30%) ou Dark Tatters (20%)
+- Ter ambas afinidades **nao** da bonus extra — cada fase so dispara sua propria afinidade
+
+**Lucky Engineer:**
+- Chance: 15% → **20%** por ciclo
+- Adicionado **FX dourado visivel** (ehealfx com tint gold + som `gemsparkle`) — antes era invisivel
+
+**Custos de upgrade e fabricacao:** mantidos (30/40 scrap, 15 scrap + 3 red gems)
