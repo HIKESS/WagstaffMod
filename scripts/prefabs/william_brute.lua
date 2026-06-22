@@ -579,7 +579,7 @@ inst.components.burnable.ignorefuel = true
 
     --==================================================================================
     -- REINFORCED CHASSIS UPGRADE: Wrench upgrade spawns williambrute2
-    -- 80 scraps total, 5 per hit (16 hits). Progress shown in bot name.
+    -- 75 scraps total, 5 per hit (15 hits). Progress shown in bot name.
     -- Level 2: storage chest, +1500 HP, +10 DMG, follows player, larger size.
     --==================================================================================
     inst.upgradelevel = 0
@@ -590,7 +590,7 @@ inst.components.burnable.ignorefuel = true
         local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
         local hp = math.floor(inst.components.health.currenthealth)
         local maxhp = math.floor(inst.components.health.maxhealth)
-        local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 65") or ""
+        local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 75") or ""
         local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
         inst.components.named:SetName(displayname)
         inst.name = displayname
@@ -671,7 +671,7 @@ inst.components.burnable.ignorefuel = true
         end
         print("[DEBUG] Skill encontrada! Prosseguindo com upgrade...")
 
-        -- Upgrade: scrap metal per wrench hit (5 per hit, 65 total for Mk.II)
+        -- Upgrade: scrap metal per wrench hit (5 per hit, 75 total for Mk.II)
         local function IsScrap(item)
             return item.prefab == "scrap"
         end
@@ -690,7 +690,7 @@ inst.components.burnable.ignorefuel = true
         UpdateBruteName(inst)
         inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
 
-        if inst.upgradelevel >= 65 then
+        if inst.upgradelevel >= 75 then
             inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
             if worker.components.talker then
                 worker.components.talker:Say("Reinforced Chassis complete!")
@@ -1019,7 +1019,7 @@ inst.components.burnable.ignorefuel = true
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 40") or ""
+            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 90") or ""
             local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
             inst.components.named:SetName(displayname)
             inst.name = displayname
@@ -1067,7 +1067,7 @@ inst.components.burnable.ignorefuel = true
                 end
                 return
             end
-            if inst.upgradelevel_mk3 < 40 then
+            if inst.upgradelevel_mk3 < 90 then
                 print("[DEBUG] Tentando upgrade para MK3...")
                 -- Try to upgrade
                 local function IsScrap(item)
@@ -1088,7 +1088,7 @@ inst.components.burnable.ignorefuel = true
                 UpdateBrute2Name(inst)
                 inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
 
-                if inst.upgradelevel_mk3 >= 40 then
+                if inst.upgradelevel_mk3 >= 90 then
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     if worker.components.talker then
                         worker.components.talker:Say("Mk.III Complete!")

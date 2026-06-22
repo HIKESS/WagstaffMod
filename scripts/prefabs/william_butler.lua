@@ -45,10 +45,10 @@ local function UpdateButlerName(inst)
     
     -- Build name string with fuel, HP and upgrade info
     local upgrade_str = ""
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 85 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/85"
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 55 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/55"
     elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/120"
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
     end
     local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
     
@@ -658,7 +658,7 @@ inst.components.burnable.ignorefuel = true
             
             print("[DEBUG UPGRADE] Skill encontrada! Prosseguindo com upgrade...")
 
-    -- Upgrade: variable scrap cost per wrench hit (10, 10, 10, 10, 10, 15 = 85 total)
+    -- Upgrade: variable scrap cost per wrench hit (10, 10, 10, 10, 15 = 55 total)
             local scrap_count = 0
             if worker.components.inventory then
                 for _, item in pairs(worker.components.inventory.itemslots) do
@@ -672,7 +672,7 @@ inst.components.burnable.ignorefuel = true
             print("[DEBUG UPGRADE] Scrap count no inventario:", scrap_count)
             
             -- Determine cost based on current upgrade level
-            local upgrade_cost_table = {10, 10, 10, 10, 10, 15}  -- Total: 85 scraps
+            local upgrade_cost_table = {10, 10, 10, 10, 15}  -- Total: 55 scraps
             local hits_so_far = math.floor(inst.upgradelevel / 10)  -- 0-5 hits
             local base_cost = upgrade_cost_table[hits_so_far + 1] or 15
             local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, base_cost)
@@ -693,7 +693,7 @@ inst.components.burnable.ignorefuel = true
             print("[DEBUG UPGRADE] Novo upgrade level:", inst.upgradelevel)
             UpdateButlerName(inst)
 
-            if inst.upgradelevel >= 85 then
+            if inst.upgradelevel >= 55 then
                 print("[DEBUG UPGRADE] UPGRADE COMPLETO! Spawnando williambutler2...")
                 inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                 if worker.components.talker then
@@ -933,7 +933,7 @@ inst.components.burnable.ignorefuel = true
                 return
             end
 
-            -- PRIORITY 2: Upgrade to MK.III if HP = 100% AND skill learned (60 scraps, 5 per hit)
+            -- PRIORITY 2: Upgrade to MK.III if HP = 100% AND skill learned (70 scraps, 5 per hit)
             if not _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade_mk3") then
                 if worker.components.talker then
                     worker.components.talker:Say("Requires Butler MK. II skill!\n(Activate it in the skill tree!)")
@@ -941,7 +941,7 @@ inst.components.burnable.ignorefuel = true
                 return
             end
 
-            -- MK.III Upgrade: 5 scraps per hit, 120 total
+            -- MK.III Upgrade: 5 scraps per hit, 70 total
             local scrap_count = 0
             if worker.components.inventory then
                 for _, item in pairs(worker.components.inventory.itemslots) do
@@ -965,7 +965,7 @@ inst.components.burnable.ignorefuel = true
             inst.upgradelevel_mk3 = inst.upgradelevel_mk3 + 5
             UpdateButlerName(inst)
 
-            if inst.upgradelevel_mk3 >= 120 then
+            if inst.upgradelevel_mk3 >= 70 then
                 inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                 if worker.components.talker then
                     worker.components.talker:Say("Butler Bot MK. III upgrade complete!")
