@@ -16,6 +16,11 @@ local prefabs =
     "collapse_small",
     "scrap",
     "ehealfx",
+    "moonglass",
+    "moon_moth",
+    "nightmarefuel",
+    "pure_horror",
+    "dark_tatters",
 }
 
 local fuel =
@@ -60,6 +65,20 @@ local lucky_rare =
     { item = "opalpreciousgem", weight = 1 },
 }
 
+-- v2.0.14: Level 2 affinity active drop tables (MK3 only, no dual affinity bonus)
+local celestial_drops =
+{
+    { item = "moonglass",  weight = 60 },
+    { item = "moon_moth",  weight = 40 },
+}
+
+local shadow_drops =
+{
+    { item = "nightmarefuel", weight = 50 },
+    { item = "pure_horror",   weight = 30 },
+    { item = "dark_tatters",  weight = 20 },
+}
+
 local function weighted_random_choice(items)
     local total = 0
     for _, v in ipairs(items) do
@@ -78,9 +97,21 @@ end
 local function TryLuckyDrop(inst)
     local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
     if builder and builder:HasTag("wagstaff_lucky_engineer") then
-        if math.random() < 0.15 then
+        -- v2.0.14: Lucky Engineer 15% -> 20% + golden FX feedback
+        if math.random() < 0.20 then
             local item = weighted_random_choice(lucky_rare)
             inst.components.lootdropper:SpawnLootPrefab(item)
+            -- Golden FX so the player sees the lucky proc (reuses ehealfx with gold tint)
+            local fx = _G.SpawnPrefab("ehealfx")
+            if fx then
+                local x, y, z = inst.Transform:GetWorldPosition()
+                fx.Transform:SetPosition(x, 1.2, z)
+                fx.AnimState:SetMultColour(1.0, 0.84, 0.0, 1) -- gold
+                fx:DoTaskInTime(1.0, function()
+                    if fx and fx:IsValid() then fx:Remove() end
+                end)
+            end
+            inst.SoundEmitter:PlaySound("dontstarve/common/gemsparkle")
             return true
         end
     end
@@ -122,6 +153,8 @@ function upgrade(inst)
         inst:RemoveTag("lvl1")
         inst.AnimState:PlayAnimation("upgrade2")
         inst.AnimState:PushAnimation("idle_2", true)
+        -- Mk.II: max fuel 6 (was 4) — v2.0.14 balance
+        inst.components.fueled.maxfuel = 6
         UpdateDispenserName(inst)
     end
     if inst.upgradelevel >= 70 then
@@ -130,8 +163,8 @@ function upgrade(inst)
         inst:RemoveTag("lvl2")
         inst.AnimState:PlayAnimation("upgrade3")
         inst.AnimState:PushAnimation("idle_3", true)
-        -- Mk.III: double max fuel to 8
-        inst.components.fueled.maxfuel = 8
+        -- Mk.III: max fuel 10 (was 8) — v2.0.14 balance
+        inst.components.fueled.maxfuel = 10
         UpdateDispenserName(inst)
         -- MK3 affinity auras (setup once)
         if not inst._mk3_aura_setup then
@@ -177,12 +210,18 @@ function upgrade(inst)
                         local follower = inst._healfx.entity:AddFollower()
                         follower:FollowSymbol(inst.GUID, "placer", 205, 140, 1)
                     end
-                    -- Celestial: blue-white tint; Shadow: purple tint
+                    -- Celestial: strong blue-silver light radius 2.5; Shadow: medium purple light radius 1.5
                     if TheWorld.state.isday and celestial then
                         inst._healfx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
-                        inst.Light:SetColour(0.4, 0.7, 1.0)
+                        inst.Light:SetRadius(2.5)
+                        inst.Light:SetIntensity(0.85)
+                        inst.Light:SetFalloff(0.5)
+                        inst.Light:SetColour(0.6, 0.8, 1.0)
                     elseif TheWorld.state.isdusk and shadow then
                         inst._healfx.AnimState:SetMultColour(0.6, 0.1, 0.8, 1)
+                        inst.Light:SetRadius(1.5)
+                        inst.Light:SetIntensity(0.7)
+                        inst.Light:SetFalloff(0.7)
                         inst.Light:SetColour(0.5, 0.0, 0.7)
                     end
                     inst._healfx:Show()
@@ -199,6 +238,7 @@ function upgrade(inst)
             inst:AddComponent("sanityaura")
             inst.components.sanityaura.aura = 0
 
+            -- v2.0.14 Level 2 auras: TUNING.DISP_HEALING is 0.5s, so 2 HP/tick = 4 HP/sec shadow heal
             inst:DoPeriodicTask(_G.TUNING.DISP_HEALING, function()
                 local builder = GetBuilder(inst)
                 local celestial = builder and builder:HasTag("wagstaff_celestial_possession")
@@ -207,24 +247,20 @@ function upgrade(inst)
                 -- Update FX
                 UpdateAuraFX(inst)
 
-                -- CELESTIAL (day): Sanity aura 2/tick
+                -- CELESTIAL (day): Sanity aura MED (100/min) — was SMALL (50/min)
                 if TheWorld.state.isday and celestial then
-                    inst.components.sanityaura.aura = _G.TUNING.SANITYAURA_SMALL
-                    -- HP heal as bonus too? No — only sanity per spec
+                    inst.components.sanityaura.aura = _G.TUNING.SANITYAURA_MED
                 else
                     inst.components.sanityaura.aura = 0
                 end
 
-                -- SHADOW (dusk): HP heal 1/tick to nearby players/willminions
-                if TheWorld.state.isdusk and shadow then
-                    local x, y, z = inst.Transform:GetWorldPosition()
-                    _G.FindEntity(inst, _G.TUNING.DISP_RANGE, function(guy)
-                        if guy and guy:HasTag("player") and guy.components.health
-                            and not guy.components.health:IsDead()
-                            and guy.components.health.currenthealth < guy.components.health.maxhealth then
-                            guy.components.health:DoDelta(1, true, nil, true)
-                        end
-                    end, {"player"}, {"INLIMBO"})
+                -- SHADOW (dusk): HP heal 2/tick (4 HP/sec) — builder only, within DISP_RANGE
+                if TheWorld.state.isdusk and shadow and builder ~= nil then
+                    if builder.components.health
+                        and not builder.components.health:IsDead()
+                        and builder.components.health.currenthealth < builder.components.health.maxhealth then
+                        builder.components.health:DoDelta(2, true, nil, true)
+                    end
                 end
             end)
 
@@ -379,17 +415,18 @@ local function dispenseitem(inst, phase, cavephase)
     local item = nil
     if inst.components.fueled.currentfuel ~= 0 then
         inst:DoTaskInTime(5, function()
+            -- Mk.I (day only) — v2.0.14 Option B: flat 3 scrap / 2 fuel / 2 mineral (was 2+33% / 1 / 1)
             if inst:HasTag("lvl1") then
                 if _G.TheWorld.state.isday then
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
+                    inst.components.lootdropper:SpawnLootPrefab("scrap")
                     item = _G.weighted_random_choice(fuel)
+                    inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     item = _G.weighted_random_choice(mineral)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    if math.random() < .33 then
-                        inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    end
+                    inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
                     inst.AnimState:PlayAnimation("hit")
@@ -397,29 +434,10 @@ local function dispenseitem(inst, phase, cavephase)
                     setmeterlevl(inst)
                 end
             end
+            -- Mk.II (day + dusk) — v2.0.14 Option B: flat 4 scrap / 3 fuel / 3 mineral (was 3+33% / 3 / 2)
             if inst:HasTag("lvl2") then
-                if _G.TheWorld.state.isday then
+                if _G.TheWorld.state.isday or _G.TheWorld.state.isdusk then
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    item = _G.weighted_random_choice(fuel)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    item = _G.weighted_random_choice(mineral)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    if math.random() < .33 then
-                        inst.components.lootdropper:SpawnLootPrefab("scrap")
-                        inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    end
-                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
-                    inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
-                    inst.AnimState:PlayAnimation("hit_2")
-                    TryLuckyDrop(inst)
-                    setmeterlevl(inst)
-                end
-                if _G.TheWorld.state.isdusk then
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
@@ -430,10 +448,7 @@ local function dispenseitem(inst, phase, cavephase)
                     item = _G.weighted_random_choice(mineral)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    if math.random() < .33 then
-                        inst.components.lootdropper:SpawnLootPrefab("scrap")
-                        inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    end
+                    inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
                     inst.AnimState:PlayAnimation("hit_2")
@@ -441,61 +456,56 @@ local function dispenseitem(inst, phase, cavephase)
                     setmeterlevl(inst)
                 end
             end
+            -- Mk.III (day + dusk + night) — v2.0.14 Option B:
+            -- 4 scrap / 3 fuel / 3 mineral / 2 rare flat (was 2 / 2 / 2 / 33% chance 1)
+            -- + 33% night-bonus (2 night items) on night cycle
+            -- + Level 2 affinity active drops (33% per affinity phase, no dual affinity bonus)
             if inst:HasTag("lvl3") then
-                if _G.TheWorld.state.isday then
+                if _G.TheWorld.state.isday or _G.TheWorld.state.isdusk or _G.TheWorld.state.isnight then
+                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+                    inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     item = _G.weighted_random_choice(fuel)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    item = _G.weighted_random_choice(mineral)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    if math.random() < .33 then
-                        item = _G.weighted_random_choice(rare)
-                        inst.components.lootdropper:SpawnLootPrefab(item)
-                    end
-                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
-                    inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
-                    inst.AnimState:PlayAnimation("hit_3")
-                    TryLuckyDrop(inst)
-                    setmeterlevl(inst)
-                end
-                if _G.TheWorld.state.isdusk then
-                    inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    item = _G.weighted_random_choice(fuel)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     item = _G.weighted_random_choice(mineral)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    if math.random() < .33 then
-                        item = _G.weighted_random_choice(rare)
-                        inst.components.lootdropper:SpawnLootPrefab(item)
+                    inst.components.lootdropper:SpawnLootPrefab(item)
+                    -- 2 rare drops flat (was 33% chance for 1)
+                    item = _G.weighted_random_choice(rare)
+                    inst.components.lootdropper:SpawnLootPrefab(item)
+                    item = _G.weighted_random_choice(rare)
+                    inst.components.lootdropper:SpawnLootPrefab(item)
+
+                    -- Night cycle bonus: 33% chance for 2 night-themed items
+                    if _G.TheWorld.state.isnight then
+                        if math.random() < .33 then
+                            item = _G.weighted_random_choice(night)
+                            inst.components.lootdropper:SpawnLootPrefab(item)
+                            inst.components.lootdropper:SpawnLootPrefab(item)
+                        end
                     end
-                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
-                    inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
-                    inst.AnimState:PlayAnimation("hit_3")
-                    TryLuckyDrop(inst)
-                    setmeterlevl(inst)
-                end
-                if _G.TheWorld.state.isnight then
-                    inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    item = _G.weighted_random_choice(fuel)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    item = _G.weighted_random_choice(mineral)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    inst.components.lootdropper:SpawnLootPrefab(item)
-                    if math.random() < .33 then
-                        item = _G.weighted_random_choice(night)
-                        inst.components.lootdropper:SpawnLootPrefab(item)
-                        inst.components.lootdropper:SpawnLootPrefab(item)
-                        item = _G.weighted_random_choice(rare)
-                        inst.components.lootdropper:SpawnLootPrefab(item)
+
+                    -- Level 2 affinity active drops: 33% per cycle during the affinity's active phase
+                    -- No dual affinity bonus — each phase only triggers its own affinity
+                    local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
+                    if builder then
+                        if _G.TheWorld.state.isday and builder:HasTag("wagstaff_celestial_possession") then
+                            if math.random() < 0.33 then
+                                local drop = weighted_random_choice(celestial_drops)
+                                inst.components.lootdropper:SpawnLootPrefab(drop)
+                            end
+                        elseif _G.TheWorld.state.isdusk and builder:HasTag("wagstaff_shadow_possession") then
+                            if math.random() < 0.33 then
+                                local drop = weighted_random_choice(shadow_drops)
+                                inst.components.lootdropper:SpawnLootPrefab(drop)
+                            end
+                        end
                     end
+
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
                     inst.AnimState:PlayAnimation("hit_3")
