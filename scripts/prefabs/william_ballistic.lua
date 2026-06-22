@@ -84,9 +84,9 @@ local function ZapFX(inst)
 
         end
 
--- Passive Light Orb: automatic lantern light for MK2+ Ballistic Bots
--- No toggle needed - light is always on when bot has fuel
--- Light varies between 1.5x and 3x lantern size every 0.5s with FX
+-- Passive Lantern Light for MK3 Ballistic Bot
+-- Base light: 1.5x lantern size, always on, no FX (fixed)
+-- Pulses to 3x lantern size with wx78_big_spark FX every 0.5s, then back to 1.5x
 local function StartLightOrb(inst)
     if inst._lightorb_active then return end
     if inst.components.fueled:IsEmpty() then return end
@@ -99,31 +99,23 @@ local function StartLightOrb(inst)
     inst:AddTag("lantern")
 
     -- Lantern base values (lantern radius ~= 2.5, intensity ~= 0.8)
-    local BASE_RADIUS = 2.5 * 3      -- 3x lantern = 7.5 max
-    local MIN_RADIUS = 2.5 * 1.5     -- 1.5x lantern = 3.75 min
-    local BASE_INTENSITY = 0.8 * 3    -- 3x intensity max
-    local MIN_INTENSITY = 0.8 * 1.5  -- 1.5x intensity min
+    local FIX_RADIUS = 2.5 * 1.5     -- 1.5x lantern = 3.75 (fixed base)
+    local PULSE_RADIUS = 2.5 * 3     -- 3x lantern = 7.5 (pulse)
+    local FIX_INTENSITY = 0.8 * 1.5  -- 1.5x intensity
+    local PULSE_INTENSITY = 0.8 * 3  -- 3x intensity
     local BASE_FALLOFF = 0.6
     local R, G, B = 1, 0.95, 0.8    -- Warm lantern color
 
-    local _is_bright = false
+    local _is_pulsing = false
 
-    -- Initial light setup (bright state)
-    inst.Light:SetRadius(BASE_RADIUS)
-    inst.Light:SetIntensity(BASE_INTENSITY)
+    -- Initial light setup: 1.5x fixed (no FX)
+    inst.Light:SetRadius(FIX_RADIUS)
+    inst.Light:SetIntensity(FIX_INTENSITY)
     inst.Light:SetFalloff(BASE_FALLOFF)
     inst.Light:SetColour(R, G, B)
     inst.Light:Enable(true)
 
-    -- Spawn initial FX for bright state
-    local fx = SpawnPrefab("wx78_big_spark")
-    if fx then
-        fx.entity:SetParent(inst.entity)
-        fx.Transform:SetPosition(0, 1, 0)
-        inst._lightorb_fx = fx
-    end
-
-    -- Tick every 0.5s: toggle between 3x (bright) and 1.5x (dim)
+    -- Tick every 0.5s: toggle between 1.5x (fixed, no FX) and 3x (pulse, wx78_big_spark)
     inst._lightorb_tick = inst:DoPeriodicTask(0.5, function()
         if not inst._lightorb_active then return end
         if inst.components.fueled:IsEmpty() then
@@ -131,13 +123,12 @@ local function StartLightOrb(inst)
             return
         end
 
-        _is_bright = not _is_bright
+        _is_pulsing = not _is_pulsing
 
-        if _is_bright then
-            -- 3x lantern size - BRIGHT
-            inst.Light:SetRadius(BASE_RADIUS)
-            inst.Light:SetIntensity(BASE_INTENSITY)
-            -- FX: wx78_big_spark for 3x
+        if _is_pulsing then
+            -- 3x lantern size - PULSE with wx78_big_spark FX
+            inst.Light:SetRadius(PULSE_RADIUS)
+            inst.Light:SetIntensity(PULSE_INTENSITY)
             if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
                 inst._lightorb_fx:Remove()
             end
@@ -148,24 +139,15 @@ local function StartLightOrb(inst)
                 inst._lightorb_fx = newfx
             end
         else
-            -- 1.5x lantern size - DIM
-            inst.Light:SetRadius(MIN_RADIUS)
-            inst.Light:SetIntensity(MIN_INTENSITY)
-            -- FX: hitsparks_fx for 1.5x
+            -- 1.5x lantern size - FIXED base, no FX
+            inst.Light:SetRadius(FIX_RADIUS)
+            inst.Light:SetIntensity(FIX_INTENSITY)
             if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
                 inst._lightorb_fx:Remove()
             end
-            local newfx = SpawnPrefab("hitsparks_fx")
-            if newfx then
-                newfx.entity:SetParent(inst.entity)
-                newfx.Transform:SetPosition(0, 1, 0)
-                inst._lightorb_fx = newfx
-            end
+            inst._lightorb_fx = nil
         end
     end)
-
-    -- No attack disable - passive light, bot can still fight
-    -- No extra fuel drain - bot consumes fuel normally
 end
 
 local function StopLightOrb(inst)
@@ -434,8 +416,6 @@ end
         inst:AddTag("NOBLOCK")
         inst:AddTag("mech")
         inst:AddTag("ballistic")
-
-    inst:SetPrefabNameOverride("williamballistic")
 
         inst.level = 0
 
