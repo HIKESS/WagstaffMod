@@ -5,22 +5,39 @@
 
 ---
 
+## MÁQUINAS / PROTOTYPERS (ESTAÇÕES DE FABRICAÇÃO)
+
+Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_tag = "tinkerer"`) e exigem estar **proximo de uma estacao prototyper** correspondente ao nivel de Tech (ou nenhuma, no caso de `TECH.NONE`). Mapeamento dos niveis de Tech do DST para as maquinas reais:
+
+| Tech (código) | Nível | Máquina / Prototyper |
+|---------------|-------|----------------------|
+| `TECH.NONE` | — | **Nenhuma** (fabricavel à mão, a qualquer momento) |
+| `TECH.SCIENCE_ONE` | Science I | **Science Machine** (Máquina de Ciência) |
+| `TECH.SCIENCE_TWO` | Science II | **Alchemy Engine** (Motor de Alquimia) |
+| `TECH.MAGIC_ONE` | Magic I | Prestihatitator (Prestidigitador) |
+| `TECH.MAGIC_TWO` | Magic II | **Shadow Manipulator** (Manipulador de Sombras) |
+| `TECH.MAGIC_THREE` | Magic III | ⚠️ **Sem prototyper vanilla** — ver nota abaixo |
+
+> ⚠️ **Nota sobre `TECH.MAGIC_THREE`:** No DST vanilla **nenhuma estação** fornece o nivel Magic III (Science Machine, Alchemy Engine, Prestihatitator e Shadow Manipulator param no nivel II). As receitas do **Ballistic Bot**, **E-Teleporter** e **E-Teleporter Exit** usam `TECH.MAGIC_THREE`, portanto **nao sao prototipaveis** em nenhuma estacao padrao. Nao foi encontrado no codigo do mod nenhum perk/skill que conceda esse tier ao Wagstaff — verifique in-game se ha desbloqueio alternativo ou se trata-se de requisito a ser ajustado pelo autor do mod.
+
+---
+
 ## FABRICACAO BASE
 
 ### Scrap
-| Custo | Quantidade | Tech |
-|-------|-----------|------|
-| 2 Flint + 2 Twigs | **x5** Scrap | Nenhuma |
+| Custo | Quantidade | Tech | Máquina |
+|-------|-----------|------|---------|
+| 2 Flint + 2 Twigs | **x5** Scrap | Nenhuma | Nenhuma (à mão) |
 
 ### TF2 Wrench (chave de upgrade)
-| Custo | Quantidade | Tech |
-|-------|-----------|------|
-| 5 Scrap + 3 Twigs | **x1** | Nenhuma |
+| Custo | Quantidade | Tech | Máquina |
+|-------|-----------|------|---------|
+| 5 Scrap + 3 Twigs | **x1** | Nenhuma | Nenhuma (à mão) |
 
 ### William Gadget (material base dos bots)
-| Custo | Quantidade | Tech |
-|-------|-----------|------|
-| 2 Gears + 1 Gold Nugget | **x1** | Nenhuma |
+| Custo | Quantidade | Tech | Máquina |
+|-------|-----------|------|---------|
+| 2 Gears + 1 Gold Nugget | **x1** | Nenhuma | Nenhuma (à mão) |
 
 ---
 
@@ -30,7 +47,7 @@
 
 ### BUTLER BOT
 
-**Fabricacao:** 1 William Gadget + 4 Boards + 2 Transistors *(Science One)*
+**Fabricacao:** 1 William Gadget + 4 Boards + 2 Transistors *(Science One — Science Machine / Máquina de Ciência)*
 
 | | **MK.I** | **MK.II** | **MK.III** |
 |---|---|---|---|
@@ -56,7 +73,7 @@
 
 ### BUSTER BOT
 
-**Fabricacao:** 1 William Gadget + 3 Marble + 2 Transistors *(Magic Two)*
+**Fabricacao:** 1 William Gadget + 3 Marble + 2 Transistors *(Magic Two — Shadow Manipulator / Manipulador de Sombras)*
 
 | | **MK.I** | **MK.II** | **MK.III** |
 |---|---|---|---|
@@ -81,24 +98,24 @@
 
 ### BALLISTIC BOT
 
-**Fabricacao:** 1 William Gadget + 4 Nitre + 2 Transistors *(Magic Three)*
+**Fabricacao:** 1 William Gadget + 4 Nitre + 2 Transistors *(Magic Three — ⚠️ sem prototyper vanilla, ver tabela de Máquinas acima)*
 
 | | **MK.I** | **MK.II** | **MK.III** |
 |---|---|---|---|
 | **HP** | 150 | 400 (+250) | 400 (herda MK.II) |
 | **DMG** | 16 (24/1.5) | 28 (+12) | 28 (herda MK.II) |
 | **Fuel** | 3630s (60.5 min) | 3630s (60.5 min) | 3630s (60.5 min) |
-| **Tipo** | Turret/Movel | Turret/Movel | **Turret only** |
+| **Tipo** | Turret only | Turret only | Turret only |
 | **Custo Upgrade** | — | 70 Scrap (5/hit) | 90 Scrap (5/hit) |
 | **Skill Necessaria** | — | Ballistic MK.II | Ballistic MK.III |
 
 **Habilidades por Tier:**
 
-- **MK.I:** Deploy/undeploy (turret ou movel), dano eletrico (1.5x vs mobs), para-raio, sistema de **Overcharge** (relampago = 3x DMG + 500 HP por 60s, 1x/dia, drena toda a bateria ao acabar)
+- **MK.I:** Deploy/undeploy (torre fixa, **nao-movel**), dano eletrico (1.5x vs mobs), para-raio, sistema de **Overcharge** (relampago = 3x DMG + 500 HP por 60s, 1x/dia, drena toda a bateria ao acabar)
 
 - **MK.II:** +250 HP, +12 DMG, herda tudo do MK.I
 
-- **MK.III:** Herda MK.II (mesmo HP/DMG), **turret puro** (nao movel), +:
+- **MK.III:** Herda MK.II (mesmo HP/DMG), permanece **turret only** (o Ballistic Bot é exclusivamente uma torre fixa em **todos** os tiers — a melhoria de mobilidade está desativada no código), +:
   - **Lantern Light (so a noite):** Luz fixa ~0.6x lanterna + pulso ~3x lanterna a cada 0.5s
   - **Rain Splash:** Ataques causam splash eletrico (30% dano) + chain lightning em inimigos proximos
   - **Tempest Call:** Chuva + combate = atrai relampagos automaticamente (auto-overcharge)
@@ -110,7 +127,7 @@
 
 ### BRUTE BOT
 
-**Fabricacao:** 1 William Gadget + 4 Cut Stone + 2 Transistors *(Science Two)*
+**Fabricacao:** 1 William Gadget + 4 Cut Stone + 2 Transistors *(Science Two — Alchemy Engine / Motor de Alquimia)*
 
 | | **MK.I** | **MK.II** | **MK.III** |
 |---|---|---|---|
@@ -144,7 +161,7 @@
 
 ### SENTRY GUN
 
-**Fabricacao:** 20 Scrap + 3 Gears *(Magic Two)*
+**Fabricacao:** 20 Scrap + 3 Gears *(Magic Two — Shadow Manipulator / Manipulador de Sombras)*
 
 | | **LVL 1** | **LVL 2** | **LVL 3** |
 |---|---|---|---|
@@ -173,7 +190,7 @@
 
 ### DISPENSER
 
-**Fabricacao:** 15 Scrap + 3 Red Gems *(Science One)*
+**Fabricacao:** 15 Scrap + 3 Red Gems *(Science One — Science Machine / Máquina de Ciência)*
 
 | | **LVL 1** | **LVL 2** | **LVL 3** |
 |---|---|---|---|
@@ -260,19 +277,19 @@
 
 ## RESUMO DE CUSTOS DE FABRICACAO
 
-| Item | Custo | Tech |
-|------|-------|------|
-| **Scrap** (x5) | 2 Flint + 2 Twigs | Nenhuma |
-| **TF2 Wrench** | 5 Scrap + 3 Twigs | Nenhuma |
-| **William Gadget** | 2 Gears + 1 Gold Nugget | Nenhuma |
-| **Butler Bot** | 1 Gadget + 4 Boards + 2 Transistors | Science I |
-| **Buster Bot** | 1 Gadget + 3 Marble + 2 Transistors | Magic II |
-| **Brute Bot** | 1 Gadget + 4 Cut Stone + 2 Transistors | Science II |
-| **Ballistic Bot** | 1 Gadget + 4 Nitre + 2 Transistors | Magic III |
-| **Sentry Gun** | 20 Scrap + 3 Gears | Magic II |
-| **Dispenser** | 15 Scrap + 3 Red Gems | Science I |
-| **E-Teleporter** | 30 Scrap + 5 Gears + 5 Transistors | Magic III |
-| **E-Teleporter Exit** | 25 Scrap + 3 Gears + 3 Transistors | Magic III |
+| Item | Custo | Tech | Máquina (Prototyper) |
+|------|-------|------|----------------------|
+| **Scrap** (x5) | 2 Flint + 2 Twigs | Nenhuma | Nenhuma (à mão) |
+| **TF2 Wrench** | 5 Scrap + 3 Twigs | Nenhuma | Nenhuma (à mão) |
+| **William Gadget** | 2 Gears + 1 Gold Nugget | Nenhuma | Nenhuma (à mão) |
+| **Butler Bot** | 1 Gadget + 4 Boards + 2 Transistors | Science I | Science Machine |
+| **Buster Bot** | 1 Gadget + 3 Marble + 2 Transistors | Magic II | Shadow Manipulator |
+| **Brute Bot** | 1 Gadget + 4 Cut Stone + 2 Transistors | Science II | Alchemy Engine |
+| **Ballistic Bot** | 1 Gadget + 4 Nitre + 2 Transistors | Magic III | ⚠️ Sem prototyper vanilla |
+| **Sentry Gun** | 20 Scrap + 3 Gears | Magic II | Shadow Manipulator |
+| **Dispenser** | 15 Scrap + 3 Red Gems | Science I | Science Machine |
+| **E-Teleporter** | 30 Scrap + 5 Gears + 5 Transistors | Magic III | ⚠️ Sem prototyper vanilla |
+| **E-Teleporter Exit** | 25 Scrap + 3 Gears + 3 Transistors | Magic III | ⚠️ Sem prototyper vanilla |
 
 ---
 
