@@ -1986,26 +1986,76 @@ AddPrefabPostInit("world", function(self)
 end)
 
 
--- Listen for boss kills — set BOTH server state AND networked variable
+--==================================================================================
+-- Listen for boss kills — set server state, net_bool, AND player tags.
+-- Player tags are the PRIMARY replication mechanism because they are always
+-- networked by DST's engine (unlike net_bool created in a PostInit, which
+-- may not replicate because the world entity is already fully networked
+-- by the time AddPrefabPostInit("world") runs).
+--==================================================================================
+
+-- Helper: apply boss-kill tag to all currently connected players
+local function ApplyBossKillTag(tag_name)
+    for _, player in ipairs(GLOBAL.AllPlayers) do
+        if player and player:IsValid() and not player:HasTag(tag_name) then
+            player:AddTag(tag_name)
+            print("[Wagstaff] Added tag '" .. tag_name .. "' to player " .. tostring(player.name))
+        end
+    end
+end
+
 AddPrefabPostInit("stalker_atrium", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
     inst:ListenForEvent("death", function()
+        -- Server-side state (persists in save data, NOT networked)
         GLOBAL.TheWorld.state.wagstaff_fuelweaver_killed = true
+        -- net_bool (may not replicate from PostInit, kept as fallback)
         if GLOBAL.TheWorld.wagstaff_fuelweaver_killed_net then
             GLOBAL.TheWorld.wagstaff_fuelweaver_killed_net:set(true)
         end
-        print("[Wagstaff] Ancient Fuelweaver killed — affinity lock unlocked (networked)")
+        -- PRIMARY: player tags (always replicate server->client in DST)
+        ApplyBossKillTag("wagstaff_fuelweaver_killed")
+        print("[Wagstaff] Ancient Fuelweaver killed — affinity lock unlocked (tag+net)")
     end)
 end)
 
 AddPrefabPostInit("alterguardian_phase3", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
     inst:ListenForEvent("death", function()
+        -- Server-side state (persists in save data, NOT networked)
         GLOBAL.TheWorld.state.wagstaff_celestial_killed = true
+        -- net_bool (may not replicate from PostInit, kept as fallback)
         if GLOBAL.TheWorld.wagstaff_celestial_killed_net then
             GLOBAL.TheWorld.wagstaff_celestial_killed_net:set(true)
         end
-        print("[Wagstaff] Celestial Champion killed — affinity lock unlocked (networked)")
+        -- PRIMARY: player tags (always replicate server->client in DST)
+        ApplyBossKillTag("wagstaff_celestial_killed")
+        print("[Wagstaff] Celestial Champion killed — affinity lock unlocked (tag+net)")
+    end)
+end)
+
+--==================================================================================
+-- Re-apply boss-kill tags when players join/load (tags don't persist across
+-- save/load on players, so we must re-add them from the world's saved state).
+-- This runs on the master sim for every player that spawns.
+--==================================================================================
+AddPlayerPostInit(function(inst)
+    if not GLOBAL.TheWorld.ismastersim then return end
+    inst:DoTaskInTime(1, function()
+        if not inst:IsValid() then return end
+        -- Re-apply tags from world state (handles save/load and late-joining players)
+        if GLOBAL.TheWorld.state.wagstaff_fuelweaver_killed then
+            if not inst:HasTag("wagstaff_fuelweaver_killed") then
+                inst:AddTag("wagstaff_fuelweaver_killed")
+                print("[Wagstaff] Re-applied wagstaff_fuelweaver_killed tag to " .. tostring(inst.name) .. " (world state)")
+            end
+        end
+        if GLOBAL.TheWorld.state.wagstaff_celestial_killed then
+            if not inst:HasTag("wagstaff_celestial_killed") then
+                inst:AddTag("wagstaff_celestial_killed")
+                print("[Wagstaff] Re-applied wagstaff_celestial_killed tag to " .. tostring(inst.name) .. " (world state)")
+            end
+        end
     end)
 end)
 
