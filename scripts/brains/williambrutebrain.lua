@@ -89,31 +89,24 @@ local function ShouldGoHome(inst)
 end
 
 function WilliamBruteBrain:OnStart()
-    local has_leader = self.inst.components.follower ~= nil and self.inst.components.follower.leader ~= nil
-
-    local root
-    if has_leader then
-        -- Follow player mode
-        root = PriorityNode(
-        {
-            WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
-            WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
-            ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
-            Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST),
-            FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn),
-            Wander(self.inst, function() return self.inst.components.knownlocations:GetLocation("home") end, MAX_WANDER_DIST)
-        }, .25)
-    else
-        -- Stationary/home guard mode
-        root = PriorityNode(
-        {
-            WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
-            WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
-            ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
-            WhileNode(function() return ShouldGoHome(self.inst) end, "ShouldGoHome", DoAction(self.inst, GoHomeAction, "Go Home", true)),
-            Wander(self.inst, function() return self.inst.components.knownlocations:GetLocation("home") end, MAX_WANDER_DIST)
-        }, .25)
-    end
+    -- Always build a single tree that handles both follow and home-guard modes.
+    -- Previously, the tree was built once in OnStart based on whether the leader
+    -- existed at that exact moment. On game reload, the leader is restored via
+    -- DoTaskInTime(0) which can race with brain creation, causing the brain to
+    -- build WITHOUT a Follow node → brute never follows (wanders for ~1 min).
+    -- Now Follow is wrapped in a WhileNode so it activates as soon as a leader
+    -- is available, even if set after brain creation.
+    local root = PriorityNode(
+    {
+        WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
+        WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
+        ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
+        WhileNode(function() return GetLeader(self.inst) ~= nil end, "HasLeader",
+            Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST)),
+        WhileNode(function() return ShouldGoHome(self.inst) end, "ShouldGoHome", DoAction(self.inst, GoHomeAction, "Go Home", true)),
+        FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn),
+        Wander(self.inst, function() return self.inst.components.knownlocations:GetLocation("home") end, MAX_WANDER_DIST)
+    }, .25)
 
     self.bt = BT(self.inst, root)
 end

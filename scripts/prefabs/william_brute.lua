@@ -1240,14 +1240,9 @@ inst.components.burnable.ignorefuel = true
                     end
                 end
             end
-            
-            inst:DoTaskInTime(0, function()
-                if inst.on == true then
-                    TurnOn(inst, nil, true)
-                else
-                    TurnOff(inst, nil, true)
-                end
-            end)
+            -- NOTE: TurnOn/TurnOff is already called by base onload (via DoTaskInTime(0)).
+            -- We do NOT duplicate it here to avoid double brain creation and SG interruption
+            -- which caused ~1 min follow delay on reload.
         end
         inst.OnSave = OnSaveBrute2WithUpgrade
         inst.OnLoad = OnLoadBrute2WithUpgrade
@@ -1364,30 +1359,28 @@ inst.components.burnable.ignorefuel = true
             data.is_mk3 = true
         end
         
-        local old_OnLoadBrute3 = inst.OnLoad
-        local function OnLoadBrute3(inst, data)
-            if old_OnLoadBrute3 then
-                old_OnLoadBrute3(inst, data)
-            end
-            -- Restore container if it was removed during load
-            if data and data.is_mk3 and not inst:HasTag("container") then
-                inst:AddTag("container")
-                if inst.components.container == nil then
-                    inst:AddComponent("container")
-                    inst.components.container:WidgetSetup("williambrute3")
-                    inst.components.container.onopenfn = OnOpen
-                    inst.components.container.onclosefn = OnClose
-                    inst.components.container.skipopensnd = true
-                    inst.components.container.skipclosesnd = true
-                end
-            end
-        end
-        
         inst.OnSave = OnSaveBrute3
-        local old_OnLoadBrute3 = inst.OnLoad
+        
+        local old_OnLoadBrute3 = inst.OnLoad  -- captures OnLoadBrute2WithUpgrade
         inst.OnLoad = function(inst2, data)
+            -- Call the MK2→base onload chain first
             if old_OnLoadBrute3 then old_OnLoadBrute3(inst2, data) end
             if not TheWorld.ismastersim then return end
+            
+            -- Restore MK3 container if it was removed during load (bot was OFF when saved)
+            if data and data.is_mk3 and not inst2:HasTag("container") then
+                inst2:AddTag("container")
+                if inst2.components.container == nil then
+                    inst2:AddComponent("container")
+                    inst2.components.container:WidgetSetup("williambrute3")
+                    inst2.components.container.onopenfn = OnOpen
+                    inst2.components.container.onclosefn = OnClose
+                    inst2.components.container.skipopensnd = true
+                    inst2.components.container.skipclosesnd = true
+                end
+            end
+            
+            -- Restore affinity FX (celestial/shadow) after load
             inst2:DoTaskInTime(0, function()
                 if not inst2:IsValid() then return end
                 local owner = inst2.components.follower and inst2.components.follower:GetLeader()
