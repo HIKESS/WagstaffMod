@@ -177,7 +177,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_robotic_1 = {
             name = "wagstaff_robotic_1",
             title = "Brute Bot MK. II",
-            desc = "Reinforces the Brute's heavy frame.\nGreatly increases durability and damage."
+            desc = "Reinforces the Brute's heavy frame.\nGreatly increases durability and damage.",
             icon = "brutemk2",
             icon_atlas = "images/skilltree/brutemk2.xml",
             pos = { -36.9, 164.2 },
@@ -226,7 +226,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_buster_evolve = {
             name = "wagstaff_buster_evolve",
             title = "Buster Bot MK.II",
-            desc = "Upgrades the Buster's combat chassis.\nIncreases its health and damage."
+            desc = "Upgrades the Buster's combat chassis.\nIncreases its health and damage.",
             icon = "bustermk2",
             icon_atlas = "images/skilltree/bustermk2.xml",
             pos = { -36.9, 120.5 },
