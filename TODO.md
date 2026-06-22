@@ -71,3 +71,65 @@ todas as closures do arquivo imunes ao problema.
 - Bug reportado pelo usuário @HIKESS em 2026-06-22 (timestamp do crash: 13:19 UTC-3).
 - Game Version: 736959 (x64). World Day 1 (autumn). Client-only (ismastersim = false).
 - Mod "Crash Never Mind" também habilitado — não é a causa, apenas capturou o trace.
+
+---
+
+## Fix v2.0.2 — Persistência do reset de XP/skills (4 bugs)
+
+**Contexto:**
+O usuário reportou que o XP/insights do Wagstaff voltavam após relogar, e que ao
+deletar um save e criar um novo, o XP antigo persistia (comportamento padrão do
+Klei — o profile é global, não por mundo). O mecanismo de reset existente
+(`wagstaff_profile_reset` flag + net_bool signal + client-side DeactivateSkill/AddSkillXP)
+estava estruturalmente correto, mas falhava em 4 pontos críticos de persistência.
+
+**Bug #1 (CRÍTICO) — Reset client-side não persistia no profile:**
+O bloco client (modmain.lua:2033) fazia `DeactivateSkill` + `AddSkillXP(-xp)` para
+zerar em memória, mas NÃO chamava `Profile:Save()`. Como o profile é a source-of-truth
+global do DST (independente de saves de mundo), o reset era perdido no próximo reload.
+**Fix:** Adicionar `Profile:Save()` no final do bloco client, dentro de pcall.
+
+**Bug #2 (MÉDIO) — `needs_xp_reset_net` não era resetado no OnLoad:**
+No `OnLoad` do world (modmain.lua:1928), os boss nets eram sincronizados, mas o
+`wagstaff_needs_xp_reset_net` era esquecido. Em certos cenários de timing (client
+reconecta antes do server reconstruir o world), o client recebia um `true` "órfão"
+do reset anterior, causando reset duplicado em reload.
+**Fix:** Setar explicitamente `wagstaff_needs_xp_reset_net:set(false)` no OnLoad.
+
+**Bug #3 (CRÍTICO) — Flag `wagstaff_profile_reset` em `TheWorld.state` (não persiste):**
+O flag era guardado em `TheWorld.state.wagstaff_profile_reset`. Campos custom em
+`TheWorld.state` NÃO são persistidos automaticamente pelo engine — dependiam do
+wrap `OnSave`/`OnLoad` (pattern `local old_OnSave = self.OnSave; self.OnSave = ...`),
+que é frágil: se outro mod ou o engine sobrescrever `world.OnSave` depois, o wrap é
+perdido e o flag volta como `nil`→`false` no reload, fazendo o reset rodar de novo.
+**Fix:** Mover o flag para campo direto na entidade world (`self.wagstaff_profile_reset`
+em vez de `self.state.wagstaff_profile_reset`). Campos diretos em entidades DST são
+persistidos naturalmente quando retornados no `data` do OnSave. Ajustadas 8 referências.
+
+**Bug #4 (MÉDIO) — Race condition: flag setado no FIM do DoTaskInTime:**
+O flag `wagstaff_profile_reset = true` era setado na última linha do bloco
+`DoTaskInTime(0)` (após todo o trabalho de reset). Se o jogador saísse do mundo
+antes desse tick completar, o flag nunca era persistido e o reset rodava de novo
+no próximo reload, zerando XP/skills legitimamente ganhos.
+**Fix:** Setar o flag IMEDIATAMENTE no início do bloco (antes de qualquer trabalho),
+garantindo que o flag persista mesmo se o trabalho abaixo falhar/interromper.
+
+**Escopo da mudança (modmain.lua):**
+- Bloco `AddPrefabPostInit("world")`: init do flag movido de `self.state` → `self`
+  + OnLoad agora reseta `needs_xp_reset_net` explicitamente.
+- Bloco `AddPrefabPostInit("wagstaff")` (server): flag lido/escrito no campo direto
+  + setado no início do DoTaskInTime em vez do fim.
+- Bloco `AddPrefabPostInit("wagstaff")` (client): adicionado `Profile:Save()` final.
+- Total: ~40 linhas adicionadas/comentadas, 0 linhas funcionais removidas.
+
+**Validação:**
+- Sintaxe validada com `luac -p` (Lua 5.4.7) — OK.
+- Verificado que nenhuma referência ao campo antigo (`TheWorld.state.wagstaff_profile_reset`)
+  sobreviveu fora de comentários explicativos.
+
+**Notas:**
+- Branch de trabalho contínuo: `fix/xp-reset-persistence` (sem PR/merge ainda —
+  acumulando correções conforme o usuário reporta).
+- Esta é uma correção de persistência, não muda a lógica do mecanismo existente.
+- Teste recomendado: criar mundo novo, verificar XP=0, jogar alguns dias, relogar,
+  verificar que XP/skills do reload estão intactos (não zeraram de novo).
