@@ -1221,10 +1221,6 @@ local function evil_portal_fn()
     inst.Light:SetIntensity(0.3)
     inst.Light:SetColour(100/255, 150/255, 100/255)
     inst.Light:Enable(true)
-    local fx = G.SpawnPrefab("electrichitsparks")
-    if fx then
-        fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
-    end
     local group = EVIL_PORTAL_MOB_GROUPS[math.random(#EVIL_PORTAL_MOB_GROUPS)]
     local max_easy = group[1]
     local max_hard = group[2]
@@ -1246,10 +1242,6 @@ local function evil_portal_fn()
         SpawnMob(inst, mob4, mob4_count)
     end)
     inst:DoTaskInTime(20, function()
-        local remove_fx = G.SpawnPrefab("electrichitsparks")
-        if remove_fx then
-            remove_fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
-        end
         inst:Remove()
     end)
     return inst
