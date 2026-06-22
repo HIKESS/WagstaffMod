@@ -35,13 +35,13 @@ AddCharacterRecipe("gogglesshoothat",
 
 AddCharacterRecipe("telebrella",
     {Ingredient("grass_umbrella", 1), Ingredient("transistor", 1)},
-    TECH.NONE,
+    TECH.MAGIC_TWO,
     {builder_tag = "tinkerer", atlas = "images/inventoryimages/telebrella.xml", image = "telebrella.tex"},
     {"MODS", "TOOLS"}
 )
 AddCharacterRecipe("telipad",
     {Ingredient("gears", 1), Ingredient("transistor", 1), Ingredient("cutstone", 2)},
-    TECH.NONE,
+    TECH.MAGIC_TWO,
     {builder_tag = "tinkerer", placer = "telipad_placer", atlas = "images/inventoryimages/telipad.xml", image = "telipad.tex"},
     {"MODS", "STRUCTURES"}
 )

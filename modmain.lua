@@ -3500,7 +3500,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 30, eimg("scrap")), Ingredient("gears", 5), Ingredient("transistor", 5)},
 
-        TECH.MAGIC_THREE,
+        TECH.MAGIC_ONE,
 
         {builder_tag = "tinkerer", atlas = eimg("eteleporter"), image = "eteleporter.tex"},
 
@@ -3510,7 +3510,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 25, eimg("scrap")), Ingredient("gears", 3), Ingredient("transistor", 3)},
 
-        TECH.MAGIC_THREE,
+        TECH.MAGIC_ONE,
 
         {builder_tag = "tinkerer", atlas = eimg("eteleporter_exit"), image = "eteleporter_exit.tex"},
 
@@ -3549,7 +3549,7 @@ AddSimPostInit(function()
 
         {williamgadget_ing, Ingredient("marble", 3), Ingredient("transistor", 2)},
 
-        TECH.MAGIC_TWO,
+        TECH.MAGIC_ONE,
 
         {builder_tag = "tinkerer", atlas = mimg("williambuster_builder"), image = "williambuster_builder.tex"},
 
@@ -3569,7 +3569,7 @@ AddSimPostInit(function()
 
         {williamgadget_ing, Ingredient("nitre", 4), Ingredient("transistor", 2)},
 
-        TECH.MAGIC_THREE,
+        TECH.MAGIC_TWO,
 
         {builder_tag = "tinkerer", atlas = mimg("williamballistic_empty"), image = "williamballistic_empty.tex"},
 
