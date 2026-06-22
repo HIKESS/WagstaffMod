@@ -85,77 +85,113 @@ local function ZapFX(inst)
         end
 
 -- Passive Lantern Light for MK3 Ballistic Bot
--- Fixed light: ~0.6x lantern size, only at night
--- Pulse: ~3x lantern size with wx78_big_spark FX every 0.5s, only at night
--- Both light and FX only active at night (auto-toggle)
-local FIX_RADIUS = 1.5          -- Fixed base: ~0.6x lantern
-local PULSE_RADIUS = 7.5        -- Pulse: ~3x lantern
+-- Two separate lights: one fixed (small, steady, yellow) and one pulse (large, periodic, yellow)
+-- Both only active at night (auto-toggle)
+
+-- Lightning yellow colour
+local LIGHT_R, LIGHT_G, LIGHT_B = 1, 1, 0.3
+
+-- Fixed light: small steady glow, always on at night
+local FIX_RADIUS = 1.5
 local FIX_INTENSITY = 0.8
-local PULSE_INTENSITY = 1.2
 local FIX_FALLOFF = 0.5
-local PULSE_FALLOFF = 0.35      -- Lower falloff so pulse reaches further
-local LIGHT_R, LIGHT_G, LIGHT_B = 1, 0.95, 0.8    -- Warm lantern color
+
+-- Pulse light: large flash, ~same size as a max campfire
+local PULSE_RADIUS = 5.5
+local PULSE_INTENSITY = 0.85
+local PULSE_FALLOFF = 0.5
+local PULSE_INTERVAL = 1.5    -- seconds between pulses
+local PULSE_DURATION = 0.35   -- how long each pulse flash lasts
+
+local function CreatePulseLightEntity(parent)
+    -- Create a separate networked entity for the pulse light.
+    -- DST allows only ONE Light per entity, so we need a child entity.
+    local ent = CreateEntity()
+    ent:AddTag("FX")
+    ent.persists = false
+    ent.entity:AddTransform()
+    ent.entity:AddNetwork()
+    ent.entity:AddLight()
+    ent.Light:SetRadius(0)
+    ent.Light:SetIntensity(PULSE_INTENSITY)
+    ent.Light:SetFalloff(PULSE_FALLOFF)
+    ent.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
+    ent.Light:Enable(false)
+    ent.entity:SetParent(parent.entity)
+    ent.Transform:SetPosition(0, 1, 0)
+    return ent
+end
 
 local function StartLightOrb(inst)
     if inst._lightorb_active then return end
     if inst.components.fueled:IsEmpty() then return end
     if not TheWorld.state.isnight then return end
     inst._lightorb_active = true
-
-    -- Light entity is already added in active3() common section (before is_mastersim)
-    -- so it is properly networked to clients for rendering.
     inst:AddTag("lantern")
 
-    local _is_pulsing = false
-
-    -- Initial light setup: fixed (no FX)
+    -- FIXED LIGHT: set once, never changes while active
     inst.Light:SetRadius(FIX_RADIUS)
     inst.Light:SetIntensity(FIX_INTENSITY)
     inst.Light:SetFalloff(FIX_FALLOFF)
     inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
     inst.Light:Enable(true)
 
-    -- Tick every 0.5s: pulse with FX, then back to fixed
-    inst._lightorb_tick = inst:DoPeriodicTask(0.5, function()
+    -- PULSE LIGHT: separate child entity, flashes periodically
+    if not inst._pulse_light or not inst._pulse_light:IsValid() then
+        inst._pulse_light = CreatePulseLightEntity(inst)
+    end
+
+    -- Periodic pulse: flash big, then dim, repeat
+    inst._lightorb_tick = inst:DoPeriodicTask(PULSE_INTERVAL, function()
         if not inst._lightorb_active then return end
         if inst.components.fueled:IsEmpty() then
             StopLightOrb(inst)
             return
         end
 
-        _is_pulsing = not _is_pulsing
-
-        if _is_pulsing then
-            -- Pulse with wx78_big_spark FX
-            inst.Light:SetRadius(PULSE_RADIUS)
-            inst.Light:SetIntensity(PULSE_INTENSITY)
-            inst.Light:SetFalloff(PULSE_FALLOFF)
-            inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
-            if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
-                inst._lightorb_fx:Remove()
-            end
-            local newfx = SpawnPrefab("wx78_big_spark")
-            if newfx then
-                newfx.entity:SetParent(inst.entity)
-                newfx.Transform:SetPosition(0, 1, 0)
-                inst._lightorb_fx = newfx
-            end
-        else
-            -- Fixed base, no FX
-            inst.Light:SetRadius(FIX_RADIUS)
-            inst.Light:SetIntensity(FIX_INTENSITY)
-            inst.Light:SetFalloff(FIX_FALLOFF)
-            inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
-            if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
-                inst._lightorb_fx:Remove()
-            end
-            inst._lightorb_fx = nil
+        -- Flash the pulse light ON
+        if inst._pulse_light and inst._pulse_light:IsValid() then
+            inst._pulse_light.Light:SetRadius(PULSE_RADIUS)
+            inst._pulse_light.Light:Enable(true)
         end
+
+        -- Spawn spark FX
+        if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
+            inst._lightorb_fx:Remove()
+        end
+        local newfx = SpawnPrefab("wx78_big_spark")
+        if newfx then
+            newfx.entity:SetParent(inst.entity)
+            newfx.Transform:SetPosition(0, 1, 0)
+            inst._lightorb_fx = newfx
+        end
+
+        -- Turn pulse OFF after short duration
+        inst._pulse_dim_task = inst:DoTaskInTime(PULSE_DURATION, function()
+            if inst._pulse_light and inst._pulse_light:IsValid() then
+                inst._pulse_light.Light:SetRadius(0)
+                inst._pulse_light.Light:Enable(false)
+            end
+            if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
+                inst._lightorb_fx:Remove()
+                inst._lightorb_fx = nil
+            end
+        end)
     end)
 end
 
 local function StopLightOrb(inst)
     inst._lightorb_active = false
+
+    -- Remove pulse light entity
+    if inst._pulse_dim_task then
+        inst._pulse_dim_task:Cancel()
+        inst._pulse_dim_task = nil
+    end
+    if inst._pulse_light and inst._pulse_light:IsValid() then
+        inst._pulse_light:Remove()
+    end
+    inst._pulse_light = nil
 
     -- Remove FX
     if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
@@ -163,7 +199,7 @@ local function StopLightOrb(inst)
     end
     inst._lightorb_fx = nil
 
-    -- Disable light
+    -- Disable fixed light
     if inst.Light then
         inst.Light:Enable(false)
     end
@@ -1473,6 +1509,8 @@ end
         inst._lightorb_active = false
         inst._lightorb_fx = nil
         inst._lightorb_tick = nil
+        inst._pulse_light = nil
+        inst._pulse_dim_task = nil
 
         -- Auto-start the light when MK3 is active and has fuel (only if night)
         inst:DoTaskInTime(0.5, function()
