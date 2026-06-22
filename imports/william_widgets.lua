@@ -95,6 +95,7 @@ params.williambutler2.widget.buttoninfo = params.williambutler.widget.buttoninfo
 
 --==================================================================================
 -- BRUTE BOT LVL 3: Storage container - 9 slots (3x3)
+-- Uses standard DST ui_chest_3x3 layout with correct slot positions
 --==================================================================================
 params.williambrute3 =
 {
@@ -102,16 +103,16 @@ params.williambrute3 =
     {
         slotpos =
         {
-            -- 3x3 grid matching standard treasurechest layout
-            Vector3(-81 - 76, 32 + 36, 0),
-            Vector3(-81, 32 + 36, 0),
-            Vector3(-81 + 76, 32 + 36, 0),
-            Vector3(-81 - 76, 32 - 36 - 8, 0),
-            Vector3(-81, 32 - 36 - 8, 0),
-            Vector3(-81 + 76, 32 - 36 - 8, 0),
-            Vector3(-81 - 76, 32 - 36 - 8 - 72, 0),
-            Vector3(-81, 32 - 36 - 8 - 72, 0),
-            Vector3(-81 + 76, 32 - 36 - 8 - 72, 0),
+            -- Standard 3x3 grid matching vanilla ui_chest_3x3 build
+            Vector3(-75, 32 + 36, 0),
+            Vector3(0, 32 + 36, 0),
+            Vector3(75, 32 + 36, 0),
+            Vector3(-75, 32 - 36 - 8, 0),
+            Vector3(0, 32 - 36 - 8, 0),
+            Vector3(75, 32 - 36 - 8, 0),
+            Vector3(-75, 32 - 36 - 8 - 72, 0),
+            Vector3(0, 32 - 36 - 8 - 72, 0),
+            Vector3(75, 32 - 36 - 8 - 72, 0),
         },
         animbank = "ui_chest_3x3",
         animbuild = "ui_chest_3x3",

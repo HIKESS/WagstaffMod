@@ -456,9 +456,8 @@ end
 
     inst:AddComponent("inspectable")
     inst.components.inspectable.getstatus = getstatus
-    
+
     inst:AddComponent("named")
-    UpdateButlerName(inst)
 
         inst:AddComponent("willyraise")
     inst.components.willyraise:SetOnRiseFn(MakeAlive)
@@ -469,6 +468,9 @@ end
     inst.components.fueled.accepting = true  -- Enable manual fueling (reverted to original)
     inst.components.fueled:InitializeFuelLevel(TUNING.WILLIAM_BUTLER_MAXFUEL)
     inst.components.fueled.bonusmult = 1
+
+    -- Update name AFTER fueled component is added (was crashing on craft: fueled was nil)
+    UpdateButlerName(inst)
 
         return inst
     end

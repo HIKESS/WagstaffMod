@@ -98,16 +98,16 @@ local function ShouldKite(target, inst)
 end
 
 local function ShouldWatchMinigame(inst)
-	if inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil then
-		if inst.components.combat.target == nil or inst.components.combat.target.components.minigame_participator ~= nil then
-			return true
-		end
-	end
-	return false
+        if inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil then
+                if inst.components.combat.target == nil or inst.components.combat.target.components.minigame_participator ~= nil then
+                        return true
+                end
+        end
+        return false
 end
 
 local function WatchingMinigame(inst)
-	return (inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil) and inst.components.follower.leader.components.minigame_participator:GetMinigame() or nil
+        return (inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil) and inst.components.follower.leader.components.minigame_participator:GetMinigame() or nil
 end
 
 local function ShouldRunAway(guy)
@@ -119,13 +119,15 @@ local function CanAttackNow(inst)
 end
 
 function WilliamBallisticBrain:OnStart()
-    local has_movement = self.inst:HasTag("ballistic_mobile")
+    local has_leader = self.inst.components.follower ~= nil and self.inst.components.follower:GetLeader() ~= nil
 
     local root
-    if has_movement and self.inst.components.follower ~= nil then
+    if has_leader then
         -- Mobile mode: follow leader, chase and attack enemies
         root = PriorityNode(
         {
+            WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
+            WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
             ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
             Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST),
             FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn),
