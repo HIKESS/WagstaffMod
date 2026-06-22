@@ -91,102 +91,80 @@ local function tableToString(t, indent, depth, visited)
 end
 
 -- ============================================================================
--- WAGSTAFF DEBUG SYSTEM (BUFFERED, DST-SANCTIONED FILE I/O)
+-- WAGSTAFF DEBUG SYSTEM (BUFFERED)
 -- Buffers debug lines in memory and flushes to file every 5 seconds to avoid
 -- freezing the game with file I/O on every call (especially in hot paths like
 -- IsActivated which the skill tree UI calls many times per second).
 --
--- BUG FIX (v2.0.3): Previous versions used G.io.open() to write the debug
--- file, but `io` is NIL in the DST mod sandbox (blocked for security). This
--- meant wagstaff_debug.txt was NEVER created — the flush function silently
--- cleared the buffer and returned. Now uses TheSim:SetPersistentString(),
--- which is the DST-engine-sanctioned way to write files from mods. The file
--- is written to the save directory as "wagstaff_debug.txt".
--- All traces ALSO go to client_log.txt / master_server_log.txt via print(),
--- so you can always find them there with: grep "\[Wagstaff" *_log.txt
---
--- BUG FIX (v2.0.3-hotfix): The initial v2.0.3 called TheSim:SetPersistentString
--- DURING MOD LOAD (at the top level of modmain.lua, before CreateSkillTree()).
--- This file I/O during mod loading interfered with DST's file access system,
--- causing the subsequent require("prefabs/skilltree_wagstaff") to fail with
--- "OLDFILEACCESSMETHOD" — a DST file loader error. The Lua parser then tried
--- to parse the error message as code, producing a bogus syntax error at line
--- 181 of skilltree_wagstaff.lua (which is actually valid). Fix: ALL file
--- writes are now deferred to AddSimPostInit (after the world is created),
--- so NO file I/O happens during mod load. print() calls are still immediate.
+-- REVERTED (v2.0.5): The v2.0.3/v2.0.4 rewrite of this system used
+-- TheSim:SetPersistentString() to write the debug file. This caused a crash
+-- (OLDFILEACCESSMETHOD) when loading skilltree_wagstaff.lua via require().
+-- The exact mechanism is unclear (even with deferred I/O the crash persisted),
+-- but reverting to the original G.io.open()-based flush (which silently no-ops
+-- because io is nil in the DST sandbox) eliminates the crash. Traces still
+-- reach the game logs via print() — use: grep "\[Wagstaff" *_log.txt
 -- ============================================================================
 G.WagstaffDebugEnabled = GetModConfigData("debug") == true
 
--- Debug file name (written to the save directory via TheSim:SetPersistentString)
-local _debug_log_name = "wagstaff_debug.txt"
+-- Get the mod directory properly using TheModManager or MODROOT
+local function get_mod_directory()
+    local moddir = "."
+    -- First try MODROOT which is set by the game for each mod
+    if MODROOT and MODROOT ~= "" then
+        return MODROOT
+    end
+    -- Fallback: Try to get our mod's directory from TheModManager
+    if G.TheModManager then
+        for _, mod in pairs(G.TheModManager.mods) do
+            if mod and mod.modinfo and mod.modinfo.id then
+                if mod.modinfo.id == "wagstaff_standalone" or
+                   string.find(mod.modinfo.id, "wagstaff") or
+                   string.find(mod.modinfo.name, "Wagstaff") then
+                    moddir = mod.path or mod.modpath or moddir
+                    break
+                end
+            end
+        end
+    end
+    return moddir
+end
+
+local _moddir = get_mod_directory()
+local _debug_log_path = _moddir .. "/wagstaff_debug.txt"
 local _debug_buffer = {}  -- lines collected in memory, flushed periodically
 local _debug_max_buffer = 500  -- flush early if buffer gets this big
 
--- In-memory file content (accumulated between flushes). We build the full
--- file content as a table of lines, then concat + write in one call.
-local _debug_file_content = {}
-
--- Flush the buffer to the debug log file using TheSim:SetPersistentString.
--- This is the ONLY reliable file-write API available in the DST mod sandbox.
--- `io` is nil, `os.execute` is nil, but TheSim:SetPersistentString works.
--- We accumulate the full file content (existing + new lines) and write it
--- as a single string, since SetPersistentString overwrites the whole file.
---
--- IMPORTANT: This function must ONLY be called AFTER the sim/world is
--- initialized (via AddSimPostInit or DoPeriodicTask). Calling it during
--- mod load (before the world exists) can cause OLDFILEACCESSMETHOD errors
--- that break subsequent require() calls.
-local _debug_file_io_ready = false  -- set to true by AddSimPostInit
+-- Flush the buffer to the debug log file (batch write — one open/close per flush)
 local function wagstaff_debug_flush()
     if #_debug_buffer == 0 then return end
-    if not _debug_file_io_ready then
-        -- File I/O not yet safe (sim not initialized) — keep buffering,
-        -- print() already delivered the lines to the game log
-        return
-    end
-    local TheSim = G.TheSim
-    local tlib = G.table
-    if TheSim == nil or TheSim.SetPersistentString == nil or tlib == nil then
-        _debug_buffer = {}
-        return
-    end
-    -- Append buffered lines to the in-memory file content
-    for i = 1, #_debug_buffer do
-        _debug_file_content[#_debug_file_content + 1] = _debug_buffer[i]
-    end
-    -- Write the full accumulated content (overwrite mode)
-    local content_str = tlib.concat(_debug_file_content, "\n") .. "\n"
-    -- SetPersistentString(filename, value, encode_as_json, callback)
-    -- encode=false (we want raw text), callback=nil (fire-and-forget)
-    local ok, err = G.pcall(function()
-        TheSim:SetPersistentString(_debug_log_name, content_str, false, nil)
-    end)
-    if not ok then
-        -- Silent fail — print() already delivered the lines to the game log
+    local iolib = G.io
+    if iolib == nil then _debug_buffer = {} return end
+    local ok, file = G.pcall(iolib.open, _debug_log_path, "a")
+    if ok and file then
+        for i = 1, #_debug_buffer do
+            file:write(_debug_buffer[i] .. "\n")
+        end
+        file:close()
     end
     _debug_buffer = {}
 end
 
--- Initialize debug mode. print() calls are immediate (always work), but
--- file writes are DEFERRED to AddSimPostInit to avoid OLDFILEACCESSMETHOD.
+-- Clear the debug log on mod load (fresh session)
 if G.WagstaffDebugEnabled then
-    -- Seed the in-memory file content with a header (not written to disk yet)
-    _debug_file_content = {
-        "=== Wagstaff Standalone Debug Log ===",
-        "=== Session start (deferred write) ===",
-        "",
-    }
-    print("[Wagstaff Debug] Debug mode ON. Traces go to client_log.txt / master_server_log.txt via print().")
-    print("[Wagstaff Debug] Debug file (wagstaff_debug.txt) will be written to save dir after world loads.")
-    print("[Wagstaff Debug] To find traces now: grep \"\\[Wagstaff\" client_log.txt master_server_log.txt")
-    -- Schedule periodic flush every 5 seconds — ONLY after the world exists.
-    -- This also enables file I/O (sets _debug_file_io_ready = true).
+    local iolib = G.io
+    if iolib then
+        local ok, file = G.pcall(iolib.open, _debug_log_path, "w")
+        if ok and file then
+            file:write("=== Wagstaff Standalone Debug Log ===\n")
+            file:write("=== Session start ===\n\n")
+            file:close()
+        end
+    end
+    print("[Wagstaff Debug] Debug mode ON. Log file: " .. _debug_log_path)
+    -- Schedule periodic flush every 5 seconds (only runs when world exists)
+    -- AddSimPostInit is a modutil function available directly in modmain scope
     AddSimPostInit(function()
         if GLOBAL.TheWorld then
-            _debug_file_io_ready = true
-            -- Write the header + any buffered lines immediately on world init
-            wagstaff_debug_flush()
-            -- Then flush every 5 seconds
             GLOBAL.TheWorld:DoPeriodicTask(5, wagstaff_debug_flush)
         end
     end)
@@ -198,21 +176,7 @@ local function wagstaff_debug_emit(str)
     local ts = (G.GetTime and G.GetTime()) or 0
     _debug_buffer[#_debug_buffer + 1] = G.string.format("[%.2f] %s", ts, str)
     if #_debug_buffer >= _debug_max_buffer then
-        -- If file I/O is ready, flush to disk. If not (during mod load),
-        -- drop the oldest half of the buffer to prevent unbounded growth.
-        -- print() already delivered every line to the game log, so no
-        -- trace is truly lost.
-        if _debug_file_io_ready then
-            wagstaff_debug_flush()
-        else
-            local half = math.floor(_debug_max_buffer / 2)
-            for i = 1, half do
-                _debug_buffer[i] = _debug_buffer[i + half]
-            end
-            for i = #_debug_buffer, half + 1, -1 do
-                _debug_buffer[i] = nil
-            end
-        end
+        wagstaff_debug_flush()
     end
     -- 2. print() so it appears in server_log too (print is cheap, file I/O is not)
     print(str)
