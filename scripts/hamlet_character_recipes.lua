@@ -48,7 +48,7 @@ AddCharacterRecipe("telipad",
 
 AddCharacterRecipe("thumper",
     {Ingredient("gears", 1), Ingredient("flint", 6), Ingredient("hammer", 2)},
-    TECH.NONE,
+    TECH.SCIENCE_ONE,
     {builder_tag = "tinkerer", placer = "thumper_placer", atlas = "images/inventoryimages/thumper.xml", image = "thumper.tex"},
     {"MODS", "STRUCTURES"}
 )

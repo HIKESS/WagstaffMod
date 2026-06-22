@@ -3232,7 +3232,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 20, eimg("scrap")), Ingredient("gears", 3)},
 
-        TECH.MAGIC_TWO,
+        TECH.MAGIC_ONE,
 
         {builder_tag = "tinkerer", atlas = eimg("esentry"), image = "esentry.tex"},
 
@@ -3242,7 +3242,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 15, eimg("scrap")), Ingredient("redgem", 3)},
 
-        TECH.SCIENCE_ONE,
+        TECH.SCIENCE_TWO,
 
         {builder_tag = "tinkerer", atlas = eimg("dispenser"), image = "dispenser.tex"},
 
@@ -3252,7 +3252,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 30, eimg("scrap")), Ingredient("gears", 5), Ingredient("transistor", 5)},
 
-        TECH.MAGIC_ONE,
+        TECH.MAGIC_TWO,
 
         {builder_tag = "tinkerer", atlas = eimg("eteleporter"), image = "eteleporter.tex"},
 
@@ -3262,7 +3262,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 25, eimg("scrap")), Ingredient("gears", 3), Ingredient("transistor", 3)},
 
-        TECH.MAGIC_ONE,
+        TECH.MAGIC_TWO,
 
         {builder_tag = "tinkerer", atlas = eimg("eteleporter_exit"), image = "eteleporter_exit.tex"},
 
