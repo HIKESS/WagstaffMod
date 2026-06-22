@@ -104,6 +104,16 @@ end
 -- is written to the save directory as "wagstaff_debug.txt".
 -- All traces ALSO go to client_log.txt / master_server_log.txt via print(),
 -- so you can always find them there with: grep "\[Wagstaff" *_log.txt
+--
+-- BUG FIX (v2.0.3-hotfix): The initial v2.0.3 called TheSim:SetPersistentString
+-- DURING MOD LOAD (at the top level of modmain.lua, before CreateSkillTree()).
+-- This file I/O during mod loading interfered with DST's file access system,
+-- causing the subsequent require("prefabs/skilltree_wagstaff") to fail with
+-- "OLDFILEACCESSMETHOD" — a DST file loader error. The Lua parser then tried
+-- to parse the error message as code, producing a bogus syntax error at line
+-- 181 of skilltree_wagstaff.lua (which is actually valid). Fix: ALL file
+-- writes are now deferred to AddSimPostInit (after the world is created),
+-- so NO file I/O happens during mod load. print() calls are still immediate.
 -- ============================================================================
 G.WagstaffDebugEnabled = GetModConfigData("debug") == true
 
@@ -112,18 +122,31 @@ local _debug_log_name = "wagstaff_debug.txt"
 local _debug_buffer = {}  -- lines collected in memory, flushed periodically
 local _debug_max_buffer = 500  -- flush early if buffer gets this big
 
+-- In-memory file content (accumulated between flushes). We build the full
+-- file content as a table of lines, then concat + write in one call.
+local _debug_file_content = {}
+
 -- Flush the buffer to the debug log file using TheSim:SetPersistentString.
 -- This is the ONLY reliable file-write API available in the DST mod sandbox.
 -- `io` is nil, `os.execute` is nil, but TheSim:SetPersistentString works.
 -- We accumulate the full file content (existing + new lines) and write it
 -- as a single string, since SetPersistentString overwrites the whole file.
-local _debug_file_content = {}
+--
+-- IMPORTANT: This function must ONLY be called AFTER the sim/world is
+-- initialized (via AddSimPostInit or DoPeriodicTask). Calling it during
+-- mod load (before the world exists) can cause OLDFILEACCESSMETHOD errors
+-- that break subsequent require() calls.
+local _debug_file_io_ready = false  -- set to true by AddSimPostInit
 local function wagstaff_debug_flush()
     if #_debug_buffer == 0 then return end
+    if not _debug_file_io_ready then
+        -- File I/O not yet safe (sim not initialized) — keep buffering,
+        -- print() already delivered the lines to the game log
+        return
+    end
     local TheSim = G.TheSim
     local tlib = G.table
     if TheSim == nil or TheSim.SetPersistentString == nil or tlib == nil then
-        -- No file API available — just clear the buffer (print() already happened)
         _debug_buffer = {}
         return
     end
@@ -144,32 +167,26 @@ local function wagstaff_debug_flush()
     _debug_buffer = {}
 end
 
--- Clear the debug log on mod load (fresh session)
+-- Initialize debug mode. print() calls are immediate (always work), but
+-- file writes are DEFERRED to AddSimPostInit to avoid OLDFILEACCESSMETHOD.
 if G.WagstaffDebugEnabled then
-    -- Try to write the header immediately (tests if TheSim:SetPersistentString works)
+    -- Seed the in-memory file content with a header (not written to disk yet)
     _debug_file_content = {
         "=== Wagstaff Standalone Debug Log ===",
-        "=== Session start: " .. tostring(G.os and G.os.time and G.os.time() or "?") .. " ===",
+        "=== Session start (deferred write) ===",
         "",
     }
-    local TheSim = G.TheSim
-    local tlib = G.table
-    if TheSim and TheSim.SetPersistentString and tlib then
-        local ok = G.pcall(function()
-            TheSim:SetPersistentString(_debug_log_name, tlib.concat(_debug_file_content, "\n") .. "\n", false, nil)
-        end)
-        if ok then
-            print("[Wagstaff Debug] Debug mode ON. Log file (save dir): " .. _debug_log_name)
-        else
-            print("[Wagstaff Debug] Debug mode ON. WARNING: TheSim:SetPersistentString failed — traces only in game logs (client_log.txt / master_server_log.txt)")
-        end
-    else
-        print("[Wagstaff Debug] Debug mode ON. TheSim:SetPersistentString unavailable — traces only in game logs (client_log.txt / master_server_log.txt)")
-    end
-    print("[Wagstaff Debug] To find traces: grep \"\\[Wagstaff\" client_log.txt master_server_log.txt")
-    -- Schedule periodic flush every 5 seconds (only runs when world exists)
+    print("[Wagstaff Debug] Debug mode ON. Traces go to client_log.txt / master_server_log.txt via print().")
+    print("[Wagstaff Debug] Debug file (wagstaff_debug.txt) will be written to save dir after world loads.")
+    print("[Wagstaff Debug] To find traces now: grep \"\\[Wagstaff\" client_log.txt master_server_log.txt")
+    -- Schedule periodic flush every 5 seconds — ONLY after the world exists.
+    -- This also enables file I/O (sets _debug_file_io_ready = true).
     AddSimPostInit(function()
         if GLOBAL.TheWorld then
+            _debug_file_io_ready = true
+            -- Write the header + any buffered lines immediately on world init
+            wagstaff_debug_flush()
+            -- Then flush every 5 seconds
             GLOBAL.TheWorld:DoPeriodicTask(5, wagstaff_debug_flush)
         end
     end)
@@ -181,7 +198,21 @@ local function wagstaff_debug_emit(str)
     local ts = (G.GetTime and G.GetTime()) or 0
     _debug_buffer[#_debug_buffer + 1] = G.string.format("[%.2f] %s", ts, str)
     if #_debug_buffer >= _debug_max_buffer then
-        wagstaff_debug_flush()
+        -- If file I/O is ready, flush to disk. If not (during mod load),
+        -- drop the oldest half of the buffer to prevent unbounded growth.
+        -- print() already delivered every line to the game log, so no
+        -- trace is truly lost.
+        if _debug_file_io_ready then
+            wagstaff_debug_flush()
+        else
+            local half = math.floor(_debug_max_buffer / 2)
+            for i = 1, half do
+                _debug_buffer[i] = _debug_buffer[i + half]
+            end
+            for i = #_debug_buffer, half + 1, -1 do
+                _debug_buffer[i] = nil
+            end
+        end
     end
     -- 2. print() so it appears in server_log too (print is cheap, file I/O is not)
     print(str)
