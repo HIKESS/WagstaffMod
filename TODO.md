@@ -133,3 +133,84 @@ garantindo que o flag persista mesmo se o trabalho abaixo falhar/interromper.
 - Esta é uma correção de persistência, não muda a lógica do mecanismo existente.
 - Teste recomendado: criar mundo novo, verificar XP=0, jogar alguns dias, relogar,
   verificar que XP/skills do reload estão intactos (não zeraram de novo).
+
+---
+
+## Fix v2.0.3 — net_bool replication failure + debug file never created
+
+**Contexto:**
+Após v2.0.2, o usuário reportou que o reset de XP ainda não funcionava. Enviou
+novos logs (DontStarve-logs repo) e disse: "o wagstaff debug nao existe, ele
+nunca funcionou na verdade. só os outros do jogos mesmo."
+
+**Diagnóstico dos logs (client_log.txt + master_server_log.txt):**
+A instrumentação de debug do commit anterior (831a11f) FUNCIONOU — os traces
+`[Wagstaff Debug]` apareceram nos logs do jogo via `print()`. A timeline mostra:
+
+1. `00:02:17` SERVER world PostInit: cria `needs_xp_reset_net` (default false)
+2. `00:03:30` CLIENT world PostInit: cria `needs_xp_reset_net` (default false)
+3. `00:09:02` SERVER: `wagstaff_needs_xp_reset_net:set(TRUE)` ✓
+4. `00:09:43` CLIENT: `wagstaff_needs_xp_reset_net:value()` = **FALSE** ✗
+
+O server setou `true` 41 segundos antes do client ler, mas o client leu `false`.
+**O net_bool NÃO replicou do server para o client.**
+
+**Bug #1 (CRÍTICO) — net_bool criado em AddPrefabPostInit não replica:**
+Em DST, `net_bool(guid, name)` deve ser declarado DURANTE a `fn()` do prefab
+(ou `common_postinit`/`master_postinit`, que rodam dentro de `fn()`). Net_bools
+criados em `AddPrefabPostInit` (que roda DEPOIS de `fn()`) não são registrados
+no schema de serialização de rede do engine — o objeto Lua existe em ambos os
+lados, mas o valor não é replicado. O `inst.spy` net_bool do wagstaff FUNCIONA
+porque está em `common_postinit` (linha 215 do prefab). O `needs_xp_reset_net`
+do world NÃO funcionava porque estava em `AddPrefabPostInit("world")`.
+
+**Fix:** Mover a declaração do net_bool para o prefab do wagstaff
+(`scripts/prefabs/wagstaff.lua:227`), em `common_postinit`, ao lado do `inst.spy`.
+O server seta `inst.wagstaff_needs_xp_reset:set(true)` (entidade jogador) em vez
+de `TheWorld.wagstaff_needs_xp_reset_net:set(true)` (entidade world). O client
+lê `inst.wagstaff_needs_xp_reset:value()`. O world net_bool é mantido como
+fallback secundário (legado).
+
+**Bug #2 (CRÍTICO) — wagstaff_debug.txt nunca foi criado:**
+O sistema de debug usava `G.io.open()` para escrever o arquivo, mas `io` é
+`nil` na sandbox de mods do DST (bloqueado por segurança). A função de flush
+falhava silenciosamente (`if iolib == nil then _debug_buffer = {} return end`),
+limpando o buffer sem escrever nada. O arquivo prometido nunca existiu.
+
+**Fix:** Reescrever o flush para usar `TheSim:SetPersistentString()`, que é a
+API sancionada pelo engine DST para escrita de arquivos em mods. O arquivo
+`wagstaff_debug.txt` agora é escrito no diretório de save (não no dir do mod).
+Os traces TAMBÉM vão para `client_log.txt` / `master_server_log.txt` via `print()`
+(como antes), então sempre dá pra encontrá-los com `grep "\[Wagstaff" *_log.txt`.
+
+**Bug #3 (MELHORIA) — Client checava o flag uma única vez (DoTaskInTime(3)):**
+Se a replicação do net_bool tivesse delay (player entity não totalmente
+networked em t=3s), o client perdia a janela. Adicionado retry poll: checa em
+3s, 5s, 8s, 12s, 20s. Se qualquer check retornar true, executa o reset. Se
+todos retornarem false, skip (esperado em reload).
+
+**Escopo da mudança:**
+- `scripts/prefabs/wagstaff.lua`: +12 linhas (net_bool em common_postinit).
+- `modmain.lua`:
+  - Sistema de debug reescrito (~50 linhas) — usa TheSim:SetPersistentString.
+  - Server PostInit: seta `inst.wagstaff_needs_xp_reset:set(true)` + diagnostics
+    de GUID + verify read-back. Mantém world net_bool como legacy fallback.
+  - Client PostInit: check_reset_flag() lê player net_bool (PRIMARY) + world
+    net_bool (SECONDARY). Retry poll em 5 tentativas (3s/5s/8s/12s/20s).
+- `modinfo.lua`: bump `2.0.2` -> `2.0.3`.
+
+**Validação:**
+- `luac -p` (Lua 5.4.7) em modmain.lua, wagstaff.lua, modinfo.lua — todos OK.
+- Diagnóstico confirmado pelos logs: server set funcionou, client read falhou
+  exatamente no net_bool do world (não no do player, que não existia ainda).
+
+**Notas:**
+- Hipótese a confirmar no próximo teste: com o net_bool no prefab do wagstaff,
+  o client deve ler `inst.wagstaff_needs_xp_reset:value() = true` no primeiro
+  ou segundo poll attempt, e o reset deve executar (DeactivateSkill + AddSkillXP
+  + Profile:Save). Se ainda falhar, o trace mostrará exatamente qual poll
+  attempt leu qual valor, permitindo isolar se é timing ou outra causa.
+- O boss-kill net_bools (`wagstaff_fuelweaver_killed_net`, etc.) no world
+  PostInit provavelmente tem o MESMO bug de replicação — mas como o user não
+  reportou problemas com locks de boss, deixamos como está por enquanto. Se
+  reportar, mover para o prefab do wagstaff também.

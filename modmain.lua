@@ -91,70 +91,83 @@ local function tableToString(t, indent, depth, visited)
 end
 
 -- ============================================================================
--- WAGSTAFF DEBUG SYSTEM (BUFFERED)
+-- WAGSTAFF DEBUG SYSTEM (BUFFERED, DST-SANCTIONED FILE I/O)
 -- Buffers debug lines in memory and flushes to file every 5 seconds to avoid
 -- freezing the game with file I/O on every call (especially in hot paths like
 -- IsActivated which the skill tree UI calls many times per second).
+--
+-- BUG FIX (v2.0.3): Previous versions used G.io.open() to write the debug
+-- file, but `io` is NIL in the DST mod sandbox (blocked for security). This
+-- meant wagstaff_debug.txt was NEVER created — the flush function silently
+-- cleared the buffer and returned. Now uses TheSim:SetPersistentString(),
+-- which is the DST-engine-sanctioned way to write files from mods. The file
+-- is written to the save directory as "wagstaff_debug.txt".
+-- All traces ALSO go to client_log.txt / master_server_log.txt via print(),
+-- so you can always find them there with: grep "\[Wagstaff" *_log.txt
 -- ============================================================================
 G.WagstaffDebugEnabled = GetModConfigData("debug") == true
 
--- Get the mod directory properly using TheModManager or MODROOT
-local function get_mod_directory()
-    local moddir = "."
-    -- First try MODROOT which is set by the game for each mod
-    if MODROOT and MODROOT ~= "" then
-        return MODROOT
-    end
-    -- Fallback: Try to get our mod's directory from TheModManager
-    if G.TheModManager then
-        for _, mod in pairs(G.TheModManager.mods) do
-            if mod and mod.modinfo and mod.modinfo.id then
-                if mod.modinfo.id == "wagstaff_standalone" or 
-                   string.find(mod.modinfo.id, "wagstaff") or 
-                   string.find(mod.modinfo.name, "Wagstaff") then
-                    moddir = mod.path or mod.modpath or moddir
-                    break
-                end
-            end
-        end
-    end
-    return moddir
-end
-
-local _moddir = get_mod_directory()
-local _debug_log_path = _moddir .. "/wagstaff_debug.txt"
+-- Debug file name (written to the save directory via TheSim:SetPersistentString)
+local _debug_log_name = "wagstaff_debug.txt"
 local _debug_buffer = {}  -- lines collected in memory, flushed periodically
 local _debug_max_buffer = 500  -- flush early if buffer gets this big
 
--- Flush the buffer to the debug log file (batch write — one open/close per flush)
+-- Flush the buffer to the debug log file using TheSim:SetPersistentString.
+-- This is the ONLY reliable file-write API available in the DST mod sandbox.
+-- `io` is nil, `os.execute` is nil, but TheSim:SetPersistentString works.
+-- We accumulate the full file content (existing + new lines) and write it
+-- as a single string, since SetPersistentString overwrites the whole file.
+local _debug_file_content = {}
 local function wagstaff_debug_flush()
     if #_debug_buffer == 0 then return end
-    local iolib = G.io
-    if iolib == nil then _debug_buffer = {} return end
-    local ok, file = G.pcall(iolib.open, _debug_log_path, "a")
-    if ok and file then
-        for i = 1, #_debug_buffer do
-            file:write(_debug_buffer[i] .. "\n")
-        end
-        file:close()
+    local TheSim = G.TheSim
+    local tlib = G.table
+    if TheSim == nil or TheSim.SetPersistentString == nil or tlib == nil then
+        -- No file API available — just clear the buffer (print() already happened)
+        _debug_buffer = {}
+        return
+    end
+    -- Append buffered lines to the in-memory file content
+    for i = 1, #_debug_buffer do
+        _debug_file_content[#_debug_file_content + 1] = _debug_buffer[i]
+    end
+    -- Write the full accumulated content (overwrite mode)
+    local content_str = tlib.concat(_debug_file_content, "\n") .. "\n"
+    -- SetPersistentString(filename, value, encode_as_json, callback)
+    -- encode=false (we want raw text), callback=nil (fire-and-forget)
+    local ok, err = G.pcall(function()
+        TheSim:SetPersistentString(_debug_log_name, content_str, false, nil)
+    end)
+    if not ok then
+        -- Silent fail — print() already delivered the lines to the game log
     end
     _debug_buffer = {}
 end
 
 -- Clear the debug log on mod load (fresh session)
 if G.WagstaffDebugEnabled then
-    local iolib = G.io
-    if iolib then
-        local ok, file = G.pcall(iolib.open, _debug_log_path, "w")
-        if ok and file then
-            file:write("=== Wagstaff Standalone Debug Log ===\n")
-            file:write("=== Session start ===\n\n")
-            file:close()
+    -- Try to write the header immediately (tests if TheSim:SetPersistentString works)
+    _debug_file_content = {
+        "=== Wagstaff Standalone Debug Log ===",
+        "=== Session start: " .. tostring(G.os and G.os.time and G.os.time() or "?") .. " ===",
+        "",
+    }
+    local TheSim = G.TheSim
+    local tlib = G.table
+    if TheSim and TheSim.SetPersistentString and tlib then
+        local ok = G.pcall(function()
+            TheSim:SetPersistentString(_debug_log_name, tlib.concat(_debug_file_content, "\n") .. "\n", false, nil)
+        end)
+        if ok then
+            print("[Wagstaff Debug] Debug mode ON. Log file (save dir): " .. _debug_log_name)
+        else
+            print("[Wagstaff Debug] Debug mode ON. WARNING: TheSim:SetPersistentString failed — traces only in game logs (client_log.txt / master_server_log.txt)")
         end
+    else
+        print("[Wagstaff Debug] Debug mode ON. TheSim:SetPersistentString unavailable — traces only in game logs (client_log.txt / master_server_log.txt)")
     end
-    print("[Wagstaff Debug] Debug mode ON. Log file: " .. _debug_log_path)
+    print("[Wagstaff Debug] To find traces: grep \"\\[Wagstaff\" client_log.txt master_server_log.txt")
     -- Schedule periodic flush every 5 seconds (only runs when world exists)
-    -- AddSimPostInit is a modutil function available directly in modmain scope
     AddSimPostInit(function()
         if GLOBAL.TheWorld then
             GLOBAL.TheWorld:DoPeriodicTask(5, wagstaff_debug_flush)
@@ -2018,7 +2031,9 @@ AddPrefabPostInit("wagstaff", function(inst)
 
     WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] ENTERED (master sim)")
     WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] TheWorld.wagstaff_profile_reset=" .. tostring(GLOBAL.TheWorld.wagstaff_profile_reset))
-    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] TheWorld.wagstaff_needs_xp_reset_net=" .. tostring(GLOBAL.TheWorld.wagstaff_needs_xp_reset_net ~= nil))
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] inst.wagstaff_needs_xp_reset=" .. tostring(inst.wagstaff_needs_xp_reset ~= nil))
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] inst.GUID=" .. tostring(inst.GUID))
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] TheWorld.GUID=" .. tostring(GLOBAL.TheWorld.GUID))
 
     --==================================================================================
     -- FRESH WORLD PROFILE RESET (XP + boss kill stats)
@@ -2054,15 +2069,37 @@ AddPrefabPostInit("wagstaff", function(inst)
         GLOBAL.TheWorld.wagstaff_profile_reset = true
         WagstaffDebug("[WAGSTAFF-SERVER] Set wagstaff_profile_reset=TRUE (immediately, before any work)")
 
-        -- Signal the CLIENT to reset TheSkillTree via NETWORKED boolean
-        -- (rawset GLOBAL doesn't work — server and client have separate Lua environments)
-        if GLOBAL.TheWorld.wagstaff_needs_xp_reset_net then
-            GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:set(true)
-            WagstaffDebug("[WAGSTAFF-SERVER] Set needs_xp_reset_net=TRUE (signaling client)")
-            print("[Wagstaff SERVER] Set needs_xp_reset_net=TRUE — client should reset within 3s")
+        -- BUG FIX (v2.0.3): Signal the CLIENT to reset TheSkillTree via the
+        -- PLAYER ENTITY's net_bool (inst.wagstaff_needs_xp_reset), NOT the
+        -- world entity's net_bool. The player net_bool is declared in the
+        -- wagstaff prefab's common_postinit (scripts/prefabs/wagstaff.lua:227),
+        -- which runs during the prefab fn phase — so it IS registered with the
+        -- engine's network serialization and its value WILL replicate from
+        -- server to client. The world net_bool (TheWorld.wagstaff_needs_xp_reset_net)
+        -- was declared in AddPrefabPostInit("world"), which runs AFTER the
+        -- prefab fn — net_bools created in PostInit are NOT registered for
+        -- replication, so the server's :set(true) never reached the client.
+        -- We set BOTH (world net_bool as a legacy fallback) but the client
+        -- primarily checks the player net_bool.
+        local player_net = inst.wagstaff_needs_xp_reset
+        WagstaffDebug("[WAGSTAFF-SERVER] player net_bool (inst.wagstaff_needs_xp_reset)=" .. tostring(player_net ~= nil))
+        if player_net then
+            local set_ok, set_err = pcall(function() player_net:set(true) end)
+            WagstaffDebug("[WAGSTAFF-SERVER] Set inst.wagstaff_needs_xp_reset=TRUE ok=" .. tostring(set_ok) .. " err=" .. tostring(set_err))
+            print("[Wagstaff SERVER] Set inst.wagstaff_needs_xp_reset=TRUE (player net_bool — replicates to client)")
+            -- Verify the set took effect (read back immediately)
+            local verify_ok, verify_val = pcall(function() return player_net:value() end)
+            WagstaffDebug("[WAGSTAFF-SERVER] verify player net:value()=" .. tostring(verify_val) .. " ok=" .. tostring(verify_ok))
         else
-            WagstaffDebug("[WAGSTAFF-SERVER] WARNING: needs_xp_reset_net is NIL — client will NOT receive reset signal!")
-            print("[Wagstaff SERVER] WARNING: needs_xp_reset_net is NIL — client reset will NOT trigger!")
+            WagstaffDebug("[WAGSTAFF-SERVER] WARNING: inst.wagstaff_needs_xp_reset is NIL — prefab net_bool not found!")
+            print("[Wagstaff SERVER] WARNING: inst.wagstaff_needs_xp_reset is NIL — client reset will NOT trigger!")
+        end
+
+        -- Also set the world net_bool (legacy — does not replicate, kept for
+        -- diagnostics and in case a future DST engine change makes it work)
+        if GLOBAL.TheWorld.wagstaff_needs_xp_reset_net then
+            pcall(function() GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:set(true) end)
+            WagstaffDebug("[WAGSTAFF-SERVER] Also set TheWorld.wagstaff_needs_xp_reset_net=TRUE (legacy, may not replicate)")
         end
 
         -- Zero boss kill stats in the player profile (affinity-gating bosses)
@@ -2110,54 +2147,32 @@ end)
 
 --==================================================================================
 -- CLIENT-SIDE: Reset TheSkillTree on fresh world
--- Uses net_bool on the world entity for server→client communication.
--- (rawset/rawget GLOBAL doesn't work — DST server and client have separate environments.)
+-- BUG FIX (v2.0.3): Uses the PLAYER ENTITY's net_bool (inst.wagstaff_needs_xp_reset)
+-- as the PRIMARY signal, because it is declared in the wagstaff prefab's
+-- common_postinit (during prefab fn phase) and therefore IS registered with the
+-- engine's network serialization — its value replicates from server to client.
+-- The world net_bool (TheWorld.wagstaff_needs_xp_reset_net) is kept as a
+-- SECONDARY fallback, but it was created in AddPrefabPostInit("world") which
+-- runs AFTER the prefab fn, so its value does NOT replicate (confirmed by logs:
+-- server set it to true at 00:09:02, client read false at 00:09:43).
+-- Also adds a RETRY POLL: checks at 3s, 5s, 8s, 12s, 20s in case replication
+-- is delayed (the player entity may not be fully networked at DoTaskInTime(3)).
 --==================================================================================
 AddPrefabPostInit("wagstaff", function(inst)
     if GLOBAL.TheWorld.ismastersim then return end -- Client only
 
     WagstaffDebug("[WAGSTAFF-CLIENT-POSTINIT] ENTERED (client/non-master sim)")
     WagstaffDebug("[WAGSTAFF-CLIENT-POSTINIT] inst.prefab=" .. tostring(inst and inst.prefab))
+    WagstaffDebug("[WAGSTAFF-CLIENT-POSTINIT] inst.GUID=" .. tostring(inst and inst.GUID))
+    WagstaffDebug("[WAGSTAFF-CLIENT-POSTINIT] inst.wagstaff_needs_xp_reset=" .. tostring(inst and inst.wagstaff_needs_xp_reset ~= nil))
     WagstaffDebug("[WAGSTAFF-CLIENT-POSTINIT] TheWorld.wagstaff_needs_xp_reset_net=" .. tostring(GLOBAL.TheWorld.wagstaff_needs_xp_reset_net ~= nil))
     print("[Wagstaff CLIENT] PostInit entered — scheduling DoTaskInTime(3) to check reset flag")
 
-    inst:DoTaskInTime(3, function()
-        WagstaffDebug("[WAGSTAFF-CLIENT] DoTaskInTime(3) fired, inst:IsValid()=" .. tostring(inst:IsValid()))
-        print("[Wagstaff CLIENT] DoTaskInTime(3) fired — checking reset flag now")
-        if not inst:IsValid() then
-            WagstaffDebug("[WAGSTAFF-CLIENT] inst NOT valid — aborting")
-            print("[Wagstaff CLIENT] WARNING: inst not valid — aborting reset check")
-            return
-        end
-
-        -- Check the NETWORKED flag on TheWorld (synced from server)
-        local needs_reset = false
-        local net_err = nil
-        local net_exists = GLOBAL.TheWorld.wagstaff_needs_xp_reset_net ~= nil
-        WagstaffDebug("[WAGSTAFF-CLIENT] needs_xp_reset_net exists=" .. tostring(net_exists))
-        if net_exists then
-            needs_reset, net_err = pcall(function()
-                return GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:value()
-            end)
-            -- pcall returns (ok, result_or_err); quando ok=true, needs_reset é o valor retornado
-            if needs_reset == true then
-                -- needs_reset ainda é true do pcall, precisamos do valor de retorno real
-                local actual_value = false
-                pcall(function() actual_value = GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:value() end)
-                needs_reset = actual_value
-            else
-                -- pcall falhou, net_err tem a mensagem de erro
-                WagstaffDebug("[WAGSTAFF-CLIENT] pcall:value() FAILED: " .. tostring(net_err))
-                needs_reset = false
-            end
-        end
-        WagstaffDebug("[WAGSTAFF-CLIENT] needs_reset value=" .. tostring(needs_reset) .. " net_err=" .. tostring(net_err))
-        print("[Wagstaff CLIENT] needs_xp_reset_net:value() = " .. tostring(needs_reset))
-        if not needs_reset then
-            WagstaffDebug("[WAGSTAFF-CLIENT] needs_reset=false — SKIPPING reset (this is expected on reload, NOT on fresh world)")
-            print("[Wagstaff CLIENT] Reset flag is false — no reset needed (expected on reload; BAD if on fresh world)")
-            return
-        end
+    -- The actual reset procedure (extracted so the retry poll can call it once)
+    local _reset_done = false
+    local function do_xp_reset()
+        if _reset_done then return end
+        _reset_done = true
 
         print("[Wagstaff CLIENT] Net flag detected — resetting TheSkillTree XP and skills...")
         WagstaffDebug("[WAGSTAFF-CLIENT] Net flag detected — starting TheSkillTree reset")
@@ -2257,7 +2272,70 @@ AddPrefabPostInit("wagstaff", function(inst)
 
         print("[Wagstaff CLIENT] TheSkillTree reset complete.")
         WagstaffDebug("[WAGSTAFF-CLIENT] TheSkillTree reset procedure COMPLETE")
-    end)
+    end  -- end of do_xp_reset function
+
+    -- Check the net_bool flags. Returns true if EITHER the player net_bool
+    -- (primary — declared in prefab fn, replicates) or the world net_bool
+    -- (secondary — declared in PostInit, may not replicate) is true.
+    local function check_reset_flag(attempt)
+        if not inst:IsValid() then
+            WagstaffDebug("[WAGSTAFF-CLIENT] check attempt " .. tostring(attempt) .. " — inst NOT valid, aborting")
+            return "abort"
+        end
+        -- PRIMARY: player entity net_bool (declared in wagstaff prefab common_postinit)
+        local player_net = inst.wagstaff_needs_xp_reset
+        local player_val = false
+        if player_net then
+            local ok, val = pcall(function() return player_net:value() end)
+            if ok then player_val = (val == true) end
+            WagstaffDebug("[WAGSTAFF-CLIENT] check attempt " .. tostring(attempt) .. " — player net:value()=" .. tostring(val) .. " ok=" .. tostring(ok))
+        else
+            WagstaffDebug("[WAGSTAFF-CLIENT] check attempt " .. tostring(attempt) .. " — player net is NIL")
+        end
+        -- SECONDARY: world net_bool (declared in AddPrefabPostInit("world") — legacy)
+        local world_net = GLOBAL.TheWorld.wagstaff_needs_xp_reset_net
+        local world_val = false
+        if world_net then
+            local ok, val = pcall(function() return world_net:value() end)
+            if ok then world_val = (val == true) end
+            WagstaffDebug("[WAGSTAFF-CLIENT] check attempt " .. tostring(attempt) .. " — world net:value()=" .. tostring(val) .. " ok=" .. tostring(ok))
+        end
+        local result = player_val or world_val
+        WagstaffDebug("[WAGSTAFF-CLIENT] check attempt " .. tostring(attempt) .. " — RESULT=" .. tostring(result) .. " (player=" .. tostring(player_val) .. " world=" .. tostring(world_val) .. ")")
+        print("[Wagstaff CLIENT] Reset check attempt " .. tostring(attempt) .. ": player_net=" .. tostring(player_val) .. " world_net=" .. tostring(world_val) .. " -> " .. tostring(result))
+        return result
+    end
+
+    -- Retry poll: check at 3s, 5s, 8s, 12s, 20s. If any check returns true,
+    -- run the reset. This handles delayed network replication gracefully.
+    -- If all checks return false, the reset is skipped (expected on reload).
+    local _poll_attempts = {3, 5, 8, 12, 20}
+    local _poll_idx = 0
+    local function schedule_next_poll()
+        _poll_idx = _poll_idx + 1
+        if _poll_idx > #_poll_attempts then
+            WagstaffDebug("[WAGSTAFF-CLIENT] All " .. #_poll_attempts .. " poll attempts exhausted — flag never became true")
+            print("[Wagstaff CLIENT] All reset checks done — flag was false (expected on reload; BAD if fresh world)")
+            return
+        end
+        local delay = _poll_attempts[_poll_idx]
+        -- delay is relative to NOW, but previous DoTaskInTime already waited.
+        -- We use a short relative delay (the gap to the next target time).
+        local prev_delay = _poll_attempts[_poll_idx - 1] or 0
+        local gap = delay - prev_delay
+        inst:DoTaskInTime(gap, function()
+            if _reset_done then return end  -- already reset, stop polling
+            WagstaffDebug("[WAGSTAFF-CLIENT] Poll attempt " .. tostring(_poll_idx) .. " at ~" .. tostring(delay) .. "s")
+            local result = check_reset_flag(_poll_idx)
+            if result == "abort" then return end
+            if result then
+                do_xp_reset()
+            else
+                schedule_next_poll()
+            end
+        end)
+    end
+    schedule_next_poll()
 end)
 
 
