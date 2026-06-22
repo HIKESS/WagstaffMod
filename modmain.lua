@@ -1887,9 +1887,18 @@ AddPrefabPostInit("world", function(self)
     if self.state.wagstaff_celestial_killed == nil then
         self.state.wagstaff_celestial_killed = false
     end
-    -- Profile reset flag: true after resetting XP/boss stats on fresh world
-    if self.state.wagstaff_profile_reset == nil then
-        self.state.wagstaff_profile_reset = false
+    -- Profile reset flag: true after resetting XP/boss stats on fresh world.
+    --
+    -- BUG FIX (v2.0.2): Previously stored in self.state.wagstaff_profile_reset.
+    -- Custom fields on TheWorld.state are NOT persisted automatically by the
+    -- engine — they depend on the OnSave/OnLoad wrap below, which is fragile
+    -- (other mods or the engine can override world.OnSave and break the chain).
+    -- Storing the flag directly on the world entity and returning it from
+    -- OnSave data makes persistence reliable across reloads. This prevents
+    -- the flag from reverting to nil/false on reload, which was causing a
+    -- DUPLICATE XP reset every time the player relogged.
+    if self.wagstaff_profile_reset == nil then
+        self.wagstaff_profile_reset = false
     end
 
     -- Networked variables: these sync from server to client automatically.
@@ -1918,7 +1927,7 @@ AddPrefabPostInit("world", function(self)
         local data = old_OnSave and old_OnSave(self, ...) or {}
         data.wagstaff_fuelweaver_killed = self.state.wagstaff_fuelweaver_killed
         data.wagstaff_celestial_killed  = self.state.wagstaff_celestial_killed
-        data.wagstaff_profile_reset     = self.state.wagstaff_profile_reset
+        data.wagstaff_profile_reset     = self.wagstaff_profile_reset
         WagstaffDebug("World OnSave done")
         return data
     end
@@ -1931,12 +1940,12 @@ AddPrefabPostInit("world", function(self)
         if data then
             self.state.wagstaff_fuelweaver_killed = data.wagstaff_fuelweaver_killed or false
             self.state.wagstaff_celestial_killed  = data.wagstaff_celestial_killed  or false
-            self.state.wagstaff_profile_reset     = data.wagstaff_profile_reset or false
+            self.wagstaff_profile_reset     = data.wagstaff_profile_reset or false
         else
             -- Fresh world (no save data): flag stays false so profile reset will trigger
             self.state.wagstaff_fuelweaver_killed = false
             self.state.wagstaff_celestial_killed  = false
-            self.state.wagstaff_profile_reset     = false
+            self.wagstaff_profile_reset     = false
         end
         -- Sync loaded state to networked variables (so client lock_open can read them)
         -- `self` here is TheWorld (this is the world's OnLoad method). Use
@@ -1945,6 +1954,16 @@ AddPrefabPostInit("world", function(self)
         if self.ismastersim and self.wagstaff_fuelweaver_killed_net then
             self.wagstaff_fuelweaver_killed_net:set(self.state.wagstaff_fuelweaver_killed)
             self.wagstaff_celestial_killed_net:set(self.state.wagstaff_celestial_killed)
+            -- BUG FIX (v2.0.2): explicitly clear the XP reset signal on reload.
+            -- net_bool defaults to false on entity reconstruction, but clearing
+            -- it here guarantees the client won't receive a stale "true" from
+            -- the previous session's fresh-world signal (which would cause a
+            -- duplicate XP reset on every reload). On a truly fresh world the
+            -- signal is set later by the master sim's DoTaskInTime(0) in the
+            -- wagstaff PostInit below.
+            if self.wagstaff_needs_xp_reset_net then
+                self.wagstaff_needs_xp_reset_net:set(false)
+            end
         end
     end
 end)
@@ -1984,10 +2003,23 @@ AddPrefabPostInit("wagstaff", function(inst)
     --==================================================================================
     inst:DoTaskInTime(0, function()
         if not inst:IsValid() then return end
-        -- Skip if already reset for this world (reload)
-        if GLOBAL.TheWorld.state.wagstaff_profile_reset then return end
+        -- Skip if already reset for this world (reload).
+        -- Flag is now stored directly on TheWorld entity (not TheWorld.state)
+        -- for reliable persistence across save/load — see AddPrefabPostInit("world").
+        if GLOBAL.TheWorld.wagstaff_profile_reset then return end
 
         print("[Wagstaff] Fresh world detected — signaling client via net_bool...")
+
+        -- BUG FIX (v2.0.2): Mark this world as reset IMMEDIATELY (before doing
+        -- any work) so that a crash/disconnect during the reset procedure
+        -- below won't leave the flag unset and cause a DUPLICATE reset on next
+        -- reload. The flag is persisted via the world's OnSave/OnLoad wrap, so
+        -- once set it survives save/load cycles and prevents re-running this
+        -- block. (Previously the flag was set at the END of this block, after
+        -- all the profile work — if the player quit before the block finished,
+        -- the flag was never persisted and the reset ran again next reload,
+        -- wiping XP/skills the player had legitimately earned.)
+        GLOBAL.TheWorld.wagstaff_profile_reset = true
 
         -- Signal the CLIENT to reset TheSkillTree via NETWORKED boolean
         -- (rawset GLOBAL doesn't work — server and client have separate Lua environments)
@@ -2011,8 +2043,6 @@ AddPrefabPostInit("wagstaff", function(inst)
             print("[Wagstaff] Reset boss kill stats for affinity bosses")
         end
 
-        -- Mark this world as reset — will NOT trigger again on reload
-        GLOBAL.TheWorld.state.wagstaff_profile_reset = true
         print("[Wagstaff] Server-side reset done. Waiting for client to reset TheSkillTree...")
     end)
 
@@ -2071,6 +2101,30 @@ AddPrefabPostInit("wagstaff", function(inst)
             end
         end)
         if not ok2 then print("[Wagstaff CLIENT] XP reset error: " .. tostring(err2)) end
+
+        -- BUG FIX (v2.0.2): Persist the reset to the player PROFILE.
+        --
+        -- In DST, skill XP and activated skills are stored in the player
+        -- profile (a GLOBAL data structure shared across ALL worlds, NOT
+        -- per-world). The DeactivateSkill/AddSkillXP calls above only modify
+        -- the in-memory state of TheSkillTree. Without calling Profile:Save()
+        -- here, the reset is lost on next reload — the profile is read back
+        -- from disk with the OLD values, undoing the reset entirely.
+        --
+        -- This was the root cause of: "Klei persists XP/insights between saves
+        -- even after deleting the world save". The Klei profile is independent
+        -- of world saves, so deleting a world save does NOT clear profile XP.
+        -- The reset MUST be persisted to the profile to actually take effect.
+        local ok3, err3 = pcall(function()
+            local Profile = rawget(GLOBAL, "Profile")
+            if Profile and Profile.Save then
+                Profile:Save()
+                print("[Wagstaff CLIENT] Profile saved — XP/skill reset persisted to disk")
+            else
+                print("[Wagstaff CLIENT] WARNING: Profile or Profile:Save not available — reset NOT persisted!")
+            end
+        end)
+        if not ok3 then print("[Wagstaff CLIENT] Profile save error: " .. tostring(err3)) end
 
         print("[Wagstaff CLIENT] TheSkillTree reset complete.")
     end)
