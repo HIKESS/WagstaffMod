@@ -274,7 +274,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_evolve = {
             name = "wagstaff_ballistic_evolve",
             title = "Ballistic Bot MK. II",
-            desc = "Stat Upgrade\n+250 HP, +7 Damage",
+            desc = "Stat Upgrade\n+250 HP, +12 Damage",
             icon = "balisticmk2",
             icon_atlas = "images/skilltree/balisticmk2.xml",
             pos = { -36.9, 76.4 },
@@ -298,7 +298,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_parallel = {
             name = "wagstaff_ballistic_parallel",
             title = "Ballistic Bot MK.III",
-            desc = "Mobile Bot + Lantern Light\nRain/Lightning abilities, Celestial & Shadow affinity",
+            desc = "Turret Upgrade\nLantern Light (night), Rain/Lightning, Celestial & Shadow affinity",
             icon = "balisticmk3",
             icon_atlas = "images/skilltree/balisticmk3.xml",
             pos = { 38.6, 76.4 },

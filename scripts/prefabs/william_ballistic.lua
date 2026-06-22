@@ -799,10 +799,10 @@ end
         inst.components.fueled.currentfuel = inst.components.fueled.maxfuel
         inst.components.fueled.accepting = true
 
-        -- STAT UPGRADE: +250 HP, +7 Damage
+        -- STAT UPGRADE: +250 HP, +12 Damage
         inst.components.health:SetMaxHealth(TUNING.WILLIAM_BALLISTIC_HEALTH + 250)
         inst.components.health:DoDelta(250)
-        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 7)
+        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 12)
 
         -- Named status display (Fuel | HP | Upgrade MK3)
         inst.upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
@@ -993,22 +993,10 @@ end
             return inst
         end
 
-        -- Additional stats on TOP of MK2's +250/+7 (total: +350 HP, +15 DMG)
-        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BALLISTIC_HEALTH + 350)
-        inst.components.health:DoDelta(100)
-        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 15)
+        -- MK3 inherits MK2 stats (+250 HP, +12 DMG) — no additional stat bonus
+        -- MK3 is a TURRET (not mobile), keeps turret physics and brain
 
-        -- Remove obstacle physics, add character physics for movement
-        inst.Physics:ClearCollisionMask()
-        MakeCharacterPhysics(inst, 50, .5)
-
-        -- Add locomotor for movement
-        inst:AddComponent("locomotor")
-        inst.components.locomotor.runspeed = TUNING.SHADOWWAXWELL_SPEED
-        inst.components.locomotor:SetAllowPlatformHopping(true)
-        inst:AddComponent("embarker")
-
-        -- Add follower so it follows player
+        -- Add follower for owner tracking only (affinity, save/load)
         inst:AddComponent("follower")
         inst.components.follower:KeepLeaderOnAttacked()
         inst.components.follower.keepdeadleader = true
@@ -1033,9 +1021,6 @@ end
                 end
             end
         end)
-
-        -- Switch to follow brain
-        inst:SetBrain(require "brains/williamballisticbrain")
 
         -- Named status display
         if inst.components.named == nil then
@@ -1107,9 +1092,9 @@ end
             inst._overcharge = false
             inst:RemoveTag("overcharged")
 
-            -- Revert stats (MK3 base: +15 DMG, so revert to that)
+            -- Revert stats to MK2 base: +12 DMG
             inst.components.combat:SetAttackPeriod(TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD)
-            inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 15)
+            inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 12)
             inst.components.health:SetMaxHealth(inst.components.health.maxhealth - 500)
             inst.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN, TUNING.WILLIAM_ROBOT_REGENPERIOD)
             inst.AnimState:ClearBloomEffectHandle()
@@ -1140,8 +1125,8 @@ end
             ZapFX(inst)
             inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
 
-            -- Only overcharge if deployed (not in inventory / following)
-            if not inst.components.inventoryitem and inst.components.follower ~= nil then
+            -- Only overcharge if deployed (MK3 is always a turret)
+            if not inst.components.inventoryitem then
                 ApplyOvercharge(inst)
                 -- Overcharge lasts 60 seconds
                 if inst._overchargetask ~= nil then
