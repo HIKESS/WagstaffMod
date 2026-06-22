@@ -13,6 +13,16 @@
 
 local GAP = 38
 
+-- Module-level locals for diagnostic logging flags.
+-- These are used inside lock_open functions to print the unlock state exactly
+-- once per skill tree open. Using module-level locals (NOT globals) is required
+-- because DST ships with scripts/strict.lua which throws an error on any read
+-- of an undeclared global variable. Reading `_WAGSTAFF_LOCK_LOGGED_*` without
+-- declaring it first crashed the skill tree panel with:
+--   variable '_WAGSTAFF_LOCK_LOGGED_FUELWEAVER' is not declared
+local _lock_logged_fuelweaver = false
+local _lock_logged_celestial = false
+
 -- ORDERS: one entry per branch with {x, y} header position in the skill tree UI.
 -- Format matches DST's standard: {branch_name, {x_offset, y_offset}}.
 -- x = horizontal center of the branch column, y = vertical position of branch header.
@@ -407,9 +417,11 @@ local function BuildSkillsData(SkillTreeFns)
                     end
                 end
 
-                -- Diagnostic logging (helps debug if still not unlocking)
-                if not _WAGSTAFF_LOCK_LOGGED_FUELWEAVER then
-                    _WAGSTAFF_LOCK_LOGGED_FUELWEAVER = true
+                -- Diagnostic logging (helps debug if still not unlocking).
+                -- Uses module-level locals to avoid strict.lua crashes on
+                -- undeclared global reads.
+                if not _lock_logged_fuelweaver then
+                    _lock_logged_fuelweaver = true
                     print("[Wagstaff LOCK] shadow_boss lock_open: tag=" .. tostring(player and player:HasTag("wagstaff_fuelweaver_killed") or false) ..
                           " net=" .. tostring(TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() or false) ..
                           " stat=" .. tostring(player and player.profile and player.profile.stats and player.profile.stats["killed_stalker_atrium"] or 0) ..
@@ -467,9 +479,11 @@ local function BuildSkillsData(SkillTreeFns)
                     end
                 end
 
-                -- Diagnostic logging (helps debug if still not unlocking)
-                if not _WAGSTAFF_LOCK_LOGGED_CELESTIAL then
-                    _WAGSTAFF_LOCK_LOGGED_CELESTIAL = true
+                -- Diagnostic logging (helps debug if still not unlocking).
+                -- Uses module-level locals to avoid strict.lua crashes on
+                -- undeclared global reads.
+                if not _lock_logged_celestial then
+                    _lock_logged_celestial = true
                     print("[Wagstaff LOCK] lunar_boss lock_open: tag=" .. tostring(player and player:HasTag("wagstaff_celestial_killed") or false) ..
                           " net=" .. tostring(TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() or false) ..
                           " stat=" .. tostring(player and player.profile and player.profile.stats and player.profile.stats["killed_alterguardian_phase3"] or 0) ..
