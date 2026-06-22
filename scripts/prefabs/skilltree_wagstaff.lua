@@ -33,7 +33,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_mechanical_1 = {
             name = "wagstaff_mechanical_1",
             title = "Mechanical Efficiency",
-            desc = "30% chance repair, recharge, and upgrade costs no scrap",
+            desc = "Years of tinkering pay off.\nRepairs, upgrades, and maintenance have a chance to cost no Scrap.",
             icon = "Wrench",
             icon_atlas = "images/skilltree/Wrench.xml",
             pos = { -168.9, 164.9 },
@@ -58,7 +58,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_sentry_mk2 = {
             name = "wagstaff_sentry_mk2",
             title = "Sentry Mk.II",
-            desc = "Increases Health\nRate of Fire",
+            desc = "Equips the Sentry with dual guns.\nIncreases durability, damage, and ammo capacity.",
             icon = "sentrymk2",
             icon_atlas = "images/skilltree/sentrymk2.xml",
             pos = { -206.7, 120.7 },
@@ -77,7 +77,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_sentry_mk3 = {
             name = "wagstaff_sentry_mk3",
             title = "Sentry Mk.III",
-            desc = "Increases Health\nAttack Range\nPeriodically shoot rockets that deal AOE damage",
+            desc = "Unlocks the Sentry's full firepower.\nAdds rocket support and increases fire rate, durability, damage, and ammo capacity.",
             icon = "sentrymk3",
             icon_atlas = "images/skilltree/sentrymk3.xml",
             pos = { -206.7, 76.4 },
@@ -96,7 +96,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_x2_damage = {
             name = "wagstaff_x2_damage",
             title = "x2-Damage",
-            desc = "Chance to cause double damage",
+            desc = "Sometimes one shot is all it takes.\nGives the Sentry a chance to deal double damage.",
             icon = "doubledamage",
             icon_atlas = "images/skilltree/doubledamage.xml",
             pos = { -206.7, 32.5 },
@@ -115,7 +115,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_dispenser_mk2 = {
             name = "wagstaff_dispenser_mk2",
             title = "Dispenser MK.II",
-            desc = "Provides more resources per the day segment\nProvides Health regen in a small aura\nDay and Dusk",
+            desc = "Improves the Dispenser's production efficiency.",
             icon = "disp2",
             icon_atlas = "images/skilltree/disp2.xml",
             pos = { -131.2, 120.7 },
@@ -134,7 +134,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_dispenser_mk3 = {
             name = "wagstaff_dispenser_mk3",
             title = "Dispenser MK.III",
-            desc = "Increase the fuel duration per day\nProvides Health regen in a small aura\nDay, Dusk, & Night",
+            desc = "Keeps the workshop running around the clock.\nProduces rarer resources and increases fuel capacity.",
             icon = "disp3",
             icon_atlas = "images/skilltree/disp3.xml",
             pos = { -131.2, 76.4 },
@@ -153,7 +153,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_lucky_engineer = {
             name = "wagstaff_lucky_engineer",
             title = "Lucky Engineer",
-            desc = "Dispenser 15% rare drop chance",
+            desc = "Fortune smiles on good craftsmanship.\nGives the Dispenser a chance to produce an additional rare resource.",
             icon = "luckyenginer",
             icon_atlas = "images/skilltree/luckyenginer.xml",
             pos = { -131.2, 32.5 },
@@ -177,7 +177,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_robotic_1 = {
             name = "wagstaff_robotic_1",
             title = "Brute Bot MK. II",
-            desc = "Increases Health\nIncreases Damage",
+            desc = "Reinforces the Brute's heavy frame.\nGreatly increases durability and damage."
             icon = "brutemk2",
             icon_atlas = "images/skilltree/brutemk2.xml",
             pos = { -36.9, 164.2 },
@@ -202,7 +202,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_robotic_1_parallel = {
             name = "wagstaff_robotic_1_parallel",
             title = "Brute Bot MK. III",
-            desc = "Add Storage",
+            desc = "Turns the Brute into a true pack mule.\nAdds a complete storage system.",
             icon = "brutemk3",
             icon_atlas = "images/skilltree/brutemk3.xml",
             pos = { 38.6, 164.2 },
@@ -226,7 +226,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_buster_evolve = {
             name = "wagstaff_buster_evolve",
             title = "Buster Bot MK.II",
-            desc = "Increases Health\nIncreases Damage",
+            desc = "Upgrades the Buster's combat chassis.\nIncreases its health and damage."
             icon = "bustermk2",
             icon_atlas = "images/skilltree/bustermk2.xml",
             pos = { -36.9, 120.5 },
@@ -250,7 +250,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_buster_parallel = {
             name = "wagstaff_buster_parallel",
             title = "Buster Bot MK. III",
-            desc = "Explosive Punch",
+            desc = "Pushes its offensive systems to the limit.\nUnlocks explosive strike abilities.",
             icon = "bustermk3",
             icon_atlas = "images/skilltree/bustermk3.xml",
             pos = { 38.6, 120.5 },
@@ -274,7 +274,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_evolve = {
             name = "wagstaff_ballistic_evolve",
             title = "Ballistic Bot MK. II",
-            desc = "Stat Upgrade\n+250 HP, +12 Damage",
+            desc = "Upgrades the Ballistic Bot's electrical systems.\nImproves durability and increases attack power.",
             icon = "balisticmk2",
             icon_atlas = "images/skilltree/balisticmk2.xml",
             pos = { -36.9, 76.4 },
@@ -298,7 +298,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_parallel = {
             name = "wagstaff_ballistic_parallel",
             title = "Ballistic Bot MK.III",
-            desc = "Turret Upgrade\nLantern Light (night), Rain/Lightning, Celestial & Shadow affinity",
+            desc = "Unlocks its lightning platform.\nGains advanced electrical weaponry and emits its own light.",
             icon = "balisticmk3",
             icon_atlas = "images/skilltree/balisticmk3.xml",
             pos = { 38.6, 76.4 },
@@ -322,7 +322,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_thermal_upgrade = {
             name = "wagstaff_thermal_upgrade",
             title = "Butler MK. II",
-            desc = "Unlocks wood chopping and mining ability for Butler Bot",
+            desc = "Unlocks the Butler's gathering tools.\nAllows it to chop trees and mine.",
             icon = "buttlermk2",
             icon_atlas = "images/skilltree/buttlermk2.xml",
             pos = { -36.9, 32.5 },
@@ -346,7 +346,7 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_thermal_upgrade_parallel = {
             name = "wagstaff_thermal_upgrade_parallel",
             title = "Butler MK. III",
-            desc = "Your Spirit Remains Bound into machine\nCost 30 Max HP",
+            desc = "Expands the Butler's capabilities far beyond household tasks.\nBrings memories back to life.",
             icon = "buttlermk3",
             icon_atlas = "images/skilltree/buttlermk3.xml",
             pos = { 38.6, 32.5 },
