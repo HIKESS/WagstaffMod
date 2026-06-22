@@ -812,17 +812,30 @@ Assets = {
     Asset("ANIM", "anim/eteleporter.zip"),
 
     -- Minimap / map icons (bots, sentry, dispenser, teleporter)
+    -- NOTE: Both IMAGE and ATLAS assets are required for minimap icons to display correctly.
+    -- Missing ATLAS causes the icon to show as a generic square on the map.
     Asset("IMAGE", "images/minimap/esentry.tex"),
+    Asset("ATLAS", "images/minimap/esentry.xml"),
     Asset("IMAGE", "images/minimap/esentry_2.tex"),
+    Asset("ATLAS", "images/minimap/esentry_2.xml"),
     Asset("IMAGE", "images/minimap/esentry_3.tex"),
+    Asset("ATLAS", "images/minimap/esentry_3.xml"),
     Asset("IMAGE", "images/minimap/dispenser.tex"),
+    Asset("ATLAS", "images/minimap/dispenser.xml"),
     Asset("IMAGE", "images/minimap/eteleporter.tex"),
+    Asset("ATLAS", "images/minimap/eteleporter.xml"),
     Asset("IMAGE", "images/minimap/eteleporterentrance.tex"),
+    Asset("ATLAS", "images/minimap/eteleporterentrance.xml"),
     Asset("IMAGE", "images/minimap/eteleporterexit.tex"),
+    Asset("ATLAS", "images/minimap/eteleporterexit.xml"),
     Asset("IMAGE", "images/map_icons/williambutler.tex"),
+    Asset("ATLAS", "images/map_icons/williambutler.xml"),
     Asset("IMAGE", "images/map_icons/williambuster.tex"),
+    Asset("ATLAS", "images/map_icons/williambuster.xml"),
     Asset("IMAGE", "images/map_icons/williambrute.tex"),
+    Asset("ATLAS", "images/map_icons/williambrute.xml"),
     Asset("IMAGE", "images/map_icons/williamballistic.tex"),
+    Asset("ATLAS", "images/map_icons/williamballistic.xml"),
 }
 
 
