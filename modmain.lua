@@ -1529,6 +1529,12 @@ ENGIEWORKABLE.fn = function(act)
 
     if act.doer ~= nil and act.target ~= nil and act.doer:HasTag("player") then
 
+        -- Verify wrench is still valid and has durability
+        local wrench = act.doer.components.inventory and act.doer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+        if wrench == nil or wrench.prefab ~= "tf2wrench" or (wrench.components.finiteuses and wrench.components.finiteuses:GetUses() <= 0) then
+            return false
+        end
+
         if act.target.components.engieworkable then
 
             act.target.components.engieworkable:WorkedBy(act.doer, 1)
@@ -1551,13 +1557,12 @@ AddAction(ENGIEWORKABLE)
 
 
 AddComponentAction("SCENE", "engieworkable", function(inst, doer, actions, right)
-
-    if inst:HasTag("ebuild_wrenchable") and doer.replica.inventory:GetEquippedItem(G.EQUIPSLOTS.HANDS) ~= nil and doer.replica.inventory:GetEquippedItem(G.EQUIPSLOTS.HANDS).prefab == "tf2wrench" then
-
-        table.insert(actions, G.ACTIONS.ENGIEWORKABLE)
-
+    local equipped = doer.replica.inventory:GetEquippedItem(G.EQUIPSLOTS.HANDS)
+    if inst:HasTag("ebuild_wrenchable") and equipped ~= nil and equipped.prefab == "tf2wrench" then
+        if equipped.replica.finiteuses == nil or equipped.replica.finiteuses:GetUses() > 0 then
+            table.insert(actions, G.ACTIONS.ENGIEWORKABLE)
+        end
     end
-
 end)
 
 

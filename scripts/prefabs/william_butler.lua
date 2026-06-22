@@ -458,6 +458,7 @@ end
     inst.components.inspectable.getstatus = getstatus
     
     inst:AddComponent("named")
+    UpdateButlerName(inst)
 
         inst:AddComponent("willyraise")
     inst.components.willyraise:SetOnRiseFn(MakeAlive)

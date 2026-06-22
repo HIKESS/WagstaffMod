@@ -482,8 +482,6 @@ end
         inst:AddTag("NOBLOCK")
         inst:AddTag("mech")
 
-    inst:SetPrefabNameOverride("williambuster")
-
         inst.entity:SetPristine()
 
         if not TheWorld.ismastersim then
