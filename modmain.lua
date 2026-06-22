@@ -95,6 +95,14 @@ end
 -- Buffers debug lines in memory and flushes to file every 5 seconds to avoid
 -- freezing the game with file I/O on every call (especially in hot paths like
 -- IsActivated which the skill tree UI calls many times per second).
+--
+-- REVERTED (v2.0.5): The v2.0.3/v2.0.4 rewrite of this system used
+-- TheSim:SetPersistentString() to write the debug file. This caused a crash
+-- (OLDFILEACCESSMETHOD) when loading skilltree_wagstaff.lua via require().
+-- The exact mechanism is unclear (even with deferred I/O the crash persisted),
+-- but reverting to the original G.io.open()-based flush (which silently no-ops
+-- because io is nil in the DST sandbox) eliminates the crash. Traces still
+-- reach the game logs via print() — use: grep "\[Wagstaff" *_log.txt
 -- ============================================================================
 G.WagstaffDebugEnabled = GetModConfigData("debug") == true
 
@@ -109,8 +117,8 @@ local function get_mod_directory()
     if G.TheModManager then
         for _, mod in pairs(G.TheModManager.mods) do
             if mod and mod.modinfo and mod.modinfo.id then
-                if mod.modinfo.id == "wagstaff_standalone" or 
-                   string.find(mod.modinfo.id, "wagstaff") or 
+                if mod.modinfo.id == "wagstaff_standalone" or
+                   string.find(mod.modinfo.id, "wagstaff") or
                    string.find(mod.modinfo.name, "Wagstaff") then
                     moddir = mod.path or mod.modpath or moddir
                     break
@@ -1879,7 +1887,11 @@ TUNING.SKILL_THRESHOLDS.wagstaff = {0,3,6,10,14,18,23,28,33,38,43,48,53,58,63,68
 -- (Custom world.state fields are NOT networked in DST — they only exist on the server.)
 WagstaffDebug("Registering AddPrefabPostInit('world')")
 AddPrefabPostInit("world", function(self)
-    WagstaffDebug("AddPrefabPostInit('world') called")
+    WagstaffDebug("[WORLD-POSTINIT] ENTERED")
+    -- Diagnóstico: registrar contexto de execução (master sim? client? dedicated?)
+    local _is_master = self.ismastersim == true
+    local _is_dedicated = GLOBAL.TheNet and GLOBAL.TheNet:IsDedicated() == true
+    WagstaffDebug("[WORLD-POSTINIT] ismastersim=" .. tostring(_is_master) .. " IsDedicated=" .. tostring(_is_dedicated))
     -- Initialize worldstate boss flags (server-side persistence for save/load)
     if self.state.wagstaff_fuelweaver_killed == nil then
         self.state.wagstaff_fuelweaver_killed = false
@@ -1887,10 +1899,20 @@ AddPrefabPostInit("world", function(self)
     if self.state.wagstaff_celestial_killed == nil then
         self.state.wagstaff_celestial_killed = false
     end
-    -- Profile reset flag: true after resetting XP/boss stats on fresh world
-    if self.state.wagstaff_profile_reset == nil then
-        self.state.wagstaff_profile_reset = false
+    -- Profile reset flag: true after resetting XP/boss stats on fresh world.
+    --
+    -- BUG FIX (v2.0.2): Previously stored in self.state.wagstaff_profile_reset.
+    -- Custom fields on TheWorld.state are NOT persisted automatically by the
+    -- engine — they depend on the OnSave/OnLoad wrap below, which is fragile
+    -- (other mods or the engine can override world.OnSave and break the chain).
+    -- Storing the flag directly on the world entity and returning it from
+    -- OnSave data makes persistence reliable across reloads. This prevents
+    -- the flag from reverting to nil/false on reload, which was causing a
+    -- DUPLICATE XP reset every time the player relogged.
+    if self.wagstaff_profile_reset == nil then
+        self.wagstaff_profile_reset = false
     end
+    WagstaffDebug("[WORLD-POSTINIT] wagstaff_profile_reset (init)=" .. tostring(self.wagstaff_profile_reset))
 
     -- Networked variables: these sync from server to client automatically.
     -- IMPORTANT: net_bool must be accessed via GLOBAL here. In the DST mod
@@ -1903,12 +1925,16 @@ AddPrefabPostInit("world", function(self)
     if GLOBAL.net_bool then
         self.wagstaff_fuelweaver_killed_net = GLOBAL.net_bool(self.GUID, "wagstaff_fuelweaver_killed_net")
         self.wagstaff_celestial_killed_net  = GLOBAL.net_bool(self.GUID, "wagstaff_celestial_killed_net")
+        WagstaffDebug("[WORLD-POSTINIT] net_bool vars CREATED (fuelweaver, celestial)")
         -- net_bool defaults to false, so no initial :set() is required. Also,
         -- :set() may only be called on the master sim — calling it on a client
         -- (when the client constructs its local world entity) is invalid. The
         -- real values are pushed from the master sim via OnLoad below and via
         -- the boss-kill callbacks; clients receive them through net
         -- variable replication automatically.
+    else
+        WagstaffDebug("[WORLD-POSTINIT] WARNING: GLOBAL.net_bool is NIL — net vars NOT created!")
+        print("[Wagstaff WORLD] WARNING: GLOBAL.net_bool is NIL — needs_xp_reset_net will NOT be available!")
     end
 
     -- SAVE: store boss flags + profile reset flag
@@ -1917,7 +1943,9 @@ AddPrefabPostInit("world", function(self)
         local data = old_OnSave and old_OnSave(self, ...) or {}
         data.wagstaff_fuelweaver_killed = self.state.wagstaff_fuelweaver_killed
         data.wagstaff_celestial_killed  = self.state.wagstaff_celestial_killed
-        data.wagstaff_profile_reset     = self.state.wagstaff_profile_reset
+        data.wagstaff_profile_reset     = self.wagstaff_profile_reset
+        WagstaffDebug("[WORLD-ONSAVE] wagstaff_profile_reset=" .. tostring(self.wagstaff_profile_reset) .. " fuelweaver=" .. tostring(self.state.wagstaff_fuelweaver_killed) .. " celestial=" .. tostring(self.state.wagstaff_celestial_killed))
+        print("[Wagstaff WORLD] OnSave: profile_reset=" .. tostring(self.wagstaff_profile_reset) .. " fuelweaver=" .. tostring(self.state.wagstaff_fuelweaver_killed) .. " celestial=" .. tostring(self.state.wagstaff_celestial_killed))
         WagstaffDebug("World OnSave done")
         return data
     end
@@ -1925,17 +1953,21 @@ AddPrefabPostInit("world", function(self)
     -- LOAD: restore boss flags + profile reset flag + sync to net_bool
     local old_OnLoad = self.OnLoad
     self.OnLoad = function(self, data, ...)
-        WagstaffDebug("World OnLoad called")
+        WagstaffDebug("[WORLD-ONLOAD] ENTERED, data=" .. tostring(data ~= nil))
+        print("[Wagstaff WORLD] OnLoad called, data present=" .. tostring(data ~= nil))
         if old_OnLoad then old_OnLoad(self, data, ...) end
         if data then
             self.state.wagstaff_fuelweaver_killed = data.wagstaff_fuelweaver_killed or false
             self.state.wagstaff_celestial_killed  = data.wagstaff_celestial_killed  or false
-            self.state.wagstaff_profile_reset     = data.wagstaff_profile_reset or false
+            self.wagstaff_profile_reset     = data.wagstaff_profile_reset or false
+            WagstaffDebug("[WORLD-ONLOAD] restored from data: profile_reset=" .. tostring(self.wagstaff_profile_reset) .. " fuelweaver=" .. tostring(self.state.wagstaff_fuelweaver_killed) .. " celestial=" .. tostring(self.state.wagstaff_celestial_killed))
         else
             -- Fresh world (no save data): flag stays false so profile reset will trigger
             self.state.wagstaff_fuelweaver_killed = false
             self.state.wagstaff_celestial_killed  = false
-            self.state.wagstaff_profile_reset     = false
+            self.wagstaff_profile_reset     = false
+            WagstaffDebug("[WORLD-ONLOAD] FRESH WORLD (no data) — profile_reset=false (reset WILL trigger)")
+            print("[Wagstaff WORLD] OnLoad: FRESH WORLD detected — profile reset WILL trigger")
         end
         -- Sync loaded state to networked variables (so client lock_open can read them)
         -- `self` here is TheWorld (this is the world's OnLoad method). Use
@@ -1944,6 +1976,11 @@ AddPrefabPostInit("world", function(self)
         if self.ismastersim and self.wagstaff_fuelweaver_killed_net then
             self.wagstaff_fuelweaver_killed_net:set(self.state.wagstaff_fuelweaver_killed)
             self.wagstaff_celestial_killed_net:set(self.state.wagstaff_celestial_killed)
+            WagstaffDebug("[WORLD-ONLOAD] master sim — syncing boss nets: fuelweaver=" .. tostring(self.state.wagstaff_fuelweaver_killed) .. " celestial=" .. tostring(self.state.wagstaff_celestial_killed))
+            -- Note: wagstaff_needs_xp_reset_net was removed in v2.0.8 (XP reset
+            -- system deleted). Only boss kill net_bools are synced here.
+        else
+            WagstaffDebug("[WORLD-ONLOAD] NOT master sim OR no boss net — skipping net sync (ismastersim=" .. tostring(self.ismastersim) .. ", boss_net=" .. tostring(self.wagstaff_fuelweaver_killed_net ~= nil) .. ")")
         end
     end
 end)
@@ -1977,18 +2014,35 @@ end)
 AddPrefabPostInit("wagstaff", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
 
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] ENTERED (master sim)")
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] TheWorld.wagstaff_profile_reset=" .. tostring(GLOBAL.TheWorld.wagstaff_profile_reset))
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] inst.wagstaff_needs_xp_reset=" .. tostring(inst.wagstaff_needs_xp_reset ~= nil))
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] inst.GUID=" .. tostring(inst.GUID))
+    WagstaffDebug("[WAGSTAFF-SERVER-POSTINIT] TheWorld.GUID=" .. tostring(GLOBAL.TheWorld.GUID))
+
     --==================================================================================
     -- FRESH WORLD: Zero boss kill stats (affinity-gating bosses)
     -- Only runs once per world creation, never on reload.
     -- (XP and skill activations are NOT reset — players keep their progress.)
     --==================================================================================
     inst:DoTaskInTime(0, function()
-        if not inst:IsValid() then return end
-        -- Skip if already reset for this world (reload)
-        if GLOBAL.TheWorld.state.wagstaff_profile_reset then return end
+        WagstaffDebug("[WAGSTAFF-SERVER] DoTaskInTime(0) fired, inst:IsValid()=" .. tostring(inst:IsValid()))
+        if not inst:IsValid() then
+            WagstaffDebug("[WAGSTAFF-SERVER] inst NOT valid — aborting reset")
+            return
+        end
+        -- Skip if already reset for this world (reload).
+        -- Flag is now stored directly on TheWorld entity (not TheWorld.state)
+        -- for reliable persistence across save/load — see AddPrefabPostInit("world").
+        if GLOBAL.TheWorld.wagstaff_profile_reset then
+            WagstaffDebug("[WAGSTAFF-SERVER] SKIPPING reset — wagstaff_profile_reset already true (reload)")
+            print("[Wagstaff SERVER] SKIPPING fresh-world reset — already done for this world (reload)")
+            return
+        end
 
         -- Zero boss kill stats in the player profile (affinity-gating bosses)
         local profile = inst.profile
+        WagstaffDebug("[WAGSTAFF-SERVER] inst.profile=" .. tostring(profile ~= nil) .. " profile.stats=" .. tostring(profile and profile.stats ~= nil))
         if profile and profile.stats then
             local bosses = {
                 "stalker", "stalker_atrium",
@@ -1998,20 +2052,34 @@ AddPrefabPostInit("wagstaff", function(inst)
                 profile.stats["killed_" .. boss] = 0
             end
             if profile.Save then
-                pcall(function() profile:Save() end)
+                local save_ok, save_err = pcall(function() profile:Save() end)
+                WagstaffDebug("[WAGSTAFF-SERVER] profile:Save() result: ok=" .. tostring(save_ok) .. " err=" .. tostring(save_err))
             end
             print("[Wagstaff] Reset boss kill stats for affinity bosses (fresh world)")
+            WagstaffDebug("[WAGSTAFF-SERVER] Reset boss kill stats for affinity bosses")
+        else
+            WagstaffDebug("[WAGSTAFF-SERVER] WARNING: inst.profile or profile.stats is NIL — boss stats NOT reset")
+            print("[Wagstaff SERVER] WARNING: inst.profile or profile.stats is NIL — boss stats NOT reset")
         end
 
         -- Mark this world as reset — will NOT trigger again on reload
         GLOBAL.TheWorld.state.wagstaff_profile_reset = true
+        WagstaffDebug("[WAGSTAFF-SERVER] Set wagstaff_profile_reset=TRUE (boss stats reset complete)")
         print("[Wagstaff] Fresh world boss kill stats reset complete.")
     end)
 
     inst:ListenForEvent("daycomplete", function(inst)
+        WagstaffDebug("[WAGSTAFF-SERVER] daycomplete fired, isghost=" .. tostring(inst:HasTag("playerghost")))
         if not inst:HasTag("playerghost") then
             if GLOBAL.TheSkillTree then
+                local xp_before = nil
+                pcall(function() xp_before = GLOBAL.TheSkillTree:GetSkillXP("wagstaff") end)
                 GLOBAL.TheSkillTree:AddSkillXP(1, "wagstaff")
+                local xp_after = nil
+                pcall(function() xp_after = GLOBAL.TheSkillTree:GetSkillXP("wagstaff") end)
+                WagstaffDebug("[WAGSTAFF-SERVER] AddSkillXP(+1, wagstaff): before=" .. tostring(xp_before) .. " after=" .. tostring(xp_after))
+            else
+                WagstaffDebug("[WAGSTAFF-SERVER] WARNING: TheSkillTree is NIL on daycomplete — XP NOT added")
             end
         end
     end)
@@ -3184,7 +3252,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 30, eimg("scrap")), Ingredient("gears", 5), Ingredient("transistor", 5)},
 
-        TECH.MAGIC_THREE,
+        TECH.MAGIC_ONE,
 
         {builder_tag = "tinkerer", atlas = eimg("eteleporter"), image = "eteleporter.tex"},
 
@@ -3194,7 +3262,7 @@ AddSimPostInit(function()
 
         {Ingredient("scrap", 25, eimg("scrap")), Ingredient("gears", 3), Ingredient("transistor", 3)},
 
-        TECH.MAGIC_THREE,
+        TECH.MAGIC_ONE,
 
         {builder_tag = "tinkerer", atlas = eimg("eteleporter_exit"), image = "eteleporter_exit.tex"},
 
@@ -3233,7 +3301,7 @@ AddSimPostInit(function()
 
         {williamgadget_ing, Ingredient("marble", 3), Ingredient("transistor", 2)},
 
-        TECH.MAGIC_TWO,
+        TECH.MAGIC_ONE,
 
         {builder_tag = "tinkerer", atlas = mimg("williambuster_builder"), image = "williambuster_builder.tex"},
 
@@ -3253,7 +3321,7 @@ AddSimPostInit(function()
 
         {williamgadget_ing, Ingredient("nitre", 4), Ingredient("transistor", 2)},
 
-        TECH.MAGIC_THREE,
+        TECH.MAGIC_TWO,
 
         {builder_tag = "tinkerer", atlas = mimg("williamballistic_empty"), image = "williamballistic_empty.tex"},
 

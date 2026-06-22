@@ -90,7 +90,7 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 - **MK.II:** +300 HP, +5 DMG, dano em AoE, chance de stun
 
-- **MK.III:** +600 HP total, +10 DMG total, **Explosive Punch** (30% chance: +50% dano bonus + explosao AoE em inimigos adjacentes)
+- **MK.III:** +600 HP total, +10 DMG total, **Explosive Punch** (30% chance: +50% dano bonus)
   - **Celestial (dia):** Explosive Punch ganha AoE com explosao de luz
   - **Shadow (dusk):** Invoca Shadow Clone (50% do dano original, invencivel, some no dia ou se Buster morre)
 
