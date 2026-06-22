@@ -995,6 +995,7 @@ end
 
         -- MK3 inherits MK2 stats (+250 HP, +12 DMG) — no additional stat bonus
         -- MK3 is a TURRET (not mobile), keeps turret physics and brain
+        inst:AddTag("ballistic_turret")
 
         -- Add follower for owner tracking only (affinity, save/load)
         inst:AddComponent("follower")
