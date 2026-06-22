@@ -377,7 +377,20 @@ local function BuildSkillsData(SkillTreeFns)
                 if readonly then
                     return "question"
                 end
-                return TheWorld and TheWorld.state and TheWorld.state.wagstaff_fuelweaver_killed
+                -- Primary: NETWORKED world state (synced server->client via net_bool)
+                -- (Custom world.state fields are NOT networked in DST — must use net_bool)
+                if TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() then
+                    return true
+                end
+                -- Fallback: check player profile stats (always available on client)
+                local player = ThePlayer or (AllPlayers and AllPlayers[1])
+                if player and player.profile and player.profile.stats then
+                    local fuelweaver_kills = player.profile.stats["killed_stalker_atrium"] or 0
+                    if fuelweaver_kills > 0 then
+                        return true
+                    end
+                end
+                return false
             end,
             connects = {"wagstaff_shadow_possession"},
         },
@@ -392,7 +405,20 @@ local function BuildSkillsData(SkillTreeFns)
                 if readonly then
                     return "question"
                 end
-                return TheWorld and TheWorld.state and TheWorld.state.wagstaff_celestial_killed
+                -- Primary: NETWORKED world state (synced server->client via net_bool)
+                -- (Custom world.state fields are NOT networked in DST — must use net_bool)
+                if TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() then
+                    return true
+                end
+                -- Fallback: check player profile stats (always available on client)
+                local player = ThePlayer or (AllPlayers and AllPlayers[1])
+                if player and player.profile and player.profile.stats then
+                    local celestial_kills = player.profile.stats["killed_alterguardian_phase3"] or 0
+                    if celestial_kills > 0 then
+                        return true
+                    end
+                end
+                return false
             end,
             connects = {"wagstaff_celestial_possession"},
         },
