@@ -1903,12 +1903,11 @@ AddPrefabPostInit("world", function(self)
     if GLOBAL.net_bool then
         self.wagstaff_fuelweaver_killed_net = GLOBAL.net_bool(self.GUID, "wagstaff_fuelweaver_killed_net")
         self.wagstaff_celestial_killed_net  = GLOBAL.net_bool(self.GUID, "wagstaff_celestial_killed_net")
-        self.wagstaff_needs_xp_reset_net    = GLOBAL.net_bool(self.GUID, "wagstaff_needs_xp_reset_net")
         -- net_bool defaults to false, so no initial :set() is required. Also,
         -- :set() may only be called on the master sim — calling it on a client
         -- (when the client constructs its local world entity) is invalid. The
         -- real values are pushed from the master sim via OnLoad below and via
-        -- the boss-kill/XP-reset callbacks; clients receive them through net
+        -- the boss-kill callbacks; clients receive them through net
         -- variable replication automatically.
     end
 
@@ -1979,21 +1978,14 @@ AddPrefabPostInit("wagstaff", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
 
     --==================================================================================
-    -- FRESH WORLD PROFILE RESET (XP + boss kill stats)
+    -- FRESH WORLD: Zero boss kill stats (affinity-gating bosses)
     -- Only runs once per world creation, never on reload.
+    -- (XP and skill activations are NOT reset — players keep their progress.)
     --==================================================================================
     inst:DoTaskInTime(0, function()
         if not inst:IsValid() then return end
         -- Skip if already reset for this world (reload)
         if GLOBAL.TheWorld.state.wagstaff_profile_reset then return end
-
-        print("[Wagstaff] Fresh world detected — signaling client via net_bool...")
-
-        -- Signal the CLIENT to reset TheSkillTree via NETWORKED boolean
-        -- (rawset GLOBAL doesn't work — server and client have separate Lua environments)
-        if GLOBAL.TheWorld.wagstaff_needs_xp_reset_net then
-            GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:set(true)
-        end
 
         -- Zero boss kill stats in the player profile (affinity-gating bosses)
         local profile = inst.profile
@@ -2008,12 +2000,12 @@ AddPrefabPostInit("wagstaff", function(inst)
             if profile.Save then
                 pcall(function() profile:Save() end)
             end
-            print("[Wagstaff] Reset boss kill stats for affinity bosses")
+            print("[Wagstaff] Reset boss kill stats for affinity bosses (fresh world)")
         end
 
         -- Mark this world as reset — will NOT trigger again on reload
         GLOBAL.TheWorld.state.wagstaff_profile_reset = true
-        print("[Wagstaff] Server-side reset done. Waiting for client to reset TheSkillTree...")
+        print("[Wagstaff] Fresh world boss kill stats reset complete.")
     end)
 
     inst:ListenForEvent("daycomplete", function(inst)
@@ -2022,57 +2014,6 @@ AddPrefabPostInit("wagstaff", function(inst)
                 GLOBAL.TheSkillTree:AddSkillXP(1, "wagstaff")
             end
         end
-    end)
-end)
-
---==================================================================================
--- CLIENT-SIDE: Reset TheSkillTree on fresh world
--- Uses net_bool on the world entity for server→client communication.
--- (rawset/rawget GLOBAL doesn't work — DST server and client have separate environments.)
---==================================================================================
-AddPrefabPostInit("wagstaff", function(inst)
-    if GLOBAL.TheWorld.ismastersim then return end -- Client only
-
-    inst:DoTaskInTime(3, function()
-        -- Check the NETWORKED flag on TheWorld (synced from server)
-        local needs_reset = false
-        pcall(function()
-            needs_reset = GLOBAL.TheWorld.wagstaff_needs_xp_reset_net:value()
-        end)
-        if not needs_reset then return end
-
-        print("[Wagstaff CLIENT] Net flag detected — resetting TheSkillTree XP and skills...")
-
-        local TheSkillTree = rawget(GLOBAL, "TheSkillTree")
-        if not TheSkillTree then
-            print("[Wagstaff CLIENT] ERROR: TheSkillTree is NIL!")
-            return
-        end
-
-        -- Deactivate all activated wagstaff skills
-        local ok1, err1 = pcall(function()
-            local skills = TheSkillTree:GetActivatedSkills("wagstaff")
-            if skills and type(skills) == "table" then
-                print("[Wagstaff CLIENT] Found " .. #skills .. " activated skills to deactivate")
-                for _, skill_name in ipairs(skills) do
-                    TheSkillTree:DeactivateSkill("wagstaff", skill_name)
-                end
-            end
-        end)
-        if not ok1 then print("[Wagstaff CLIENT] Deactivate error: " .. tostring(err1)) end
-
-        -- Zero out residual XP
-        local ok2, err2 = pcall(function()
-            local xp = TheSkillTree:GetSkillXP("wagstaff")
-            print("[Wagstaff CLIENT] Current XP: " .. tostring(xp))
-            if xp and xp > 0 then
-                TheSkillTree:AddSkillXP(-xp, "wagstaff")
-                print("[Wagstaff CLIENT] Reset XP: " .. tostring(xp) .. " -> 0")
-            end
-        end)
-        if not ok2 then print("[Wagstaff CLIENT] XP reset error: " .. tostring(err2)) end
-
-        print("[Wagstaff CLIENT] TheSkillTree reset complete.")
     end)
 end)
 
