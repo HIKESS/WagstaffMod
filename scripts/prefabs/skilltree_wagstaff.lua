@@ -374,23 +374,37 @@ local function BuildSkillsData(SkillTreeFns)
             tags = {"allegiance","lock"},
             root = true,
             lock_open = function(prefabname, activatedskills, readonly)
-                if readonly then
-                    return "question"
-                end
+                -- Evaluate the REAL unlock condition FIRST. The previous code did
+                -- `if readonly then return "question" end` unconditionally at the
+                -- top, which made the skill tree UI render this node as a forever-
+                -- locked "?" even AFTER the Fuelweaver was dead -- so the player
+                -- could never click/activate the skill. Now we only hide as "?"
+                -- when the boss is NOT yet killed (spoiler prevention).
+                local unlocked = false
                 -- Primary: NETWORKED world state (synced server->client via net_bool)
                 -- (Custom world.state fields are NOT networked in DST -- must use net_bool)
                 if TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() then
-                    return true
+                    unlocked = true
                 end
-                -- Fallback: check player profile stats (always available on client)
-                local player = ThePlayer or (AllPlayers and AllPlayers[1])
-                if player and player.profile and player.profile.stats then
-                    local fuelweaver_kills = player.profile.stats["killed_stalker_atrium"] or 0
-                    if fuelweaver_kills > 0 then
-                        return true
+                -- Fallback: check player profile stats (always available on client,
+                -- and works cross-shard -- important if the boss was killed in a
+                -- different shard than where the skill tree is opened)
+                if not unlocked then
+                    local player = ThePlayer or (AllPlayers and AllPlayers[1])
+                    if player and player.profile and player.profile.stats then
+                        local fuelweaver_kills = player.profile.stats["killed_stalker_atrium"] or 0
+                        if fuelweaver_kills > 0 then
+                            unlocked = true
+                        end
                     end
                 end
-                return false
+                -- Only show "?" when the lock is genuinely undiscovered (boss
+                -- still alive). Once killed, return the real state so the UI
+                -- marks the node as accessible/clickable.
+                if readonly and not unlocked then
+                    return "question"
+                end
+                return unlocked
             end,
             connects = {"wagstaff_shadow_possession"},
         },
@@ -402,23 +416,37 @@ local function BuildSkillsData(SkillTreeFns)
             tags = {"allegiance","lock"},
             root = true,
             lock_open = function(prefabname, activatedskills, readonly)
-                if readonly then
-                    return "question"
-                end
+                -- Evaluate the REAL unlock condition FIRST. The previous code did
+                -- `if readonly then return "question" end` unconditionally at the
+                -- top, which made the skill tree UI render this node as a forever-
+                -- locked "?" even AFTER the Celestial Champion was dead -- so the
+                -- player could never click/activate the skill. Now we only hide
+                -- as "?" when the boss is NOT yet killed (spoiler prevention).
+                local unlocked = false
                 -- Primary: NETWORKED world state (synced server->client via net_bool)
                 -- (Custom world.state fields are NOT networked in DST -- must use net_bool)
                 if TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() then
-                    return true
+                    unlocked = true
                 end
-                -- Fallback: check player profile stats (always available on client)
-                local player = ThePlayer or (AllPlayers and AllPlayers[1])
-                if player and player.profile and player.profile.stats then
-                    local celestial_kills = player.profile.stats["killed_alterguardian_phase3"] or 0
-                    if celestial_kills > 0 then
-                        return true
+                -- Fallback: check player profile stats (always available on client,
+                -- and works cross-shard -- important if the boss was killed in a
+                -- different shard than where the skill tree is opened)
+                if not unlocked then
+                    local player = ThePlayer or (AllPlayers and AllPlayers[1])
+                    if player and player.profile and player.profile.stats then
+                        local celestial_kills = player.profile.stats["killed_alterguardian_phase3"] or 0
+                        if celestial_kills > 0 then
+                            unlocked = true
+                        end
                     end
                 end
-                return false
+                -- Only show "?" when the lock is genuinely undiscovered (boss
+                -- still alive). Once killed, return the real state so the UI
+                -- marks the node as accessible/clickable.
+                if readonly and not unlocked then
+                    return "question"
+                end
+                return unlocked
             end,
             connects = {"wagstaff_celestial_possession"},
         },
