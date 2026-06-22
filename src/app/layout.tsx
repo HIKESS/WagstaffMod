@@ -14,24 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tower Defense — Sentry vs Dispenser (MK1/MK2/MK3)",
-  description: "Compare o poder do MK2 e a diferença entre MK1, MK2 e MK3 do Dispenser, e jogue em tempo real. Veja por que a Sentry custa mais (recarga).",
-  keywords: ["tower defense", "sentry", "dispenser", "MK1", "MK2", "MK3", "game", "Next.js"],
+  title: "Z.ai Code Scaffold - AI-Powered Development",
+  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
+  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
   authors: [{ name: "Z.ai Team" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
   openGraph: {
-    title: "Tower Defense — Sentry vs Dispenser",
-    description: "Compare MK1, MK2 e MK3 do Dispenser e jogue em tempo real.",
+    title: "Z.ai Code Scaffold",
+    description: "AI-powered development with modern React stack",
     url: "https://chat.z.ai",
     siteName: "Z.ai",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tower Defense — Sentry vs Dispenser",
-    description: "Compare MK1, MK2 e MK3 do Dispenser e jogue em tempo real.",
+    title: "Z.ai Code Scaffold",
+    description: "AI-powered development with modern React stack",
   },
 };
 
