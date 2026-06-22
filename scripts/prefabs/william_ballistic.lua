@@ -103,23 +103,21 @@ local PULSE_FALLOFF = 0.5
 local PULSE_INTERVAL = 1.5    -- seconds between pulses
 local PULSE_DURATION = 0.35   -- how long each pulse flash lasts
 
-local function CreatePulseLightEntity(parent)
-    -- Create a separate networked entity for the pulse light.
-    -- DST allows only ONE Light per entity, so we need a child entity.
-    local ent = CreateEntity()
-    ent:AddTag("FX")
-    ent.persists = false
-    ent.entity:AddTransform()
-    ent.entity:AddNetwork()
-    ent.entity:AddLight()
-    ent.Light:SetRadius(0)
-    ent.Light:SetIntensity(PULSE_INTENSITY)
-    ent.Light:SetFalloff(PULSE_FALLOFF)
-    ent.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
-    ent.Light:Enable(false)
-    ent.entity:SetParent(parent.entity)
-    ent.Transform:SetPosition(0, 1, 0)
-    return ent
+-- Registered prefab for the MK3 pulse light (DST requires registered prefabs
+-- for network replication; CreateEntity() without a prefab crashes with
+-- "AllocReplica Invalid Prefab").
+local function ballistic_pulse_light_fn()
+    local inst = CreateEntity()
+    inst.entity:AddTransform()
+    inst.entity:AddNetwork()
+    inst.entity:AddLight()
+    inst.Light:Enable(false)
+    inst.Light:SetRadius(0)
+    inst.Light:SetIntensity(PULSE_INTENSITY)
+    inst.Light:SetFalloff(PULSE_FALLOFF)
+    inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
+    inst.persists = false
+    return inst
 end
 
 local function StartLightOrb(inst)
@@ -136,9 +134,15 @@ local function StartLightOrb(inst)
     inst.Light:SetColour(LIGHT_R, LIGHT_G, LIGHT_B)
     inst.Light:Enable(true)
 
-    -- PULSE LIGHT: separate child entity, flashes periodically
+    -- PULSE LIGHT: re-spawn if missing (e.g. after load or if removed)
     if not inst._pulse_light or not inst._pulse_light:IsValid() then
-        inst._pulse_light = CreatePulseLightEntity(inst)
+        inst._pulse_light = SpawnPrefab("ballistic_pulse_light")
+        if inst._pulse_light then
+            inst._pulse_light.entity:SetParent(inst.entity)
+            inst._pulse_light.Transform:SetPosition(0, 1, 0)
+        else
+            return  -- Cannot spawn pulse light
+        end
     end
 
     -- Periodic pulse: flash big, then dim, repeat
@@ -183,15 +187,15 @@ end
 local function StopLightOrb(inst)
     inst._lightorb_active = false
 
-    -- Remove pulse light entity
+    -- Remove pulse light entity (spawned via SpawnPrefab, so safe to Remove)
     if inst._pulse_dim_task then
         inst._pulse_dim_task:Cancel()
         inst._pulse_dim_task = nil
     end
     if inst._pulse_light and inst._pulse_light:IsValid() then
         inst._pulse_light:Remove()
+        inst._pulse_light = nil
     end
-    inst._pulse_light = nil
 
     -- Remove FX
     if inst._lightorb_fx and inst._lightorb_fx:IsValid() then
@@ -1037,6 +1041,8 @@ end
         -- LIGHT ENTITY: Must be added BEFORE is_mastersim check so it is
         -- networked to clients for rendering. In DST, Light is a client-side
         -- visual component — adding it server-only makes it invisible.
+        -- This is the FIXED small light. The PULSE light is a separate
+        -- registered prefab (ballistic_pulse_light) spawned after is_mastersim.
         inst.entity:AddLight()
         inst.Light:Enable(false)
         inst.Light:SetRadius(FIX_RADIUS)
@@ -1047,6 +1053,13 @@ end
         if not TheWorld.ismastersim then
             return inst
         end
+
+        -- Spawn pulse light as a registered prefab child (server-side).
+        -- SpawnPrefab is required here because DST only replicates
+        -- registered prefabs over the network.
+        inst._pulse_light = SpawnPrefab("ballistic_pulse_light")
+        inst._pulse_light.entity:SetParent(inst.entity)
+        inst._pulse_light.Transform:SetPosition(0, 1, 0)
 
         -- MK3 inherits MK2 stats (+250 HP, +12 DMG) — no additional stat bonus
         -- MK3 is a TURRET (not mobile), keeps turret physics and brain
@@ -1802,6 +1815,7 @@ end
     Prefab("williamballistic3", active3, assets, prefabs),
     Prefab("williamballistic2", active2, assets, prefabs),
     Prefab("williamballistic_empty", empty, assets, prefabs),
+    Prefab("ballistic_pulse_light", ballistic_pulse_light_fn),
     MakePlacer("williamballistic_empty_placer", "firefighter_placement", "firefighter_placement", "idle", true, nil, nil, PLACER_SCALE, nil, nil, placer_postinit_fn)
 
 
