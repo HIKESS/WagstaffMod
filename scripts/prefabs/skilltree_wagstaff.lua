@@ -381,23 +381,41 @@ local function BuildSkillsData(SkillTreeFns)
                 -- could never click/activate the skill. Now we only hide as "?"
                 -- when the boss is NOT yet killed (spoiler prevention).
                 local unlocked = false
-                -- Primary: NETWORKED world state (synced server->client via net_bool)
-                -- (Custom world.state fields are NOT networked in DST -- must use net_bool)
-                if TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() then
+                local player = ThePlayer or (AllPlayers and AllPlayers[1])
+
+                -- PRIMARY: Player tag (always replicates server->client in DST).
+                -- net_bool created in AddPrefabPostInit("world") does NOT reliably
+                -- replicate because the world entity is already fully networked by
+                -- the time PostInit runs. Player tags, by contrast, are part of
+                -- DST's core entity networking and always replicate.
+                if player and player.HasTag and player:HasTag("wagstaff_fuelweaver_killed") then
                     unlocked = true
                 end
-                -- Fallback: check player profile stats (always available on client,
-                -- and works cross-shard -- important if the boss was killed in a
+
+                -- Fallback 1: net_bool (may work in some cases, kept for redundancy)
+                if not unlocked and TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() then
+                    unlocked = true
+                end
+
+                -- Fallback 2: player profile stats (always available on client,
+                -- works cross-shard -- important if the boss was killed in a
                 -- different shard than where the skill tree is opened)
-                if not unlocked then
-                    local player = ThePlayer or (AllPlayers and AllPlayers[1])
-                    if player and player.profile and player.profile.stats then
-                        local fuelweaver_kills = player.profile.stats["killed_stalker_atrium"] or 0
-                        if fuelweaver_kills > 0 then
-                            unlocked = true
-                        end
+                if not unlocked and player and player.profile and player.profile.stats then
+                    local fuelweaver_kills = player.profile.stats["killed_stalker_atrium"] or 0
+                    if fuelweaver_kills > 0 then
+                        unlocked = true
                     end
                 end
+
+                -- Diagnostic logging (helps debug if still not unlocking)
+                if not _WAGSTAFF_LOCK_LOGGED_FUELWEAVER then
+                    _WAGSTAFF_LOCK_LOGGED_FUELWEAVER = true
+                    print("[Wagstaff LOCK] shadow_boss lock_open: tag=" .. tostring(player and player:HasTag("wagstaff_fuelweaver_killed") or false) ..
+                          " net=" .. tostring(TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() or false) ..
+                          " stat=" .. tostring(player and player.profile and player.profile.stats and player.profile.stats["killed_stalker_atrium"] or 0) ..
+                          " -> unlocked=" .. tostring(unlocked))
+                end
+
                 -- Only show "?" when the lock is genuinely undiscovered (boss
                 -- still alive). Once killed, return the real state so the UI
                 -- marks the node as accessible/clickable.
@@ -423,23 +441,41 @@ local function BuildSkillsData(SkillTreeFns)
                 -- player could never click/activate the skill. Now we only hide
                 -- as "?" when the boss is NOT yet killed (spoiler prevention).
                 local unlocked = false
-                -- Primary: NETWORKED world state (synced server->client via net_bool)
-                -- (Custom world.state fields are NOT networked in DST -- must use net_bool)
-                if TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() then
+                local player = ThePlayer or (AllPlayers and AllPlayers[1])
+
+                -- PRIMARY: Player tag (always replicates server->client in DST).
+                -- net_bool created in AddPrefabPostInit("world") does NOT reliably
+                -- replicate because the world entity is already fully networked by
+                -- the time PostInit runs. Player tags, by contrast, are part of
+                -- DST's core entity networking and always replicate.
+                if player and player.HasTag and player:HasTag("wagstaff_celestial_killed") then
                     unlocked = true
                 end
-                -- Fallback: check player profile stats (always available on client,
-                -- and works cross-shard -- important if the boss was killed in a
+
+                -- Fallback 1: net_bool (may work in some cases, kept for redundancy)
+                if not unlocked and TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() then
+                    unlocked = true
+                end
+
+                -- Fallback 2: player profile stats (always available on client,
+                -- works cross-shard -- important if the boss was killed in a
                 -- different shard than where the skill tree is opened)
-                if not unlocked then
-                    local player = ThePlayer or (AllPlayers and AllPlayers[1])
-                    if player and player.profile and player.profile.stats then
-                        local celestial_kills = player.profile.stats["killed_alterguardian_phase3"] or 0
-                        if celestial_kills > 0 then
-                            unlocked = true
-                        end
+                if not unlocked and player and player.profile and player.profile.stats then
+                    local celestial_kills = player.profile.stats["killed_alterguardian_phase3"] or 0
+                    if celestial_kills > 0 then
+                        unlocked = true
                     end
                 end
+
+                -- Diagnostic logging (helps debug if still not unlocking)
+                if not _WAGSTAFF_LOCK_LOGGED_CELESTIAL then
+                    _WAGSTAFF_LOCK_LOGGED_CELESTIAL = true
+                    print("[Wagstaff LOCK] lunar_boss lock_open: tag=" .. tostring(player and player:HasTag("wagstaff_celestial_killed") or false) ..
+                          " net=" .. tostring(TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() or false) ..
+                          " stat=" .. tostring(player and player.profile and player.profile.stats and player.profile.stats["killed_alterguardian_phase3"] or 0) ..
+                          " -> unlocked=" .. tostring(unlocked))
+                end
+
                 -- Only show "?" when the lock is genuinely undiscovered (boss
                 -- still alive). Once killed, return the real state so the UI
                 -- marks the node as accessible/clickable.
