@@ -1198,7 +1198,7 @@ local function SpawnMob(portal, prefabname, count)
         if mob then
             local x, y, z = portal.Transform:GetWorldPosition()
             mob.Transform:SetPosition(x + (math.random() - 0.5) * 4, 0, z + (math.random() - 0.5) * 4)
-            local fx = G.SpawnPrefab("sparks")
+            local fx = G.SpawnPrefab("electrichitsparks")
             if fx then
                 fx.Transform:SetPosition(mob.Transform:GetWorldPosition())
             end
@@ -1221,18 +1221,14 @@ local function evil_portal_fn()
     inst.Light:SetIntensity(0.3)
     inst.Light:SetColour(100/255, 150/255, 100/255)
     inst.Light:Enable(true)
-    local fx = G.SpawnPrefab("sparks")
-    if fx then
-        fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
-    end
     local group = EVIL_PORTAL_MOB_GROUPS[math.random(#EVIL_PORTAL_MOB_GROUPS)]
     local max_easy = group[1]
     local max_hard = group[2]
     local mob1, mob2, mob3, mob4 = group[3], group[4], group[5], group[6]
-    local mob1_count = math.floor(math.random(0, max_easy))
-    local mob2_count = math.floor(math.random(0, max_easy))
-    local mob3_count = math.floor(math.random(0, max_hard))
-    local mob4_count = math.floor(math.random(0, max_hard))
+    local mob1_count = math.max(1, math.floor(math.random(0, max_easy)))
+    local mob2_count = math.max(1, math.floor(math.random(0, max_easy)))
+    local mob3_count = math.max(1, math.floor(math.random(0, max_hard)))
+    local mob4_count = math.max(1, math.floor(math.random(0, max_hard)))
     inst:DoTaskInTime(1 + math.random(), function()
         SpawnMob(inst, mob1, mob1_count)
     end)
@@ -1246,10 +1242,6 @@ local function evil_portal_fn()
         SpawnMob(inst, mob4, mob4_count)
     end)
     inst:DoTaskInTime(20, function()
-        local remove_fx = G.SpawnPrefab("sparks")
-        if remove_fx then
-            remove_fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
-        end
         inst:Remove()
     end)
     return inst
