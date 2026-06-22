@@ -4,7 +4,7 @@
 --   - root = true: marks entry-point skills (available immediately)
 --   - connects: chains skills forward (parent -> child). Engine follows this graph.
 --   - locks: only for prerequisite back-references to lock nodes with lock_open functions
---   - NO (9999,9999) hidden locks needed — connects chains handle progression
+--   - NO (9999,9999) hidden locks needed -- connects chains handle progression
 --
 -- Branches:
 --   mechanical: Fork (sentry path + dispenser path)
@@ -26,9 +26,9 @@ local ORDERS =
 local function BuildSkillsData(SkillTreeFns)
     local skills =
     {
-        -- ════════════════════════════════════════════════════════════════
+        -- ================================================================
         -- COLUMN 1: MECHANICAL (Fork: sentry path + dispenser path)
-        -- ════════════════════════════════════════════════════════════════
+        -- ================================================================
 
         wagstaff_mechanical_1 = {
             name = "wagstaff_mechanical_1",
@@ -168,9 +168,9 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        -- ════════════════════════════════════════════════════════════════
+        -- ================================================================
         -- COLUMN 2: ROBOTIC (Linear chain: brute->buster->ballistic->butler)
-        -- ════════════════════════════════════════════════════════════════
+        -- ================================================================
         -- Chain: brute_mk2 -> brute_mk3 -> buster_mk2 -> buster_mk3 ->
         --        ballistic_mk2 -> ballistic_mk3 -> butler_mk2 -> butler_mk3
 
@@ -361,9 +361,9 @@ local function BuildSkillsData(SkillTreeFns)
             end,
         },
 
-        -- ════════════════════════════════════════════════════════════════
+        -- ================================================================
         -- ALLEGIANCE (Boss-locked with mutual exclusion: shadow vs lunar)
-        -- ════════════════════════════════════════════════════════════════
+        -- ================================================================
         -- These lock nodes use real positions and lock_open functions,
         -- matching the pattern from reference mods (kodi, sdf).
 
@@ -378,7 +378,7 @@ local function BuildSkillsData(SkillTreeFns)
                     return "question"
                 end
                 -- Primary: NETWORKED world state (synced server->client via net_bool)
-                -- (Custom world.state fields are NOT networked in DST — must use net_bool)
+                -- (Custom world.state fields are NOT networked in DST -- must use net_bool)
                 if TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() then
                     return true
                 end
@@ -406,7 +406,7 @@ local function BuildSkillsData(SkillTreeFns)
                     return "question"
                 end
                 -- Primary: NETWORKED world state (synced server->client via net_bool)
-                -- (Custom world.state fields are NOT networked in DST — must use net_bool)
+                -- (Custom world.state fields are NOT networked in DST -- must use net_bool)
                 if TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() then
                     return true
                 end
@@ -457,7 +457,19 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_shadow_possession = {
             name = "wagstaff_shadow_possession",
             title = "Shadow Engineer Herald's Mark",
-            desc = "The Void Masque recognizes the inventor as a kindred spirit.\nOne who also builds bodies to house other wills. Your bots now carry the mark of Tenebrae.\n\nButler: MK 2 can revive players (night only).\nBuster: Summons a Shadow Clone with 50% strength, immune to damage. Destroyed at day or when Buster dies.\nBouncer: Immune to planar damage + Bearger's Shovelwave. Shadow creatures target him as absolute priority.\nBattery: Chain lightning causes fear (2-3s)",
+            desc = "The Void Masque recognizes the inventor as a kindred spirit."
+            .. "\n"
+            .. "One who also builds bodies to house other wills. Your bots now carry the mark of Tenebrae."
+            .. "\n"
+            .. ""
+            .. "\n"
+            .. "Butler: MK 2 can revive players (night only)."
+            .. "\n"
+            .. "Buster: Summons a Shadow Clone with 50% strength, immune to damage. Destroyed at day or when Buster dies."
+            .. "\n"
+            .. "Bouncer: Immune to planar damage + Bearger's Shovelwave. Shadow creatures target him as absolute priority."
+            .. "\n"
+            .. "Battery: Chain lightning causes fear (2-3s)",
             icon = "wolfgang_allegiance_shadow_3",
             pos = { 205.8, 91.9 },
             group = "allegiance",
@@ -475,7 +487,19 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_celestial_possession = {
             name = "wagstaff_celestial_possession",
             title = "Celestial Engineer Gestalt Resonance",
-            desc = "The Gestalt that inhabits the chassis during the day synchronizes its frequency with the inventor's own.\nPushing each bot beyond its mechanical limits. The warmth of lunar light radiates through cold metal.\n\nButler: Foods restore 40% HP based on hunger value (day only). MK 2 can revive players.\nBuster: Explosive punch gains AOE (light explosion)\nBouncer: Heat aura. When hit, deals 25 fire damage to all enemies in aggro radius.\nBattery: Light orb grants full sanity protection",
+            desc = "The Gestalt that inhabits the chassis during the day synchronizes its frequency with the inventor's own."
+            .. "\n"
+            .. "Pushing each bot beyond its mechanical limits. The warmth of lunar light radiates through cold metal."
+            .. "\n"
+            .. ""
+            .. "\n"
+            .. "Butler: Foods restore 40% HP based on hunger value (day only). MK 2 can revive players."
+            .. "\n"
+            .. "Buster: Explosive punch gains AOE (light explosion)"
+            .. "\n"
+            .. "Bouncer: Heat aura. When hit, deals 25 fire damage to all enemies in aggro radius."
+            .. "\n"
+            .. "Battery: Light orb grants full sanity protection",
             icon = "wolfgang_allegiance_lunar_3",
             pos = { 150.2, 91.3 },
             group = "allegiance",
