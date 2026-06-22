@@ -373,7 +373,7 @@ local function onload(inst, data)
                 local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
                 local hp = math.floor(inst.components.health.currenthealth)
                 local maxhp = math.floor(inst.components.health.maxhealth)
-                local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 90") or ""
+                local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 150") or ""
                 inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str)
             end
             UpdateBallistic2Name(inst)
@@ -395,7 +395,7 @@ local function onload(inst, data)
                 local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
                 local hp = math.floor(inst.components.health.currenthealth)
                 local maxhp = math.floor(inst.components.health.maxhealth)
-                local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 70") or ""
+                local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 100") or ""
                 inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str)
             end
             UpdateBallisticName(inst)
@@ -731,7 +731,7 @@ end
                 inst.upgradelevel = inst.upgradelevel + 5
                 UpdateBallisticName(inst)
 
-                if inst.upgradelevel >= 70 then
+                if inst.upgradelevel >= 100 then
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     if worker.components.talker then
                         worker.components.talker:Say("Ballistic Bot MK. II upgrade complete!")
@@ -829,7 +829,7 @@ end
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 90") or ""
+            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 150") or ""
             local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
             inst.components.named:SetName(name_str)
             inst.name = name_str
@@ -866,14 +866,14 @@ end
                 wrench.components.finiteuses:Use(1)
             end
 
-            -- Check if can upgrade first (MK2 → MK3, threshold 90)
+            -- Check if can upgrade first (MK2 → MK3, threshold 150)
             print("[DEBUG] Verificando skill wagstaff_ballistic_mk3...")
             local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_ballistic_mk3")
             print("[DEBUG] Tem skill MK3?", has_mk3_skill)
             print("[DEBUG] upgradelevel_mk3 atual:", inst.upgradelevel_mk3)
-            if has_mk3_skill and inst.upgradelevel_mk3 < 90 then
+            if has_mk3_skill and inst.upgradelevel_mk3 < 150 then
                 print("[DEBUG] Tentando upgrade para MK3...")
-                -- Upgrade: scrap metal per wrench hit (5 per hit, 90 total for Mk.III)
+                -- Upgrade: scrap metal per wrench hit (5 per hit, 150 total for Mk.III)
                 local scrap_count = 0
                 if worker.components.inventory then
                     for _, item in pairs(worker.components.inventory.itemslots) do
@@ -898,7 +898,7 @@ end
                 UpdateBallistic2Name(inst)
                 inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
 
-                if inst.upgradelevel_mk3 >= 90 then
+                if inst.upgradelevel_mk3 >= 150 then
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                     if worker.components.talker then
                         worker.components.talker:Say("Ballistic Bot MK. III upgrade complete!")
