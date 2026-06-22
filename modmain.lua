@@ -994,18 +994,16 @@ do
 
             if inst:HasTag("shadow_buster_clone") then return end
 
-            -- Only run for MK3 versions of the bots
-            local is_mk3 = inst.prefab == "williambutler3" or 
-                          inst.prefab == "williambuster3" or 
-                          inst.prefab == "williamballistic3" or 
-                          inst.prefab == "williambrute3"
-            if not is_mk3 then
-                inst.AnimState:SetAddColour(0, 0, 0, 0)
-                inst.AnimState:SetMultColour(1, 1, 1, 1)
-                inst._aff_step = 1
-                inst._aff_dir  = 1
-                return
-            end
+            -- NOTE: Do NOT filter by prefab name here. All call sites already
+            -- gate AffinityPulse.Setup to MK3-only entities:
+            --   - Bots (butler/buster/brute/ballistic): called inside fn3() (MK3 upgrade fn)
+            --   - Sentry (esentry): called inside SetupMK3Affinity(), which only
+            --     runs when inst:HasTag("lvl3")
+            --   - Dispenser: called inside `if inst.upgradelevel >= 70` (MK3)
+            -- The previous is_mk3 prefab-name check here broke the sentry and
+            -- dispenser pulse because they use the "lvl3" tag (not a separate
+            -- MK3 prefab name like the bots do), so the check always failed and
+            -- the pulse color was never applied to them.
 
             local owner   = GetOwnerFn and GetOwnerFn(inst)
 
