@@ -1227,7 +1227,7 @@ local function WagstaffWilliamPostInit(inst)
     end
 
 
-    -- Give starting items (tf2wrench + goggles + williambutler_builder)
+    -- Give starting items (butler builder only; goggles come from wagstaff.lua starting_inventory)
     inst:DoTaskInTime(0, function(inst)
         if not inst:IsValid() then return end
 
@@ -1242,17 +1242,7 @@ local function WagstaffWilliamPostInit(inst)
         -- Mark that starting items were given (this persists across save/load)
         inst.wagstaff_received_starting_items = true
 
-        -- Add starting items in specific slots
-        local wrench = G.SpawnPrefab("tf2wrench")
-        if wrench then
-            inv:GiveItem(wrench, 1)
-        end
-
-        local goggles = G.SpawnPrefab("gogglesnormalhat")
-        if goggles then
-            inv:GiveItem(goggles, 2)
-        end
-
+        -- Only give butler builder (goggles already from starting_inventory)
         local bot = G.SpawnPrefab("williambutler_builder")
         if bot then
             inv:GiveItem(bot)
@@ -1870,18 +1860,23 @@ AddPrefabPostInit("world", function(self)
     if self.state.wagstaff_celestial_killed == nil then
         self.state.wagstaff_celestial_killed = false
     end
+    -- Profile reset flag: true after resetting XP/boss stats on fresh world
+    if self.state.wagstaff_profile_reset == nil then
+        self.state.wagstaff_profile_reset = false
+    end
 
-    -- SAVE: store boss flags only
+    -- SAVE: store boss flags + profile reset flag
     local old_OnSave = self.OnSave
     self.OnSave = function(self, ...)
         local data = old_OnSave and old_OnSave(self, ...) or {}
         data.wagstaff_fuelweaver_killed = self.state.wagstaff_fuelweaver_killed
         data.wagstaff_celestial_killed  = self.state.wagstaff_celestial_killed
+        data.wagstaff_profile_reset     = self.state.wagstaff_profile_reset
         WagstaffDebug("World OnSave done")
         return data
     end
 
-    -- LOAD: restore boss flags only
+    -- LOAD: restore boss flags + profile reset flag
     local old_OnLoad = self.OnLoad
     self.OnLoad = function(self, data, ...)
         WagstaffDebug("World OnLoad called")
@@ -1889,9 +1884,12 @@ AddPrefabPostInit("world", function(self)
         if data then
             self.state.wagstaff_fuelweaver_killed = data.wagstaff_fuelweaver_killed or false
             self.state.wagstaff_celestial_killed  = data.wagstaff_celestial_killed  or false
+            self.state.wagstaff_profile_reset     = data.wagstaff_profile_reset or false
         else
+            -- Fresh world (no save data): flag stays false so profile reset will trigger
             self.state.wagstaff_fuelweaver_killed = false
             self.state.wagstaff_celestial_killed  = false
+            self.state.wagstaff_profile_reset     = false
         end
     end
 end)
@@ -1916,6 +1914,70 @@ end)
 -- Each day survived: +1 XP via standard DST skill tree persistence
 AddPrefabPostInit("wagstaff", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
+
+    --==================================================================================
+    -- FRESH WORLD PROFILE RESET (XP + boss kill stats)
+    -- Only runs once per world creation, never on reload.
+    -- Prevents XP/skills from a previous save from carrying over to a new world,
+    -- and zeros boss kill stats for affinity-gating bosses (Fuelweaver, Celestial).
+    --==================================================================================
+    inst:DoTaskInTime(0, function()
+        if not inst:IsValid() then return end
+        -- Skip if already reset for this world (reload)
+        if GLOBAL.TheWorld.state.wagstaff_profile_reset then return end
+
+        print("[Wagstaff] Fresh world detected — resetting profile XP and boss kill stats...")
+
+        -- 1. Deactivate all wagstaff skills and zero XP in the profile
+        if GLOBAL.TheSkillTree then
+            -- Deactivate each activated skill individually (safe fallback)
+            local ok, skills = G.pcall(function()
+                return GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+            end)
+            if ok and skills and type(skills) == "table" then
+                for _, skill_name in G.ipairs(skills) do
+                    G.pcall(function()
+                        GLOBAL.TheSkillTree:DeactivateSkill("wagstaff", skill_name)
+                    end)
+                end
+            end
+
+            -- Zero out residual XP
+            local ok2, xp = G.pcall(function()
+                return GLOBAL.TheSkillTree:GetSkillXP("wagstaff")
+            end)
+            if ok2 and xp and xp > 0 then
+                G.pcall(function()
+                    GLOBAL.TheSkillTree:AddSkillXP(-xp, "wagstaff")
+                end)
+                print("[Wagstaff] Reset XP: " .. tostring(xp) .. " -> 0")
+            end
+        end
+
+        -- 2. Zero boss kill stats in the player profile (affinity-gating bosses)
+        --    DST persists these across saves; zeroing prevents carry-over.
+        local profile = inst.profile
+        if profile and profile.stats then
+            local bosses = {
+                "stalker",
+                "stalker_atrium",
+                "alterguardian_phase3",
+                "alterguardian_phase2",
+                "alterguardian_phase1",
+            }
+            for _, boss in G.ipairs(bosses) do
+                profile.stats["killed_" .. boss] = 0
+            end
+            if profile.Save then
+                G.pcall(function() profile:Save() end)
+            end
+            print("[Wagstaff] Reset boss kill stats for affinity bosses")
+        end
+
+        -- Mark this world as reset — will NOT trigger again on reload
+        GLOBAL.TheWorld.state.wagstaff_profile_reset = true
+        print("[Wagstaff] Profile reset complete for this world.")
+    end)
 
     inst:ListenForEvent("daycomplete", function(inst)
         if not inst:HasTag("playerghost") then
