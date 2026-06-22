@@ -1927,7 +1927,7 @@ AddPrefabPostInit("wagstaff", function(inst)
         print("[Wagstaff] Fresh world detected — setting reset flag for client...")
 
         -- Signal the CLIENT to reset TheSkillTree (TheSkillTree is client-side API)
-        GLOBAL._wagstaff_needs_xp_reset = true
+        rawset(GLOBAL, "_wagstaff_needs_xp_reset", true)
 
         -- Zero boss kill stats in the player profile (affinity-gating bosses)
         local profile = inst.profile
@@ -1967,23 +1967,25 @@ AddPrefabPostInit("wagstaff", function(inst)
     if GLOBAL.TheWorld.ismastersim then return end -- Client only
 
     inst:DoTaskInTime(2, function()
-        if not GLOBAL._wagstaff_needs_xp_reset then return end
-        GLOBAL._wagstaff_needs_xp_reset = false
+        -- Use rawget to bypass DST strict mode (variable set by server, may not exist on client)
+        if not rawget(GLOBAL, "_wagstaff_needs_xp_reset") then return end
+        rawset(GLOBAL, "_wagstaff_needs_xp_reset", false)
 
         print("[Wagstaff CLIENT] Resetting TheSkillTree XP and skills...")
 
-        if not GLOBAL.TheSkillTree then
+        local TheSkillTree = rawget(GLOBAL, "TheSkillTree")
+        if not TheSkillTree then
             print("[Wagstaff CLIENT] ERROR: TheSkillTree is NIL!")
             return
         end
 
         -- Deactivate all activated wagstaff skills
         local ok1, err1 = pcall(function()
-            local skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+            local skills = TheSkillTree:GetActivatedSkills("wagstaff")
             if skills and type(skills) == "table" then
                 print("[Wagstaff CLIENT] Found " .. #skills .. " activated skills to deactivate")
                 for _, skill_name in ipairs(skills) do
-                    GLOBAL.TheSkillTree:DeactivateSkill("wagstaff", skill_name)
+                    TheSkillTree:DeactivateSkill("wagstaff", skill_name)
                 end
             end
         end)
@@ -1991,10 +1993,10 @@ AddPrefabPostInit("wagstaff", function(inst)
 
         -- Zero out residual XP
         local ok2, err2 = pcall(function()
-            local xp = GLOBAL.TheSkillTree:GetSkillXP("wagstaff")
+            local xp = TheSkillTree:GetSkillXP("wagstaff")
             print("[Wagstaff CLIENT] Current XP: " .. tostring(xp))
             if xp and xp > 0 then
-                GLOBAL.TheSkillTree:AddSkillXP(-xp, "wagstaff")
+                TheSkillTree:AddSkillXP(-xp, "wagstaff")
                 print("[Wagstaff CLIENT] Reset XP: " .. tostring(xp) .. " -> 0")
             end
         end)
