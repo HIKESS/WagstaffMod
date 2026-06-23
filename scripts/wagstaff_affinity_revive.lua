@@ -191,7 +191,9 @@ local function ApplyCelestialBuff(player)
             player._wagstaff_celestial_shield_fx:Remove()
         end
         player._wagstaff_celestial_shield_fx = nil
-        if health and health:IsAlive() then
+        -- v2.0.29 FIX: Health component has no :IsAlive() method (crash at line 194
+        -- in v2.0.27/v2.0.28). The canonical DST API is :IsDead(). Use the inverse.
+        if health and not health:IsDead() then
             if health.DeltaMaxHealth then
                 health:DeltaMaxHealth(-CELESTIAL_HP_BONUS)
             else
@@ -275,7 +277,8 @@ local function ApplyShadowBuff(player)
             if dmg <= 0 then return end
             local heal = dmg * SHADOW_LIFESTEAL_PCT
             local hp = inst.components.health
-            if hp and hp:IsAlive() and not hp:IsInvincible() then
+            -- v2.0.29 FIX: Health has no :IsAlive() — use :IsDead() inverse.
+            if hp and not hp:IsDead() and not hp:IsInvincible() then
                 hp:DoDelta(heal, nil, "wagstaff_shadow_lifesteal")
             end
         end
