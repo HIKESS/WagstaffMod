@@ -102,14 +102,11 @@ local function UpdateButlerName(inst)
         base_name = "Butler Bot Mk. III"
     end
 
-    -- Build name string with fuel, HP and upgrade info (show progress from 0)
-    local upgrade_str = ""
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/50"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
-    end
-    local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+    -- v2.0.33: upgrade progress removed from the name. It was always visible to
+    -- all players, but should only show when the viewer has the upgrade skill
+    -- unlocked + wrench equipped. Since the name is global (not per-viewer), the
+    -- upgrade progress is now visible only via the wrench upgrade interaction.
+    local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
 
     -- Set on named component (always exists — added in fn())
     if inst.components.named ~= nil then
@@ -368,50 +365,27 @@ local function nokeeptargetfn(inst)
 end
 
 local function getstatus(inst, viewer)
-    -- Fuel status
-    local fuel_pct = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
-    local fuel_str = "Fuel: " .. fuel_pct .. "%"
-    
-    -- Upgrade status
-    local upgrade_str = ""
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/50"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
-    end
-    
-    -- Combined status
+    -- v2.0.33: upgrade progress removed from getstatus (was always visible,
+    -- should only show with skill + wrench). Returns clean status keys now.
     if inst.components.fueled:IsEmpty() then
-        return "EMPTY" .. upgrade_str
+        return "EMPTY"
     elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .3 then
-        return "CRITICALFUEL" .. upgrade_str
+        return "CRITICALFUEL"
     elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .6 then
-        return "LOWFUEL" .. upgrade_str
-    else
-        return fuel_str .. upgrade_str
+        return "LOWFUEL"
     end
 end
 
 local function GetButlerDescription(inst, viewer)
-    -- Direct description for hover text
+    -- v2.0.33: upgrade progress removed (was always visible, should only show
+    -- with skill + wrench). Fuel/HP are in the name via displaynamefn.
     local fuel_pct = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
-    local desc = "Butler Bot\n"
-    
     if inst.prefab == "williambutler2" then
-        desc = "Butler Bot Mk. II\n"
+        return "Butler Bot Mk. II\nFuel: " .. fuel_pct .. "%"
     elseif inst.prefab == "williambutler3" then
-        desc = "Butler Bot Mk. III\n"
+        return "Butler Bot Mk. III\nFuel: " .. fuel_pct .. "%"
     end
-    
-    desc = desc .. "Fuel: " .. fuel_pct .. "%"
-    
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
-        desc = desc .. "\nUpgrade: " .. inst.upgradelevel .. "/50"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
-        desc = desc .. "\nUpgrade: " .. inst.upgradelevel_mk3 .. "/70"
-    end
-    
-    return desc
+    return "Butler Bot\nFuel: " .. fuel_pct .. "%"
 end
 
 local function NoHoles(pt)

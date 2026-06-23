@@ -545,10 +545,8 @@ local function BuildSkillsData(SkillTreeFns)
 
         wagstaff_shadow_possession = {
             name = "wagstaff_shadow_possession",
-            title = "Shadow Engineer Herald's Mark",
-            desc = "The Void Masque recognizes the inventor as a kindred spirit."
-            .. "\n"
-            .. "One who also builds bodies to house other wills. Your bots now carry the mark of Tenebrae."
+            title = "Shadow's Embrace",
+            desc = "Your inventions embrace the shadows during dusk."
             .. "\n"
             .. ""
             .. "\n"
@@ -575,10 +573,8 @@ local function BuildSkillsData(SkillTreeFns)
 
         wagstaff_celestial_possession = {
             name = "wagstaff_celestial_possession",
-            title = "Celestial Engineer Gestalt Resonance",
-            desc = "The Gestalt that inhabits the chassis during the day synchronizes its frequency with the inventor's own."
-            .. "\n"
-            .. "Pushing each bot beyond its mechanical limits. The warmth of lunar light radiates through cold metal."
+            title = "Moon's Blessing",
+            desc = "Your inventions draw strength from the moon during the day."
             .. "\n"
             .. ""
             .. "\n"
