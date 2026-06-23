@@ -1,0 +1,1345 @@
+     1→require "prefabutil"
+     2→require "recipe"
+     3→require "modutil"
+     4→
+     5→local prefabs =
+     6→{
+     7→
+     8→}
+     9→
+    10→    local assets =
+    11→    {
+    12→        Asset("ANIM", "anim/william_butler.zip"),
+    13→    Asset("ANIM", "anim/ui_chest_3x2.zip"),
+    14→    Asset("ANIM", "anim/ui_chest_3x1.zip"),
+    15→        Asset("SOUND", "sound/maxwell.fsb"),
+    16→    }
+    17→
+    18→SetSharedLootTable("butler",
+    19→{
+    20→    {'cutstone',          1},
+    21→    {'transistor',          1},
+    22→    {'goldnugget',          1},
+    23→    {'silk',          1},
+    24→
+    25→})
+    26→
+    27→SetSharedLootTable("butlergadget",
+    28→{
+    29→    {'williamgadget',          1},
+    30→})
+    31→
+    32→local brain = require "brains/williambutlerbrain"
+    33→local AffinityPulse = _G.AffinityPulse
+    34→
+    35→local function UpdateButlerName(inst)
+    36→    local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+    37→    local hp = math.floor(inst.components.health.currenthealth)
+    38→    local maxhp = math.floor(inst.components.health.maxhealth)
+    39→    local base_name = "Butler Bot"
+    40→    if inst.prefab == "williambutler2" then
+    41→        base_name = "Butler Bot Mk. II"
+    42→    elseif inst.prefab == "williambutler3" then
+    43→        base_name = "Butler Bot Mk. III"
+    44→    end
+    45→    
+    46→    -- Build name string with fuel, HP and upgrade info
+    47→    local upgrade_str = ""
+    48→    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 55 then
+    49→        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/55"
+    50→    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
+    51→        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
+    52→    end
+    53→    local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+    54→    
+    55→    -- Set on named component if exists
+    56→    if inst.components.named ~= nil then
+    57→        inst.components.named:SetName(name_str)
+    58→    end
+    59→    
+    60→    -- Directly set inst.name and GetDisplayName for hover display
+    61→    inst.name = name_str
+    62→    inst.GetDisplayName = function() return name_str end
+    63→end
+    64→
+    65→-- Helper function to check if bot's owner has affinity skills
+    66→local function GetOwner(inst)
+    67→    return inst.components.follower and inst.components.follower:GetLeader()
+    68→end
+    69→
+    70→local function OwnerHasCelestial(inst)
+    71→    local owner = GetOwner(inst)
+    72→    return owner and owner:HasTag("wagstaff_celestial_possession")
+    73→end
+    74→
+    75→local function OwnerHasShadow(inst)
+    76→    local owner = GetOwner(inst)
+    77→    return owner and owner:HasTag("wagstaff_shadow_possession")
+    78→end
+    79→
+    80→local function MakeAlive(inst, doer)
+    81→    -- BUG FIX: Check if doer has petleash (fixes bug after c_skip)
+    82→    if not doer or not doer.components.petleash then
+    83→        return
+    84→    end
+    85→
+    86→    local pt = inst:GetPosition()
+    87→    local prefab_to_spawn = "williambutler"
+    88→    local was_level2 = inst.was_level2 or false
+    89→    local was_mk3 = inst.was_mk3 or false
+    90→    local saved_upgrade = inst.saved_upgradelevel or 0
+    91→    local saved_upgrade_mk3 = inst.saved_upgradelevel_mk3 or 0
+    92→
+    93→    -- Check upgrade state
+    94→    if was_mk3 then
+    95→        prefab_to_spawn = "williambutler3"
+    96→    elseif was_level2 then
+    97→        prefab_to_spawn = "williambutler2"
+    98→    end
+    99→
+   100→    local respawned = doer.components.petleash:SpawnPetAt(pt.x, 0, pt.z, prefab_to_spawn)
+   101→    if respawned ~= nil then
+   102→        respawned.components.fueled.currentfuel = inst.components.fueled.currentfuel
+   103→        respawned.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+   104→        respawned.Transform:SetRotation(inst.Transform:GetRotation())
+   105→
+   106→        -- BUG FIX: Save owner GUID for tracking (fixes bug 9)
+   107→        respawned.owner_guid = doer.GUID
+   108→        respawned.owner_name = doer.name
+   109→
+   110→        -- Restore upgrade progress
+   111→        if was_mk3 and saved_upgrade_mk3 > 0 then
+   112→            respawned.upgradelevel_mk3 = saved_upgrade_mk3
+   113→        elseif was_level2 then
+   114→            respawned.upgradelevel_mk3 = saved_upgrade_mk3 or 0
+   115→        elseif not was_level2 and not was_mk3 and saved_upgrade > 0 then
+   116→            respawned.upgradelevel = saved_upgrade
+   117→        end
+   118→        UpdateButlerName(respawned)
+   119→
+   120→        respawned.sg:GoToState("revived")
+   121→    end
+   122→    inst:Remove()
+   123→end
+   124→
+   125→local function onfuelchange(newsection, oldsection, inst, doer)
+   126→        if newsection >= 0 then
+   127→    local pt = inst:GetPosition()
+   128→        -- BUG FIX: Check petleash before reviving
+   129→        if doer ~= nil and doer:HasTag("williamcrafter") and doer.components.petleash then
+   130→                MakeAlive(inst, doer)
+   131→                end
+   132→        end
+   133→end
+   134→
+   135→local function OnAddFuel(inst)
+   136→        inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
+   137→
+   138→        if inst.sg ~= nil and not inst.sg:HasStateTag("busy") then
+   139→    inst.sg:GoToState("fed")
+   140→        end
+   141→        
+   142→        -- Update fuel display when refueled
+   143→        UpdateButlerName(inst)
+   144→    inst:AddTag("alive")
+   145→end
+   146→
+   147→local function OnHammered(inst, worker)
+   148→    if inst.components.container then
+   149→        inst.components.container:DropEverything()
+   150→    end
+   151→
+   152→    -- Exactly 1 core — clear preset tables so DropLoot does not stack gadgets
+   153→    inst.components.lootdropper:SetLoot({"williamgadget"})
+   154→    inst.components.lootdropper:SetChanceLootTable(nil)
+   155→    inst.components.lootdropper:DropLoot()
+   156→
+   157→    -- 50% bonus materials only (butler table never includes williamgadget)
+   158→    if math.random() < 0.5 then
+   159→        inst.components.lootdropper:SetLoot({})
+   160→        inst.components.lootdropper:SetChanceLootTable("butler")
+   161→        inst.components.lootdropper:DropLoot()
+   162→    end
+   163→
+   164→    local fx = SpawnPrefab("collapse_small")
+   165→    fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+   166→    fx:SetMaterial("metal")
+   167→    inst:Remove()
+   168→end
+   169→
+   170→local function onworked(inst)
+   171→        if inst.sg ~= nil then
+   172→        inst.sg:GoToState("hit")
+   173→        end
+   174→end
+   175→
+   176→local function OnFuelEmpty(inst)
+   177→    if inst.sg ~= nil then
+   178→        inst.sg:GoToState("powerdown")
+   179→    end
+   180→end
+   181→
+   182→local function oncook(inst, doer)
+   183→
+   184→for k, v in pairs (inst.components.container.slots) do
+   185→                        if v.components.cookable ~= nil then
+   186→                local leader = inst.components.follower:GetLeader()
+   187→                local cook_pos = inst:GetPosition()
+   188→                        inst.sg:GoToState("cook")
+   189→        inst:DoTaskInTime(0.9, function()
+   190→
+   191→if inst.components.fueled ~= nil then
+   192→        inst.components.fueled:DoDelta(-.01 * inst.components.fueled.maxfuel)
+   193→    end
+   194→
+   195→        if inst.components.fueled ~= nil and not inst.components.fueled:IsEmpty() then
+   196→
+   197→        local ingredient = inst.components.container:RemoveItem(v)
+   198→
+   199→
+   200→        --if ingredient ~= nil then  end
+   201→
+   202→        v.Transform:SetPosition(cook_pos:Get())
+   203→
+   204→        if not inst.components.cooker:CanCook(ingredient, inst) then
+   205→            inst.components.container:GiveItem(ingredient, nil, cook_pos)
+   206→            return false
+   207→        end
+   208→
+   209→        if ingredient.components.health ~= nil and ingredient.components.combat ~= nil then
+   210→            inst:PushEvent("killed", { victim = ingredient })
+   211→        end
+   212→
+   213→        local product = inst.components.cooker:CookItem(ingredient, inst)
+   214→            if product ~= nil and doer ~= nil then
+   215→                -- CELESTIAL POSSESSION: Foods restore HP% (MK3 only)
+   216→                if inst.prefab == "williambutler3" and TheWorld.state.isday and OwnerHasCelestial(inst) then
+   217→                if product.components.edible and product.components.edible.hungervalue then
+   218→                    local hunger_percent = product.components.edible.hungervalue / 100
+   219→                    if hunger_percent > 1 then hunger_percent = 1 end
+   220→                    -- Store the healing amount on the food item (40% of hunger = HP%)
+   221→                    product._celestial_hp_heal = hunger_percent * 40
+   222→                    product._celestial_hp_doer = doer
+   223→                    -- Listen for when food is eaten
+   224→                    local old_oneaten = product.components.edible.oneaten
+   225→                    product.components.edible:SetOnEatenFn(function(food, eater)
+   226→                        if old_oneaten then old_oneaten(food, eater) end
+   227→                        -- Only HP heal, no sanity bonus
+   228→                        if eater.components.health and food._celestial_hp_heal then
+   229→                            local max_hp = eater.components.health.maxhealth
+   230→                            local heal_amount = max_hp * (food._celestial_hp_heal / 100)
+   231→                            eater.components.health:DoDelta(heal_amount, false, "celestial_food")
+   232→                        end
+   233→                    end)
+   234→                end
+   235→            end
+   236→            
+   237→            -- SHADOW POSSESSION: Foods restore SANITY% (MK3 only)
+   238→            if inst.prefab == "williambutler3" and TheWorld.state.isdusk and OwnerHasShadow(inst) then
+   239→                if product.components.edible and product.components.edible.hungervalue then
+   240→                    local hunger_percent = product.components.edible.hungervalue / 100
+   241→                    if hunger_percent > 1 then hunger_percent = 1 end
+   242→                    -- Store the sanity amount on the food item (40% of hunger = sanity%)
+   243→                    product._shadow_sanity_restore = hunger_percent * 40
+   244→                    product._shadow_sanity_doer = doer
+   245→                    -- Listen for when food is eaten
+   246→                    local old_oneaten = product.components.edible.oneaten
+   247→                    product.components.edible:SetOnEatenFn(function(food, eater)
+   248→                        if old_oneaten then old_oneaten(food, eater) end
+   249→                        -- Only sanity restore, no HP bonus
+   250→                        if eater.components.sanity and food._shadow_sanity_restore then
+   251→                            local max_sanity = eater.components.sanity.max
+   252→                            local sanity_amount = max_sanity * (food._shadow_sanity_restore / 100)
+   253→                            eater.components.sanity:DoDelta(sanity_amount, false, "shadow_food")
+   254→                        end
+   255→                    end)
+   256→                end
+   257→            end
+   258→            
+   259→            doer.components.inventory:GiveItem(product, nil, cook_pos)
+   260→
+   261→            return true
+   262→        elseif ingredient:IsValid() then
+   263→            inst.components.container:GiveItem(ingredient, nil, cook_pos)
+   264→        end
+   265→
+   266→        end
+   267→
+   268→        end)
+   269→                end
+   270→        end
+   271→end
+   272→
+   273→local function fuelupdate(inst)
+   274→        if inst.components.fueled ~= nil
+   275→            and inst.components.fueled.currentfuel <= inst.components.fueled.maxfuel*0.2  then
+   276→                inst:AddTag("lowfuel")
+   277→                else
+   278→        if inst:HasTag("lowfuel") then
+   279→    inst:RemoveTag("lowfuel")
+   280→        end
+   281→        end
+   282→    -- Update name with current fuel (now one function handles all versions!)
+   283→    UpdateButlerName(inst)
+   284→end
+   285→
+   286→local function nokeeptargetfn(inst)
+   287→    return false
+   288→end
+   289→
+   290→local function getstatus(inst, viewer)
+   291→    -- Fuel status
+   292→    local fuel_pct = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+   293→    local fuel_str = "Fuel: " .. fuel_pct .. "%"
+   294→    
+   295→    -- Upgrade status
+   296→    local upgrade_str = ""
+   297→    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 65 then
+   298→        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/65"
+   299→    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
+   300→        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/60"
+   301→    end
+   302→    
+   303→    -- Combined status
+   304→    if inst.components.fueled:IsEmpty() then
+   305→        return "EMPTY" .. upgrade_str
+   306→    elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .3 then
+   307→        return "CRITICALFUEL" .. upgrade_str
+   308→    elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .6 then
+   309→        return "LOWFUEL" .. upgrade_str
+   310→    else
+   311→        return fuel_str .. upgrade_str
+   312→    end
+   313→end
+   314→
+   315→local function GetButlerDescription(inst, viewer)
+   316→    -- Direct description for hover text
+   317→    local fuel_pct = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+   318→    local desc = "Butler Bot\n"
+   319→    
+   320→    if inst.prefab == "williambutler2" then
+   321→        desc = "Butler Bot Mk. II\n"
+   322→    elseif inst.prefab == "williambutler3" then
+   323→        desc = "Butler Bot Mk. III\n"
+   324→    end
+   325→    
+   326→    desc = desc .. "Fuel: " .. fuel_pct .. "%"
+   327→    
+   328→    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 65 then
+   329→        desc = desc .. "\nUpgrade: " .. inst.upgradelevel .. "/65"
+   330→    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
+   331→        desc = desc .. "\nUpgrade: " .. inst.upgradelevel_mk3 .. "/60"
+   332→    end
+   333→    
+   334→    return desc
+   335→end
+   336→
+   337→local function NoHoles(pt)
+   338→    return not TheWorld.Map:IsPointNearHole(pt)
+   339→end
+   340→
+   341→local function nodebrisdmg(inst, amount, overtime, cause, ignore_invincible, afflicter, ignore_absorb)
+   342→    return (afflicter ~= nil and afflicter:HasTag("quakedebris")) or (afflicter ~= nil and afflicter:HasTag("epic") and afflicter.components.combat.target ~= inst)
+   343→end
+   344→
+   345→local function OnOpen(inst)
+   346→    if not inst.components.health:IsDead() then
+   347→        inst.sg:GoToState("open")
+   348→        
+   349→        -- Show slot labels for butler2
+   350→        if inst.prefab == "williambutler2" and inst.components.follower and inst.components.follower:GetLeader() then
+   351→            local leader = inst.components.follower:GetLeader()
+   352→            if leader and leader.components.talker then
+   353→                leader.components.talker:Say("Slots 1-3: [Cook]")
+   354→            end
+   355→        end
+   356→        
+   357→        -- CELESTIAL POSSESSION: FX ao abrir menu - ghostlyelixir_shield central (MK3 only)
+   358→        if inst.prefab == "williambutler3" and TheWorld.state.isday and OwnerHasCelestial(inst) then
+   359→            local x, y, z = inst.Transform:GetWorldPosition()
+   360→            -- FX central no meio do corpo do bot
+   361→            local shield_fx = SpawnPrefab("ghostlyelixir_shield_fx")
+   362→            if shield_fx then
+   363→                shield_fx.Transform:SetPosition(x, y + 0.3, z) -- Centro do corpo (mais baixo)
+   364→                shield_fx.Transform:SetScale(0.5, 0.5, 0.5) -- 50% do tamanho (médio)
+   365→                if shield_fx.AnimState then
+   366→                    shield_fx.AnimState:SetMultColour(1, 1, 1, 0.5) -- 50% transparente
+   367→                    shield_fx.AnimState:SetDeltaTimeMultiplier(0.3) -- Pisca 3x mais lento
+   368→                end
+   369→            end
+   370→        end
+   371→        
+   372→        -- SHADOW POSSESSION: FX ao abrir menu - shadow_shield1 (MK3 only)
+   373→        if inst.prefab == "williambutler3" and TheWorld.state.isdusk and OwnerHasShadow(inst) then
+   374→            local x, y, z = inst.Transform:GetWorldPosition()
+   375→            -- FX de escudo sombrio
+   376→            local shield_fx = SpawnPrefab("shadow_shield1")
+   377→            if shield_fx then
+   378→                shield_fx.Transform:SetPosition(x, y + 0.3, z) -- Centro do corpo
+   379→                shield_fx.Transform:SetScale(0.5, 0.5, 0.5) -- 50% do tamanho
+   380→            end
+   381→        end
+   382→    end
+   383→end
+   384→
+   385→local function OnClose(inst)
+   386→    if not inst.components.health:IsDead() and not inst.sg:HasStateTag("busy") then
+   387→        inst.sg:GoToState("close")
+   388→    end
+   389→
+   390→end
+   391→
+   392→local function onload(inst)
+   393→   if inst.components.fueled:IsEmpty() then
+   394→                OnFuelEmpty(inst)
+   395→        end
+   396→end
+   397→
+   398→
+   399→    local function fn(inst)
+   400→        local inst = CreateEntity()
+   401→
+   402→        inst.entity:AddTransform()
+   403→        inst.entity:AddAnimState()
+   404→        inst.entity:AddSoundEmitter()
+   405→        inst.entity:AddMiniMapEntity()
+   406→        inst.entity:AddDynamicShadow()
+   407→        inst.entity:AddNetwork()
+   408→        inst.MiniMapEntity:SetIcon("williambutler.tex")
+   409→        inst.DynamicShadow:SetSize(1.3, .6)
+   410→        inst.Transform:SetFourFaced()
+   411→
+   412→        inst.AnimState:SetBank("wilson")
+   413→        inst.AnimState:SetBuild("william_butler")
+   414→        inst.AnimState:PlayAnimation("idle")
+   415→            inst.AnimState:Hide("ARM_carry")
+   416→            inst.AnimState:Hide("HEAD_HAT")
+   417→
+   418→    MakeCharacterPhysics(inst, 50, .5)
+   419→        --inst.Physics:SetCollides(true)
+   420→        --inst:DoTaskInTime(0, function() inst.Physics:SetCollides(true) end)
+   421→
+   422→        inst.AnimState:OverrideSymbol("fx_wipe", "wilson_fx", "fx_wipe")
+   423→        inst.AnimState:OverrideSymbol("fx_liquid", "wilson_fx", "fx_liquid")
+   424→        inst.AnimState:OverrideSymbol("shadow_hands", "shadow_hands", "shadow_hands")
+   425→    inst.AnimState:AddOverrideBuild("player_idles_warly")
+   426→
+   427→
+   428→        inst:AddTag("willminion")
+   429→        inst:AddTag("willfollower")
+   430→        inst:AddTag("companion")
+   431→        inst:AddTag("NOBLOCK")
+   432→        inst:AddTag("mech")
+   433→    inst:AddTag("cooker")
+   434→   inst:AddTag("container")
+   435→    inst:AddTag("stewer")
+   436→        inst:AddTag("tiddlevirusimmune")
+   437→    inst:SetPrefabNameOverride("williambutler")
+   438→
+   439→        inst.entity:SetPristine()
+   440→
+   441→        if not TheWorld.ismastersim then
+   442→            return inst
+   443→        end
+   444→
+   445→
+   446→
+   447→
+   448→
+   449→        inst:AddComponent("health")
+   450→        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BUTLER_HEALTH)
+   451→       -- inst.components.health.nofadeout = true
+   452→    inst.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN, TUNING.WILLIAM_ROBOT_REGENPERIOD)
+   453→        inst.components.health.redirect = nodebrisdmg
+   454→                inst:AddComponent("lootdropper")
+   455→    inst.components.lootdropper:SetChanceLootTable("butler")
+   456→
+   457→    inst:AddComponent("inspectable")
+   458→    inst.components.inspectable.getstatus = getstatus
+   459→
+   460→    inst:AddComponent("named")
+   461→
+   462→        inst:AddComponent("willyraise")
+   463→    inst.components.willyraise:SetOnRiseFn(MakeAlive)
+   464→    inst.components.willyraise:SetOnLowerFn(OnFuelEmpty)
+   465→
+   466→    inst:AddComponent("fueled")
+   467→    inst.components.fueled:SetTakeFuelFn(OnAddFuel)
+   468→    inst.components.fueled.accepting = true  -- Enable manual fueling (reverted to original)
+   469→    inst.components.fueled:InitializeFuelLevel(TUNING.WILLIAM_BUTLER_MAXFUEL)
+   470→    inst.components.fueled.bonusmult = 1
+   471→
+   472→    -- Update name AFTER fueled component is added (was crashing on craft: fueled was nil)
+   473→    UpdateButlerName(inst)
+   474→
+   475→        return inst
+   476→    end
+   477→
+   478→        --ACTIVE butler
+   479→        
+   480→    local function active(inst)
+   481→        local inst = fn(inst)
+   482→    MakeCharacterPhysics(inst, 50, .5)
+   483→
+   484→    inst.MiniMapEntity:SetCanUseCache(false)
+   485→
+   486→        inst.Transform:SetFourFaced()
+   487→
+   488→        inst:AddTag("alive")
+   489→        inst:AddTag("scarytoprey")
+   490→        inst:AddTag("willminion")
+   491→        inst:AddTag("companion")
+   492→        inst:AddTag("NOBLOCK")
+   493→        inst:AddTag("mech")
+   494→        inst:AddTag("butler")
+   495→        inst:AddTag("dangerouscooker")
+   496→        inst:AddTag("expertchef")
+   497→        inst:AddTag("tiddlevirusimmune")
+   498→        inst:AddTag("ebuild_wrenchable")
+   499→        inst.AnimState:Hide("swap_body")
+   500→
+   501→        if not TheWorld.ismastersim then
+   502→            return inst
+   503→        end
+   504→
+   505→    -- BUG FIX: Standard workable for regular hammer (always present)
+   506→    inst:AddComponent("workable")
+   507→    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+   508→    inst.components.workable:SetWorkLeft(3)
+   509→    inst.components.workable:SetOnFinishCallback(OnHammered)
+   510→    inst.components.workable:SetOnWorkCallback(onworked)
+   511→
+   512→ inst:AddComponent("locomotor")
+   513→        inst.components.locomotor.runspeed = TUNING.SHADOWWAXWELL_SPEED
+   514→        inst.components.locomotor:SetAllowPlatformHopping(true)
+   515→        inst:AddComponent("embarker")
+   516→
+   517→        inst:SetStateGraph("SGwilliambutler")
+   518→
+   519→    inst:AddComponent("container")
+   520→    inst.components.container:WidgetSetup("williambutler")
+   521→    inst.components.container.onopenfn = OnOpen
+   522→    inst.components.container.onclosefn = OnClose
+   523→    inst.components.container.skipopensnd = true
+   524→    inst.components.container.skipclosesnd = true
+   525→
+   526→        inst:AddComponent("combat")
+   527→        inst.components.combat.hiteffectsymbol = "torso"
+   528→        inst.components.combat:SetRange(3)
+   529→    inst.components.combat:SetKeepTargetFunction(nokeeptargetfn)
+   530→
+   531→
+   532→        inst:ListenForEvent("docookery", oncook)
+   533→
+   534→        inst:AddComponent("follower")
+   535→        inst.components.follower:KeepLeaderOnAttacked()
+   536→        inst.components.follower.keepdeadleader = true
+   537→        inst.components.follower.keepleaderduringminigame = true
+   538→
+   539→        -- Meat Effigy Overclock: swap places with owner on near-death
+   540→    inst.components.fueled:SetUpdateFn(fuelupdate)
+   541→    inst.components.fueled:SetDepletedFn(OnFuelEmpty)
+   542→
+   543→        inst:SetBrain(brain)
+   544→
+   545→    MakeMediumBurnableCharacter(inst, "torso")
+   546→    MakeMediumFreezableCharacter(inst, "torso")
+   547→
+   548→    inst.components.fueled:StartConsuming()
+   549→
+   550→    -- Rain damage (like WX-78) when active
+   551→    inst:DoPeriodicTask(1, function(inst)
+   552→        if TheWorld.state.israining and inst.components.health then
+   553→            inst.components.health:DoDelta(-1, false, "wetness")
+   554→        end
+   555→    end)
+   556→
+   557→    -- Lightning recharge (refuel, no overcharge)
+   558→    inst:ListenForEvent("lightningstrike", function(inst)
+   559→        if inst.components.fueled then
+   560→            inst.components.fueled:DoDelta(inst.components.fueled.maxfuel * 0.25)
+   561→        end
+   562→    end)
+   563→
+   564→inst.components.burnable.ignorefuel = true
+   565→    inst:AddComponent("cooker")
+   566→    
+   567→    -- Initialize name with fuel status
+   568→    UpdateButlerName(inst)
+   569→    inst:ListenForEvent("fuelchange", function() UpdateButlerName(inst) end)
+   570→    inst:ListenForEvent("healthdelta", function() UpdateButlerName(inst) end)
+   571→    -- Periodic update to ensure hover display stays current (matches other bots)
+   572→    inst:DoPeriodicTask(2, function() UpdateButlerName(inst) end)
+   573→
+   574→    --==================================================================================
+   575→    -- BUTLER UPGRADE: Wrench upgrade spawns williambutler2 with 3 cook slots
+   576→    -- 65 scraps total, variable cost per hit. Progress shown in bot name.
+   577→    -- Requires wagstaff_thermal_upgrade skill to be learned.
+   578→    --==================================================================================
+   579→    inst.upgradelevel = 0
+   580→
+   581→        local function IsScrap(item)
+   582→            return item.prefab == "scrap"
+   583→        end
+   584→
+   585→        inst:AddComponent("engieworkable")
+   586→        inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
+   587→        inst.components.engieworkable:SetMaxWork(1)
+   588→        inst.components.engieworkable:SetWorkLeft(1)
+   589→        inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+   590→            print("[DEBUG UPGRADE] OnWorkCallback chamado!")
+   591→            if inst.sg ~= nil then
+   592→                inst.sg:GoToState("hit")
+   593→            end
+   594→        end)
+   595→        inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+   596→            print("[DEBUG UPGRADE] === INICIO DO UPGRADE DO BUTLER ===")
+   597→            print("[DEBUG UPGRADE] worker:", worker, worker.prefab)
+   598→            print("[DEBUG UPGRADE] inst:", inst, inst.prefab)
+   599→            
+   600→            if inst.sg ~= nil and inst.sg:HasStateTag("shutdown") then
+   601→                print("[DEBUG UPGRADE] Bot em estado shutdown, abortando")
+   602→                return
+   603→            end
+   604→            
+   605→            local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+   606→            print("[DEBUG UPGRADE] Wrench equipada:", wrench and wrench.prefab or "NENHUMA")
+   607→            
+   608→            if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
+   609→                print("[DEBUG UPGRADE] Usando durabilidade da wrench")
+   610→                wrench.components.finiteuses:Use(1)
+   611→            end
+   612→
+   613→            -- PRIORITY 1: Repair if HP < 100% (NO skill required)
+   614→            print("[DEBUG UPGRADE] HP atual:", inst.components.health.currenthealth, "/", inst.components.health.maxhealth)
+   615→            if inst.components.health.currenthealth < inst.components.health.maxhealth then
+   616→                print("[DEBUG UPGRADE] Tentando reparar bot...")
+   617→                local function IsScrap(item)
+   618→                    return item.prefab == "scrap"
+   619→                end
+   620→                local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   621→                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   622→                print("[DEBUG UPGRADE] Scrap encontrado:", scrapstack and scrapstack.prefab or "NENHUM", "Custo reparo:", repair_cost)
+   623→                if repair_cost > 0 and scrapstack == nil then
+   624→                    print("[DEBUG UPGRADE] Sem scrap para reparo!")
+   625→                    if worker.components.talker then
+   626→                        worker.components.talker:Say("Need Scrap Metal to repair!")
+   627→                    end
+   628→                    return
+   629→                end
+   630→                if repair_cost > 0 then
+   631→                    print("[DEBUG UPGRADE] Consumindo", repair_cost, "scrap(s) para reparo")
+   632→                    worker.components.inventory:ConsumeByName("scrap", repair_cost)
+   633→                end
+   634→                inst.components.health:DoDelta(50)
+   635→                inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+   636→                if worker.components.talker then
+   637→                    worker.components.talker:Say("Repaired 50 HP!")
+   638→                end
+   639→                print("[DEBUG UPGRADE] Reparo concluido!")
+   640→                return
+   641→            end
+   642→
+   643→            -- PRIORITY 2: Upgrade if HP = 100% AND skill learned
+   644→            print("[DEBUG UPGRADE] Bot com HP maximo, verificando skill wagstaff_thermal_upgrade...")
+   645→            print("[DEBUG UPGRADE] worker.prefab=", tostring(worker.prefab))
+   646→            print("[DEBUG UPGRADE] worker tem skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
+   647→            
+   648→            local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade")
+   649→            print("[DEBUG UPGRADE] Resultado de WagstaffHasSkill:", has_skill)
+   650→            
+   651→            if not has_skill then
+   652→                print("[DEBUG UPGRADE] Skill NAO encontrada! Bloqueando upgrade.")
+   653→                if worker.components.talker then
+   654→                    worker.components.talker:Say("Requires Butler MK. II skill!\n(Activate it in the skill tree!)")
+   655→                end
+   656→                return
+   657→            end
+   658→            
+   659→            print("[DEBUG UPGRADE] Skill encontrada! Prosseguindo com upgrade...")
+   660→
+   661→    -- Upgrade: variable scrap cost per wrench hit (10, 10, 10, 10, 15 = 55 total)
+   662→            local scrap_count = 0
+   663→            if worker.components.inventory then
+   664→                for _, item in pairs(worker.components.inventory.itemslots) do
+   665→                    if item ~= nil and item.prefab == "scrap" and item.components.stackable then
+   666→                        scrap_count = scrap_count + item.components.stackable:StackSize()
+   667→                    elseif item ~= nil and item.prefab == "scrap" then
+   668→                        scrap_count = scrap_count + 1
+   669→                    end
+   670→                end
+   671→            end
+   672→            print("[DEBUG UPGRADE] Scrap count no inventario:", scrap_count)
+   673→            
+   674→            -- Determine cost based on current upgrade level
+   675→            local upgrade_cost_table = {10, 10, 10, 10, 15}  -- Total: 55 scraps
+   676→            local hits_so_far = math.floor(inst.upgradelevel / 10)  -- 0-5 hits
+   677→            local base_cost = upgrade_cost_table[hits_so_far + 1] or 15
+   678→            local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, base_cost)
+   679→            print("[DEBUG UPGRADE] Upgrade level atual:", inst.upgradelevel, "hits_so_far:", hits_so_far, "base_cost:", base_cost, "upgrade_cost (com eficiencia):", upgrade_cost)
+   680→            
+   681→            if upgrade_cost > 0 and scrap_count < upgrade_cost then
+   682→                print("[DEBUG UPGRADE] Scrap insuficiente! Precisa de", upgrade_cost, "tem", scrap_count)
+   683→                if worker.components.talker then
+   684→                    worker.components.talker:Say("Need " .. upgrade_cost .. " Scrap Metal!")
+   685→                end
+   686→                return
+   687→            end
+   688→            if upgrade_cost > 0 then
+   689→                print("[DEBUG UPGRADE] Consumindo", upgrade_cost, "scrap(s) para upgrade")
+   690→                worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
+   691→            end
+   692→            inst.upgradelevel = inst.upgradelevel + base_cost
+   693→            print("[DEBUG UPGRADE] Novo upgrade level:", inst.upgradelevel)
+   694→            UpdateButlerName(inst)
+   695→
+   696→            if inst.upgradelevel >= 55 then
+   697→                print("[DEBUG UPGRADE] UPGRADE COMPLETO! Spawnando williambutler2...")
+   698→                inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   699→                if worker.components.talker then
+   700→                    worker.components.talker:Say("Butler Bot MK. II upgrade complete!")
+   701→                end
+   702→
+   703→                -- Spawn upgraded bot
+   704→                local pt = inst:GetPosition()
+   705→                local newbot = SpawnPrefab("williambutler2")
+   706→                print("[DEBUG UPGRADE] newbot spawned:", newbot and "SUCESSO" or "FALHA")
+   707→                if newbot ~= nil then
+   708→                    newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
+   709→                    newbot.Transform:SetRotation(inst.Transform:GetRotation())
+   710→
+   711→                    -- Transfer fuel
+   712→                    if inst.components.fueled and newbot.components.fueled then
+   713→                        print("[DEBUG UPGRADE] Transferindo fuel:", inst.components.fueled.currentfuel)
+   714→                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+   715→                    end
+   716→                    -- Transfer health
+   717→                    if inst.components.health and newbot.components.health then
+   718→                        print("[DEBUG UPGRADE] Transferindo health:", inst.components.health.currenthealth)
+   719→                        newbot.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+   720→                    end
+   721→                    -- Transfer container items (crockpot slots 1-3)
+   722→                    if inst.components.container and newbot.components.container then
+   723→                        for slot = 1, 3 do
+   724→                            local item = inst.components.container:GetItemInSlot(slot)
+   725→                            if item ~= nil then
+   726→                                print("[DEBUG UPGRADE] Transferindo item do slot", slot, ":", item.prefab)
+   727→                                newbot.components.container:GiveItem(item, slot)
+   728→                            end
+   729→                        end
+   730→                    end
+   731→
+   732→                    -- Transfer follower
+   733→                    if inst.components.follower and newbot.components.follower then
+   734→                        local leader = inst.components.follower:GetLeader()
+   735→                        if leader ~= nil then
+   736→                            print("[DEBUG UPGRADE] Transferindo leader:", leader.prefab)
+   737→                            newbot.components.follower:SetLeader(leader)
+   738→                        end
+   739→                    end
+   740→
+   741→                    -- Spawn FX
+   742→                    SpawnPrefab("small_puff").Transform:SetPosition(pt.x, pt.y, pt.z)
+   743→                end
+   744→
+   745→                print("[DEBUG UPGRADE] Removendo bot antigo...")
+   746→                inst:Remove()
+   747→            else
+   748→                print("[DEBUG UPGRADE] Upgrade em andamento... falta", 85 - inst.upgradelevel, "para completar")
+   749→            end
+   750→        end)
+   751→
+   752→    -- Save/load upgrade progress
+   753→    local function OnSaveButler(inst, data)
+   754→        data.upgradelevel = inst.upgradelevel
+   755→        -- Save leader GUID for persistence
+   756→        if inst.components.follower and inst.components.follower:GetLeader() then
+   757→            data.leader_guid = inst.components.follower:GetLeader().GUID
+   758→        end
+   759→    end
+   760→
+   761→    local function OnLoadButler(inst, data)
+   762→        if data then
+   763→            inst.upgradelevel = data.upgradelevel or 0
+   764→        end
+   765→        -- Restore follower after save/load
+   766→        if data ~= nil and data.leader_guid ~= nil then
+   767→            inst:DoTaskInTime(0, function()
+   768→                local leader = TheWorld.GUIDToPos and TheWorld.GUIDToPos(data.leader_guid)
+   769→                if not leader then
+   770→                    for k, v in pairs(Ents) do
+   771→                        if k == data.leader_guid then
+   772→                            leader = v
+   773→                            break
+   774→                        end
+   775→                    end
+   776→                end
+   777→                if leader and leader:IsValid() and inst:IsValid() then
+   778→                    if inst.components.follower then
+   779→                        inst.components.follower:SetLeader(leader)
+   780→                    end
+   781→                end
+   782→            end)
+   783→        end
+   784→    end
+   785→
+   786→    inst.OnSave = OnSaveButler
+   787→    inst.OnLoad = OnLoadButler
+   788→
+   789→    MakeHauntablePanic(inst)
+   790→
+   791→        return inst
+   792→    end
+   793→
+   794→    --==================================================================================
+   795→    -- BUTLER BOT v2: Upgraded version with 3 cook slots
+   796→    -- Now Picks Twigs & Grass when owner picks.
+   797→    -- Spawned by wrench upgrade on original butler.
+   798→    --==================================================================================
+   799→    local function active2(inst)
+   800→        local inst = fn(inst)
+   801→        MakeCharacterPhysics(inst, 50, .5)
+   802→
+   803→        inst.MiniMapEntity:SetCanUseCache(false)
+   804→        inst.Transform:SetFourFaced()
+   805→
+   806→        inst:AddTag("alive")
+   807→        inst:AddTag("scarytoprey")
+   808→        inst:AddTag("willminion")
+   809→        inst:AddTag("companion")
+   810→        inst:AddTag("NOBLOCK")
+   811→        inst:AddTag("mech")
+   812→        inst:AddTag("butler")
+   813→        inst:AddTag("dangerouscooker")
+   814→        inst:AddTag("expertchef")
+   815→        inst:AddTag("tiddlevirusimmune")
+   816→        inst:AddTag("butler_thermal_upgraded")
+   817→        inst:AddTag("ebuild_wrenchable")
+   818→        inst.AnimState:Hide("swap_body")
+   819→
+   820→        if not TheWorld.ismastersim then
+   821→            return inst
+   822→        end
+   823→
+   824→        inst:AddComponent("locomotor")
+   825→        inst.components.locomotor.runspeed = TUNING.SHADOWWAXWELL_SPEED
+   826→        inst.components.locomotor:SetAllowPlatformHopping(true)
+   827→        inst:AddComponent("embarker")
+   828→
+   829→        inst:SetStateGraph("SGwilliambutler")
+   830→
+   831→        inst:AddComponent("container")
+   832→        inst.components.container:WidgetSetup("williambutler2")
+   833→        inst.components.container.onopenfn = OnOpen
+   834→        inst.components.container.onclosefn = OnClose
+   835→        inst.components.container.skipopensnd = true
+   836→        inst.components.container.skipclosesnd = true
+   837→
+   838→        inst:AddComponent("combat")
+   839→        inst.components.combat.hiteffectsymbol = "torso"
+   840→        inst.components.combat:SetRange(3)
+   841→        inst.components.combat:SetKeepTargetFunction(nokeeptargetfn)
+   842→
+   843→        inst:ListenForEvent("docookery", oncook)
+   844→
+   845→
+   846→
+   847→        inst:AddComponent("follower")
+   848→        inst.components.follower:KeepLeaderOnAttacked()
+   849→        inst.components.follower.keepdeadleader = true
+   850→        inst.components.follower.keepleaderduringminigame = true
+   851→
+   852→        inst.components.fueled:SetUpdateFn(fuelupdate)
+   853→        inst.components.fueled:SetDepletedFn(OnFuelEmpty)
+   854→
+   855→        inst:SetBrain(brain)
+   856→
+   857→        MakeMediumBurnableCharacter(inst, "torso")
+   858→        MakeMediumFreezableCharacter(inst, "torso")
+   859→
+   860→        inst.components.fueled:StartConsuming()
+   861→
+   862→        inst.components.burnable.ignorefuel = true
+   863→        inst:AddComponent("cooker")
+   864→
+   865→    -- Wrapper Save/Load (padrão Buster - preserva dados do active())
+   866→    local old_OnSaveButler2 = inst.OnSave
+   867→    inst.OnSave = function(inst, data)
+   868→        if old_OnSaveButler2 then old_OnSaveButler2(inst, data) end
+   869→        data.upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
+   870→        data.was_mk3 = inst.was_mk3 or false
+   871→    end
+   872→
+   873→    local old_OnLoadButler2 = inst.OnLoad
+   874→    inst.OnLoad = function(inst, data)
+   875→        if old_OnLoadButler2 then old_OnLoadButler2(inst, data) end
+   876→        if data then
+   877→            inst.upgradelevel_mk3 = data.upgradelevel_mk3 or 0
+   878→            inst.was_mk3 = data.was_mk3 or false
+   879→        end
+   880→        -- Atualiza o nome após carregar
+   881→        inst:DoTaskInTime(0, function()
+   882→            if inst.components.named then UpdateButlerName(inst) end
+   883→        end)
+   884→    end
+   885→
+   886→        -- BUTLER MK.II -> MK.III UPGRADE (60 scraps total, 5 per hit)
+   887→        inst.upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
+   888→
+   889→        UpdateButlerName(inst)
+   890→        inst:ListenForEvent("fuelchange", function() UpdateButlerName(inst) end)
+   891→        inst:ListenForEvent("healthdelta", function() UpdateButlerName(inst) end)
+   892→
+   893→        inst:AddComponent("engieworkable")
+   894→        inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
+   895→        inst.components.engieworkable:SetMaxWork(1)
+   896→        inst.components.engieworkable:SetWorkLeft(1)
+   897→        inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+   898→            if inst.sg ~= nil then
+   899→                inst.sg:GoToState("hit")
+   900→            end
+   901→        end)
+   902→        inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+   903→            if inst.sg ~= nil and inst.sg:HasStateTag("shutdown") then
+   904→                return
+   905→            end
+   906→            inst.components.engieworkable:SetWorkLeft(1)
+   907→            local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+   908→            if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
+   909→                wrench.components.finiteuses:Use(1)
+   910→            end
+   911→
+   912→            -- PRIORITY 1: Repair if HP < 100% (NO skill required)
+   913→            if inst.components.health.currenthealth < inst.components.health.maxhealth then
+   914→                local function IsScrap(item)
+   915→                    return item.prefab == "scrap"
+   916→                end
+   917→                local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   918→                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   919→                if repair_cost > 0 and scrapstack == nil then
+   920→                    if worker.components.talker then
+   921→                        worker.components.talker:Say("Need Scrap Metal to repair!")
+   922→                    end
+   923→                    return
+   924→                end
+   925→                if repair_cost > 0 then
+   926→                    worker.components.inventory:ConsumeByName("scrap", repair_cost)
+   927→                end
+   928→                inst.components.health:DoDelta(50)
+   929→                inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+   930→                if worker.components.talker then
+   931→                    worker.components.talker:Say("Repaired 50 HP!")
+   932→                end
+   933→                return
+   934→            end
+   935→
+   936→            -- PRIORITY 2: Upgrade to MK.III if HP = 100% AND skill learned (70 scraps, 5 per hit)
+   937→            if not _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade_mk3") then
+   938→                if worker.components.talker then
+   939→                    worker.components.talker:Say("Requires Butler MK. II skill!\n(Activate it in the skill tree!)")
+   940→                end
+   941→                return
+   942→            end
+   943→
+   944→            -- MK.III Upgrade: 5 scraps per hit, 70 total
+   945→            local scrap_count = 0
+   946→            if worker.components.inventory then
+   947→                for _, item in pairs(worker.components.inventory.itemslots) do
+   948→                    if item ~= nil and item.prefab == "scrap" and item.components.stackable then
+   949→                        scrap_count = scrap_count + item.components.stackable:StackSize()
+   950→                    elseif item ~= nil and item.prefab == "scrap" then
+   951→                        scrap_count = scrap_count + 1
+   952→                    end
+   953→                end
+   954→            end
+   955→            local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+   956→            if upgrade_cost > 0 and scrap_count < upgrade_cost then
+   957→                if worker.components.talker then
+   958→                    worker.components.talker:Say("Need 5 Scrap Metal!")
+   959→                end
+   960→                return
+   961→            end
+   962→            if upgrade_cost > 0 then
+   963→                worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
+   964→            end
+   965→            inst.upgradelevel_mk3 = inst.upgradelevel_mk3 + 5
+   966→            UpdateButlerName(inst)
+   967→
+   968→            if inst.upgradelevel_mk3 >= 70 then
+   969→                inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   970→                if worker.components.talker then
+   971→                    worker.components.talker:Say("Butler Bot MK. III upgrade complete!")
+   972→                end
+   973→
+   974→                -- Spawn MK.III version
+   975→                local pt = inst:GetPosition()
+   976→                local newbot = SpawnPrefab("williambutler3")
+   977→                if newbot ~= nil then
+   978→                    newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
+   979→                    newbot.Transform:SetRotation(inst.Transform:GetRotation())
+   980→                    newbot.was_mk3 = true
+   981→
+   982→                    if inst.components.fueled and newbot.components.fueled then
+   983→                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+   984→                    end
+   985→                    if inst.components.health and newbot.components.health then
+   986→                        newbot.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+   987→                    end
+   988→                    if inst.components.container and newbot.components.container then
+   989→                        for slot = 1, 3 do
+   990→                            local item = inst.components.container:GetItemInSlot(slot)
+   991→                            if item ~= nil then
+   992→                                newbot.components.container:GiveItem(item, slot)
+   993→                            end
+   994→                        end
+   995→                    end
+   996→
+   997→                    if inst.components.follower and newbot.components.follower then
+   998→                        local leader = inst.components.follower:GetLeader()
+   999→                        if leader ~= nil then
+  1000→                            newbot.components.follower:SetLeader(leader)
+  1001→                            newbot.components.follower:SetLeader(leader)
+  1002→                        end
+  1003→                    end
+  1004→
+  1005→                    SpawnPrefab("small_puff").Transform:SetPosition(pt.x, pt.y, pt.z)
+  1006→                end
+  1007→
+  1008→                inst:Remove()
+  1009→            end
+  1010→        end)
+  1011→
+  1012→        return inst
+  1013→    end
+  1014→
+  1015→    --==================================================================================
+  1016→    -- BUTLER BOT v3: Master Chef
+  1017→    -- Spawned by wrench upgrade on MK.II butler (60 scraps total for MK.II->MK.III)
+  1018→    --==================================================================================
+  1019→    local function active3(inst)
+  1020→        local inst = active2(inst)
+  1021→
+  1022→        inst:SetPrefabNameOverride("williambutler3")
+  1023→        inst:AddTag("butler_master_chef")
+  1024→
+  1025→        if not TheWorld.ismastersim then
+  1026→            return inst
+  1027→        end
+  1028→
+  1029→        -- Slightly larger with golden tint
+  1030→        inst.Transform:SetScale(1.1, 1.1, 1.1)
+  1031→        inst.AnimState:SetMultColour(1, 0.95, 0.7, 1)
+  1032→
+  1033→        -- Ensure Mk.III identity is persistent across saves
+  1034→        inst.was_mk3 = true
+  1035→
+  1036→        -- Affinity pulse (MK3 only)
+  1037→        AffinityPulse.Setup(inst, GetOwner)
+  1038→
+  1039→        -- Celestial light + aura (MK3 only)
+  1040→        inst._celestial_light = nil
+  1041→        inst._aura_fx = nil
+  1042→        inst._shadow_fx = nil
+  1043→        inst:DoPeriodicTask(3, function()
+  1044→            if TheWorld.state.isday and OwnerHasCelestial(inst) then
+  1045→                -- Add light component to bot
+  1046→                if inst._celestial_light == nil then
+  1047→                    inst.entity:AddLight()
+  1048→                    inst._celestial_light = true
+  1049→                end
+  1050→                if inst.Light then
+  1051→                    inst.Light:SetRadius(2)
+  1052→                    inst.Light:SetIntensity(0.45)
+  1053→                    inst.Light:SetFalloff(0.8)
+  1054→                    inst.Light:SetColour(0.7, 0.85, 1)
+  1055→                    inst.Light:Enable(true)
+  1056→                end
+  1057→                
+  1058→                -- NOVA AURA CELESTIAL - só quando ativo (nil = inicialmente ativo)
+  1059→                if inst.on ~= false and (inst._aura_fx == nil or not inst._aura_fx:IsValid()) then
+  1060→                    inst._aura_fx = SpawnPrefab("bot_aura_butler")
+  1061→                    if inst._aura_fx then
+  1062→                        inst._aura_fx._parent = inst
+  1063→                    end
+  1064→                end
+  1065→                
+  1066→                -- Remove shadow FX if present
+  1067→                if inst._shadow_fx ~= nil and inst._shadow_fx:IsValid() then
+  1068→                    inst._shadow_fx:Remove()
+  1069→                    inst._shadow_fx = nil
+  1070→                end
+  1071→            else
+  1072→                if inst.Light then
+  1073→                    inst.Light:Enable(false)
+  1074→                end
+  1075→                inst._celestial_light = nil
+  1076→                if inst._aura_fx ~= nil and inst._aura_fx:IsValid() then
+  1077→                    inst._aura_fx:Remove()
+  1078→                    inst._aura_fx = nil
+  1079→                end
+  1080→            end
+  1081→        end)
+  1082→
+  1083→        -- Override name
+  1084→        if inst.components.named == nil then
+  1085→            inst:AddComponent("named")
+  1086→        end
+  1087→        inst.components.named:SetName("Butler Bot Mk.III")
+  1088→        local function UpdateButler3Name(inst)
+  1089→            local base = "Butler Bot Mk.III"
+  1090→            local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+  1091→            local hp = math.floor(inst.components.health.currenthealth)
+  1092→            local maxhp = math.floor(inst.components.health.maxhealth)
+  1093→            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
+  1094→            inst.components.named:SetName(name_str)
+  1095→            inst.name = name_str
+  1096→            inst.GetDisplayName = function() return name_str end
+  1097→        end
+  1098→        UpdateButler3Name(inst)
+  1099→        inst:ListenForEvent("fuelchange", function() UpdateButler3Name(inst) end)
+  1100→        inst:ListenForEvent("healthdelta", function() UpdateButler3Name(inst) end)
+  1101→
+  1102→        -- HAUNT RESURRECTION: MK.III only - revive with celestial/shadow bonuses
+  1103→        inst:AddComponent("hauntable")
+  1104→        inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
+  1105→            if haunter:HasTag("playerghost") and inst.prefab == "williambutler3" then
+  1106→                -- Standard revive
+  1107→                haunter:PushEvent("respawnfromghost", { source = inst })
+  1108→                
+  1109→                -- CELESTIAL POSSESSION: Revive during day gives bonus HP
+  1110→                if TheWorld.state.isday and OwnerHasCelestial(inst) then
+  1111→                    haunter:DoTaskInTime(0.5, function()
+  1112→                        if haunter:IsValid() and haunter.components.health then
+  1113→                            local bonus_hp = haunter.components.health.maxhealth * 0.2
+  1114→                            haunter.components.health:DoDelta(bonus_hp)
+  1115→                        end
+  1116→                    end)
+  1117→                end
+  1118→                
+  1119→                -- SHADOW POSSESSION: Revive during dusk gives bonus sanity
+  1120→                if TheWorld.state.isdusk and OwnerHasShadow(inst) then
+  1121→                    haunter:DoTaskInTime(0.5, function()
+  1122→                        if haunter:IsValid() and haunter.components.sanity then
+  1123→                            local bonus_sanity = haunter.components.sanity.max * 0.3
+  1124→                            haunter.components.sanity:DoDelta(bonus_sanity)
+  1125→                        end
+  1126→                    end)
+  1127→                end
+  1128→                
+  1129→                -- Bot dies on revive (standard mechanic)
+  1130→                inst.components.health:Kill()
+  1131→                return true
+  1132→            end
+  1133→            return false
+  1134→        end)
+  1135→
+  1136→        -- MK3 reload resync: re-aplica FX celestial/shadow imediatamente após save->reload
+  1137→        local old_OnLoad3 = inst.OnLoad
+  1138→        inst.OnLoad = function(inst2, data)
+  1139→            if old_OnLoad3 then old_OnLoad3(inst2, data) end
+  1140→            if not TheWorld.ismastersim then return end
+  1141→            inst2:DoTaskInTime(0, function()
+  1142→                if not inst2:IsValid() then return end
+  1143→                local owner = inst2.components.follower and inst2.components.follower:GetLeader()
+  1144→                local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
+  1145→                local shadow = owner and owner:HasTag("wagstaff_shadow_possession")
+  1146→                if TheWorld.state.isday and celestial then
+  1147→                    if inst2._celestial_light == nil then inst2.entity:AddLight(); inst2._celestial_light = true end
+  1148→                    if inst2.Light then inst2.Light:Enable(true); inst2.Light:SetRadius(2); inst2.Light:SetIntensity(0.45); inst2.Light:SetColour(0.7,0.85,1) end
+  1149→                    if inst2.on ~= false and (inst2._aura_fx == nil or not inst2._aura_fx:IsValid()) then
+  1150→                        inst2._aura_fx = SpawnPrefab("bot_aura_buster")
+  1151→                        if inst2._aura_fx then inst2._aura_fx._parent = inst2 end
+  1152→                    end
+  1153→                end
+  1154→                if TheWorld.state.isdusk and shadow then
+  1155→                    if inst2._shadow_fx == nil or not inst2._shadow_fx:IsValid() then
+  1156→                        inst2._shadow_fx = SpawnPrefab("shadow_puff_large_front")
+  1157→                        if inst2._shadow_fx then inst2._shadow_fx.entity:SetParent(inst2.entity) end
+  1158→                    end
+  1159→                end
+  1160→            end)
+  1161→        end
+  1162→
+  1163→        -- Repair system for MK3 + MK.III upgrade (60 scraps from MK.II to MK.III only - not applicable here since we spawn directly)
+  1164→        if inst.components.engieworkable == nil then
+  1165→            inst:AddComponent("engieworkable")
+  1166→        end
+  1167→        inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
+  1168→        inst.components.engieworkable:SetMaxWork(1)
+  1169→        inst.components.engieworkable:SetWorkLeft(1)
+  1170→        inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+  1171→            if inst.sg ~= nil then
+  1172→                inst.sg:GoToState("hit")
+  1173→            end
+  1174→        end)
+  1175→        inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+  1176→            if inst.sg ~= nil and inst.sg:HasStateTag("shutdown") then
+  1177→                return
+  1178→            end
+  1179→            inst.components.engieworkable:SetWorkLeft(1)
+  1180→            local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+  1181→            if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
+  1182→                wrench.components.finiteuses:Use(1)
+  1183→            end
+  1184→            if inst.components.health.currenthealth >= inst.components.health.maxhealth then
+  1185→                if worker.components.talker then
+  1186→                    worker.components.talker:Say("HP is already full!")
+  1187→                end
+  1188→                return
+  1189→            end
+  1190→            local function IsScrap(item)
+  1191→                return item.prefab == "scrap"
+  1192→            end
+  1193→            local scrapstack = worker.components.inventory:FindItem(IsScrap)
+  1194→            local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+  1195→            if repair_cost > 0 and scrapstack == nil then
+  1196→                if worker.components.talker then
+  1197→                    worker.components.talker:Say("Need Scrap Metal to repair!")
+  1198→                end
+  1199→                return
+  1200→            end
+  1201→            if repair_cost > 0 then
+  1202→                worker.components.inventory:ConsumeByName("scrap", repair_cost)
+  1203→            end
+  1204→            inst.components.health:DoDelta(50)
+  1205→            inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+  1206→            if worker.components.talker then
+  1207→                worker.components.talker:Say("Repaired 50 HP!")
+  1208→            end
+  1209→        end)
+  1210→
+  1211→        return inst
+  1212→    end
+  1213→
+  1214→-- EMPTY butler
+  1215→
+  1216→
+  1217→    local function empty(inst)
+  1218→        local inst = fn(inst)
+  1219→
+  1220→        inst.AnimState:PlayAnimation("sleep_loop", false)
+  1221→        inst.AnimState:Pause()
+  1222→        MakeCharacterPhysics(inst, 80, .25)
+  1223→        inst.Physics:SetFriction(1)
+  1224→
+  1225→        inst:AddTag("NOBLOCK")
+  1226→        inst:AddTag("Notarget")
+  1227→        inst:AddTag("mech")
+  1228→        inst:AddTag("butler")
+  1229→        inst:AddTag("tiddlevirusimmune")
+  1230→
+  1231→        if not TheWorld.ismastersim then
+  1232→            return inst
+  1233→        end
+  1234→
+  1235→    inst:AddComponent("workable")
+  1236→    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+  1237→            inst.components.workable:SetWorkLeft(3)
+  1238→    inst.components.workable:SetOnFinishCallback(OnHammered)
+  1239→    inst.components.workable:SetOnWorkCallback(onworked)
+  1240→
+  1241→--    inst.components.fueled.currentfuel = 0
+  1242→
+  1243→    inst.components.lootdropper:SetChanceLootTable("butlergadget")
+  1244→
+  1245→    -- BUG FIX 5: Add fuel listener to enable ACTIVATE when refueled
+  1246→    inst.components.fueled.accepting = true
+  1247→    inst:ListenForEvent("percentusedchange", function(inst)
+  1248→        local fuel_pct = inst.components.fueled:GetPercent()
+  1249→        if fuel_pct > 0 and fuel_pct <= 1 then
+  1250→            -- Has fuel now, enable ACTIVATE
+  1251→            if inst.components.workable and inst.components.workable.action ~= ACTIONS.ACTIVATE then
+  1252→                inst:RemoveComponent("workable")
+  1253→                inst:AddComponent("workable")
+  1254→                inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
+  1255→                inst.components.workable:SetWorkLeft(1)
+  1256→                inst.components.workable:SetOnFinishCallback(function(inst, doer)
+  1257→                    if doer and doer.components.petleash then
+  1258→                        MakeAlive(inst, doer)
+  1259→                    end
+  1260→                end)
+  1261→            end
+  1262→        end
+  1263→    end)
+  1264→
+  1265→    -- Save/load husk state (for reactivating at correct level)
+  1266→    local function OnSaveHusk(inst, data)
+  1267→        data.was_level2 = inst.was_level2
+  1268→        data.was_mk3 = inst.was_mk3
+  1269→        data.saved_upgradelevel = inst.saved_upgradelevel
+  1270→        data.saved_upgradelevel_mk3 = inst.saved_upgradelevel_mk3
+  1271→    end
+  1272→
+  1273→    local function OnLoadHusk(inst, data)
+  1274→        if data then
+  1275→            inst.was_level2 = data.was_level2 or false
+  1276→            inst.was_mk3 = data.was_mk3 or false
+  1277→            inst.saved_upgradelevel = data.saved_upgradelevel or 0
+  1278→            inst.saved_upgradelevel_mk3 = data.saved_upgradelevel_mk3 or 0
+  1279→        end
+  1280→    end
+  1281→
+  1282→    inst.OnSave = OnSaveHusk
+  1283→    inst.OnLoad = OnLoadHusk
+  1284→
+  1285→    MakeHauntableWork(inst)
+  1286→
+  1287→        return inst
+  1288→    end
+  1289→
+  1290→
+  1291→local function onbuilt(inst, builder)
+  1292→    local theta = math.random() * 2 * PI
+  1293→    local pt = builder:GetPosition()
+  1294→    local radius = math.random(1, 2)
+  1295→    local offset = FindWalkableOffset(pt, theta, radius, 12, true, true, NoHoles)
+  1296→    if offset ~= nil then
+  1297→        pt.x = pt.x + offset.x
+  1298→        pt.z = pt.z + offset.z
+  1299→    end
+  1300→   local pet = builder:HasTag("williamcrafter") and builder.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambutler") or SpawnPrefab("williambutler_empty")
+  1301→        if pet ~= nil then
+  1302→            if pet.sg ~= nil then
+  1303→                pet.sg:GoToState("spawn") 
+  1304→            else
+  1305→                pet.Transform:SetPosition(pt.x, 0, pt.z)
+  1306→        pet.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
+  1307→        SpawnPrefab("small_puff").Transform:SetPosition(pt.x, 0, pt.z)
+  1308→            end
+  1309→pet.components.fueled.currentfuel = pet.components.fueled.currentfuel*0.9
+  1310→    inst:Remove()
+  1311→        end
+  1312→end
+  1313→
+  1314→    local function builder()
+  1315→        local inst = CreateEntity()
+  1316→
+  1317→        inst.entity:AddTransform()
+  1318→
+  1319→        inst:AddTag("CLASSIFIED")
+  1320→
+  1321→        --[[Non-networked entity]]
+  1322→        inst.persists = false
+  1323→
+  1324→        --Auto-remove if not spawned by builder
+  1325→        inst:DoTaskInTime(0, inst.Remove)
+  1326→
+  1327→        if not TheWorld.ismastersim then
+  1328→            return inst
+  1329→        end
+  1330→
+  1331→        inst.OnBuiltFn = onbuilt
+  1332→
+  1333→        return inst
+  1334→    end
+  1335→
+  1336→
+  1337→    return Prefab("williambutler", active, assets, prefabs),
+  1338→    Prefab("williambutler2", active2, assets, prefabs),
+  1339→    Prefab("williambutler3", active3, assets, prefabs),
+  1340→    Prefab("williambutler_builder", builder, assets, prefabs),
+  1341→    Prefab("williambutler_empty", empty, assets, prefabs)
+  1342→
+  1343→
+  1344→
+  1345→--------------------------------------------------------------------------
