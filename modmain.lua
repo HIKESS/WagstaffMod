@@ -241,6 +241,30 @@ end
 -- Alias local para debug, seguro mesmo que G.WagstaffDebug ainda nao exista
 local WagstaffDebug = (G.WagstaffDebug ~= nil) and G.WagstaffDebug or function(...) end
 
+-- ============================================================================
+-- v2.0.17: LIGHTWEIGHT DEBUG HELPERS (gated by the "Debug mode" mod config button)
+-- ============================================================================
+-- These are the preferred helpers for all debug print() calls across the mod.
+-- They early-return BEFORE any string work when debug is OFF, so the mod does
+-- not "pesar à toa" (no I/O, no formatting, no console mirroring).
+--
+-- Usage:
+--   _dbg("[BUTLER REVIVE] haunt by ghost=", ghost.prefab, "shadow=", shadow)
+--   _dbgF("[BUTLER COOK] prefab=%s isday=%s owner=%s", prefab, isday, owner)
+--
+-- When debug is OFF (default): both are zero-cost (single boolean check, return).
+-- When debug is ON: behave exactly like print() / print(string.format()).
+-- ============================================================================
+G.WagstaffDbg = function(...)
+    if not G.WagstaffDebugEnabled then return end
+    print(...)
+end
+
+G.WagstaffDbgF = function(fmt, ...)
+    if not G.WagstaffDebugEnabled then return end
+    print(string.format(fmt, ...))
+end
+
 -- [REMOVED] RPC lookup/publish functions — no longer needed.
 -- The engine's built-in skill tree RPC handles everything (matches reference mod pattern).
 
