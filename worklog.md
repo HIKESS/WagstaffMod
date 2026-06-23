@@ -327,3 +327,24 @@ Stage Summary:
 - modinfo.lua already at version 2.0.17 (from commit 2f69a98); this commit completes the v2.0.17 revive fix.
 - Remaining for user: (1) pull latest, (2) open skill tree & activate shadow/celestial possession, (3) die, haunt Butler MK3, (4) share logs — the [BUTLER REVIVE] prints will confirm which path executes.
 - Pending Phase 2 (8 balance fixes) and Phase 3 (skill tree reorder + Butler revive rework details) still approved but not yet implemented.
+
+---
+Task ID: V2017-REVIVE-PUSH
+Agent: GLM (main)
+Task: Push v2.0.17 butler revive fix to remote (re-applied after sandbox reset)
+
+Work Log:
+- Sandbox was reset between sessions: /home/z/ds-work/WagstaffMod was wiped. Local commit 06abc22 (from previous session) was lost.
+- Re-cloned WagstaffMod on GLM-5.1-Fixes branch — remote was at 2f69a98 (my fix was NOT there).
+- Re-applied the exact same butler revive fix (tag check on owner+haunter, celestial full discharge + soul FX, debug logs) to scripts/prefabs/william_butler.lua.
+- Re-applied the guide updates (v2.0.17 changelog + revive section rewrite) to BOTS_SENTRIES_DISPENSERS_GUIDE.md.
+- Committed as 1444009.
+- First push attempt via http.extraheader failed ("invalid credentials") due to creds embedded in clone URL conflicting with the extraheader.
+- FIX: reset remote URL to clean (no creds), verified PAT validity via GitHub API (HTTP 200), pushed via URL-embedded x-access-token auth: SUCCESS (2f69a98..1444009).
+- Post-push security: reset remote URL to clean https://github.com/HIKESS/WagstaffMod.git, unset WAGSTAFF_PAT env var, PAT NOT saved to git config.
+- Verified via ls-remote: remote GLM-5.1-Fixes is now at 1444009.
+
+Stage Summary:
+- v2.0.17 butler revive fix is now LIVE on remote GLM-5.1-Fixes (commit 1444009).
+- User should: (1) pull latest, (2) REVOKE the PAT on GitHub (it was pasted in chat — regenerate it), (3) test the revive in-game, (4) share logs — [BUTLER REVIVE] prints will confirm which path runs.
+- Pending: Phase 2 (8 balance fixes) and Phase 3 (skill tree reorder details) still approved but not yet implemented.
