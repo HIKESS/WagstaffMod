@@ -113,6 +113,16 @@ local function randomtele(inst, on_ocean)
 end
 
 local function teleport(inst)
+    -- v2.0.39: cooldown between teleports to prevent combat/skip abuse.
+    -- TUNING.TELEBRELLA_COOLDOWN is configurable (default 10s). 0 = no cooldown.
+    local cooldown = TUNING.TELEBRELLA_COOLDOWN or 0
+    if cooldown > 0 and inst._telebrella_cooldown_task ~= nil then
+        -- Still on cooldown — emit a subtle "buzz" feedback and abort.
+        if inst.SoundEmitter then
+            inst.SoundEmitter:PlaySound("dontstarve/HUD/click_negative")
+        end
+        return
+    end
     local player = inst.components.inventoryitem.owner 
     local pad = nil
     if canteleport(inst) then
@@ -143,6 +153,13 @@ local function teleport(inst)
         end
     end
     inst.components.finiteuses:Use(1)
+
+    -- v2.0.39: start the cooldown timer (only if a teleport actually happened).
+    if cooldown > 0 then
+        inst._telebrella_cooldown_task = inst:DoTaskInTime(cooldown, function()
+            inst._telebrella_cooldown_task = nil
+        end)
+    end
 end
 
 local function IsRiding(inst)

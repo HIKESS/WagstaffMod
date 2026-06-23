@@ -19,7 +19,7 @@ Features:
 
 id = "wagstaff_standalone"
 author = "Auror4Gam3"
-version = "2.0.37"
+version = "2.0.39"
 
 api_version = 10
 
@@ -179,6 +179,32 @@ configuration_options = {
             {description = "Yes", data = true},
         },
         default = true,
+    },
+    {
+        name = "telebrellauses",
+        label = "Telebrella Uses",
+        hover = "How many teleports per Telebrella before it breaks. Lower = more balanced (teleporting is powerful).",
+        options = {
+            {description = "5 (very limited)",  data = 5},
+            {description = "10 (balanced)",     data = 10},
+            {description = "15 (default)",      data = 15},
+            {description = "25 (generous)",     data = 25},
+            {description = "50 (Hamlet default)", data = 50},
+        },
+        default = 15,
+    },
+    {
+        name = "telebrellacooldown",
+        label = "Telebrella Cooldown",
+        hover = "Seconds between teleports. Prevents spamming teleport to dodge combat or skip content.",
+        options = {
+            {description = "0 (no cooldown)",  data = 0},
+            {description = "5s",               data = 5},
+            {description = "10s (balanced)",   data = 10},
+            {description = "15s",              data = 15},
+            {description = "30s (very strict)", data = 30},
+        },
+        default = 10,
     },
     {
         name = "flickerthreshold",

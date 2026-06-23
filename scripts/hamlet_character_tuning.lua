@@ -85,6 +85,12 @@ else
 	TUNING.WEAKSTOMACHPAIN = GetModConfigData("weakstomachpain")
 	TUNING.TELEBRELLA_SPELLTYPE = GetModConfigData("telebrellaspelltype")
 	TUNING.TELEBRELLA_RANDOM = GetModConfigData("telebrellarandom")
+	-- v2.0.39: finite uses + cooldown to balance the Telebrella. Previously it
+	-- used TUNING.TELEBRELLA_USES from the Hamlet DLC (50 uses), which was far
+	-- too many — a single Telebrella could skip half the map content. Now
+	-- configurable: default 15 uses + 10s cooldown between teleports.
+	TUNING.TELEBRELLA_USES = GetModConfigData("telebrellauses") or 15
+	TUNING.TELEBRELLA_COOLDOWN = GetModConfigData("telebrellacooldown") or 10
 end
 
 TUNING.GOGGLES_RESTRICTED = GetModConfigData("gogglesrestricted")

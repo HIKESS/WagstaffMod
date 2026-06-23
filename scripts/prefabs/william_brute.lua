@@ -819,8 +819,9 @@ inst.components.burnable.ignorefuel = true
         end
 
         -- Override base health and damage
-        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1000)
-        inst.components.health:DoDelta(1000)
+        -- v2.0.39: HP bonus +1000 -> +600 (still the tankiest bot, but not OP).
+        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 600)
+        inst.components.health:DoDelta(600)
         inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BRUTE_DAMAGE + 10)
 
         -- CELESTIAL POSSESSION: "Lunar Guardian" - Aura fogo AZUL + Enlightenment + Cor pulsante
@@ -934,8 +935,8 @@ inst.components.burnable.ignorefuel = true
                 if data and data.attacker and data.attacker:IsValid() then
                     local attacker = data.attacker
                     if attacker.components.health and not attacker.components.health:IsDead() then
-                        -- v2.0.15: 30 -> 50 fire damage (was too weak vs Dispenser MK3 auras)
-                        attacker.components.health:DoDelta(-50, false, "fire")
+                        -- v2.0.39: 50 -> 30 fire damage (was too punishing, back to v2.0.14 value).
+                        attacker.components.health:DoDelta(-30, false, "fire")
                         -- Celestial FX on attacker (azul)
                         local fx = SpawnPrefab("electrichitsparks")
                         if fx then
@@ -971,7 +972,8 @@ inst.components.burnable.ignorefuel = true
 
                 if do_debuff then
                     inst._void_pulse_cooldown = true
-                    inst:DoTaskInTime(8, function() inst._void_pulse_cooldown = nil end)
+                    -- v2.0.39: cooldown 8s -> 12s (AOE -50% damage was too frequent).
+                    inst:DoTaskInTime(12, function() inst._void_pulse_cooldown = nil end)
 
                     -- Central void burst FX at Bouncer: massive shadow_puff_large_front explosion
                     if inst.SoundEmitter then
@@ -1006,19 +1008,23 @@ inst.components.burnable.ignorefuel = true
         end
         inst:ListenForEvent("attacked", OnAttackedMK2)
 
-        -- SHADOW POSSESSION: Planar immunity + shadow creatures target priority during dusk
+        -- SHADOW POSSESSION: shadow creatures target priority during dusk
+        -- v2.0.39: REMOVED planardefense from Shadow path. planardefense is now
+        -- EXCLUSIVELY a Celestial trait (line 838) — this creates a real trade-off:
+        --   Celestial Brute = anti-planar tank (imune a dano planar de lunar weapons)
+        --   Shadow Brute    = anti-shadow tank (shadowlure + counter shadow + Void Weaken)
+        -- Before, the Shadow Brute had BOTH planar immunity AND shadow attraction,
+        -- making it strictly better than the Celestial version. Now each affinity
+        -- has a clear defensive niche.
         inst:DoPeriodicTask(5, function()
             if TheWorld.state.isdusk and OwnerHasShadow(inst) then
-                -- Add planar immunity
-                inst:AddTag("planardefense")
-                -- Add groundpound immune
+                -- Add groundpound immune (keeps Shadow Brute viable vs Deer Clops etc.)
                 inst:AddTag("groundpoundimmune")
                 -- Attract shadow creatures as absolute priority target
                 inst:AddTag("shadowlure")
                 inst:AddTag("shadowcreature_target")
             else
-                -- Remove effects when not night
-                inst:RemoveTag("planardefense")
+                -- Remove effects when not dusk
                 inst:RemoveTag("groundpoundimmune")
                 inst:RemoveTag("shadowlure")
                 inst:RemoveTag("shadowcreature_target")

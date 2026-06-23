@@ -97,16 +97,29 @@ local function SpawnShadowClone(parent_buster)
         end
     end)
     
-    -- Set up combat stats (50% of parent)
+    -- Set up combat stats.
+    -- v2.0.39: clone damage 50% -> 35% of parent. Combined with the v2.0.38
+    -- change (clone now HUNTS shadow creatures), 50% was too strong — the clone
+    -- could solo-kill Terrorbeaks faster than the parent. 35% keeps it as a
+    -- support fighter, not a replacement for the parent.
     if clone.components.combat then
         local parent_damage = parent_buster.components.combat and parent_buster.components.combat.defaultdamage or TUNING.WILLIAM_BUSTER_DAMAGE
-        clone.components.combat:SetDefaultDamage(parent_damage * 0.5)
+        clone.components.combat:SetDefaultDamage(parent_damage * 0.35)
     end
-    
-    -- Make health invincible (shadow clone takes no damage)
+
+    -- v2.0.39: clone HP is now FINITE (50% of parent max HP) instead of
+    -- invincible. An immortal clone that also hunts shadows (v2.0.38) had no
+    -- trade-off. Now the clone can die if focused by enemies — the player must
+    -- position the parent well to keep the clone alive. Still absorbs damage
+    -- (50% absorption) so it's tanky but not unkillable.
     if clone.components.health then
-        clone.components.health:SetInvincible(true)
-        clone.components.health:SetAbsorptionAmount(1)
+        local parent_maxhp = parent_buster.components.health and parent_buster.components.health.maxhealth or TUNING.WILLIAM_BUSTER_HEALTH
+        clone.components.health:SetMaxHealth(parent_maxhp * 0.5)
+        clone.components.health:SetAbsorptionAmount(0.5)
+        -- Keep health regen so the clone recovers between fights (parent has regen too).
+        if clone.components.health.StartRegen then
+            clone.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN or 5, TUNING.WILLIAM_ROBOT_REGENPERIOD or 5)
+        end
     end
     
     -- Don't consume fuel (it's a shadow manifestation)
@@ -114,9 +127,14 @@ local function SpawnShadowClone(parent_buster)
         clone.components.fueled:StopConsuming()
     end
     
-    -- Tag as shadow clone
+    -- Tag as shadow clone.
+    -- v2.0.38: REMOVED "shadowcreature" tag. That tag made hostile shadow
+    -- monsters (Terrorbeak, Crawling Horror) treat the clone as a friendly
+    -- (shadow-vs-shadow immunity) AND prevented the clone's combat from
+    -- targeting them. Now the clone is a shadow-THEMED bot (visual only),
+    -- not a shadow-ALIGNED entity — so it can hunt shadow creatures like
+    -- any normal bot, and shadow creatures will fight back normally.
     clone:AddTag("shadow_buster_clone")
-    clone:AddTag("shadowcreature")
     clone:AddTag("NOCLICK") -- Can't be clicked/interacted with
     
     -- CRITICAL: Do not save this clone - it should always be recreated on load
@@ -127,18 +145,70 @@ local function SpawnShadowClone(parent_buster)
         clone.components.follower:SetLeader(parent_buster)
     end
     
-    -- Configure combat retarget to attack parent's target
+    -- Configure combat retarget to attack parent's target + nearby shadow creatures.
+    -- v2.0.38: the clone now HUNTS shadow creatures (Terrorbeaks, Crawling Horrors)
+    -- that are menacing the player or the parent bot. This makes the Buster's
+    -- shadow clone a proper anti-shadow fighter, not just a mirror of the parent.
     if clone.components.combat then
-        -- Clear default retarget and set new one
         clone.components.combat:SetRetargetFunction(1, function(inst)
-            -- Check parent_buster target
-            if parent_buster:IsValid() and parent_buster.components.combat then
+            if not parent_buster:IsValid() then return nil end
+
+            -- 1) Priority: parent's current target (unchanged behavior).
+            if parent_buster.components.combat then
                 local parent_target = parent_buster.components.combat.target
-                if parent_target and parent_target:IsValid() and not parent_target:IsInLimbo() then
+                if parent_target and parent_target:IsValid() and not parent_target:IsInLimbo()
+                    and not parent_target:IsDead() then
                     return parent_target
                 end
             end
+
+            -- 2) Hunt shadow creatures near the parent that are hunting the player
+            --    or any willminion. Tags: "shadow" (Terrorbeak, Crawling Horror,
+            --    Night Hands etc.) + "_combat" (has a combat component).
+            --    The clone itself is tagged "shadowcreature" but NOT "shadow", so
+            --    it won't retarget itself or other buster clones.
+            local px, py, pz = parent_buster.Transform:GetWorldPosition()
+            local shadow_target = FindEntity(
+                parent_buster, 8,
+                function(guy)
+                    if not guy:IsValid() or guy:IsInLimbo() then return false end
+                    if not guy:HasTag("shadow") then return false end
+                    if guy.components.health == nil or guy.components.health:IsDead() then return false end
+                    if guy.components.combat == nil then return false end
+                    -- Only target shadows that are actively menacing the player
+                    -- or one of the player's bots (willminion). This prevents
+                    -- the clone from chasing passive shadow flora/decorations.
+                    local t = guy.components.combat.target
+                    if t == nil then return false end
+                    return t:HasTag("player") or t:HasTag("willminion")
+                end,
+                { "shadow", "_combat" },  -- MUST have these
+                { "INLIMBO", "shadow_buster_clone", "companion", "player" }  -- EXCLUDE these
+            )
+            if shadow_target then
+                return shadow_target
+            end
+
             return nil
+        end)
+
+        -- v2.0.38: Override CanTarget so the clone can attack shadow creatures.
+        -- By default, combat:CanTarget returns false for entities sharing the
+        -- "shadowcreature" tag (shadow-vs-shadow immunity). Since our clone IS
+        -- tagged shadowcreature (for visual/behavior), we need a custom CanTarget
+        -- that explicitly allows targeting the hostile shadow monsters.
+        clone.components.combat.canretarget = true
+        -- We can't easily override the method, but the SetRetargetFunction above
+        -- returns the target directly (bypassing CanTarget for retarget). The
+        -- keeptargetfn below also bypasses it by always returning true while the
+        -- target is alive and near.
+        clone.components.combat:SetKeepTargetFunction(function(inst, target)
+            if not target or not target:IsValid() then return false end
+            if target:IsInLimbo() then return false end
+            if target.components.health == nil or target.components.health:IsDead() then return false end
+            -- Stay on target while parent is alive and we're within leash range
+            if not parent_buster:IsValid() then return false end
+            return true
         end)
     end
     
@@ -147,13 +217,30 @@ local function SpawnShadowClone(parent_buster)
         clone.components.named:SetName("Shadow Buster")
     end
     
-    -- Monitor dusk state and parent health - REMOVE when dusk ends or parent dies
+    -- Monitor dusk state, parent health, and CLONE health.
+    -- v2.0.39: clone now has finite HP — also despawn when the clone itself dies
+    -- (instead of leaving a corpse that lingers until dusk ends).
     clone:DoPeriodicTask(0.5, function()
         if not parent_buster:IsValid() or not clone:IsValid() then
             if clone:IsValid() then clone:Remove() end
             return
         end
-        
+
+        -- v2.0.39: if the clone's HP ran out, despawn it with the shadow FX
+        -- (don't leave a dead clone body hanging around).
+        if clone.components.health and clone.components.health:IsDead() then
+            local remove_fx = SpawnPrefab("shadow_despawn")
+            if remove_fx then
+                local cx, cy, cz = clone.Transform:GetWorldPosition()
+                remove_fx.Transform:SetPosition(cx, cy, cz)
+                if remove_fx.SoundEmitter then
+                    remove_fx.SoundEmitter:KillAllSounds()
+                end
+            end
+            clone:Remove()
+            return
+        end
+
         -- Check if dusk ended (not dusk anymore) or parent is dead
         if not TheWorld.state.isdusk or not parent_buster.components.health or parent_buster.components.health:IsDead() then
             -- FX: shadow despawn (NO SOUND)
