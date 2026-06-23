@@ -3181,6 +3181,15 @@ AddSimPostInit(function()
 
     STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_TELEPORTERBUILT = "Teleportation matrix established!"
 
+    -- v2.0.17: announce strings for when these structures are HAMMERED/destroyed.
+    -- Previously missing — caused "STRING UNKNOWN" / broken text when the player
+    -- hammered a dispenser, sentry, or teleporter entrance/exit.
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_DISPENSER_DOWN = "My dispensing unit! Reduced to scrap."
+
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_SENTRY_DOWN = "My turret! Downed in the line of duty."
+
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_TELEPORTER_DOWN = "The teleportation link has been severed!"
+
     -- Skill tree column titles
 
     if not STRINGS.SKILLTREE then STRINGS.SKILLTREE = {} end
