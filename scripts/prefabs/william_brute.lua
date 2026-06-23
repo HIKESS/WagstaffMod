@@ -482,11 +482,24 @@ local PLACER_SCALE = 1.5
         inst:AddTag("companion")
         inst:AddTag("NOBLOCK")
         inst:AddTag("mech")
-        inst:AddTag("buster")
+        inst:AddTag("brute")
         inst:AddTag("ebuild_wrenchable")
 
     inst._task = nil
     inst.on = nil
+
+        -- v2.0.36 FIX: hover display on CLIENT (same fix as butler/buster).
+        -- displaynamefn has the HIGHEST priority, runs on both server+client
+        -- before the ismastersim return, forces hover to use named/replica.
+        inst.displaynamefn = function(inst)
+            if inst.components.named ~= nil then
+                return inst.components.named.name
+            end
+            if inst.replica.named ~= nil then
+                return inst.replica.named.name
+            end
+            return inst.name
+        end
 
         inst.entity:SetPristine()
 
@@ -1012,7 +1025,7 @@ inst.components.burnable.ignorefuel = true
             end
         end)
 
-        -- Named with status (upgrade progress for MK3)
+        -- Named with status (v2.0.36: upgrade progress removed from name)
         inst.upgradelevel_mk3 = 0
         local function UpdateBrute2Name(inst)
             if inst.prefab == "williambrute3" then return end
@@ -1020,8 +1033,9 @@ inst.components.burnable.ignorefuel = true
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 90") or ""
-            local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+            -- v2.0.36: upgrade progress removed from name (should only show
+            -- with skill + wrench, via the wrench upgrade interaction).
+            local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
             inst.components.named:SetName(displayname)
             inst.name = displayname
             inst.GetDisplayName = function() return displayname end
