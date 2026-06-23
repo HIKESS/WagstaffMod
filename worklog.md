@@ -403,3 +403,39 @@ Stage Summary:
 - v2.0.17 debug gating is now LIVE on remote GLM-5.1-Fixes (commit 637f386).
 - All 164 debug prints across the mod are now gated by the "Debug mode" config button (default OFF = zero cost).
 - PAT still valid (was NOT revoked despite being pasted in chat previously) — user should still revoke it for safety.
+
+---
+Task ID: V2017-STRING-UNKNOWN-FIX
+Agent: GLM (main)
+Task: Fix "STRING UNKNOWN" broken text when hammering dispenser/sentry/teleporter
+
+Work Log:
+- User reported: when hammering the dispenser or teleporter entrance/exit, the character says broken text like "string unknown".
+- Investigated onhammered/ondeath callbacks in:
+    dispenser.lua:343        — calls GetString(v, "ANNOUNCE_DISPENSER_DOWN")
+    esentry.lua:432 (ondeath) — calls GetString(v, "ANNOUNCE_SENTRY_DOWN")
+    eteleporter.lua:140      — calls GetString(v, "ANNOUNCE_TELEPORTER_DOWN")
+    eteleporter_exit.lua:128 — calls GetString(v, "ANNOUNCE_TELEPORTER_DOWN")
+- Grepped the entire mod for these 3 ANNOUNCE_*_DOWN keys: NONE were defined anywhere.
+  The existing ANNOUNCE_*BUILT strings (DISPENSERBUILT, SENTRYBUILT, TELEPORTERBUILT)
+  WERE defined in modmain.lua ~line 3178-3182, but the matching "_DOWN" variants
+  were missing → DST falls back to showing the raw key / "STRING UNKNOWN".
+- FIX: added 3 missing announce strings to modmain.lua right after ANNOUNCE_TELEPORTERBUILT:
+    ANNOUNCE_DISPENSER_DOWN  = "My dispensing unit! Reduced to scrap."
+    ANNOUNCE_SENTRY_DOWN     = "My turret! Downed in the line of duty."
+    ANNOUNCE_TELEPORTER_DOWN = "The teleportation link has been severed!"
+  Tone matches the existing Wagstaff inventor voice (short, technical, mildly dramatic).
+- Cross-checked ALL ANNOUNCE_ references in prefab/component code against definitions
+  in modmain.lua + speech_wagstaff.lua. The 5 remaining "missing from modmain" keys
+  (ANNOUNCE_BAD_STOMACH, ANNOUNCE_EAT, ANNOUNCE_MYSTERY_*, ANNOUNCE_PUTONGOGGLES_*)
+  are all correctly defined in speech_wagstaff.lua (character speech file) — verified
+  8 occurrences. No other missing strings remain.
+- Verified modmain.lua syntax with luaparse: SYNTAX OK.
+- Committed as 7b05d95. Pushed to origin/GLM-5.1-Fixes: SUCCESS (637f386..7b05d95).
+- Post-push security: reset remote URL to clean (no creds), unset WAGSTAFF_PAT env var.
+
+Stage Summary:
+- v2.0.17 string fix is now LIVE on remote GLM-5.1-Fixes (commit 7b05d95).
+- Hammering a dispenser, sentry (ondeath), or teleporter entrance/exit now shows
+  a proper character line instead of broken "STRING UNKNOWN" text.
+- All other ANNOUNCE_ strings verified present — no other broken-text bugs remain.
