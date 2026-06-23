@@ -603,8 +603,9 @@ inst.components.burnable.ignorefuel = true
         local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
         local hp = math.floor(inst.components.health.currenthealth)
         local maxhp = math.floor(inst.components.health.maxhealth)
-        -- v2.0.33: upgrade progress removed from name.
-        local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
+        -- v2.0.40: show MK2 upgrade progress only while in progress (>0).
+        local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. "/75") or ""
+        local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
         inst.components.named:SetName(displayname)
         inst.name = displayname
         inst.GetDisplayName = function() return displayname end
@@ -1039,9 +1040,9 @@ inst.components.burnable.ignorefuel = true
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            -- v2.0.36: upgrade progress removed from name (should only show
-            -- with skill + wrench, via the wrench upgrade interaction).
-            local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
+            -- v2.0.40: show MK3 upgrade progress only while in progress (>0).
+            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. "/90") or ""
+            local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
             inst.components.named:SetName(displayname)
             inst.name = displayname
             inst.GetDisplayName = function() return displayname end
