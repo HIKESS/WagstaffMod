@@ -546,7 +546,17 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_shadow_possession = {
             name = "wagstaff_shadow_possession",
             title = "Shadow's Embrace",
-            desc = "Your inventions embrace the shadows during dusk.",
+            desc = "Your inventions embrace the shadows during dusk."
+            .. "\n"
+            .. ""
+            .. "\n"
+            .. "Butler: Haunting the MK III revives you with full HP and grants a Shadow Buff for 60s (+50% damage, +20% attack speed, +15% move speed, 15% lifesteal)."
+            .. "\n"
+            .. "Buster: Summons a Shadow Clone with 50% strength, immune to damage. Destroyed at day or when Buster dies."
+            .. "\n"
+            .. "Bouncer: Immune to planar damage + Bearger's Shovelwave. Shadow creatures target him as absolute priority."
+            .. "\n"
+            .. "Battery: Chain lightning causes fear (2-3s)",
             icon = "wolfgang_allegiance_shadow_3",
             pos = { 205.8, 91.9 },
             group = "allegiance",
@@ -564,7 +574,17 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_celestial_possession = {
             name = "wagstaff_celestial_possession",
             title = "Moon's Blessing",
-            desc = "Your inventions draw strength from the moon during the day.",
+            desc = "Your inventions draw strength from the moon during the day."
+            .. "\n"
+            .. ""
+            .. "\n"
+            .. "Butler: Foods restore 40% HP based on hunger value (day only). Haunting the MK III revives you with FULL HP, +100 max HP and 25% damage absorption for 60s (sanity/hunger not restored)."
+            .. "\n"
+            .. "Buster: Explosive punch gains AOE (light explosion)"
+            .. "\n"
+            .. "Bouncer: Heat aura. When hit, deals 25 fire damage to all enemies in aggro radius."
+            .. "\n"
+            .. "Battery: Light orb grants full sanity protection",
             icon = "wolfgang_allegiance_lunar_3",
             pos = { 150.2, 91.3 },
             group = "allegiance",

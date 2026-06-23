@@ -419,9 +419,8 @@ local function onload(inst, data)
                 local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
                 local hp = math.floor(inst.components.health.currenthealth)
                 local maxhp = math.floor(inst.components.health.maxhealth)
-                -- v2.0.36: upgrade progress removed from name (should only show
-                -- with skill + wrench, via the wrench upgrade interaction).
-                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp)
+                local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 150") or ""
+                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str)
             end
             UpdateBallistic2Name(inst)
         elseif inst.prefab == "williamballistic3" and inst.components.named then
@@ -479,18 +478,6 @@ end
 
         inst.level = 0
 
-        -- v2.0.36 FIX: hover display on CLIENT (same fix as butler/buster).
-        -- displaynamefn has the HIGHEST priority, runs on both server+client
-        -- before the ismastersim return, forces hover to use named/replica.
-        inst.displaynamefn = function(inst)
-            if inst.components.named ~= nil then
-                return inst.components.named.name
-            end
-            if inst.replica.named ~= nil then
-                return inst.replica.named.name
-            end
-            return inst.name
-        end
 
         inst.entity:SetPristine()
 
@@ -888,9 +875,8 @@ end
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            -- v2.0.36: upgrade progress removed from name (should only show
-            -- with skill + wrench, via the wrench upgrade interaction).
-            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
+            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 150") or ""
+            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
             inst.components.named:SetName(name_str)
             inst.name = name_str
             inst.GetDisplayName = function() return name_str end

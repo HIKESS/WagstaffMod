@@ -11,16 +11,13 @@
 --   - 25% damage absorption for the duration.
 --   - 5 HP/sec regen for the duration (drives the health-badge up-arrow).
 --   - Duration: 60s.
---   - FX (v2.0.36): TWO visual layers —
---       1) A BRIEF `forcefield` FX (self-removes ~2-3s) synced with the revive
---          animation (ghost->body materialization at 0.6s). Gives the "clouds"
---          visual on revive only, then auto-removes so it does NOT persist
---          and clash with UI panels (skill tree, crafting menu, etc.).
---       2) A persistent player tint (celestial blue glow on the player's own
---          AnimState) for the full 60s. Renders in the world layer, properly
---          hidden behind UI panels (same approach as the shadow buff tint).
---     The old design used a PERSISTENT forcefieldfx (60s) which rendered
---     through the skill tree UI background (z-order bug). See v2.0.36 changelog.
+--   - FX: ruinshat-style shield using the PERSISTENT `forcefieldfx` prefab
+--         (NOT `forcefield` which self-removes after ~2-3s). `forcefieldfx`
+--         stays until explicitly Remove()'d, so NO continuous respawns are
+--         needed — spawn once, parent to player, tint celestial blue, remove
+--         on expiry. Reference: "Bone Armor: Shield FX" mod (workshop 2832660562).
+--         Initial spawn at 0.6s to sync with the ghost->body materialization
+--         (the revive animation delay), so the shield does NOT appear on the ghost.
 --
 -- SHADOW (wagstaff_shadow_possession tag):
 --   - NO clone. (All clone-spawn logic removed in v2.0.24.)
@@ -154,36 +151,23 @@ local function ApplyCelestialBuff(player)
     if player._wagstaff_celestial_expire_task then
         player._wagstaff_celestial_expire_task:Cancel()
     end
-    -- Restore any previous tint before re-applying (no compound tints on re-revive).
-    if player.AnimState and player._wagstaff_celestial_tinted then
-        player.AnimState:SetMultColour(1, 1, 1, 1)
-        player.AnimState:SetAddColour(0, 0, 0, 0)
-        player._wagstaff_celestial_tinted = nil
-    end
 
-    -- v2.0.36 FIX: The persistent forcefieldfx shield (60s) was rendering
-    -- through/behind the skill tree UI background (z-order issue — the
-    -- forcefieldfx prefab uses a render layer that shows through UI panels).
-    -- Now the celestial buff uses TWO visual layers:
-    --   1) A BRIEF `forcefield` FX (self-removes in ~2-3s) synced with the
-    --      revive animation — gives the "clouds" visual on revive only.
-    --   2) A persistent player tint (celestial blue glow on the player's own
-    --      AnimState) for the full 60s — renders in the world layer, properly
-    --      hidden behind UI panels (same approach as the shadow buff tint).
-    -- This eliminates the "clouds behind the skill tree" issue while keeping
-    -- a clear visual indicator that the celestial buff is active.
-
-    -- 1) Brief revive animation FX (forcefield self-removes after ~2-3s).
+    -- FX: PERSISTENT forcefieldfx shield (NOT forcefield which self-removes).
+    -- Reference: "Bone Armor: Shield FX" mod (workshop 2832660562) — uses
+    -- forcefieldfx, parents to owner, disables the Light, tints via SetMultColour.
+    -- forcefieldfx stays until Remove(), so NO continuous respawns are needed.
+    -- Spawn at 0.6s to sync with the revive animation (ghost->body materialization).
     player:DoTaskInTime(0.6, function()
         if not player:IsValid() or not player.entity then return end
-        -- Remove any leftover brief shield from a previous buff.
+        -- Remove any leftover shield from a previous buff.
         if player._wagstaff_celestial_shield_fx and player._wagstaff_celestial_shield_fx:IsValid() then
             player._wagstaff_celestial_shield_fx:Remove()
         end
-        local fx = G.SpawnPrefab("forcefield")
+        local fx = G.SpawnPrefab("forcefieldfx")
         if fx then
             fx.entity:SetParent(player.entity)
-            -- Disable the Light component (default white light looks wrong).
+            -- Disable the Light component (reference mod does this — the default
+            -- light is white and looks wrong on a blue shield).
             if fx.Light then
                 fx.Light:Enable(false)
             end
@@ -193,37 +177,21 @@ local function ApplyCelestialBuff(player)
                 fx.AnimState:SetAddColour(0.1, 0.2, 0.45, 0)
             end
             player._wagstaff_celestial_shield_fx = fx
-            _dbgF("[AFFINITY] Celestial: brief forcefield spawned (auto-removes ~2-3s), parent=%s", tostring(player.prefab))
+            _dbgF("[AFFINITY] Celestial: forcefieldfx spawned (persistent), parent=%s", tostring(player.prefab))
         else
-            _dbg("[AFFINITY] Celestial: WARN — SpawnPrefab('forcefield') returned nil")
+            _dbg("[AFFINITY] Celestial: WARN — SpawnPrefab('forcefieldfx') returned nil")
         end
     end)
-
-    -- 2) Persistent player tint (celestial blue glow) for the full 60s buff.
-    --    This renders on the player's own AnimState (world layer), so it is
-    --    properly hidden behind UI panels like the skill tree.
-    if player.AnimState then
-        player.AnimState:SetMultColour(0.70, 0.80, 1.00, 1.0)
-        player.AnimState:SetAddColour(0.08, 0.12, 0.25, 0)
-        player._wagstaff_celestial_tinted = true
-    end
 
     -- Expire the buff after the duration.
     player._wagstaff_celestial_expire_task = player:DoTaskInTime(CELESTIAL_DURATION, function()
         if not player:IsValid() then return end
         _dbg("[AFFINITY] Celestial: buff expiring")
-        -- Remove the brief shield FX if still alive (forcefield usually
-        -- self-removes in ~2-3s, but clear the reference just in case).
+        -- Remove the shield FX (forcefieldfx is persistent — must Remove()).
         if player._wagstaff_celestial_shield_fx and player._wagstaff_celestial_shield_fx:IsValid() then
             player._wagstaff_celestial_shield_fx:Remove()
         end
         player._wagstaff_celestial_shield_fx = nil
-        -- Clear the persistent celestial tint.
-        if player.AnimState and player._wagstaff_celestial_tinted then
-            player.AnimState:SetMultColour(1, 1, 1, 1)
-            player.AnimState:SetAddColour(0, 0, 0, 0)
-            player._wagstaff_celestial_tinted = nil
-        end
         -- v2.0.29 FIX: Health component has no :IsAlive() method (crash at line 194
         -- in v2.0.27/v2.0.28). The canonical DST API is :IsDead(). Use the inverse.
         if health and not health:IsDead() then

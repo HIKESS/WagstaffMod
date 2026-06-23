@@ -820,7 +820,7 @@ inst.components.burnable.ignorefuel = true
                 _dbg("[DEBUG UPGRADE] Removendo bot antigo...")
                 inst:Remove()
             else
-                _dbg("[DEBUG UPGRADE] Upgrade em andamento... falta", 50 - inst.upgradelevel, "para completar")
+                _dbg("[DEBUG UPGRADE] Upgrade em andamento... falta", 85 - inst.upgradelevel, "para completar")
             end
         end)
 
