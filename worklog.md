@@ -439,3 +439,41 @@ Stage Summary:
 - Hammering a dispenser, sentry (ondeath), or teleporter entrance/exit now shows
   a proper character line instead of broken "STRING UNKNOWN" text.
 - All other ANNOUNCE_ strings verified present — no other broken-text bugs remain.
+
+---
+Task ID: EXAMINE-QUOTES
+Agent: Main (Z.ai Code)
+Task: Add custom examination (DESCRIBE) quotes for Wagstaff bots/structures that currently fall back to the generic "It's a thing." line. User provided specific quotes for 11 items.
+
+Work Log:
+- Read /home/z/my-project/worklog.md to understand prior context (WagstaffMod DST mod at /home/z/ds-work/WagstaffMod/).
+- Explored mod structure: located speech_wagstaff.lua (Wagstaff's speech file, 5834 lines) and modmain.lua (which registers GENERIC DESCRIBE entries for engineer buildings).
+- Identified prefab names from prefab files:
+    Butler Bot -> williambutler / williambutler2 / williambutler3
+    Brute Bot  -> williambrute / williambrute2 / williambrute3
+    Buster Bot -> williambuster / williambuster2 / williambuster3
+    Ballistic  -> williamballistic / williamballistic2 / williamballistic3
+    Sentry Gun -> esentry
+    Dispenser  -> dispenser
+    Telepad    -> telipad (vanilla Wagstaff receiver pad)
+    Teleporter Entrance -> eteleporter
+    Teleporter Exit     -> eteleporter_exit
+    Telebrella -> telebrella
+    Thumper     -> thumper
+- Found existing GENERIC DESCRIBE entries in modmain.lua (lines 3148-3154) for ESENTRY/DISPENSER/ETELEPORTER/ETELEPORTER_EXIT (functional descriptions), but NO entries for the 4 bots -> bots showed "It's a thing." fallback.
+- Found existing Wagstaff DESCRIBE entries for TELEBRELLA (line 4629), TELIPAD (line 4648), THUMPER (line 4679) with old quotes; user provided replacement quotes.
+- Edited scripts/speech_wagstaff.lua (Wagstaff's DESCRIBE section) with MultiEdit:
+    * Inserted DISPENSER = "My favorite kind of investment." (line 1841, alphabetical D section)
+    * Inserted ESENTRY = "Always watching.", ETELEPORTER = "The journey starts here.", ETELEPORTER_EXIT = "You've arrived. Probably." (lines 1971-1973, E section)
+    * Replaced TELEBRELLA quote -> "Weather is simply another engineering problem." (line 4633)
+    * Replaced TELIPAD quote -> "Spatial relocation begins here." (line 4652)
+    * Replaced THUMPER quote -> "Elegance hidden beneath brute force." (line 4683)
+    * Inserted WILLIAM* block (12 entries: 4 bots x MK1/MK2/MK3) between WILDBOREHOUSE and WILLOW (lines 5190-5201), each bot's 3 variants sharing the user's quote.
+- Edited modmain.lua: added GENERIC DESCRIBE entries for all 12 bot prefab variants (WILLIAMBUTLER/2/3, WILLIAMBRUTE/2/3, WILLIAMBUSTER/2/3, WILLIAMBALLISTIC/2/3) with character-neutral functional descriptions so non-Wagstaff characters also get a proper line instead of "It's a thing."
+- Verified bracket balance on both files (braces balanced 512/512 and 143/143) and confirmed all 11 new/replaced Wagstaff entries are present at expected line numbers.
+
+Stage Summary:
+- Wagstaff now speaks the user's custom quotes when examining all 11 items (Butler/Brute/Buster/Ballistic bots incl. MK2/MK3, Sentry Gun, Dispenser, Telipad, Teleporter Entrance/Exit, Telebrella, Thumper).
+- Non-Wagstaff characters get functional GENERIC descriptions for the 4 bots (new) and keep their existing ESENTRY/DISPENSER/ETELEPORTER/ETELEPORTER_EXIT descriptions.
+- No gameplay/logic changes; pure string additions/replacements. Safe to hotreload or restart.
+- Files modified: scripts/speech_wagstaff.lua, modmain.lua.
