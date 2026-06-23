@@ -1838,6 +1838,7 @@ return{
 		DIRTPILE = "I speculate that dirt pile is newly formed.",
 		DISARMING_KIT = "An aid in negotiating those violent booby traps.",
 		DISGUISEHAT = "Theoretically, this is what passes for a disguise here.",
+		DISPENSER = "My favorite kind of investment.",
 		DIVININGROD =
 		{
 			COLD = "I've tuned in to a low frequency signal!",
@@ -1967,6 +1968,9 @@ return{
 			OLDLIGHT = "Its bioluminescence is diminishing",
 			WILTED = "In need of replacement flora",
 		},
+		ESENTRY = "Always watching.",
+		ETELEPORTER = "The journey starts here.",
+		ETELEPORTER_EXIT = "You've arrived. Probably.",
 		EVERGREEN =
 		{
 			BURNING = "Undergoing an exothermic redox reaction.",
@@ -4626,7 +4630,7 @@ return{
 			GEMS = "Requires stones of an amaranthine color.",
 			VALID = "A focus for spacetime manipulation.",
 		},
-		TELEBRELLA = "A short range, aerial teleportation antenna in convenient-to-carry umbrella form.",
+		TELEBRELLA = "Weather is simply another engineering problem.",
 		TELEPORTATO_BASE =
 		{
 			ACTIVE = "An inspired design! I must remember it for building future portals!",
@@ -4645,7 +4649,7 @@ return{
 		TELEPORTATO_SW_RING = "It's inelegant, but it will still work.",
 		TELESCOPE = "The glass bottle makes an uncommonly good looking glass.",
 		TELESTAFF = "So it is possible to bend three dimensional space. I knew it!",
-		TELIPAD = "The receiver pad for my short range teleportation device.",
+		TELIPAD = "Spatial relocation begins here.",
 		TENT =
 		{
 			BURNT = "It's fortuitous I was not in it at the time.",
@@ -4676,7 +4680,7 @@ return{
 		THATCHPACK = "Palm leaves make for an outstanding building material.",
 		THULECITE = "That captivating dark fuel is concentrated in these stones.",
 		THULECITE_PIECES = "Discharging small packets of dark energy.",
-		THUMPER = "Delivers a pragmatic shock wave of ground reverberations.",
+		THUMPER = "Elegance hidden beneath brute force.",
 		THUNDERBIRD = "A stunning creature with an unusual command of electrostatic energy.",
 		THUNDERBIRDNEST = "Those birds appear to be incubating deposits of iron!",
 		THUNDERHAT = "A lightning rod mere inches from my brain. What an intriguing experiment!",
@@ -5183,6 +5187,18 @@ return{
 		WILDBORE = "A pig humanoid creature. Evidently belongs to the hirsute variant. ",
 		WILDBOREHEAD = "Curious. Evidence suggests it's linked to this planet's satellite.",
 		WILDBOREHOUSE = "Rudimentary, but quite sound structurally.",
+		WILLIAMBALLISTIC = "Peak automated lightning power.",
+		WILLIAMBALLISTIC2 = "Peak automated lightning power.",
+		WILLIAMBALLISTIC3 = "Peak automated lightning power.",
+		WILLIAMBRUTE = "Sometimes the best solution is simply more armor.",
+		WILLIAMBRUTE2 = "Sometimes the best solution is simply more armor.",
+		WILLIAMBRUTE3 = "Sometimes the best solution is simply more armor.",
+		WILLIAMBUSTER = "Violence, carefully engineered.",
+		WILLIAMBUSTER2 = "Violence, carefully engineered.",
+		WILLIAMBUSTER3 = "Violence, carefully engineered.",
+		WILLIAMBUTLER = "Remarkably efficient.",
+		WILLIAMBUTLER2 = "Remarkably efficient.",
+		WILLIAMBUTLER3 = "Remarkably efficient.",
 		WILLOW =
 		{
 			ATTACKER = "%s has decided to engage in combat. ",

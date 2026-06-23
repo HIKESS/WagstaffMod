@@ -3153,6 +3153,20 @@ AddSimPostInit(function()
 
     STRINGS.CHARACTERS.GENERIC.DESCRIBE.ETELEPORTER_EXIT = "The teleportation destination."
 
+    -- Wagstaff automation bots (MK1/MK2/MK3 variants share the same generic description)
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBUTLER = "An automated servant bot. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBUTLER2 = "An automated servant bot. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBUTLER3 = "An automated servant bot. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBRUTE = "A heavy combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBRUTE2 = "A heavy combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBRUTE3 = "A heavy combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBUSTER = "A combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBUSTER2 = "A combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBUSTER3 = "A combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBALLISTIC = "An electric combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBALLISTIC2 = "An electric combat automaton. Use wrench to upgrade."
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE.WILLIAMBALLISTIC3 = "An electric combat automaton. Use wrench to upgrade."
+
     STRINGS.CHARACTERS.GENERIC.DESCRIBE.REFINERY_BOARDS = "Give it logs to produce boards. (2:1)"
 
     STRINGS.CHARACTERS.GENERIC.DESCRIBE.REFINERY_PAPYRUS = "Give it cut reeds to produce papyrus. (2:1)"
