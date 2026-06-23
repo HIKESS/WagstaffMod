@@ -1172,27 +1172,51 @@ inst.components.burnable.ignorefuel = true
             return false
         end
 
-        -- v2.0.17: Celestial "soul leaving" FX for the discharge/revive moment.
-        -- Uses LIGHT, celestial-themed effects (white-blue shield + ascending
-        -- sparkles + a light flash that fades) — deliberately NOT shadow/dark FX.
+        -- v2.0.18: Celestial discharge FX for the revive moment.
+        -- Reworked: removed ghostlyelixir_shield_fx + sparklefx (didn't fit the
+        -- "machine discharging" theme). Now uses lunar-aligned white FX:
+        --   - archive_lockbox_dispawn_fx (white dissolve = energy dissolving away)
+        --   - moonstorm_spark (white sparks = energy escaping the chassis)
+        -- Plus a custom celestial light flash (white-blue, fades) — not a prefab,
+        -- so it doesn't conflict with any FX table.
+        -- Anti-stacking: SpawnUnique skips spawning if an FX of the same prefab
+        -- already exists within 1.5 units (prevents duplicate FX when revive is
+        -- triggered repeatedly / haunt spam).
         local function PlayCelestialDischargeFX(pt)
             local x, y, z = pt.x, pt.y, pt.z
-            -- Celestial light shield (matches the MK3 menu affinity FX)
-            local shield = _G.SpawnPrefab("ghostlyelixir_shield_fx")
-            if shield then
-                shield.Transform:SetPosition(x, y + 0.5, z)
-                shield.Transform:SetScale(1.3, 1.3, 1.3)
-                if shield.AnimState then
-                    shield.AnimState:SetMultColour(1, 1, 1, 0.8)
+
+            -- Helper: spawn FX only if no existing FX of the same prefab is nearby.
+            -- "não repetir fx se já estiver em alguém" — prevents stacking.
+            local function SpawnUnique(prefab_name, offset_y, scale)
+                offset_y = offset_y or 0
+                scale = scale or 1
+                local nearby = _G.TheSim:FindEntities(x, y, z, 1.5)
+                for _, ent in ipairs(nearby) do
+                    if ent.prefab == prefab_name then
+                        return nil -- already present nearby, skip
+                    end
                 end
+                local fx = _G.SpawnPrefab(prefab_name)
+                if fx then
+                    fx.Transform:SetPosition(x, y + offset_y, z)
+                    if scale ~= 1 then
+                        fx.Transform:SetScale(scale, scale, scale)
+                    end
+                end
+                return fx
             end
-            -- Ascending sparkles (evokes a soul/essence rising from the chassis)
-            local sparkle = _G.SpawnPrefab("sparklefx")
-            if sparkle then
-                sparkle.Transform:SetPosition(x, y + 0.3, z)
-            end
+
+            -- Primary: white dissolve (archive_lockbox_dispawn_fx) — the bot's
+            -- energy dissolving away as it discharges. Lunar-aligned (celestial).
+            SpawnUnique("archive_lockbox_dispawn_fx", 0.5, 1.2)
+
+            -- Secondary: white sparks (moonstorm_spark) — energy escaping the
+            -- chassis as the fuel hits zero.
+            SpawnUnique("moonstorm_spark", 0.3, 1.0)
+
             -- Brief celestial light flash (white-blue) that fades — the energy
-            -- leaving the bot as it discharges. Built manually so it always exists.
+            -- leaving the bot as it discharges. Custom entity (not a prefab FX),
+            -- so no duplicate-check needed (it self-removes after 1.2s).
             local lightfx = _G.CreateEntity()
             if lightfx then
                 lightfx.entity:AddTransform()
@@ -1220,35 +1244,66 @@ inst.components.burnable.ignorefuel = true
             end
         end
 
-        -- v2.0.17: discharge param — when true (celestial revive), the new MK1
-        -- spawns with 0 fuel (fully discharged) as the cost of the revive.
+        -- v2.0.17: discharge param — when true (celestial revive), the butler
+        -- fully discharges (fuel -> 0) as the cost of the revive.
+        -- v2.0.18 FIX: when discharge=true, spawn the INERT HUSK (williambutler_empty)
+        -- directly instead of an active MK1 with currentfuel=0. The previous code
+        -- set currentfuel = 0 directly on an active MK1, which bypassed the fueled
+        -- component's SetDepletedFn (OnFuelEmpty) — so the bot never entered the
+        -- "powerdown" state and stayed active at 0% fuel indefinitely (infinite
+        -- discharge bug: bot kept walking/cooking/following with no fuel).
+        -- The husk sleeps (sleep_loop paused), accepts fuel, and reactivates as a
+        -- fresh MK1 via MakeAlive when the player refuels + ACTIVATEs it.
         local function DowngradeButlerToMK1(inst, owner, discharge)
             local pt = inst:GetPosition()
             local newbot = nil
-            -- Use petleash if available (proper pet registration)
-            if owner and owner.components.petleash then
-                newbot = owner.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambutler")
-            end
-            if newbot == nil then
-                newbot = _G.SpawnPrefab("williambutler")
+
+            if discharge then
+                -- CELESTIAL: spawn the inert husk directly (already sleeping,
+                -- paused anim, Notarget tag). Player must refuel + ACTIVATE.
+                newbot = _G.SpawnPrefab("williambutler_empty")
                 if newbot then
                     newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
-                end
-            end
-            if newbot then
-                newbot.Transform:SetRotation(inst.Transform:GetRotation())
-                if newbot.components.fueled then
-                    if discharge then
-                        -- CELESTIAL: bot FULLY DISCHARGES (fuel -> 0). Player must
-                        -- refuel the MK1 to bring it back online.
+                    newbot.Transform:SetRotation(inst.Transform:GetRotation())
+                    -- Husk starts fully discharged (the cost of the celestial revive)
+                    if newbot.components.fueled then
                         newbot.components.fueled.currentfuel = 0
-                    elseif inst.components.fueled then
-                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                    end
+                    -- Transfer current health (capped at husk max)
+                    if inst.components.health and newbot.components.health then
+                        newbot.components.health:SetCurrentHealth(
+                            math.min(inst.components.health.currenthealth,
+                                     newbot.components.health.maxhealth))
+                    end
+                    -- Celestial revive DOWNGRADES to MK1: explicitly clear all
+                    -- tier-upgrade flags so MakeAlive (on later refuel + ACTIVATE)
+                    -- spawns a fresh MK1, NOT the old MK2/MK3 tier.
+                    newbot.was_level2 = false
+                    newbot.was_mk3 = false
+                    newbot.saved_upgradelevel = 0
+                    newbot.saved_upgradelevel_mk3 = 0
+                end
+            else
+                -- Non-discharge path: spawn active MK1, carry over fuel (existing behavior)
+                if owner and owner.components.petleash then
+                    newbot = owner.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambutler")
+                end
+                if newbot == nil then
+                    newbot = _G.SpawnPrefab("williambutler")
+                    if newbot then
+                        newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
                     end
                 end
-                if inst.components.health and newbot.components.health then
-                    newbot.components.health:SetCurrentHealth(
-                        math.min(inst.components.health.currenthealth, newbot.components.health.maxhealth))
+                if newbot then
+                    newbot.Transform:SetRotation(inst.Transform:GetRotation())
+                    if newbot.components.fueled and inst.components.fueled then
+                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                    end
+                    if inst.components.health and newbot.components.health then
+                        newbot.components.health:SetCurrentHealth(
+                            math.min(inst.components.health.currenthealth,
+                                     newbot.components.health.maxhealth))
+                    end
                 end
             end
             inst:Remove()
