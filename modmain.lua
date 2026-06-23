@@ -1107,6 +1107,10 @@ GLOBAL.AffinityPulse = AffinityPulse
 
 modimport("scripts/standalone_prefabs")
 
+-- v2.0.19: Decoupled affinity revive abilities (celestial buff / shadow clone).
+-- Triggers globally on the Wagstaff player's respawnfromghost event.
+modimport("scripts/wagstaff_affinity_revive")
+
 
 -- Compatibility / fallback for Miami Ricky portal tuning
 
