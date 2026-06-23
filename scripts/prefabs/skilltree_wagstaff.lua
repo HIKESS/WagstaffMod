@@ -31,11 +31,16 @@ local _lock_logged_celestial = false
 -- ORDERS: one entry per branch with {x, y} header position in the skill tree UI.
 -- Format matches DST's standard: {branch_name, {x_offset, y_offset}}.
 -- x = horizontal center of the branch column, y = vertical position of branch header.
+-- v2.0.21: branch HEADER titles ("mechanical"/"robotic"/"allegiance") moved
+-- off-screen to (9999, 9999) so they do not overlay the skill tree layout.
+-- The ORDERS entries themselves are KEPT (the branch names are used as `group`
+-- / `tags` identifiers by the skill nodes — deleting them would break layout).
+-- Only the header label positions are pushed off-screen.
 local ORDERS =
 {
-    {"mechanical", { -169, 202 }},
-    {"robotic",    {    1, 202 }},
-    {"allegiance", {  178, 130 }},
+    {"mechanical", { 9999, 9999 }},
+    {"robotic",    { 9999, 9999 }},
+    {"allegiance", { 9999, 9999 }},
 }
 
 local function BuildSkillsData(SkillTreeFns)
@@ -384,7 +389,6 @@ local function BuildSkillsData(SkillTreeFns)
         -- matching the pattern from reference mods (kodi, sdf).
 
         wagstaff_allegiance_lock_shadow_boss = {
-            title = "Shadow Allegiance — Fuelweaver",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_2_DESC or "Defeat Ancient Fuelweaver to unlock",
             pos = { 205.8, 91.9 + GAP*2 },
             group = "allegiance",
@@ -447,7 +451,6 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_allegiance_lock_lunar_boss = {
-            title = "Celestial Allegiance — Champion",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_3_DESC or "Defeat Celestial Champion to unlock",
             pos = { 150.2, 91.3 + GAP*2 },
             group = "allegiance",
@@ -511,7 +514,6 @@ local function BuildSkillsData(SkillTreeFns)
 
         -- Exclusion locks: block the opposite path if an affinity was chosen
         wagstaff_allegiance_lock_shadow_path = {
-            title = "Shadow Path",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_4_DESC or "Cannot choose if Celestial path taken",
             pos = { 205.8, 91.9 + GAP },
             group = "allegiance",
@@ -527,7 +529,6 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_allegiance_lock_lunar_path = {
-            title = "Celestial Path",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_5_DESC or "Cannot choose if Shadow path taken",
             pos = { 150.2, 91.3 + GAP },
             group = "allegiance",
