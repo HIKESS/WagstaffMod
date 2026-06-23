@@ -11,7 +11,7 @@ Features:
 - SKILL Tree (17 Skills & tree branch Mechanical/Robotic/Allegiance)
 - Robotics: Butler, Buster, Brute, Ballistic (MK2/MK3)
 - Mechanical: Sentry Gun, Dispenser, Teleporter(MK2/MK3)
-- TF2 Wrench (calibrated via skill to consume less durability)
+- Wrench (calibrated via skill to consume less durability)
 - Affinity system: Shadow Engineer vs Celestial Engineer (boss-gated, grants unique revive buffs — shadow combat buff or celestial shield)
 - Per-world progression: XP/insights saved per world, not per profile
 - Forge (Lava Arena) and Gorge (Quagmire) mode support
