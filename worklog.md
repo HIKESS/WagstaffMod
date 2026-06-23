@@ -477,3 +477,35 @@ Stage Summary:
 - Non-Wagstaff characters get functional GENERIC descriptions for the 4 bots (new) and keep their existing ESENTRY/DISPENSER/ETELEPORTER/ETELEPORTER_EXIT descriptions.
 - No gameplay/logic changes; pure string additions/replacements. Safe to hotreload or restart.
 - Files modified: scripts/speech_wagstaff.lua, modmain.lua.
+
+---
+Task ID: V2018-CELESTIAL-DISCHARGE-FIX
+Agent: GLM (main)
+Task: Fix butler celestial revive leaving bot active at 0% fuel (infinite discharge bug)
+
+Work Log:
+- User confirmed all 8 Phase-2 balance fixes from BAL-A report were ALREADY applied in v2.0.15+ (Buster LevelUp tier-bonus, Brute MK3 stats, Ballistic MK3 stats, E-Teleporter sanity cost, Butler MK2->MK3 cost, etc.). Verified in current code: william_buster.lua:208 (v2.0.15 FIX comment), william_brute.lua:1295 (v2.0.15 FIX).
+- New bug reported: after celestial revive, butler fully discharges (fuel -> 0) but stays ACTIVE — keeps walking/following/cooking indefinitely with 0% fuel.
+- Investigated fuel mechanics in william_butler.lua:
+    * OnFuelEmpty (line 182) does GoToState("powerdown")
+    * powerdown stategraph state (SGwilliambutler.lua:524) spawns williambutler_empty husk, transfers fuel/health, removes active bot
+    * SetDepletedFn(OnFuelEmpty) registered at fn() line 559
+    * StartConsuming() at fn() line 566
+- Root cause: DowngradeButlerToMK1(discharge=true) [old code line 1244] set newbot.components.fueled.currentfuel = 0 via DIRECT FIELD ASSIGNMENT. The DST 'fueled' component only fires SetDepletedFn on the >0 -> <=0 TRANSITION via DoDelta — direct assignment does NOT trigger it. So OnFuelEmpty never ran, the MK1 never entered 'powerdown', never became a husk. Result: active MK1 with 0% fuel, infinite.
+- Confirmed this matches the existing powerdown pattern: stategraph powerdown (line 556) spawns the husk with husk.components.fueled.currentfuel = inst.components.fueled.currentfuel (= 0) — also direct assignment, and it does NOT loop because the husk with 0 fuel never fires OnFuelEmpty either (no >0 -> <=0 transition). So spawning a husk with currentfuel=0 via assignment is the SAFE, established pattern.
+- FIX: rewrote DowngradeButlerToMK1 to branch on discharge:
+    * discharge=true (celestial): spawn williambutler_empty (inert husk) directly via SpawnPrefab. Husk starts with currentfuel=0, sleep_loop paused anim, Notarget tag. Player must refuel + ACTIVATE to bring a fresh MK1 online via MakeAlive.
+    * discharge=false (non-celestial): unchanged — spawn active MK1 via petleash, carry over fuel.
+- Additional safeguard in discharge branch: explicitly clear was_level2 / was_mk3 / saved_upgradelevel / saved_upgradelevel_mk3 on the husk so MakeAlive (on later refuel + ACTIVATE) spawns a fresh MK1, NOT the old MK2/MK3 tier. Enforces the 'downgrade to MK1' intent.
+- Verified Lua syntax: parens/braces/brackets all balanced (768/768, 14/14, 49/49). Edited function structure manually checked (if/else/end + function/end all matched).
+- Bumped modinfo.lua version 2.0.17 -> 2.0.18.
+- Committed as 5056033. Pushed to origin/GLM-5.1-Fixes: SUCCESS (3f49136..5056033).
+- Post-push: token NOT persisted to git config (used one-shot credential.helper via .env).
+
+Stage Summary:
+- v2.0.18 celestial revive fix is LIVE on remote GLM-5.1-Fixes (commit 5056033).
+- After celestial revive: butler now correctly becomes an INERT HUSK (williambutler_empty) at 0% fuel, sleeping on the ground. Player must refuel it (give fuel items) and then ACTIVATE it (click) to bring a fresh MK1 back online via MakeAlive. No more infinite active bot at 0% fuel.
+- The husk retains current health (capped at husk max) but all tier-upgrade flags are cleared — reactivation always produces a fresh MK1, matching the 'downgrade' intent.
+- Non-celestial path (shadow revive, normal downgrade) is UNCHANGED.
+- All 8 Phase-2 balance fixes confirmed already applied (v2.0.15+).
+- Pending: user to test in-game — die with celestial possession active, haunt Butler MK3, confirm bot becomes inert husk (not walking), refuel + ACTIVATE to confirm MK1 reactivation.
