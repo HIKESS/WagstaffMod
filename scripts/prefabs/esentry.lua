@@ -38,7 +38,9 @@ local AffinityPulse = _G.AffinityPulse
 -- All spawns are pcall-guarded with fallbacks so a missing DST prefab
 -- never crashes the server.
 
-local AFF_RAMP_MAX        = 6
+local AFF_RAMP_MAX        = 4      -- v2.0.50: was 6. Max 4 stacks (+40% total)
+                                    -- — 6 stacks (+60%) was OP combined with
+                                    -- the x2-Damage proc doubling the total.
 local AFF_RAMP_PCT        = 0.10   -- +10% base damage per stack
 local AFF_RAMP_RESET_TIME = 3      -- seconds without a hit before reset
 local AFF_X2_PROC_CHANCE  = 0.10   -- 10% chance to double current total

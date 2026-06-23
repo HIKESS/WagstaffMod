@@ -99,9 +99,10 @@ local function TryLuckyDrop(inst)
     if builder and builder:HasTag("wagstaff_lucky_engineer") then
         -- v2.0.14: Lucky Engineer 15% -> 20% + golden FX feedback
         -- v2.0.44: 20% -> 30% to reach parity with sentry x2-Damage skill
-        --          (x2-Damage post-ramp = +16-26% avg DPS; Lucky Engineer now
-        --           ~0.9 rare drops/day vs 0.6, matching combat bonus value)
-        if math.random() < 0.30 then
+        -- v2.0.50: 30% -> 25% — user tune-down. Combined with the v2.0.50 sentry
+        --          ramp reduction (6 -> 4 stacks), 25% keeps Lucky Engineer
+        --          balanced against the now-weaker x2-Damage + ramp combo.
+        if math.random() < 0.25 then
             local item = weighted_random_choice(lucky_rare)
             inst.components.lootdropper:SpawnLootPrefab(item)
             -- Golden FX so the player sees the lucky proc (reuses ehealfx with gold tint)

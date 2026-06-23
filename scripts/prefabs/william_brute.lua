@@ -97,8 +97,39 @@ end
 local function TauntCreatures(inst)
     if not inst.components.health:IsDead() then
         local x, y, z = inst.Transform:GetWorldPosition()
-        for i, v in ipairs(TheSim:FindEntities(x, y, z, 7, { "_combat", "locomotor" }, { "INLIMBO", "player", "companion", "epic", "notaunt", "shadow" })) do
-            if IsTauntable(inst, v) then
+
+        -- v2.0.48: Affinity-aware taunt for MK3 brutes. Each affinity now tanks
+        -- its ENEMY faction (mirrors the sentry faction logic — lunar and shadow
+        -- are opposing rift factions). Previously the taunt was affinity-blind:
+        -- the shadow Brute would draw aggro from shadow-aligned creatures (its
+        -- own kin), which was thematically wrong.
+        --   Celestial (day) -> taunts shadow-aligned + neutral hostiles,
+        --                       EXCLUDES lunar-aligned (allies).
+        --   Shadow (dusk)   -> taunts lunar-aligned + neutral hostiles,
+        --                       EXCLUDES shadow-aligned (allies).
+        --   Base / MK1 / MK2 / affinity inactive -> original behavior
+        --                       (exclude the legacy "shadow" tag so basic
+        --                        brutes don't pull nightmare creatures).
+        local is_mk3 = inst.prefab == "williambrute3"
+        local celestial_active = is_mk3 and TheWorld.state.isday and OwnerHasCelestial(inst)
+        local shadow_active    = is_mk3 and TheWorld.state.isdusk and OwnerHasShadow(inst)
+
+        local cant_tags, affinity_filter
+        if celestial_active then
+            -- Celestial Brute tanks the shadow faction (its enemy).
+            cant_tags = { "INLIMBO", "player", "companion", "epic", "notaunt" }
+            affinity_filter = function(v) return not v:HasTag("lunar_aligned") end
+        elseif shadow_active then
+            -- Shadow Brute tanks the lunar faction (its enemy).
+            cant_tags = { "INLIMBO", "player", "companion", "epic", "notaunt" }
+            affinity_filter = function(v) return not v:HasTag("shadow_aligned") end
+        else
+            -- Base/MK1/MK2 or affinity inactive: original behavior.
+            cant_tags = { "INLIMBO", "player", "companion", "epic", "notaunt", "shadow" }
+        end
+
+        for i, v in ipairs(TheSim:FindEntities(x, y, z, 7, { "_combat", "locomotor" }, cant_tags)) do
+            if IsTauntable(inst, v) and (affinity_filter == nil or affinity_filter(v)) then
                 v.components.combat:SetTarget(inst)
             end
         end
@@ -946,6 +977,65 @@ inst.components.burnable.ignorefuel = true
                             if fx.AnimState then
                                 fx.AnimState:SetMultColour(0.3, 0.6, 1, 1)
                                 fx.AnimState:SetAddColour(0.2, 0.3, 0.5, 0)
+                            end
+                        end
+                    end
+                end
+
+                -- v2.0.50: CELESTIAL "Lunar Empowerment" AOE — mirrors the shadow
+                -- Brute's "Void Weaken" AOE. When hit, emits a lunar pulse that
+                -- EMPOWERS nearby allies (+25% damage dealt for 4s, 12s cooldown).
+                -- v2.0.50 TUNE: reduced +50% -> +25%. With multiple allies
+                -- (player + 4 bots) the +50% stacked up to too much total team
+                -- damage; +25% per ally is still strong but not OP.
+                -- Same radius (6), duration (4s), cooldown (12s) as shadow weaken.
+                local x, y, z = inst.Transform:GetWorldPosition()
+                local do_buff = not inst._lunar_pulse_cooldown
+
+                if do_buff then
+                    inst._lunar_pulse_cooldown = true
+                    inst:DoTaskInTime(12, function() inst._lunar_pulse_cooldown = nil end)
+
+                    -- Central lunar burst FX: celestial-blue sparkle explosion.
+                    -- v2.0.50: bigger scale (6 -> 8) so it reads as an explosion,
+                    -- but not exaggerated (kept under 10).
+                    if inst.SoundEmitter then
+                        inst.SoundEmitter:PlaySound("dontstarve/common/lunar_sparkle")
+                    end
+                    local burst_fx = SpawnPrefab("sparklefx")
+                    if burst_fx then
+                        burst_fx.Transform:SetPosition(x, y + 0.5, z)
+                        burst_fx.Transform:SetScale(8.0, 8.0, 8.0)
+                        if burst_fx.AnimState then
+                            burst_fx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
+                            burst_fx.AnimState:SetAddColour(0.3, 0.4, 0.6, 0)
+                        end
+                        burst_fx:DoTaskInTime(1.5, function()
+                            if burst_fx:IsValid() then burst_fx:Remove() end
+                        end)
+                    end
+
+                    -- Find and empower allies within radius 6
+                    -- Allies = player + companion bots + willminion (all wagstaff bots)
+                    local ents = TheSim:FindEntities(x, y, z, 6, nil, {"INLIMBO"})
+                    for _, ent in ipairs(ents) do
+                        if ent:IsValid() and ent.components.combat
+                            and (ent:HasTag("player") or ent:HasTag("companion") or ent:HasTag("willminion")) then
+                            -- +25% damage dealt for 4 seconds (v2.0.50: was +50%)
+                            if ent.components.combat.externaldamagemultipliers then
+                                ent.components.combat.externaldamagemultipliers:SetModifier(inst, 1.25)
+                                ent:DoTaskInTime(4, function()
+                                    if ent:IsValid() and ent.components.combat and ent.components.combat.externaldamagemultipliers then
+                                        ent.components.combat.externaldamagemultipliers:RemoveModifier(inst)
+                                    end
+                                end)
+                            end
+                            -- Small celestial sparkle on each buffed ally
+                            local ally_fx = SpawnPrefab("sparklefx")
+                            if ally_fx and ally_fx.AnimState then
+                                ally_fx.Transform:SetPosition(ent.Transform:GetWorldPosition())
+                                ally_fx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
+                                ally_fx:DoTaskInTime(1, function() if ally_fx:IsValid() then ally_fx:Remove() end end)
                             end
                         end
                     end
