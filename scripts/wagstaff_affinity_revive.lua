@@ -29,9 +29,14 @@
 --       * Lifesteal:           15%    (heal 15% of damage dealt — sustain via offense)
 --       * Duration:            60s
 --   - Visual: subtle dark tint on the player for the duration (cleared on expiry).
---   - FX: PERSISTENT shadow_shield1 shield (parented, 60s, removed on expiry),
---         spawned at 0.6s synced with revive anim. ghost_spawn sound on spawn.
---         (v2.0.30: substituiu statue_transition_2 spawn + shadow_despawn despawn.)
+--   - FX (v2.0.36): CONTINUOUS RESPAWN of shadow_shield1 (quick-effect prefab
+--         that self-removes after ~2-3s). Re-spawned every 2.5s for the full
+--         60s buff so the visual stays active. Initial spawn at 0.6s synced
+--         with revive anim. ghost_spawn sound on initial spawn.
+--         (v2.0.30: substituiu statue_transition_2 spawn + shadow_despawn despawn.
+--          v2.0.36: changed from single-spawn to continuous respawn because
+--          shadow_shield1 self-removes and the visual was disappearing after
+--          ~2-3s even though the buff stayed active for 60s.)
 --
 -- ALL debug output is routed through the mod's debug system (G.WagstaffDbg /
 -- G.WagstaffDbgF), gated by the "Debug mode" config toggle. Zero-cost when off.
@@ -232,6 +237,11 @@ local function ApplyShadowBuff(player)
     if player._wagstaff_shadow_expire_task then
         player._wagstaff_shadow_expire_task:Cancel()
     end
+    -- v2.0.36: Cancel previous FX respawn task (continuous shadow_shield1).
+    if player._wagstaff_shadow_fx_respawn_task then
+        player._wagstaff_shadow_fx_respawn_task:Cancel()
+        player._wagstaff_shadow_fx_respawn_task = nil
+    end
     -- Remove any previous lifesteal listener (no stacking on re-revive).
     if player._wagstaff_shadow_lifesteal_fn then
         player:RemoveEventCallback("onattackother", player._wagstaff_shadow_lifesteal_fn)
@@ -336,13 +346,19 @@ local function ApplyShadowBuff(player)
         end)
     end
 
-    -- v2.0.30: PERSISTENT shadow_shield1 shield (substitui statue_transition_2
-    -- spawn + shadow_despawn despawn). Espelha a estrutura do celestial
-    -- (forcefieldfx): parented ao player, persiste pelos 60s do buff, removido
-    -- no expire. Spawn aos 0.6s sincronizado com a anim de reviver.
-    player:DoTaskInTime(0.6, function()
+    -- v2.0.36: shadow_shield1 is a QUICK-EFFECT prefab (self-removes after its
+    -- animation, ~2-3s) — unlike forcefieldfx which is persistent. The old code
+    -- spawned it ONCE at 0.6s and expected it to persist 60s (it didn't — the
+    -- visual disappeared after ~2-3s even though the buff stayed active).
+    -- Fix: CONTINUOUS RESPAWN — re-spawn shadow_shield1 every ~2.5s for the
+    -- full 60s buff duration. Each re-spawn: remove old FX, spawn new, parent,
+    -- tint, play. The periodic task is cancelled on buff expiry. Small overlap
+    -- (2.5s interval vs ~2-3s anim) ensures no visual gap.
+    local SHADOW_FX_RESPAWN_INTERVAL = 2.5  -- seconds between re-spawns
+
+    local function SpawnShadowShieldFx()
         if not player:IsValid() or not player.entity then return end
-        -- Remove shield leftover de buff anterior.
+        -- Remove previous shield FX before spawning a new one (no stacking).
         if player._wagstaff_shadow_shield_fx and player._wagstaff_shadow_shield_fx:IsValid() then
             player._wagstaff_shadow_shield_fx:Remove()
         end
@@ -355,15 +371,25 @@ local function ApplyShadowBuff(player)
                 fx.AnimState:SetAddColour(0.12, 0.0, 0.18, 0)
             end
             player._wagstaff_shadow_shield_fx = fx
-            _dbgF("[AFFINITY] Shadow: shadow_shield1 spawned (persistent), parent=%s", tostring(player.prefab))
+            _dbgF("[AFFINITY] Shadow: shadow_shield1 spawned (continuous respawn), parent=%s", tostring(player.prefab))
         else
             _dbg("[AFFINITY] Shadow: WARN — SpawnPrefab('shadow_shield1') returned nil")
         end
-        -- Som de reviver mantido (nao e FX visual).
+    end
+
+    -- Initial spawn at 0.6s (synced with revive animation ghost->body).
+    player:DoTaskInTime(0.6, function()
+        if not player:IsValid() then return end
+        SpawnShadowShieldFx()
+        -- Som de reviver.
         if player.SoundEmitter then
             player.SoundEmitter:PlaySound("dontstarve/common/ghost_spawn")
         end
     end)
+
+    -- Continuous respawn: every 2.5s for the full 60s buff duration.
+    player._wagstaff_shadow_fx_respawn_task = player:DoPeriodicTask(
+        SHADOW_FX_RESPAWN_INTERVAL, SpawnShadowShieldFx, SHADOW_FX_RESPAWN_INTERVAL)
 
     -- Expire the buff after the duration.
     player._wagstaff_shadow_expire_task = player:DoTaskInTime(SHADOW_DURATION, function()
@@ -373,6 +399,11 @@ local function ApplyShadowBuff(player)
         if player._wagstaff_shadow_enforce_task then
             player._wagstaff_shadow_enforce_task:Cancel()
             player._wagstaff_shadow_enforce_task = nil
+        end
+        -- v2.0.36: Stop the FX respawn task (continuous shadow_shield1).
+        if player._wagstaff_shadow_fx_respawn_task then
+            player._wagstaff_shadow_fx_respawn_task:Cancel()
+            player._wagstaff_shadow_fx_respawn_task = nil
         end
         -- Remove lifesteal listener.
         if player._wagstaff_shadow_lifesteal_fn then

@@ -2300,13 +2300,74 @@ end)
 
 -- Patch skill tree widget to remove tint for Wagstaff and fix favor overlay z-order
 AddClassPostConstruct("widgets/redux/skilltreewidget", function(self)
-    local original_SpawnFavorOverlay = self.SpawnFavorOverlay
-    self.SpawnFavorOverlay = function(self2, pre)
-        original_SpawnFavorOverlay(self2, pre)
-        -- Ensure the favor overlay (midlay) is on top of everything, including the bg_tree!
+    -- v2.0.36 FIX: The favor overlay (midlay — shadow hands / lunar clouds+gestalts)
+    -- was going BEHIND the bg_tree background after the player died and revived.
+    -- The original patch only called MoveToFront() in SpawnFavorOverlay, which runs
+    -- ONCE when the overlay is first spawned. After death/revive, the skill tree
+    -- panel refreshes and the bg_tree moves to front, pushing the midlay behind it.
+    -- Fix: hook into EVERY refresh/redraw method to re-assert midlay:MoveToFront(),
+    -- and also listen for the player's revive event to force a refresh.
+
+    local function EnsureMidlayFront(self2)
         if self2.midlay and self2.target == "wagstaff" then
             self2.midlay:MoveToFront()
         end
+    end
+
+    local original_SpawnFavorOverlay = self.SpawnFavorOverlay
+    self.SpawnFavorOverlay = function(self2, pre)
+        original_SpawnFavorOverlay(self2, pre)
+        EnsureMidlayFront(self2)
+    end
+
+    -- Hook RefreshSkill (called when a skill's visual state updates — runs on
+    -- panel open, skill activation, and after revive state changes).
+    local original_RefreshSkill = self.RefreshSkill
+    if original_RefreshSkill then
+        self.RefreshSkill = function(self2, ...)
+            original_RefreshSkill(self2, ...)
+            EnsureMidlayFront(self2)
+        end
+    end
+
+    -- Hook RefreshAll if it exists (bulk refresh of all skill nodes).
+    local original_RefreshAll = self.RefreshAll
+    if original_RefreshAll then
+        self.RefreshAll = function(self2, ...)
+            original_RefreshAll(self2, ...)
+            EnsureMidlayFront(self2)
+        end
+    end
+
+    -- Hook OnShow (called when the skill tree panel is shown/reopened).
+    local original_OnShow = self.OnShow
+    if original_OnShow then
+        self.OnShow = function(self2, ...)
+            original_OnShow(self2, ...)
+            EnsureMidlayFront(self2)
+        end
+    end
+
+    -- v2.0.36: Client-side listener — when the player revives from ghost, the
+    -- skill tree panel (if open) refreshes its bg_tree which pushes the midlay
+    -- behind. Force a re-assert of the midlay z-order after a short delay
+    -- (gives the panel time to finish its post-revive refresh).
+    if G.ThePlayer then
+        G.ThePlayer:ListenForEvent("ms_respawnedfromghost", function()
+            G.TheWorld:DoTaskInTime(0.5, function()
+                -- Find the open skill tree widget and re-assert midlay order.
+                -- The skill tree panel is a child of the HUD's controls.
+                local hud = G.ThePlayer.HUD
+                if hud and hud.controls and hud.controls.skilltreebuilder then
+                    local stb = hud.controls.skilltreebuilder
+                    -- The skilltreewidget is typically stb.tree or stb.skilltree
+                    local widget = stb.tree or stb.skilltree or stb
+                    if widget and widget.midlay and widget.target == "wagstaff" then
+                        widget.midlay:MoveToFront()
+                    end
+                end
+            end)
+        end)
     end
 end)
 
