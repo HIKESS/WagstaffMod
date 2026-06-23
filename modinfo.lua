@@ -4,7 +4,7 @@ description = [[Wagstaff Aurora — The Cryptic Founder.
 A great inventor, nearsighted, with a delicate stomach. A fully self-contained character mod with integrated skill tree progression, engineer bots, sentry guns, dispensers, teleporters, and a dual-path affinity system.
 
 Features:
-- Wagstaff character with nearsightedness & weak stomach mechanics
+- Nearsighted & weak stomach mechanics
 - 4 goggle types (Normal, Heat Vision, Armor, Fryfocals/Shoot)
 - Telebrella + Telipad teleport network
 - Thumper ground-pounding harvester
@@ -23,7 +23,7 @@ Features:
 Original character by Hornet, reworked by Niko. Skill tree + integration by Wholemaker Team.]]
 id = "wagstaff_standalone"
 author = "Wholemaker Team (standalone) — original by Hornet/Niko"
-version = "2.0.21"
+version = "2.0.22"
 
 api_version = 10
 
