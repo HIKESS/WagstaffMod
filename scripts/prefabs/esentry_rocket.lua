@@ -64,33 +64,19 @@ local function OnHit(inst, attacker, target)
     -- Do splash damage upon hitting the ground
         inst.components.combat:DoAreaAttack(inst, SENTRYROCKET_SPLASH_RADIUS, nil, nil, nil, AREAATTACK_EXCLUDETAGS)
 
-    -- v2.0.43: Rocket impact FX. When the firing sentry has an active
-    -- affinity (celestial/shadow), replace the default explode_small+impact
-    -- with the bomb_lunarplant blast FX (tinted black for shadow). This gives
-    -- rockets a thematic affinity-colored explosion. The sentry is the
-    -- complexprojectile attacker.
-    local sentry = inst.components.complexprojectile and inst.components.complexprojectile.attacker
-    local aff = sentry and sentry.IsValid and sentry:IsValid() and sentry._aff_type or nil
-    -- v2.0.47 FIX: use rawget to bypass strict.lua (avoids "variable not
-    -- declared" error if this prefab loads before esentry.lua registers the
-    -- global). Returns nil safely if the FX module isn't loaded yet.
-    local AffFX = rawget(_G, "WagstaffAffFX")
+    -- v2.0.50: REVERTED the v2.0.43 affinity blast FX (bomb_lunarplant). The
+    -- user preferred the original sentry missile explosion. Rockets now always
+    -- use the default explode_small + impact, regardless of sentry affinity.
+    -- The affinity ramp/x2 damage still applies to rocket DAMAGE (in
+    -- OnUpdateProjectile); only the visual FX was reverted.
 
     -- Landed on the ocean
     if inst:IsOnOcean() then
         SpawnPrefab("crab_king_waterspout").Transform:SetPosition(inst.Transform:GetWorldPosition())
     -- Landed on ground
     else
-        if aff and AffFX and AffFX.BlastFX then
-            -- Affinity blast FX (bomb_lunarplant, tinted for shadow).
-            AffFX.BlastFX(inst, aff)
-            -- A small impact spark alongside for weight.
-            SpawnPrefab("impact").Transform:SetPosition(inst.Transform:GetWorldPosition())
-        else
-            -- Default explosion (no affinity active).
-            SpawnPrefab("explode_small").Transform:SetPosition(inst.Transform:GetWorldPosition())
-            SpawnPrefab("impact").Transform:SetPosition(inst.Transform:GetWorldPosition())
-        end
+        SpawnPrefab("explode_small").Transform:SetPosition(inst.Transform:GetWorldPosition())
+        SpawnPrefab("impact").Transform:SetPosition(inst.Transform:GetWorldPosition())
     end
 
         if inst.pufftask then

@@ -982,13 +982,13 @@ inst.components.burnable.ignorefuel = true
                     end
                 end
 
-                -- v2.0.49: CELESTIAL "Lunar Empowerment" AOE — mirrors the shadow
+                -- v2.0.50: CELESTIAL "Lunar Empowerment" AOE — mirrors the shadow
                 -- Brute's "Void Weaken" AOE. When hit, emits a lunar pulse that
-                -- EMPOWERS nearby allies (+50% damage dealt for 4s, 12s cooldown).
-                -- This is the symmetric counterpart to the shadow's -50% enemy
-                -- damage debuff: shadow weakens foes (defensive), celestial
-                -- strengthens friends (offensive). Same radius (6), duration (4s),
-                -- cooldown (12s) — balanced mirror.
+                -- EMPOWERS nearby allies (+25% damage dealt for 4s, 12s cooldown).
+                -- v2.0.50 TUNE: reduced +50% -> +25%. With multiple allies
+                -- (player + 4 bots) the +50% stacked up to too much total team
+                -- damage; +25% per ally is still strong but not OP.
+                -- Same radius (6), duration (4s), cooldown (12s) as shadow weaken.
                 local x, y, z = inst.Transform:GetWorldPosition()
                 local do_buff = not inst._lunar_pulse_cooldown
 
@@ -996,17 +996,19 @@ inst.components.burnable.ignorefuel = true
                     inst._lunar_pulse_cooldown = true
                     inst:DoTaskInTime(12, function() inst._lunar_pulse_cooldown = nil end)
 
-                    -- Central lunar burst FX: celestial-blue sparkle explosion
+                    -- Central lunar burst FX: celestial-blue sparkle explosion.
+                    -- v2.0.50: bigger scale (6 -> 8) so it reads as an explosion,
+                    -- but not exaggerated (kept under 10).
                     if inst.SoundEmitter then
                         inst.SoundEmitter:PlaySound("dontstarve/common/lunar_sparkle")
                     end
                     local burst_fx = SpawnPrefab("sparklefx")
                     if burst_fx then
                         burst_fx.Transform:SetPosition(x, y + 0.5, z)
-                        burst_fx.Transform:SetScale(6.0, 6.0, 6.0)
+                        burst_fx.Transform:SetScale(8.0, 8.0, 8.0)
                         if burst_fx.AnimState then
                             burst_fx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
-                            burst_fx.AnimState:SetAddColour(0.2, 0.3, 0.5, 0)
+                            burst_fx.AnimState:SetAddColour(0.3, 0.4, 0.6, 0)
                         end
                         burst_fx:DoTaskInTime(1.5, function()
                             if burst_fx:IsValid() then burst_fx:Remove() end
@@ -1019,9 +1021,9 @@ inst.components.burnable.ignorefuel = true
                     for _, ent in ipairs(ents) do
                         if ent:IsValid() and ent.components.combat
                             and (ent:HasTag("player") or ent:HasTag("companion") or ent:HasTag("willminion")) then
-                            -- +50% damage dealt for 4 seconds (mirrors shadow's -50%)
+                            -- +25% damage dealt for 4 seconds (v2.0.50: was +50%)
                             if ent.components.combat.externaldamagemultipliers then
-                                ent.components.combat.externaldamagemultipliers:SetModifier(inst, 1.5)
+                                ent.components.combat.externaldamagemultipliers:SetModifier(inst, 1.25)
                                 ent:DoTaskInTime(4, function()
                                     if ent:IsValid() and ent.components.combat and ent.components.combat.externaldamagemultipliers then
                                         ent.components.combat.externaldamagemultipliers:RemoveModifier(inst)
