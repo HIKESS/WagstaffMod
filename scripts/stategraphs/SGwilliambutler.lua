@@ -35,7 +35,7 @@ local states=
         onenter = function(inst)
                 inst.sg:SetTimeout(0.1)
                 inst.AnimState:PlayAnimation("idle_loop")
-	end,
+        end,
 
         ontimeout = function(inst)
                 inst.sg:GoToState("idle")
@@ -49,15 +49,15 @@ local states=
         onenter = function(inst)
             inst.Physics:Stop()
         if inst.components.fueled ~= nil then
-	if inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .4 then
+        if inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .4 then
                 inst.AnimState:PlayAnimation("hungry")
-		 inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/liedown")
+                 inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/liedown")
             elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .95 then
                 inst.AnimState:PlayAnimation("idle_warly")
-	else
+        else
                 inst.AnimState:PlayAnimation("research")
-		end
-	end
+                end
+        end
 
         end,
 
@@ -78,28 +78,28 @@ local states=
             inst.Physics:Stop()
         if inst.components.fueled ~= nil then
             if inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .2 then
-	if not (inst.AnimState:IsCurrentAnimation("idle_groggy_pre") or inst.AnimState:IsCurrentAnimation("idle_groggy")) then
+        if not (inst.AnimState:IsCurrentAnimation("idle_groggy_pre") or inst.AnimState:IsCurrentAnimation("idle_groggy")) then
                 inst.AnimState:PlayAnimation("idle_groggy_pre", false)
                 inst.AnimState:PushAnimation("idle_groggy", true)
-			else
+                        else
                 inst.AnimState:PlayAnimation("idle_groggy", true)
-	end
+        end
             elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel >= .95 then
-	if not (inst.AnimState:IsCurrentAnimation("idle_onemanband1_pre") or inst.AnimState:IsCurrentAnimation("idle_onemanband1_loop")) then
+        if not (inst.AnimState:IsCurrentAnimation("idle_onemanband1_pre") or inst.AnimState:IsCurrentAnimation("idle_onemanband1_loop")) then
                 inst.AnimState:PlayAnimation("idle_onemanband1_pre", false)
                 inst.AnimState:PushAnimation("idle_onemanband1_loop", true)
-			else
+                        else
                 inst.AnimState:PlayAnimation("idle_onemanband1_loop", true)
-	end
-	else
+        end
+        else
                 inst.AnimState:PlayAnimation("idle_loop", true)
-		end
-	end
+                end
+        end
         end,
         
         timeline = 
         {
-		--    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
+                --    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
         },
         
         ontimeout = function(inst)
@@ -202,12 +202,12 @@ local states=
         events=
         {
             EventHandler("animqueueover", function(inst) 
-			if inst.components.container:IsOpen() then
+                        if inst.components.container:IsOpen() then
                     inst.sg:GoToState("open")
-			else
+                        else
                     inst.sg:GoToState("funnyidle")
-		end
-	end),
+                end
+        end),
         },
     },
 
@@ -226,8 +226,8 @@ local states=
             end
         end,
 
-	onexit = function(inst)
-	end,
+        onexit = function(inst)
+        end,
 
         timeline =
         {
@@ -267,7 +267,7 @@ local states=
         timeline=
         {
             TimeEvent(0*FRAMES, function(inst)
-	end),
+        end),
         },        
     },
 
@@ -296,11 +296,11 @@ local states=
         tags = {"idle", "dancing"},
 
         onenter = function(inst)
-	if inst.AnimState:IsCurrentAnimation("bow_pre") then
+        if inst.AnimState:IsCurrentAnimation("bow_pre") then
             inst.AnimState:PushAnimation("bow_pst", false)
-	else
+        else
             inst.AnimState:PlayAnimation("bow_pst", false)
-	end
+        end
             inst.SoundEmitter:PlaySound("dontstarve/common/teleportato/teleportato_activate_mouth", "close", 0.2)
         end,
 
@@ -462,13 +462,13 @@ end),
             inst.components.container.canbeopened = false
             inst.sg:SetTimeout(0.9)
             inst.components.locomotor:Stop()
-	inst:AddTag("cooking")
-	if not (inst.AnimState:IsCurrentAnimation("build_pre") or inst.AnimState:IsCurrentAnimation("build_loop")) then
+        inst:AddTag("cooking")
+        if not (inst.AnimState:IsCurrentAnimation("build_pre") or inst.AnimState:IsCurrentAnimation("build_loop")) then
             inst.AnimState:PlayAnimation("build_pre")
             inst.AnimState:PushAnimation("build_loop", true)
-		else
+                else
            inst.AnimState:PushAnimation("build_loop", true)
-	end
+        end
         end,
 
         ontimeout = function(inst)
@@ -503,13 +503,11 @@ end),
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("death")
             inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/death")
-            -- Drop base loot
+            -- v2.0.34: Uma unica chamada DropLoot. O lootsetfn garante williamgadget
+            -- (100%) e a chance table "butler" da 50% boards + 50% transistor
+            -- (bonus alinhado ao recipe). Antes havia um segundo DropLoot que
+            -- dropava a mesma tabela de novo (double-drop bug).
             inst.components.lootdropper:DropLoot()
-            -- 50% chance to drop additional resources on death (permanent destruction)
-            if math.random() < 0.5 then
-                inst.components.lootdropper:SetChanceLootTable("butler")
-                inst.components.lootdropper:DropLoot()
-            end
         end,
 
         events =
@@ -532,7 +530,7 @@ end),
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("dozy")
 
-	inst.Transform:SetRotation(0)
+        inst.Transform:SetRotation(0)
         end,
 
         timeline =
@@ -551,19 +549,19 @@ end),
         --inst.Physics:SetCollides(false)
     local x, y, z = inst.Transform:GetWorldPosition()
     local husk = SpawnPrefab("williambutler_empty")
-	--if husk ~= nil then
-	husk.Physics:Teleport(inst.Transform:GetWorldPosition())
-	husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
-	husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
-	-- Save upgrade state for reload
-	if inst.prefab == "williambutler2" then
-	    husk.was_level2 = true
-	    husk.saved_upgradelevel = 70
-	elseif inst.prefab == "williambutler" and inst.upgradelevel then
-	    husk.saved_upgradelevel = inst.upgradelevel
-	end
-	inst:Remove()
-	--end
+        --if husk ~= nil then
+        husk.Physics:Teleport(inst.Transform:GetWorldPosition())
+        husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
+        husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+        -- Save upgrade state for reload
+        if inst.prefab == "williambutler2" then
+            husk.was_level2 = true
+            husk.saved_upgradelevel = 70
+        elseif inst.prefab == "williambutler" and inst.upgradelevel then
+            husk.saved_upgradelevel = inst.upgradelevel
+        end
+        inst:Remove()
+        --end
             end),
         },
     },
@@ -609,7 +607,7 @@ end),
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/bounce") end ),
+                TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/bounce") end ),
         },
         
         onexit = function(inst)
@@ -636,7 +634,7 @@ end),
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst)
+                TimeEvent(0*FRAMES, function(inst)
  inst.Physics:SetActive(true)
  inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/bounce")
                     local x, y, z = inst.Transform:GetWorldPosition()
@@ -657,12 +655,12 @@ CommonStates.AddSleepStates(states,
 {
     starttimeline = 
     {
-		TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/bounce")  end ),
+                TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/bounce")  end ),
     },
     
-	sleeptimeline = {
+        sleeptimeline = {
         TimeEvent(18*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/bounce") end),
-	},
+        },
 })
 
 CommonStates.AddFrozenStates(states)

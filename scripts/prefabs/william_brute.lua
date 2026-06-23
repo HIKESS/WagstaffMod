@@ -20,17 +20,12 @@ local prefabs =
 local _dbg  = _G.WagstaffDbg  or function(...) end
 local _dbgF = _G.WagstaffDbgF or function(...) end
 
+-- v2.0.34: Bonus table alinhado com o recipe do brute (williamgadget + cutstone + transistor).
+-- O williamgadget (core) e garantido pelo lootsetfn. A chance table so tem os materiais bonus.
 SetSharedLootTable("brute",
 {
-    {'cutstone',          1},
-    {'transistor',          1},
-    {'log',          1},
-    {'log',          1},
-    {'log',          1},
-    {'cutreeds',          1},
-    {'cutreeds',          1},
-    {'cutreeds',          1},
-    {'cutreeds',          1},
+    {'cutstone',          0.50},
+    {'transistor',        0.50},
 })
 
 SetSharedLootTable("brutegadget",
@@ -47,7 +42,9 @@ local function OnClose(inst)
 end
 
 local function lootsetfn(lootdropper)
-    local loot = {}
+    -- v2.0.34: williamgadget (core) sempre dropa. gears adicionais por level
+    -- (recompensa de level up, nao e bonus aleatorio).
+    local loot = {"williamgadget"}
     local amount = lootdropper.inst.level*0.75
         if amount < 1 then amount = 1 end
 
@@ -56,7 +53,7 @@ local function lootsetfn(lootdropper)
             table.insert(loot, "gears")
                 end
                 end
-                
+
 
     lootdropper:SetLoot(loot)
 end
@@ -113,14 +110,12 @@ local function OnHammered(inst, worker)
         return
     end
 
-    -- 100% drop do core (williamgadget)
-    inst.components.lootdropper:SetLoot({"williamgadget"})
+    -- v2.0.34: lootsetfn garante williamgadget (100%) + gears por level.
+    -- Chance table "brute" da 50% cutstone + 50% transistor (bonus alinhado ao recipe).
+    -- FIX: antes usava SetChanceLootTable({"armorwood", 1}) que e sintaxe INVALIDA
+    -- (SetChanceLootTable espera string, nao tabela) + armorwood nao e do recipe.
     inst.components.lootdropper:DropLoot()
-    -- 50% chance para items bonus
-    if math.random() < 0.5 then
-        inst.components.lootdropper:SetChanceLootTable({"armorwood", 1})
-        inst.components.lootdropper:DropLoot()
-    end
+
         local fx = SpawnPrefab("collapse_small")
         fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
         fx:SetMaterial("metal")
