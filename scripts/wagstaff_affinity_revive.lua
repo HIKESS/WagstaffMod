@@ -7,12 +7,13 @@
 --
 -- CELESTIAL (wagstaff_celestial_possession tag):
 --   - Revive with FULL HP / sanity / hunger.
---   - +100 max-HP bonus for the duration.
+--   - +100 max-HP bonus (via DeltaMaxHealth -> health badge up-arrow indicator).
 --   - 25% damage absorption for the duration.
 --   - Duration: 60s (a "revive protection window").
 --   - FX: ruinshat-style shield (forcefield prefab) recolored celestial blue,
---         spawned ~0.6s after the revive event so it appears synced with the
---         ghost->body materialization (NOT on the ghost).
+--         respawned CONTINUOUSLY (every 2.5s) so the shield persists the full
+--         duration. Initial spawn delayed ~0.6s to sync with the ghost->body
+--         materialization (NOT on the ghost).
 --
 -- SHADOW (wagstaff_shadow_possession tag):
 --   - Spawns a SHADOW CLONE that fights for Wagstaff.
@@ -39,6 +40,7 @@ local G = GLOBAL
 local CELESTIAL_DURATION   = 60     -- seconds
 local CELESTIAL_HP_BONUS   = 100    -- +max HP
 local CELESTIAL_ABSORPTION = 0.25   -- 25% damage absorption
+local CELESTIAL_SHIELD_RESPAWN_INTERVAL = 2.5  -- seconds between shield FX respawns
 
 local SHADOW_CLONE_DURATION = 120   -- seconds
 local SHADOW_CLONE_HP       = 150
@@ -56,14 +58,24 @@ local function ApplyCelestialBuff(player)
     local sanity = player.components.sanity
     local hunger = player.components.hunger
 
-    -- Full HP / sanity / hunger. HP bonus is applied BEFORE SetPercent so the
-    -- current HP fills up to the new (bonus) max.
-    if health then
-        health:SetMaxHealth(health.maxhealth + CELESTIAL_HP_BONUS)
-        health:SetPercent(1)
-    end
+    -- Full sanity / hunger.
     if sanity then sanity:SetPercent(1) end
     if hunger then hunger:SetPercent(1) end
+
+    -- +100 max HP via DeltaMaxHealth (the canonical DST API for max-HP changes,
+    -- same one Wolfgang/WX-78 use). This triggers the health badge's built-in
+    -- up-arrow indicator (golden frame / boosted-max marker) so the player sees
+    -- the buff is active -- "a seta up no canto onde marca o HP". After
+    -- DeltaMaxHealth, current HP scales proportionally; SetPercent(1) then
+    -- fills it to the new (boosted) max = full HP.
+    if health then
+        if health.DeltaMaxHealth then
+            health:DeltaMaxHealth(CELESTIAL_HP_BONUS)
+        else
+            health:SetMaxHealth(health.maxhealth + CELESTIAL_HP_BONUS)
+        end
+        health:SetPercent(1)
+    end
 
     -- 25% damage absorption (save the old value to restore on expiry).
     if health then
@@ -71,12 +83,31 @@ local function ApplyCelestialBuff(player)
         health:SetAbsorptionAmount(CELESTIAL_ABSORPTION)
     end
 
-    -- FX: ruinshat-style shield (forcefield) recolored celestial blue.
-    -- Delayed ~0.6s so it appears as the player materializes (synced with the
-    -- ghost->body spawn anim), NOT on the ghost.
+    -- Cancel any previous buff/shield tasks (no stacking on repeated revives).
+    if player._wagstaff_celestial_shield_task then
+        player._wagstaff_celestial_shield_task:Cancel()
+        player._wagstaff_celestial_shield_task = nil
+    end
+    if player._wagstaff_celestial_expire_task then
+        player._wagstaff_celestial_expire_task:Cancel()
+    end
+    -- Remove any leftover shield FX from a previous buff.
+    if player._wagstaff_celestial_shield_fx and player._wagstaff_celestial_shield_fx:IsValid() then
+        player._wagstaff_celestial_shield_fx:Remove()
+    end
     player._wagstaff_celestial_shield_fx = nil
-    player:DoTaskInTime(0.6, function()
+
+    -- FX: ruinshat-style shield (forcefield) recolored celestial blue,
+    -- respawned CONTINUOUSLY so the shield visual persists the full 60s
+    -- duration (forcefield self-removes after ~2-3s, so we refresh it).
+    -- Initial spawn delayed ~0.6s to sync with the ghost->body materialization
+    -- (NOT on the ghost), per user request.
+    local function SpawnShield()
         if not player:IsValid() or not player.entity then return end
+        -- Remove previous shield if still around (anti-stack / refresh).
+        if player._wagstaff_celestial_shield_fx and player._wagstaff_celestial_shield_fx:IsValid() then
+            player._wagstaff_celestial_shield_fx:Remove()
+        end
         local fx = G.SpawnPrefab("forcefield")
         if fx then
             fx.entity:SetParent(player.entity)
@@ -87,33 +118,49 @@ local function ApplyCelestialBuff(player)
             end
             player._wagstaff_celestial_shield_fx = fx
         end
+    end
+
+    -- Initial shield at 0.6s (sync with spawn anim), then continuous respawns.
+    player:DoTaskInTime(0.6, function()
+        if not player:IsValid() then return end
+        SpawnShield()
+        player._wagstaff_celestial_shield_task =
+            player:DoPeriodicTask(CELESTIAL_SHIELD_RESPAWN_INTERVAL, SpawnShield)
     end)
 
     -- Expire the buff after the duration.
-    if player._wagstaff_celestial_expire_task then
-        player._wagstaff_celestial_expire_task:Cancel()
-    end
     player._wagstaff_celestial_expire_task = player:DoTaskInTime(CELESTIAL_DURATION, function()
         if not player:IsValid() then return end
-        -- Restore max HP (subtract the bonus; health component clamps current).
+        -- Stop the continuous shield respawns.
+        if player._wagstaff_celestial_shield_task then
+            player._wagstaff_celestial_shield_task:Cancel()
+            player._wagstaff_celestial_shield_task = nil
+        end
+        -- Remove the last shield FX.
+        if player._wagstaff_celestial_shield_fx and player._wagstaff_celestial_shield_fx:IsValid() then
+            player._wagstaff_celestial_shield_fx:Remove()
+        end
+        player._wagstaff_celestial_shield_fx = nil
+        -- Remove the +100 max HP. DeltaMaxHealth scales current proportionally
+        -- and clears the badge up-arrow. Fallback: SetMaxHealth + clamp.
         if health and health:IsAlive() then
-            health:SetMaxHealth(health.maxhealth - CELESTIAL_HP_BONUS)
+            if health.DeltaMaxHealth then
+                health:DeltaMaxHealth(-CELESTIAL_HP_BONUS)
+            else
+                health:SetMaxHealth(math.max(1, health.maxhealth - CELESTIAL_HP_BONUS))
+            end
         end
         -- Restore absorption.
         if health then
             health:SetAbsorptionAmount(player._wagstaff_celestial_old_absorb or 0)
         end
-        -- Remove shield FX if still around.
-        if player._wagstaff_celestial_shield_fx and player._wagstaff_celestial_shield_fx:IsValid() then
-            player._wagstaff_celestial_shield_fx:Remove()
-        end
-        player._wagstaff_celestial_shield_fx = nil
         player._wagstaff_celestial_expire_task = nil
         _dbgF("[AFFINITY REVIVE] CELESTIAL: buff expired after %ss", tostring(CELESTIAL_DURATION))
     end)
 
-    _dbgF("[AFFINITY REVIVE] CELESTIAL: full stats + %s HP + %s%% absorb for %ss",
-        tostring(CELESTIAL_HP_BONUS), tostring(CELESTIAL_ABSORPTION * 100), tostring(CELESTIAL_DURATION))
+    _dbgF("[AFFINITY REVIVE] CELESTIAL: full stats + %s HP (DeltaMaxHealth) + %s%% absorb for %ss, shield continuous FX every %ss",
+        tostring(CELESTIAL_HP_BONUS), tostring(CELESTIAL_ABSORPTION * 100),
+        tostring(CELESTIAL_DURATION), tostring(CELESTIAL_SHIELD_RESPAWN_INTERVAL))
 end
 
 ----------------------------------------------------------------
