@@ -1120,10 +1120,17 @@ inst.components.burnable.ignorefuel = true
         inst:ListenForEvent("fuelchange", function() UpdateButler3Name(inst) end)
         inst:ListenForEvent("healthdelta", function() UpdateButler3Name(inst) end)
 
-        -- v2.0.15: HAUNT RESURRECTION rework — affinity revive powers work ALL DAY
+        -- v2.0.17: HAUNT RESURRECTION rework — affinity revive powers work ALL DAY
         -- SHADOW (all day): consume haunter's nearest meat_effigy; butler SURVIVES
-        -- CELESTIAL (all day): downgrade butler to MK1; butler SURVIVES; 1/day cooldown
+        -- CELESTIAL (all day): butler FULLY DISCHARGES (fuel->0) + downgrades to MK1;
+        --   butler SURVIVES as inert MK1 (must be refueled); 1/day cooldown; celestial FX
         -- Default (no affinity): bot dies, player revives (classic behavior)
+        --
+        -- v2.0.17 BUGFIX: affinity tags were checked ONLY on GetOwner() (follower
+        -- leader). When the owner is DEAD (ghost), the follower leader link can be
+        -- nil, so OwnerHasShadow/OwnerHasCelestial returned false and the butler
+        -- always died. Now we ALSO check the tags on the haunter (the ghost player
+        -- attempting the revive) — its tags persist through death.
 
         local function FindAndConsumeEffigy(player)
             if not player or not player.Transform then return false end
@@ -1131,9 +1138,9 @@ inst.components.burnable.ignorefuel = true
             local nearest_dist = math.huge
             for _, ent in pairs(_G.Ents) do
                 if ent and ent:IsValid() and ent.prefab == "meat_effigy" and not ent:IsInLimbo() then
-                    -- Ownership check: DST meat_effigies store builder userid
-                    -- If userid field exists, only match this player's effigies (MP-safe)
-                    -- If no userid tracking, accept as candidate (SP fallback)
+                    -- Ownership check: DST meat_effigies store builder userid.
+                    -- If userid field exists, only match this player's effigies (MP-safe).
+                    -- If no userid tracking, accept as candidate (SP/console fallback).
                     local owned = (ent.userid == nil) or (ent.userid == player.userid)
                     if owned then
                         local dist = player:GetDistanceSqToInst(ent)
@@ -1160,7 +1167,57 @@ inst.components.burnable.ignorefuel = true
             return false
         end
 
-        local function DowngradeButlerToMK1(inst, owner)
+        -- v2.0.17: Celestial "soul leaving" FX for the discharge/revive moment.
+        -- Uses LIGHT, celestial-themed effects (white-blue shield + ascending
+        -- sparkles + a light flash that fades) — deliberately NOT shadow/dark FX.
+        local function PlayCelestialDischargeFX(pt)
+            local x, y, z = pt.x, pt.y, pt.z
+            -- Celestial light shield (matches the MK3 menu affinity FX)
+            local shield = _G.SpawnPrefab("ghostlyelixir_shield_fx")
+            if shield then
+                shield.Transform:SetPosition(x, y + 0.5, z)
+                shield.Transform:SetScale(1.3, 1.3, 1.3)
+                if shield.AnimState then
+                    shield.AnimState:SetMultColour(1, 1, 1, 0.8)
+                end
+            end
+            -- Ascending sparkles (evokes a soul/essence rising from the chassis)
+            local sparkle = _G.SpawnPrefab("sparklefx")
+            if sparkle then
+                sparkle.Transform:SetPosition(x, y + 0.3, z)
+            end
+            -- Brief celestial light flash (white-blue) that fades — the energy
+            -- leaving the bot as it discharges. Built manually so it always exists.
+            local lightfx = _G.CreateEntity()
+            if lightfx then
+                lightfx.entity:AddTransform()
+                lightfx.entity:AddLight()
+                lightfx.Light:SetRadius(4)
+                lightfx.Light:SetIntensity(0.9)
+                lightfx.Light:SetFalloff(0.7)
+                lightfx.Light:SetColour(0.7, 0.85, 1) -- celestial white-blue
+                lightfx.Light:Enable(true)
+                lightfx.Transform:SetPosition(x, y + 0.5, z)
+                lightfx.persists = false
+                lightfx:DoTaskInTime(0.4, function()
+                    if lightfx and lightfx:IsValid() and lightfx.Light then
+                        lightfx.Light:SetIntensity(0.5)
+                    end
+                end)
+                lightfx:DoTaskInTime(0.8, function()
+                    if lightfx and lightfx:IsValid() and lightfx.Light then
+                        lightfx.Light:SetIntensity(0.2)
+                    end
+                end)
+                lightfx:DoTaskInTime(1.2, function()
+                    if lightfx and lightfx:IsValid() then lightfx:Remove() end
+                end)
+            end
+        end
+
+        -- v2.0.17: discharge param — when true (celestial revive), the new MK1
+        -- spawns with 0 fuel (fully discharged) as the cost of the revive.
+        local function DowngradeButlerToMK1(inst, owner, discharge)
             local pt = inst:GetPosition()
             local newbot = nil
             -- Use petleash if available (proper pet registration)
@@ -1175,14 +1232,19 @@ inst.components.burnable.ignorefuel = true
             end
             if newbot then
                 newbot.Transform:SetRotation(inst.Transform:GetRotation())
-                if inst.components.fueled and newbot.components.fueled then
-                    newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                if newbot.components.fueled then
+                    if discharge then
+                        -- CELESTIAL: bot FULLY DISCHARGES (fuel -> 0). Player must
+                        -- refuel the MK1 to bring it back online.
+                        newbot.components.fueled.currentfuel = 0
+                    elseif inst.components.fueled then
+                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                    end
                 end
                 if inst.components.health and newbot.components.health then
                     newbot.components.health:SetCurrentHealth(
                         math.min(inst.components.health.currenthealth, newbot.components.health.maxhealth))
                 end
-                _G.SpawnPrefab("small_puff").Transform:SetPosition(pt.x, pt.y, pt.z)
             end
             inst:Remove()
         end
@@ -1190,21 +1252,35 @@ inst.components.burnable.ignorefuel = true
         inst:AddComponent("hauntable")
         inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
             if haunter:HasTag("playerghost") and inst.prefab == "williambutler3" then
-                -- Standard revive
+                local owner = GetOwner(inst)
+                -- v2.0.17 BUGFIX: check tags on BOTH owner and haunter. The follower
+                -- leader (owner) can be nil when the owner is dead; the haunter (the
+                -- ghost player) is always valid and its affinity tags persist through
+                -- death. This was the root cause of "shadow affinity revive doesn't work".
+                local shadow = (owner and owner:HasTag("wagstaff_shadow_possession"))
+                            or haunter:HasTag("wagstaff_shadow_possession")
+                local celestial = (owner and owner:HasTag("wagstaff_celestial_possession"))
+                              or haunter:HasTag("wagstaff_celestial_possession")
+
+                print(string.format("[BUTLER REVIVE] haunt by ghost=%s owner=%s shadow=%s celestial=%s",
+                    tostring(haunter and haunter.prefab),
+                    tostring(owner and owner.prefab or "NIL"),
+                    tostring(shadow), tostring(celestial)))
+
+                -- Standard revive (player respawns)
                 haunter:PushEvent("respawnfromghost", { source = inst })
 
-                local owner = GetOwner(inst)
-                local celestial = OwnerHasCelestial(inst)
-                local shadow    = OwnerHasShadow(inst)
-
-                -- v2.0.15 SHADOW (all day): consume haunter's meat_effigy, butler survives
+                -- v2.0.17 SHADOW (all day): consume haunter's meat_effigy, butler survives
                 if shadow then
-                    if FindAndConsumeEffigy(haunter) then
+                    local found = FindAndConsumeEffigy(haunter)
+                    print(string.format("[BUTLER REVIVE] SHADOW path: effigy_found=%s", tostring(found)))
+                    if found then
                         -- Butler survives! Bonus sanity (+30% max)
                         haunter:DoTaskInTime(0.5, function()
                             if haunter:IsValid() and haunter.components.sanity then
                                 local bonus_sanity = haunter.components.sanity.max * 0.3
                                 haunter.components.sanity:DoDelta(bonus_sanity)
+                                print(string.format("[BUTLER REVIVE] SHADOW: +%.0f sanity applied", bonus_sanity))
                             end
                         end)
                         -- Bot does NOT die — effigy took its place
@@ -1213,32 +1289,43 @@ inst.components.burnable.ignorefuel = true
                     -- No effigy found — fall through to default (bot dies)
                 end
 
-                -- v2.0.15 CELESTIAL (all day): downgrade to MK1, 1/day cooldown, butler survives
+                -- v2.0.17 CELESTIAL (all day): FULL DISCHARGE + downgrade to MK1,
+                -- 1/day cooldown, butler survives as inert MK1. Celestial soul FX.
                 if celestial then
                     local today = TheWorld.state.cycles
-                    local last_day = owner and owner._celestial_butler_revive_day or -1
+                    local player_for_cd = owner or haunter
+                    local last_day = player_for_cd and player_for_cd._celestial_butler_revive_day or -1
+                    print(string.format("[BUTLER REVIVE] CELESTIAL path: today=%s last_day=%s",
+                        tostring(today), tostring(last_day)))
                     if last_day ~= today then
                         -- Cooldown available — use it
-                        if owner then owner._celestial_butler_revive_day = today end
+                        if player_for_cd then player_for_cd._celestial_butler_revive_day = today end
+                        -- Celestial "soul leaving" discharge FX (NOT shadow)
+                        local pt = inst:GetPosition()
+                        PlayCelestialDischargeFX(pt)
                         -- Bonus HP (+20% max)
                         haunter:DoTaskInTime(0.5, function()
                             if haunter:IsValid() and haunter.components.health then
                                 local bonus_hp = haunter.components.health.maxhealth * 0.2
                                 haunter.components.health:DoDelta(bonus_hp)
+                                print(string.format("[BUTLER REVIVE] CELESTIAL: +%.0f HP applied", bonus_hp))
                             end
                         end)
-                        -- Downgrade butler to MK1 (bot survives as MK1)
+                        -- Downgrade butler to MK1 with FULL DISCHARGE (fuel -> 0)
                         haunter:DoTaskInTime(1.0, function()
                             if inst:IsValid() then
-                                DowngradeButlerToMK1(inst, owner)
+                                DowngradeButlerToMK1(inst, owner, true)
+                                print("[BUTLER REVIVE] CELESTIAL: downgraded to MK1, fuel=0 (discharged)")
                             end
                         end)
                         return true
                     end
                     -- On cooldown — fall through to default (bot dies)
+                    print("[BUTLER REVIVE] CELESTIAL: on cooldown, falling to default")
                 end
 
                 -- Default: bot dies on revive (no affinity, or affinity fallback)
+                print("[BUTLER REVIVE] DEFAULT path: butler dies")
                 inst.components.health:Kill()
                 return true
             end
