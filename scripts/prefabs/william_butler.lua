@@ -37,6 +37,59 @@ local AffinityPulse = _G.AffinityPulse
 local _dbg  = _G.WagstaffDbg  or function(...) end
 local _dbgF = _G.WagstaffDbgF or function(...) end
 
+-- v2.0.30: PULSE de cor no personagem ao comer comida buffada (NAO e FX prefab).
+-- Inspirado no AffinityPulse dos bots (modmain.lua) mas mais discreto e rapido:
+-- 4 steps x 0.07s = 0.28s total. Fade out de add/mul colour ate restaurar ao
+-- valor base (default OU tint do shadow buff se ativo). Sempre que come comida
+-- buffada, emite um pulse celestial (azul) ou shadow (roxo escuro).
+local EAT_PULSE_PERIOD = 0.07
+local EAT_PULSE_CELESTIAL = {
+    { add = { 0.12, 0.20, 0.40, 0 }, mul = { 0.92, 0.96, 1.0,  1 } },
+    { add = { 0.08, 0.15, 0.30, 0 }, mul = { 0.95, 0.98, 1.0,  1 } },
+    { add = { 0.05, 0.10, 0.20, 0 }, mul = { 0.97, 0.99, 1.0,  1 } },
+    { add = { 0.02, 0.05, 0.10, 0 }, mul = { 0.99, 1.0,  1.0,  1 } },
+}
+local EAT_PULSE_SHADOW = {
+    { add = { 0.14, 0.0, 0.20, 0 }, mul = { 0.85, 0.80, 0.90, 1 } },
+    { add = { 0.10, 0.0, 0.14, 0 }, mul = { 0.89, 0.85, 0.93, 1 } },
+    { add = { 0.06, 0.0, 0.09, 0 }, mul = { 0.93, 0.90, 0.96, 1 } },
+    { add = { 0.03, 0.0, 0.04, 0 }, mul = { 0.96, 0.95, 0.98, 1 } },
+}
+local function DoEatPulse(eater, kind)
+    if not eater or not eater:IsValid() or not eater.AnimState then return end
+    -- Cancela pulse anterior (não empilha em comer rápido).
+    if eater._wagstaff_eat_pulse_task then
+        eater._wagstaff_eat_pulse_task:Cancel()
+        eater._wagstaff_eat_pulse_task = nil
+    end
+    local steps = (kind == "shadow") and EAT_PULSE_SHADOW or EAT_PULSE_CELESTIAL
+    local step = 0
+    eater._wagstaff_eat_pulse_task = eater:DoPeriodicTask(EAT_PULSE_PERIOD, function()
+        if not eater:IsValid() or not eater.AnimState then
+            eater._wagstaff_eat_pulse_task = nil
+            return
+        end
+        step = step + 1
+        if step > #steps then
+            -- Restaura cor base: se o shadow buff tint estiver ativo, restaura
+            -- o tint do buff; senao restaura ao default (add=0, mul=1).
+            if eater._wagstaff_shadow_tinted then
+                eater.AnimState:SetMultColour(0.70, 0.70, 0.78, 1.0)
+                eater.AnimState:SetAddColour(0.05, 0.03, 0.10, 0)
+            else
+                eater.AnimState:SetAddColour(0, 0, 0, 0)
+                eater.AnimState:SetMultColour(1, 1, 1, 1)
+            end
+            eater._wagstaff_eat_pulse_task:Cancel()
+            eater._wagstaff_eat_pulse_task = nil
+            return
+        end
+        local s = steps[step]
+        eater.AnimState:SetAddColour(s.add[1], s.add[2], s.add[3], s.add[4])
+        eater.AnimState:SetMultColour(s.mul[1], s.mul[2], s.mul[3], s.mul[4])
+    end)
+end
+
 local function UpdateButlerName(inst)
     if not inst.components.fueled or not inst.components.health then return end
     local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
@@ -245,23 +298,11 @@ if inst.components.fueled ~= nil then
                             local heal_amount = max_hp * (food._celestial_hp_heal / 100)
                             eater.components.health:DoDelta(heal_amount, false, "celestial_food")
                             _dbgF("[BUTLER COOK] CELESTIAL eaten: healed %.1f HP", heal_amount)
-                            -- v2.0.28: celestial heal FX + sound on eat (ghostlyelixir_shield_fx
-                            -- = same FX family as OnOpen, so the player links it to celestial
-                            -- possession; gemsparkle sound is already used by dispenser.lua).
-                            if eater:IsValid() and eater.Transform then
-                                local x, y, z = eater.Transform:GetWorldPosition()
-                                local heal_fx = SpawnPrefab("ghostlyelixir_shield_fx")
-                                if heal_fx then
-                                    heal_fx.Transform:SetPosition(x, y + 1.0, z) -- chest height
-                                    heal_fx.Transform:SetScale(0.6, 0.6, 0.6)
-                                    if heal_fx.AnimState then
-                                        -- celestial blue tint, slightly transparent
-                                        heal_fx.AnimState:SetMultColour(0.7, 0.9, 1.0, 0.85)
-                                    end
-                                end
-                                if eater.SoundEmitter then
-                                    eater.SoundEmitter:PlaySound("dontstarve/common/gemsparkle")
-                                end
+                            -- v2.0.30: PULSE de cor celestial no personagem (NAO e FX prefab).
+                            -- Discreto e rapido (0.28s). Som gemsparkle como cue audio sutil.
+                            DoEatPulse(eater, "celestial")
+                            if eater.SoundEmitter then
+                                eater.SoundEmitter:PlaySound("dontstarve/common/gemsparkle")
                             end
                         end
                     end)
@@ -287,16 +328,9 @@ if inst.components.fueled ~= nil then
                             local sanity_amount = max_sanity * (food._shadow_sanity_restore / 100)
                             eater.components.sanity:DoDelta(sanity_amount, false, "shadow_food")
                             _dbgF("[BUTLER COOK] SHADOW eaten: restored %.1f sanity", sanity_amount)
-                            -- v2.0.28: shadow sanity FX on eat (shadow_shield1 = same FX
-                            -- family as OnOpen, so the player links it to shadow possession).
-                            if eater:IsValid() and eater.Transform then
-                                local x, y, z = eater.Transform:GetWorldPosition()
-                                local shadow_fx = SpawnPrefab("shadow_shield1")
-                                if shadow_fx then
-                                    shadow_fx.Transform:SetPosition(x, y + 1.0, z) -- chest height
-                                    shadow_fx.Transform:SetScale(0.6, 0.6, 0.6)
-                                end
-                            end
+                            -- v2.0.30: PULSE de cor shadow no personagem (NAO e FX prefab).
+                            -- Discreto e rapido (0.28s), roxo escuro.
+                            DoEatPulse(eater, "shadow")
                         end
                     end)
                 end
