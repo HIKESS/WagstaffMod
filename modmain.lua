@@ -241,6 +241,30 @@ end
 -- Alias local para debug, seguro mesmo que G.WagstaffDebug ainda nao exista
 local WagstaffDebug = (G.WagstaffDebug ~= nil) and G.WagstaffDebug or function(...) end
 
+-- ============================================================================
+-- v2.0.17: LIGHTWEIGHT DEBUG HELPERS (gated by the "Debug mode" mod config button)
+-- ============================================================================
+-- These are the preferred helpers for all debug print() calls across the mod.
+-- They early-return BEFORE any string work when debug is OFF, so the mod does
+-- not "pesar à toa" (no I/O, no formatting, no console mirroring).
+--
+-- Usage:
+--   _dbg("[BUTLER REVIVE] haunt by ghost=", ghost.prefab, "shadow=", shadow)
+--   _dbgF("[BUTLER COOK] prefab=%s isday=%s owner=%s", prefab, isday, owner)
+--
+-- When debug is OFF (default): both are zero-cost (single boolean check, return).
+-- When debug is ON: behave exactly like print() / print(string.format()).
+-- ============================================================================
+G.WagstaffDbg = function(...)
+    if not G.WagstaffDebugEnabled then return end
+    print(...)
+end
+
+G.WagstaffDbgF = function(fmt, ...)
+    if not G.WagstaffDebugEnabled then return end
+    print(string.format(fmt, ...))
+end
+
 -- [REMOVED] RPC lookup/publish functions — no longer needed.
 -- The engine's built-in skill tree RPC handles everything (matches reference mod pattern).
 
@@ -3156,6 +3180,15 @@ AddSimPostInit(function()
     STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_DISPENSERBUILT = "Healing station assembled!"
 
     STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_TELEPORTERBUILT = "Teleportation matrix established!"
+
+    -- v2.0.17: announce strings for when these structures are HAMMERED/destroyed.
+    -- Previously missing — caused "STRING UNKNOWN" / broken text when the player
+    -- hammered a dispenser, sentry, or teleporter entrance/exit.
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_DISPENSER_DOWN = "My dispensing unit! Reduced to scrap."
+
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_SENTRY_DOWN = "My turret! Downed in the line of duty."
+
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_TELEPORTER_DOWN = "The teleportation link has been severed!"
 
     -- Skill tree column titles
 

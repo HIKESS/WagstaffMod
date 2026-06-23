@@ -8,6 +8,10 @@ local prefabs =
         Asset("ANIM", "anim/william_ballistic.zip"),
         Asset("SOUND", "sound/maxwell.fsb"),
     }
+
+-- v2.0.17: debug helpers gated by the "Debug mode" mod config button.
+local _dbg  = _G.WagstaffDbg  or function(...) end
+local _dbgF = _G.WagstaffDbgF or function(...) end
 SetSharedLootTable("ballistic",
 {
     {'nitre',          1},
@@ -71,7 +75,7 @@ local function OwnerHasShadow(inst)
     local owner = GetOwner(inst)
     local has_shadow = owner and owner:HasTag("wagstaff_shadow_possession")
     if has_shadow then
-        -- print("[DEBUG] OwnerHasShadow: TRUE for", inst.prefab, "owner:", owner and owner.name or "nil")
+        -- _dbg("[DEBUG] OwnerHasShadow: TRUE for", inst.prefab, "owner:", owner and owner.name or "nil")
     end
     return has_shadow
 end
@@ -717,36 +721,36 @@ end
             end
         end)
         inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
-            print("[DEBUG] ==============================================")
-            print("[DEBUG] OnFinishCallback chamado para Ballistic Bot")
-            print("[DEBUG] inst.prefab:", inst.prefab)
-            print("[DEBUG] worker.prefab:", worker.prefab)
-            print("[DEBUG] worker.name:", worker.name)
-            print("[DEBUG] inst.upgradelevel:", inst.upgradelevel)
+            _dbg("[DEBUG] ==============================================")
+            _dbg("[DEBUG] OnFinishCallback chamado para Ballistic Bot")
+            _dbg("[DEBUG] inst.prefab:", inst.prefab)
+            _dbg("[DEBUG] worker.prefab:", worker.prefab)
+            _dbg("[DEBUG] worker.name:", worker.name)
+            _dbg("[DEBUG] inst.upgradelevel:", inst.upgradelevel)
             
             inst.components.engieworkable:SetWorkLeft(1)
             -- Use wrench durability
             local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
-            print("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
+            _dbg("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
             if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
                 wrench.components.finiteuses:Use(1)
             end
 
             -- Check if trying to upgrade MK1 to MK2
             if not inst:HasTag("ballistic_upgraded") and inst.prefab ~= "williamballistic2" then
-                print("[DEBUG] Ballistic é MK1 - verificando upgrade para MK2")
-                print("[DEBUG] Chamando WagstaffHasSkill para wagstaff_ballistic_evolve")
-                print("[DEBUG] worker tem skilltreeupdater?", worker.components.skilltreeupdater ~= nil)
+                _dbg("[DEBUG] Ballistic é MK1 - verificando upgrade para MK2")
+                _dbg("[DEBUG] Chamando WagstaffHasSkill para wagstaff_ballistic_evolve")
+                _dbg("[DEBUG] worker tem skilltreeupdater?", worker.components.skilltreeupdater ~= nil)
                 local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_ballistic_evolve")
-                print("[DEBUG] Resultado de WagstaffHasSkill:", has_skill)
+                _dbg("[DEBUG] Resultado de WagstaffHasSkill:", has_skill)
                 if not has_skill then
-                    print("[DEBUG] Skill NÃO encontrada! Abortando upgrade.")
+                    _dbg("[DEBUG] Skill NÃO encontrada! Abortando upgrade.")
                     if worker.components.talker then
                         worker.components.talker:Say("Requires Ballistic Bot MK. II skill!\n(Activate it in the skill tree!)")
                     end
                     return
                 end
-                print("[DEBUG] Skill encontrada! Prosseguindo com upgrade...")
+                _dbg("[DEBUG] Skill encontrada! Prosseguindo com upgrade...")
 
                 local scrap_count = 0
                 if worker.components.inventory then
@@ -892,27 +896,27 @@ end
             end
         end)
         inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
-            print("[DEBUG] ==============================================")
-            print("[DEBUG] OnFinishCallback chamado para Ballistic Bot MK2")
-            print("[DEBUG] inst.prefab:", inst.prefab)
-            print("[DEBUG] worker.prefab:", worker.prefab)
-            print("[DEBUG] inst.upgradelevel_mk3:", inst.upgradelevel_mk3)
+            _dbg("[DEBUG] ==============================================")
+            _dbg("[DEBUG] OnFinishCallback chamado para Ballistic Bot MK2")
+            _dbg("[DEBUG] inst.prefab:", inst.prefab)
+            _dbg("[DEBUG] worker.prefab:", worker.prefab)
+            _dbg("[DEBUG] inst.upgradelevel_mk3:", inst.upgradelevel_mk3)
             
             inst.components.engieworkable:SetWorkLeft(1)
             -- Use wrench durability
             local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
-            print("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
+            _dbg("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
             if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
                 wrench.components.finiteuses:Use(1)
             end
 
             -- Check if can upgrade first (MK2 → MK3, threshold 150)
-            print("[DEBUG] Verificando skill wagstaff_ballistic_mk3...")
+            _dbg("[DEBUG] Verificando skill wagstaff_ballistic_mk3...")
             local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_ballistic_mk3")
-            print("[DEBUG] Tem skill MK3?", has_mk3_skill)
-            print("[DEBUG] upgradelevel_mk3 atual:", inst.upgradelevel_mk3)
+            _dbg("[DEBUG] Tem skill MK3?", has_mk3_skill)
+            _dbg("[DEBUG] upgradelevel_mk3 atual:", inst.upgradelevel_mk3)
             if has_mk3_skill and inst.upgradelevel_mk3 < 150 then
-                print("[DEBUG] Tentando upgrade para MK3...")
+                _dbg("[DEBUG] Tentando upgrade para MK3...")
                 -- Upgrade: scrap metal per wrench hit (5 per hit, 150 total for Mk.III)
                 local scrap_count = 0
                 if worker.components.inventory then

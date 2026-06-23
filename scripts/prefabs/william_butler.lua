@@ -32,6 +32,11 @@ SetSharedLootTable("butlergadget",
 local brain = require "brains/williambutlerbrain"
 local AffinityPulse = _G.AffinityPulse
 
+-- v2.0.17: debug helpers gated by the "Debug mode" mod config button.
+-- Zero-cost when debug is OFF (early return before any string work).
+local _dbg  = _G.WagstaffDbg  or function(...) end
+local _dbgF = _G.WagstaffDbgF or function(...) end
+
 local function UpdateButlerName(inst)
     if not inst.components.fueled or not inst.components.health then return end
     local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
@@ -217,9 +222,9 @@ if inst.components.fueled ~= nil then
                 local _owner = GetOwner(inst)
                 local _has_celest = _owner and _owner:HasTag("wagstaff_celestial_possession")
                 local _has_shadow = _owner and _owner:HasTag("wagstaff_shadow_possession")
-                print(string.format("[BUTLER COOK] prefab=%s isday=%s isdusk=%s owner=%s celest=%s shadow=%s",
+                _dbgF("[BUTLER COOK] prefab=%s isday=%s isdusk=%s owner=%s celest=%s shadow=%s",
                     inst.prefab, tostring(TheWorld.state.isday), tostring(TheWorld.state.isdusk),
-                    tostring(_owner ~= nil), tostring(_has_celest), tostring(_has_shadow)))
+                    tostring(_owner ~= nil), tostring(_has_celest), tostring(_has_shadow))
 
                 -- CELESTIAL POSSESSION: Foods restore HP% (MK3 only)
                 if inst.prefab == "williambutler3" and TheWorld.state.isday and OwnerHasCelestial(inst) then
@@ -229,7 +234,7 @@ if inst.components.fueled ~= nil then
                     -- Store the healing amount on the food item (40% of hunger = HP%)
                     product._celestial_hp_heal = hunger_percent * 40
                     product._celestial_hp_doer = doer
-                    print(string.format("[BUTLER COOK] CELESTIAL applied: heal=%.1f%% of max HP", product._celestial_hp_heal))
+                    _dbgF("[BUTLER COOK] CELESTIAL applied: heal=%.1f%% of max HP", product._celestial_hp_heal)
                     -- Listen for when food is eaten
                     local old_oneaten = product.components.edible.oneaten
                     product.components.edible:SetOnEatenFn(function(food, eater)
@@ -239,7 +244,7 @@ if inst.components.fueled ~= nil then
                             local max_hp = eater.components.health.maxhealth
                             local heal_amount = max_hp * (food._celestial_hp_heal / 100)
                             eater.components.health:DoDelta(heal_amount, false, "celestial_food")
-                            print(string.format("[BUTLER COOK] CELESTIAL eaten: healed %.1f HP", heal_amount))
+                            _dbgF("[BUTLER COOK] CELESTIAL eaten: healed %.1f HP", heal_amount)
                         end
                     end)
                 end
@@ -253,7 +258,7 @@ if inst.components.fueled ~= nil then
                     -- Store the sanity amount on the food item (40% of hunger = sanity%)
                     product._shadow_sanity_restore = hunger_percent * 40
                     product._shadow_sanity_doer = doer
-                    print(string.format("[BUTLER COOK] SHADOW applied: restore=%.1f%% of max sanity", product._shadow_sanity_restore))
+                    _dbgF("[BUTLER COOK] SHADOW applied: restore=%.1f%% of max sanity", product._shadow_sanity_restore)
                     -- Listen for when food is eaten
                     local old_oneaten = product.components.edible.oneaten
                     product.components.edible:SetOnEatenFn(function(food, eater)
@@ -263,7 +268,7 @@ if inst.components.fueled ~= nil then
                             local max_sanity = eater.components.sanity.max
                             local sanity_amount = max_sanity * (food._shadow_sanity_restore / 100)
                             eater.components.sanity:DoDelta(sanity_amount, false, "shadow_food")
-                            print(string.format("[BUTLER COOK] SHADOW eaten: restored %.1f sanity", sanity_amount))
+                            _dbgF("[BUTLER COOK] SHADOW eaten: restored %.1f sanity", sanity_amount)
                         end
                     end)
                 end
@@ -600,48 +605,48 @@ inst.components.burnable.ignorefuel = true
         inst.components.engieworkable:SetMaxWork(1)
         inst.components.engieworkable:SetWorkLeft(1)
         inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
-            print("[DEBUG UPGRADE] OnWorkCallback chamado!")
+            _dbg("[DEBUG UPGRADE] OnWorkCallback chamado!")
             if inst.sg ~= nil then
                 inst.sg:GoToState("hit")
             end
         end)
         inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
-            print("[DEBUG UPGRADE] === INICIO DO UPGRADE DO BUTLER ===")
-            print("[DEBUG UPGRADE] worker:", worker, worker.prefab)
-            print("[DEBUG UPGRADE] inst:", inst, inst.prefab)
+            _dbg("[DEBUG UPGRADE] === INICIO DO UPGRADE DO BUTLER ===")
+            _dbg("[DEBUG UPGRADE] worker:", worker, worker.prefab)
+            _dbg("[DEBUG UPGRADE] inst:", inst, inst.prefab)
             
             if inst.sg ~= nil and inst.sg:HasStateTag("shutdown") then
-                print("[DEBUG UPGRADE] Bot em estado shutdown, abortando")
+                _dbg("[DEBUG UPGRADE] Bot em estado shutdown, abortando")
                 return
             end
             
             local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
-            print("[DEBUG UPGRADE] Wrench equipada:", wrench and wrench.prefab or "NENHUMA")
+            _dbg("[DEBUG UPGRADE] Wrench equipada:", wrench and wrench.prefab or "NENHUMA")
             
             if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
-                print("[DEBUG UPGRADE] Usando durabilidade da wrench")
+                _dbg("[DEBUG UPGRADE] Usando durabilidade da wrench")
                 wrench.components.finiteuses:Use(1)
             end
 
             -- PRIORITY 1: Repair if HP < 100% (NO skill required)
-            print("[DEBUG UPGRADE] HP atual:", inst.components.health.currenthealth, "/", inst.components.health.maxhealth)
+            _dbg("[DEBUG UPGRADE] HP atual:", inst.components.health.currenthealth, "/", inst.components.health.maxhealth)
             if inst.components.health.currenthealth < inst.components.health.maxhealth then
-                print("[DEBUG UPGRADE] Tentando reparar bot...")
+                _dbg("[DEBUG UPGRADE] Tentando reparar bot...")
                 local function IsScrap(item)
                     return item.prefab == "scrap"
                 end
                 local scrapstack = worker.components.inventory:FindItem(IsScrap)
                 local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
-                print("[DEBUG UPGRADE] Scrap encontrado:", scrapstack and scrapstack.prefab or "NENHUM", "Custo reparo:", repair_cost)
+                _dbg("[DEBUG UPGRADE] Scrap encontrado:", scrapstack and scrapstack.prefab or "NENHUM", "Custo reparo:", repair_cost)
                 if repair_cost > 0 and scrapstack == nil then
-                    print("[DEBUG UPGRADE] Sem scrap para reparo!")
+                    _dbg("[DEBUG UPGRADE] Sem scrap para reparo!")
                     if worker.components.talker then
                         worker.components.talker:Say("Need Scrap Metal to repair!")
                     end
                     return
                 end
                 if repair_cost > 0 then
-                    print("[DEBUG UPGRADE] Consumindo", repair_cost, "scrap(s) para reparo")
+                    _dbg("[DEBUG UPGRADE] Consumindo", repair_cost, "scrap(s) para reparo")
                     worker.components.inventory:ConsumeByName("scrap", repair_cost)
                 end
                 inst.components.health:DoDelta(50)
@@ -649,27 +654,27 @@ inst.components.burnable.ignorefuel = true
                 if worker.components.talker then
                     worker.components.talker:Say("Repaired 50 HP!")
                 end
-                print("[DEBUG UPGRADE] Reparo concluido!")
+                _dbg("[DEBUG UPGRADE] Reparo concluido!")
                 return
             end
 
             -- PRIORITY 2: Upgrade if HP = 100% AND skill learned
-            print("[DEBUG UPGRADE] Bot com HP maximo, verificando skill wagstaff_thermal_upgrade...")
-            print("[DEBUG UPGRADE] worker.prefab=", tostring(worker.prefab))
-            print("[DEBUG UPGRADE] worker tem skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
+            _dbg("[DEBUG UPGRADE] Bot com HP maximo, verificando skill wagstaff_thermal_upgrade...")
+            _dbg("[DEBUG UPGRADE] worker.prefab=", tostring(worker.prefab))
+            _dbg("[DEBUG UPGRADE] worker tem skilltreeupdater=", tostring(worker.components.skilltreeupdater ~= nil))
             
             local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade")
-            print("[DEBUG UPGRADE] Resultado de WagstaffHasSkill:", has_skill)
+            _dbg("[DEBUG UPGRADE] Resultado de WagstaffHasSkill:", has_skill)
             
             if not has_skill then
-                print("[DEBUG UPGRADE] Skill NAO encontrada! Bloqueando upgrade.")
+                _dbg("[DEBUG UPGRADE] Skill NAO encontrada! Bloqueando upgrade.")
                 if worker.components.talker then
                     worker.components.talker:Say("Requires Butler MK. II skill!\n(Activate it in the skill tree!)")
                 end
                 return
             end
             
-            print("[DEBUG UPGRADE] Skill encontrada! Prosseguindo com upgrade...")
+            _dbg("[DEBUG UPGRADE] Skill encontrada! Prosseguindo com upgrade...")
 
     -- Upgrade: variable scrap cost per wrench hit (10, 10, 10, 10, 15 = 55 total)
             local scrap_count = 0
@@ -682,32 +687,32 @@ inst.components.burnable.ignorefuel = true
                     end
                 end
             end
-            print("[DEBUG UPGRADE] Scrap count no inventario:", scrap_count)
+            _dbg("[DEBUG UPGRADE] Scrap count no inventario:", scrap_count)
             
             -- Determine cost based on current upgrade level
             local upgrade_cost_table = {10, 10, 10, 10, 10}  -- v2.0.16: 50 scraps total (was 55)
             local hits_so_far = math.floor(inst.upgradelevel / 10)  -- 0-5 hits
             local base_cost = upgrade_cost_table[hits_so_far + 1] or 10
             local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, base_cost)
-            print("[DEBUG UPGRADE] Upgrade level atual:", inst.upgradelevel, "hits_so_far:", hits_so_far, "base_cost:", base_cost, "upgrade_cost (com eficiencia):", upgrade_cost)
+            _dbg("[DEBUG UPGRADE] Upgrade level atual:", inst.upgradelevel, "hits_so_far:", hits_so_far, "base_cost:", base_cost, "upgrade_cost (com eficiencia):", upgrade_cost)
             
             if upgrade_cost > 0 and scrap_count < upgrade_cost then
-                print("[DEBUG UPGRADE] Scrap insuficiente! Precisa de", upgrade_cost, "tem", scrap_count)
+                _dbg("[DEBUG UPGRADE] Scrap insuficiente! Precisa de", upgrade_cost, "tem", scrap_count)
                 if worker.components.talker then
                     worker.components.talker:Say("Need " .. upgrade_cost .. " Scrap Metal!")
                 end
                 return
             end
             if upgrade_cost > 0 then
-                print("[DEBUG UPGRADE] Consumindo", upgrade_cost, "scrap(s) para upgrade")
+                _dbg("[DEBUG UPGRADE] Consumindo", upgrade_cost, "scrap(s) para upgrade")
                 worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
             end
             inst.upgradelevel = inst.upgradelevel + base_cost
-            print("[DEBUG UPGRADE] Novo upgrade level:", inst.upgradelevel)
+            _dbg("[DEBUG UPGRADE] Novo upgrade level:", inst.upgradelevel)
             UpdateButlerName(inst)
 
             if inst.upgradelevel >= 50 then
-                print("[DEBUG UPGRADE] UPGRADE COMPLETO! Spawnando williambutler2...")
+                _dbg("[DEBUG UPGRADE] UPGRADE COMPLETO! Spawnando williambutler2...")
                 inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                 if worker.components.talker then
                     worker.components.talker:Say("Butler Bot MK. II upgrade complete!")
@@ -716,19 +721,19 @@ inst.components.burnable.ignorefuel = true
                 -- Spawn upgraded bot
                 local pt = inst:GetPosition()
                 local newbot = SpawnPrefab("williambutler2")
-                print("[DEBUG UPGRADE] newbot spawned:", newbot and "SUCESSO" or "FALHA")
+                _dbg("[DEBUG UPGRADE] newbot spawned:", newbot and "SUCESSO" or "FALHA")
                 if newbot ~= nil then
                     newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
                     newbot.Transform:SetRotation(inst.Transform:GetRotation())
 
                     -- Transfer fuel
                     if inst.components.fueled and newbot.components.fueled then
-                        print("[DEBUG UPGRADE] Transferindo fuel:", inst.components.fueled.currentfuel)
+                        _dbg("[DEBUG UPGRADE] Transferindo fuel:", inst.components.fueled.currentfuel)
                         newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
                     end
                     -- Transfer health
                     if inst.components.health and newbot.components.health then
-                        print("[DEBUG UPGRADE] Transferindo health:", inst.components.health.currenthealth)
+                        _dbg("[DEBUG UPGRADE] Transferindo health:", inst.components.health.currenthealth)
                         newbot.components.health:SetCurrentHealth(inst.components.health.currenthealth)
                     end
                     -- Transfer container items (crockpot slots 1-3)
@@ -736,7 +741,7 @@ inst.components.burnable.ignorefuel = true
                         for slot = 1, 3 do
                             local item = inst.components.container:GetItemInSlot(slot)
                             if item ~= nil then
-                                print("[DEBUG UPGRADE] Transferindo item do slot", slot, ":", item.prefab)
+                                _dbg("[DEBUG UPGRADE] Transferindo item do slot", slot, ":", item.prefab)
                                 newbot.components.container:GiveItem(item, slot)
                             end
                         end
@@ -746,7 +751,7 @@ inst.components.burnable.ignorefuel = true
                     if inst.components.follower and newbot.components.follower then
                         local leader = inst.components.follower:GetLeader()
                         if leader ~= nil then
-                            print("[DEBUG UPGRADE] Transferindo leader:", leader.prefab)
+                            _dbg("[DEBUG UPGRADE] Transferindo leader:", leader.prefab)
                             newbot.components.follower:SetLeader(leader)
                         end
                     end
@@ -755,10 +760,10 @@ inst.components.burnable.ignorefuel = true
                     SpawnPrefab("small_puff").Transform:SetPosition(pt.x, pt.y, pt.z)
                 end
 
-                print("[DEBUG UPGRADE] Removendo bot antigo...")
+                _dbg("[DEBUG UPGRADE] Removendo bot antigo...")
                 inst:Remove()
             else
-                print("[DEBUG UPGRADE] Upgrade em andamento... falta", 85 - inst.upgradelevel, "para completar")
+                _dbg("[DEBUG UPGRADE] Upgrade em andamento... falta", 85 - inst.upgradelevel, "para completar")
             end
         end)
 
@@ -1262,10 +1267,10 @@ inst.components.burnable.ignorefuel = true
                 local celestial = (owner and owner:HasTag("wagstaff_celestial_possession"))
                               or haunter:HasTag("wagstaff_celestial_possession")
 
-                print(string.format("[BUTLER REVIVE] haunt by ghost=%s owner=%s shadow=%s celestial=%s",
+                _dbgF("[BUTLER REVIVE] haunt by ghost=%s owner=%s shadow=%s celestial=%s",
                     tostring(haunter and haunter.prefab),
                     tostring(owner and owner.prefab or "NIL"),
-                    tostring(shadow), tostring(celestial)))
+                    tostring(shadow), tostring(celestial))
 
                 -- Standard revive (player respawns)
                 haunter:PushEvent("respawnfromghost", { source = inst })
@@ -1273,14 +1278,14 @@ inst.components.burnable.ignorefuel = true
                 -- v2.0.17 SHADOW (all day): consume haunter's meat_effigy, butler survives
                 if shadow then
                     local found = FindAndConsumeEffigy(haunter)
-                    print(string.format("[BUTLER REVIVE] SHADOW path: effigy_found=%s", tostring(found)))
+                    _dbgF("[BUTLER REVIVE] SHADOW path: effigy_found=%s", tostring(found))
                     if found then
                         -- Butler survives! Bonus sanity (+30% max)
                         haunter:DoTaskInTime(0.5, function()
                             if haunter:IsValid() and haunter.components.sanity then
                                 local bonus_sanity = haunter.components.sanity.max * 0.3
                                 haunter.components.sanity:DoDelta(bonus_sanity)
-                                print(string.format("[BUTLER REVIVE] SHADOW: +%.0f sanity applied", bonus_sanity))
+                                _dbgF("[BUTLER REVIVE] SHADOW: +%.0f sanity applied", bonus_sanity)
                             end
                         end)
                         -- Bot does NOT die — effigy took its place
@@ -1295,8 +1300,8 @@ inst.components.burnable.ignorefuel = true
                     local today = TheWorld.state.cycles
                     local player_for_cd = owner or haunter
                     local last_day = player_for_cd and player_for_cd._celestial_butler_revive_day or -1
-                    print(string.format("[BUTLER REVIVE] CELESTIAL path: today=%s last_day=%s",
-                        tostring(today), tostring(last_day)))
+                    _dbgF("[BUTLER REVIVE] CELESTIAL path: today=%s last_day=%s",
+                        tostring(today), tostring(last_day))
                     if last_day ~= today then
                         -- Cooldown available — use it
                         if player_for_cd then player_for_cd._celestial_butler_revive_day = today end
@@ -1308,24 +1313,24 @@ inst.components.burnable.ignorefuel = true
                             if haunter:IsValid() and haunter.components.health then
                                 local bonus_hp = haunter.components.health.maxhealth * 0.2
                                 haunter.components.health:DoDelta(bonus_hp)
-                                print(string.format("[BUTLER REVIVE] CELESTIAL: +%.0f HP applied", bonus_hp))
+                                _dbgF("[BUTLER REVIVE] CELESTIAL: +%.0f HP applied", bonus_hp)
                             end
                         end)
                         -- Downgrade butler to MK1 with FULL DISCHARGE (fuel -> 0)
                         haunter:DoTaskInTime(1.0, function()
                             if inst:IsValid() then
                                 DowngradeButlerToMK1(inst, owner, true)
-                                print("[BUTLER REVIVE] CELESTIAL: downgraded to MK1, fuel=0 (discharged)")
+                                _dbg("[BUTLER REVIVE] CELESTIAL: downgraded to MK1, fuel=0 (discharged)")
                             end
                         end)
                         return true
                     end
                     -- On cooldown — fall through to default (bot dies)
-                    print("[BUTLER REVIVE] CELESTIAL: on cooldown, falling to default")
+                    _dbg("[BUTLER REVIVE] CELESTIAL: on cooldown, falling to default")
                 end
 
                 -- Default: bot dies on revive (no affinity, or affinity fallback)
-                print("[BUTLER REVIVE] DEFAULT path: butler dies")
+                _dbg("[BUTLER REVIVE] DEFAULT path: butler dies")
                 inst.components.health:Kill()
                 return true
             end
