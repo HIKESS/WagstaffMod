@@ -10,6 +10,7 @@
 --   - +100 max-HP bonus (via DeltaMaxHealth).
 --   - 25% damage absorption for the duration.
 --   - 5 HP/sec regen for the duration (drives the health-badge up-arrow).
+--   - +15% damage dealt for the duration (v2.0.39 — closes the gap with Shadow).
 --   - Duration: 60s.
 --   - FX: ruinshat-style shield using the PERSISTENT `forcefieldfx` prefab
 --         (NOT `forcefield` which self-removes after ~2-3s). `forcefieldfx`
@@ -60,6 +61,13 @@ local CELESTIAL_DURATION   = 60     -- seconds
 local CELESTIAL_HP_BONUS   = 100    -- +max HP
 local CELESTIAL_ABSORPTION = 0.25   -- 25% damage absorption
 local CELESTIAL_REGEN_RATE = 5      -- HP per second (drives the health-badge up-arrow)
+-- v2.0.39: Celestial revive now also grants +15% damage, matching the Shadow
+-- revive's offensive identity with a smaller offensive bonus. This closes the
+-- gap where Shadow revive (+50% dmg) was strictly better than Celestial for
+-- DPS situations. Celestial is still defensively stronger (absorb + regen +
+-- max HP), Shadow is still offensively stronger (50% vs 15% dmg + atk speed +
+-- lifesteal), but Celestial is no longer a pure-defensive dead pick.
+local CELESTIAL_DAMAGE_MULT = 1.15  -- +15% damage dealt
 
 local SHADOW_DURATION        = 60   -- seconds
 local SHADOW_DAMAGE_MULT     = 1.50 -- +50% damage dealt
@@ -153,6 +161,14 @@ local function ApplyCelestialBuff(player)
         health:SetRegen(CELESTIAL_REGEN_RATE, 1)
     end
 
+    -- v2.0.39: +15% damage dealt (save old damagemultiplier to restore on expiry).
+    -- Same pattern as the Shadow buff's damage multiplier.
+    local combat = player.components.combat
+    if combat then
+        player._wagstaff_celestial_dmg_orig = combat.damagemultiplier or 1
+        combat.damagemultiplier = player._wagstaff_celestial_dmg_orig * CELESTIAL_DAMAGE_MULT
+    end
+
     -- Cancel any previous buff/shield (no stacking on repeated revives).
     if player._wagstaff_celestial_shield_fx and player._wagstaff_celestial_shield_fx:IsValid() then
         player._wagstaff_celestial_shield_fx:Remove()
@@ -217,13 +233,19 @@ local function ApplyCelestialBuff(player)
         if health then
             health:SetAbsorptionAmount(player._wagstaff_celestial_old_absorb or 0)
         end
+        -- v2.0.39: restore the original damage multiplier.
+        if player.components.combat and player._wagstaff_celestial_dmg_orig then
+            player.components.combat.damagemultiplier = player._wagstaff_celestial_dmg_orig
+        end
+        player._wagstaff_celestial_dmg_orig = nil
         player._wagstaff_celestial_expire_task = nil
         _dbgF("[AFFINITY] Celestial: buff expired after %ss", tostring(CELESTIAL_DURATION))
     end)
 
-    _dbgF("[AFFINITY] Celestial: full HP (no san/hunger) + %s max HP + %s%% absorb + %s HP/s regen for %ss",
+    _dbgF("[AFFINITY] Celestial: full HP (no san/hunger) + %s max HP + %s%% absorb + %s HP/s regen + %s%% damage for %ss",
         tostring(CELESTIAL_HP_BONUS), tostring(CELESTIAL_ABSORPTION * 100),
-        tostring(CELESTIAL_REGEN_RATE), tostring(CELESTIAL_DURATION))
+        tostring(CELESTIAL_REGEN_RATE), tostring((CELESTIAL_DAMAGE_MULT - 1) * 100),
+        tostring(CELESTIAL_DURATION))
 end
 
 ----------------------------------------------------------------

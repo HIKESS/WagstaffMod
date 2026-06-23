@@ -97,16 +97,29 @@ local function SpawnShadowClone(parent_buster)
         end
     end)
     
-    -- Set up combat stats (50% of parent)
+    -- Set up combat stats.
+    -- v2.0.39: clone damage 50% -> 35% of parent. Combined with the v2.0.38
+    -- change (clone now HUNTS shadow creatures), 50% was too strong — the clone
+    -- could solo-kill Terrorbeaks faster than the parent. 35% keeps it as a
+    -- support fighter, not a replacement for the parent.
     if clone.components.combat then
         local parent_damage = parent_buster.components.combat and parent_buster.components.combat.defaultdamage or TUNING.WILLIAM_BUSTER_DAMAGE
-        clone.components.combat:SetDefaultDamage(parent_damage * 0.5)
+        clone.components.combat:SetDefaultDamage(parent_damage * 0.35)
     end
-    
-    -- Make health invincible (shadow clone takes no damage)
+
+    -- v2.0.39: clone HP is now FINITE (50% of parent max HP) instead of
+    -- invincible. An immortal clone that also hunts shadows (v2.0.38) had no
+    -- trade-off. Now the clone can die if focused by enemies — the player must
+    -- position the parent well to keep the clone alive. Still absorbs damage
+    -- (50% absorption) so it's tanky but not unkillable.
     if clone.components.health then
-        clone.components.health:SetInvincible(true)
-        clone.components.health:SetAbsorptionAmount(1)
+        local parent_maxhp = parent_buster.components.health and parent_buster.components.health.maxhealth or TUNING.WILLIAM_BUSTER_HEALTH
+        clone.components.health:SetMaxHealth(parent_maxhp * 0.5)
+        clone.components.health:SetAbsorptionAmount(0.5)
+        -- Keep health regen so the clone recovers between fights (parent has regen too).
+        if clone.components.health.StartRegen then
+            clone.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN or 5, TUNING.WILLIAM_ROBOT_REGENPERIOD or 5)
+        end
     end
     
     -- Don't consume fuel (it's a shadow manifestation)
@@ -204,13 +217,30 @@ local function SpawnShadowClone(parent_buster)
         clone.components.named:SetName("Shadow Buster")
     end
     
-    -- Monitor dusk state and parent health - REMOVE when dusk ends or parent dies
+    -- Monitor dusk state, parent health, and CLONE health.
+    -- v2.0.39: clone now has finite HP — also despawn when the clone itself dies
+    -- (instead of leaving a corpse that lingers until dusk ends).
     clone:DoPeriodicTask(0.5, function()
         if not parent_buster:IsValid() or not clone:IsValid() then
             if clone:IsValid() then clone:Remove() end
             return
         end
-        
+
+        -- v2.0.39: if the clone's HP ran out, despawn it with the shadow FX
+        -- (don't leave a dead clone body hanging around).
+        if clone.components.health and clone.components.health:IsDead() then
+            local remove_fx = SpawnPrefab("shadow_despawn")
+            if remove_fx then
+                local cx, cy, cz = clone.Transform:GetWorldPosition()
+                remove_fx.Transform:SetPosition(cx, cy, cz)
+                if remove_fx.SoundEmitter then
+                    remove_fx.SoundEmitter:KillAllSounds()
+                end
+            end
+            clone:Remove()
+            return
+        end
+
         -- Check if dusk ended (not dusk anymore) or parent is dead
         if not TheWorld.state.isdusk or not parent_buster.components.health or parent_buster.components.health:IsDead() then
             -- FX: shadow despawn (NO SOUND)
