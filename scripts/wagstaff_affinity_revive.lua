@@ -29,14 +29,19 @@
 --       * Lifesteal:           15%    (heal 15% of damage dealt — sustain via offense)
 --       * Duration:            60s
 --   - Visual: subtle dark tint on the player for the duration (cleared on expiry).
---   - FX (v2.0.36): CONTINUOUS RESPAWN of shadow_shield1 (quick-effect prefab
---         that self-removes after ~2-3s). Re-spawned every 2.5s for the full
---         60s buff so the visual stays active. Initial spawn at 0.6s synced
---         with revive anim. ghost_spawn sound on initial spawn.
---         (v2.0.30: substituiu statue_transition_2 spawn + shadow_despawn despawn.
---          v2.0.36: changed from single-spawn to continuous respawn because
---          shadow_shield1 self-removes and the visual was disappearing after
---          ~2-3s even though the buff stayed active for 60s.)
+--   - FX (v2.0.37): PERSISTENT forcefieldfx shield (SAME prefab as celestial)
+--         recolored BLACK/dark-purple for the shadow theme. Spawned ONCE at
+--         0.6s (synced with revive anim) and stays for the full 60s — NO
+--         continuous respawns needed (forcefieldfx stays until Remove()).
+--         v2.0.36 tried continuous respawn of shadow_shield1 (a quick-effect
+--         prefab that self-removes ~2-3s) every 2.5s — worked but was hacky and
+--         flickered on each re-spawn. Using the same persistent shield as
+--         celestial gives a smooth, natural visual that matches the celestial
+--         revive but in shadow colors. ghost_spawn sound on initial spawn.
+--         (v2.0.30: statue_transition_2 spawn + shadow_despawn despawn.
+--          v2.0.36: continuous respawn of shadow_shield1.
+--          v2.0.37: single persistent forcefieldfx, tinted dark — same approach
+--          as celestial, just different color.)
 --
 -- ALL debug output is routed through the mod's debug system (G.WagstaffDbg /
 -- G.WagstaffDbgF), gated by the "Debug mode" config toggle. Zero-cost when off.
@@ -237,11 +242,6 @@ local function ApplyShadowBuff(player)
     if player._wagstaff_shadow_expire_task then
         player._wagstaff_shadow_expire_task:Cancel()
     end
-    -- v2.0.36: Cancel previous FX respawn task (continuous shadow_shield1).
-    if player._wagstaff_shadow_fx_respawn_task then
-        player._wagstaff_shadow_fx_respawn_task:Cancel()
-        player._wagstaff_shadow_fx_respawn_task = nil
-    end
     -- Remove any previous lifesteal listener (no stacking on re-revive).
     if player._wagstaff_shadow_lifesteal_fn then
         player:RemoveEventCallback("onattackother", player._wagstaff_shadow_lifesteal_fn)
@@ -262,7 +262,7 @@ local function ApplyShadowBuff(player)
         player.AnimState:SetAddColour(0, 0, 0, 0)
         player._wagstaff_shadow_tinted = nil
     end
-    -- Remove previous shadow_shield1 (no orphan shield on re-revive).
+    -- Remove previous forcefieldfx shield (no orphan shield on re-revive).
     if player._wagstaff_shadow_shield_fx and player._wagstaff_shadow_shield_fx:IsValid() then
         player._wagstaff_shadow_shield_fx:Remove()
     end
@@ -346,50 +346,43 @@ local function ApplyShadowBuff(player)
         end)
     end
 
-    -- v2.0.36: shadow_shield1 is a QUICK-EFFECT prefab (self-removes after its
-    -- animation, ~2-3s) — unlike forcefieldfx which is persistent. The old code
-    -- spawned it ONCE at 0.6s and expected it to persist 60s (it didn't — the
-    -- visual disappeared after ~2-3s even though the buff stayed active).
-    -- Fix: CONTINUOUS RESPAWN — re-spawn shadow_shield1 every ~2.5s for the
-    -- full 60s buff duration. Each re-spawn: remove old FX, spawn new, parent,
-    -- tint, play. The periodic task is cancelled on buff expiry. Small overlap
-    -- (2.5s interval vs ~2-3s anim) ensures no visual gap.
-    local SHADOW_FX_RESPAWN_INTERVAL = 2.5  -- seconds between re-spawns
-
-    local function SpawnShadowShieldFx()
+    -- v2.0.37: PERSISTENT forcefieldfx shield (SAME prefab as celestial revive),
+    -- recolored BLACK/dark-purple for the shadow theme. Unlike shadow_shield1
+    -- (a quick-effect prefab that self-removes ~2-3s), forcefieldfx stays until
+    -- explicitly Remove()'d — so a SINGLE spawn at 0.6s persists for the full
+    -- 60s buff. Same approach as celestial (consistent visual language), just a
+    -- different tint. No continuous respawns, no flicker.
+    player:DoTaskInTime(0.6, function()
         if not player:IsValid() or not player.entity then return end
-        -- Remove previous shield FX before spawning a new one (no stacking).
+        -- Remove any leftover shield from a previous buff.
         if player._wagstaff_shadow_shield_fx and player._wagstaff_shadow_shield_fx:IsValid() then
             player._wagstaff_shadow_shield_fx:Remove()
         end
-        local fx = G.SpawnPrefab("shadow_shield1")
+        local fx = G.SpawnPrefab("forcefieldfx")
         if fx then
             fx.entity:SetParent(player.entity)
+            -- Disable the Light component (same as celestial — the default
+            -- white light looks wrong on a dark shield).
+            if fx.Light then
+                fx.Light:Enable(false)
+            end
+            -- Recolor to shadow black/dark-purple (4 args: r,g,b,a).
+            -- MultColour darkens the shield to near-black; AddColour gives a
+            -- faint dark-purple glow so it reads as "shadow" not just "off".
             if fx.AnimState then
-                -- Tint roxo escuro (shadow theme).
-                fx.AnimState:SetMultColour(0.45, 0.30, 0.55, 1.0)
-                fx.AnimState:SetAddColour(0.12, 0.0, 0.18, 0)
+                fx.AnimState:SetMultColour(0.12, 0.12, 0.15, 1.0)
+                fx.AnimState:SetAddColour(0.03, 0.0, 0.05, 0)
             end
             player._wagstaff_shadow_shield_fx = fx
-            _dbgF("[AFFINITY] Shadow: shadow_shield1 spawned (continuous respawn), parent=%s", tostring(player.prefab))
+            _dbgF("[AFFINITY] Shadow: forcefieldfx spawned (persistent, black tint), parent=%s", tostring(player.prefab))
+            -- Som de reviver.
+            if player.SoundEmitter then
+                player.SoundEmitter:PlaySound("dontstarve/common/ghost_spawn")
+            end
         else
-            _dbg("[AFFINITY] Shadow: WARN — SpawnPrefab('shadow_shield1') returned nil")
-        end
-    end
-
-    -- Initial spawn at 0.6s (synced with revive animation ghost->body).
-    player:DoTaskInTime(0.6, function()
-        if not player:IsValid() then return end
-        SpawnShadowShieldFx()
-        -- Som de reviver.
-        if player.SoundEmitter then
-            player.SoundEmitter:PlaySound("dontstarve/common/ghost_spawn")
+            _dbg("[AFFINITY] Shadow: WARN — SpawnPrefab('forcefieldfx') returned nil")
         end
     end)
-
-    -- Continuous respawn: every 2.5s for the full 60s buff duration.
-    player._wagstaff_shadow_fx_respawn_task = player:DoPeriodicTask(
-        SHADOW_FX_RESPAWN_INTERVAL, SpawnShadowShieldFx, SHADOW_FX_RESPAWN_INTERVAL)
 
     -- Expire the buff after the duration.
     player._wagstaff_shadow_expire_task = player:DoTaskInTime(SHADOW_DURATION, function()
@@ -399,11 +392,6 @@ local function ApplyShadowBuff(player)
         if player._wagstaff_shadow_enforce_task then
             player._wagstaff_shadow_enforce_task:Cancel()
             player._wagstaff_shadow_enforce_task = nil
-        end
-        -- v2.0.36: Stop the FX respawn task (continuous shadow_shield1).
-        if player._wagstaff_shadow_fx_respawn_task then
-            player._wagstaff_shadow_fx_respawn_task:Cancel()
-            player._wagstaff_shadow_fx_respawn_task = nil
         end
         -- Remove lifesteal listener.
         if player._wagstaff_shadow_lifesteal_fn then
@@ -428,7 +416,7 @@ local function ApplyShadowBuff(player)
             player.AnimState:SetAddColour(0, 0, 0, 0)
             player._wagstaff_shadow_tinted = nil
         end
-        -- Remove shadow_shield1 shield (persistente — deve Remove()).
+        -- Remove forcefieldfx shield (persistent — must Remove()).
         if player._wagstaff_shadow_shield_fx and player._wagstaff_shadow_shield_fx:IsValid() then
             player._wagstaff_shadow_shield_fx:Remove()
         end
