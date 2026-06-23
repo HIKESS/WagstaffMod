@@ -89,7 +89,10 @@ local function GetAlignedTag(aff_type)
 end
 
 -- FX module: exposed globally so esentry_rocket can use it too.
-local WagstaffAffFX = _G.WagstaffAffFX or {}
+-- v2.0.47 FIX: use rawget instead of _G.WagstaffAffFX to bypass strict.lua's
+-- __index metamethod, which throws "variable not declared" on first load
+-- (before line 165 below has a chance to write/declare the global).
+local WagstaffAffFX = rawget(_G, "WagstaffAffFX") or {}
 
 -- Bullet hit FX: brightsmithy sparkle (celestial) / shadowcraft spike (shadow).
 WagstaffAffFX.HitFX = function(target, aff_type)
@@ -162,7 +165,10 @@ WagstaffAffFX.BlastFX = function(host, aff_type)
     fx:DoTaskInTime(4, function() if fx and fx:IsValid() then fx:Remove() end end)
 end
 
-_G.WagstaffAffFX = WagstaffAffFX
+-- v2.0.47 FIX: use rawset to bypass strict.lua's __newindex (avoids potential
+-- "assign to undeclared variable" error when writing the global from a module
+-- context). rawset writes directly to the table without metatable interception.
+rawset(_G, "WagstaffAffFX", WagstaffAffFX)
 
 local function OnNameDelta(inst)
         local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil

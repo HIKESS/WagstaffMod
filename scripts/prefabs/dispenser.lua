@@ -98,7 +98,10 @@ local function TryLuckyDrop(inst)
     local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
     if builder and builder:HasTag("wagstaff_lucky_engineer") then
         -- v2.0.14: Lucky Engineer 15% -> 20% + golden FX feedback
-        if math.random() < 0.20 then
+        -- v2.0.44: 20% -> 30% to reach parity with sentry x2-Damage skill
+        --          (x2-Damage post-ramp = +16-26% avg DPS; Lucky Engineer now
+        --           ~0.9 rare drops/day vs 0.6, matching combat bonus value)
+        if math.random() < 0.30 then
             local item = weighted_random_choice(lucky_rare)
             inst.components.lootdropper:SpawnLootPrefab(item)
             -- Golden FX so the player sees the lucky proc (reuses ehealfx with gold tint)
@@ -239,18 +242,20 @@ function upgrade(inst)
                         local follower = inst._healfx.entity:AddFollower()
                         follower:FollowSymbol(inst.GUID, "placer", 205, 140, 1)
                     end
-                    -- Celestial: strong blue-silver light radius 2.5; Shadow: medium purple light radius 1.5
+                    -- v2.0.44: Equalized light to radius 2.0 for BOTH affinities
+                    -- (celestial was 2.5, shadow was 1.5). Intensity/falloff also
+                    -- matched so neither affinity is a better free base light.
                     if TheWorld.state.isday and celestial then
                         inst._healfx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
-                        inst.Light:SetRadius(2.5)
-                        inst.Light:SetIntensity(0.85)
-                        inst.Light:SetFalloff(0.5)
+                        inst.Light:SetRadius(2.0)
+                        inst.Light:SetIntensity(0.75)
+                        inst.Light:SetFalloff(0.6)
                         inst.Light:SetColour(0.6, 0.8, 1.0)
                     elseif TheWorld.state.isdusk and shadow then
                         inst._healfx.AnimState:SetMultColour(0.6, 0.1, 0.8, 1)
-                        inst.Light:SetRadius(1.5)
-                        inst.Light:SetIntensity(0.7)
-                        inst.Light:SetFalloff(0.7)
+                        inst.Light:SetRadius(2.0)
+                        inst.Light:SetIntensity(0.75)
+                        inst.Light:SetFalloff(0.6)
                         inst.Light:SetColour(0.5, 0.0, 0.7)
                     end
                     inst._healfx:Show()
@@ -282,16 +287,30 @@ function upgrade(inst)
                 -- Update FX
                 UpdateAuraFX(inst)
 
-                -- CELESTIAL (day): Sanity aura MED (100/min) — was SMALL (50/min)
-                if TheWorld.state.isday and celestial then
-                    inst.components.sanityaura.aura = _G.TUNING.SANITYAURA_MED
+                -- SHADOW (dusk): Sanity aura LARGE — AOE to all nearby players.
+                -- v2.0.46: SWAPPED powers. Shadow now gets the sanity aura (was
+                -- celestial's). Rationale: shadow already has the more valuable
+                -- drops (pure_horror/dark_tatters vs moonglass/moon_moth), so
+                -- giving the stronger combat-sustain power (HP heal) to celestial
+                -- and the lighter sanity aura to shadow balances the two paths.
+                -- Shadow's shorter dusk window is offset by its better drops.
+                if TheWorld.state.isdusk and shadow then
+                    inst.components.sanityaura.aura = _G.TUNING.SANITYAURA_LARGE
                 else
                     inst.components.sanityaura.aura = 0
                 end
 
-                -- SHADOW (dusk): HP heal 2/tick (4 HP/sec) — builder only, within DISP_RANGE
-                if TheWorld.state.isdusk and shadow and builder ~= nil then
-                    if builder.components.health
+                -- CELESTIAL (day): HP heal 2/tick (4 HP/sec) — builder only.
+                -- v2.0.46: SWAPPED powers. Celestial now gets the HP heal (was
+                -- shadow's), kept at 4 HP/sec per user request. This compensates
+                -- for celestial's weaker drops (moonglass/moon_moth) by giving it
+                -- the stronger combat-sustain power. Range bug fix from v2.0.45
+                -- is retained — heal only fires when builder is within DISP_RANGE
+                -- (4 units) of the dispenser (NOT the 40-unit GetBuilder fallback).
+                if TheWorld.state.isday and celestial and builder ~= nil then
+                    local in_range = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
+                    if in_range
+                        and builder.components.health
                         and not builder.components.health:IsDead()
                         and builder.components.health.currenthealth < builder.components.health.maxhealth then
                         builder.components.health:DoDelta(2, true, nil, true)
