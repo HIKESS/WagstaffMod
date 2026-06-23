@@ -805,7 +805,27 @@ local function wrench_fn()
             inst:AddComponent("finiteuses")
             inst.components.finiteuses:SetMaxUses(50)
             inst.components.finiteuses:SetUses(50)
-            inst.components.finiteuses:SetOnFinished(inst.Remove)
+            -- v2.0.19 FIX: when the wrench breaks mid-upgrade, stop the
+            -- player's work animation BEFORE removing the wrench. The old
+            -- code (SetOnFinished(inst.Remove)) just removed the wrench,
+            -- leaving the player stuck in the "work" stategraph loop —
+            -- the wrenching animation kept playing visually even though no
+            -- more upgrade progress was being made. Now we push "toolbroke"
+            -- (which SGwilson listens for and transitions to idle) and also
+            -- force GoToState("idle") as a fallback.
+            inst.components.finiteuses:SetOnFinished(function(inst)
+                local owner = inst.components.inventoryitem and inst.components.inventoryitem.owner
+                if owner then
+                    -- Push toolbroke event (standard DST mechanism — SGwilson
+                    -- work state listens for this and transitions out).
+                    owner:PushEvent("toolbroke", { tool = inst })
+                    -- Fallback: if the stategraph didn't handle it, force idle.
+                    if owner.sg and owner.sg:HasStateTag("working") then
+                        owner.sg:GoToState("idle")
+                    end
+                end
+                inst:Remove()
+            end)
         end)
     return inst
 end
