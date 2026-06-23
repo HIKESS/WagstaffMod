@@ -242,18 +242,20 @@ function upgrade(inst)
                         local follower = inst._healfx.entity:AddFollower()
                         follower:FollowSymbol(inst.GUID, "placer", 205, 140, 1)
                     end
-                    -- Celestial: strong blue-silver light radius 2.5; Shadow: medium purple light radius 1.5
+                    -- v2.0.44: Equalized light to radius 2.0 for BOTH affinities
+                    -- (celestial was 2.5, shadow was 1.5). Intensity/falloff also
+                    -- matched so neither affinity is a better free base light.
                     if TheWorld.state.isday and celestial then
                         inst._healfx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
-                        inst.Light:SetRadius(2.5)
-                        inst.Light:SetIntensity(0.85)
-                        inst.Light:SetFalloff(0.5)
+                        inst.Light:SetRadius(2.0)
+                        inst.Light:SetIntensity(0.75)
+                        inst.Light:SetFalloff(0.6)
                         inst.Light:SetColour(0.6, 0.8, 1.0)
                     elseif TheWorld.state.isdusk and shadow then
                         inst._healfx.AnimState:SetMultColour(0.6, 0.1, 0.8, 1)
-                        inst.Light:SetRadius(1.5)
-                        inst.Light:SetIntensity(0.7)
-                        inst.Light:SetFalloff(0.7)
+                        inst.Light:SetRadius(2.0)
+                        inst.Light:SetIntensity(0.75)
+                        inst.Light:SetFalloff(0.6)
                         inst.Light:SetColour(0.5, 0.0, 0.7)
                     end
                     inst._healfx:Show()
@@ -285,19 +287,32 @@ function upgrade(inst)
                 -- Update FX
                 UpdateAuraFX(inst)
 
-                -- CELESTIAL (day): Sanity aura MED (100/min) — was SMALL (50/min)
+                -- CELESTIAL (day): Sanity aura LARGE — v2.0.44 buffed MED -> LARGE
+                -- to better match the value of shadow's HP heal (shadow was
+                -- disproportionately strong despite the shorter dusk window).
                 if TheWorld.state.isday and celestial then
-                    inst.components.sanityaura.aura = _G.TUNING.SANITYAURA_MED
+                    inst.components.sanityaura.aura = _G.TUNING.SANITYAURA_LARGE
                 else
                     inst.components.sanityaura.aura = 0
                 end
 
-                -- SHADOW (dusk): HP heal 2/tick (4 HP/sec) — builder only, within DISP_RANGE
+                -- SHADOW (dusk): HP heal 1.5/tick (3 HP/sec) — builder only.
+                -- v2.0.44 balance (Option B):
+                --   (1) REDUCED 4 -> 3 HP/sec — 4 HP/sec was trivializing HP
+                --       management during the entire dusk window.
+                --   (2) FIXED RANGE BUG — GetBuilder() searches up to 40 units as
+                --       a fallback when entitytracker fails, and the heal had NO
+                --       distance check, so a builder could be healed from across
+                --       the map. The original comment said "within DISP_RANGE"
+                --       but the code never enforced it. Now explicitly checks
+                --       builder is within DISP_RANGE (4 units) of the dispenser.
                 if TheWorld.state.isdusk and shadow and builder ~= nil then
-                    if builder.components.health
+                    local in_range = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
+                    if in_range
+                        and builder.components.health
                         and not builder.components.health:IsDead()
                         and builder.components.health.currenthealth < builder.components.health.maxhealth then
-                        builder.components.health:DoDelta(2, true, nil, true)
+                        builder.components.health:DoDelta(1.5, true, nil, true)
                     end
                 end
             end)
