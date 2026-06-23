@@ -62,6 +62,18 @@ local SHADOW_ENFORCE_INTERVAL = 0.5 -- re-apply attackperiod after weapon swaps
 local _dbg  = G.WagstaffDbg  or function(...) end
 local _dbgF = G.WagstaffDbgF or function(...) end
 
+-- v2.0.27 FIX: capture standard-library functions as locals from GLOBAL.
+-- In the modimport'd environment, bare globals like `pcall` can resolve to nil
+-- when a closure runs later inside the scheduler (DoTaskInTime / DoPeriodicTask
+-- callbacks). Capturing them as upvalues at file-load time is safe and standard
+-- DST modding practice. (Crash was: "attempt to call global 'pcall' (a nil
+-- value)" at line 76 inside the DoTaskInTime(2) ReapplyAffinityTags callback.)
+local pcall    = G.pcall    or pcall
+local ipairs   = G.ipairs   or ipairs
+local pairs    = G.pairs    or pairs
+local tostring = G.tostring or tostring
+local math     = G.math     or math
+
 ----------------------------------------------------------------
 -- Affinity tag persistence (safety net for save/load)
 ----------------------------------------------------------------
