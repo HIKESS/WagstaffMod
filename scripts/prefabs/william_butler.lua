@@ -108,20 +108,29 @@ local function UpdateButlerName(inst)
         base_name = "Butler Bot Mk. III"
     end
 
-    -- v2.0.33: upgrade progress removed from the name. It was always visible to
-    -- all players, but should only show when the viewer has the upgrade skill
-    -- unlocked + wrench equipped. Since the name is global (not per-viewer), the
-    -- upgrade progress is now visible only via the wrench upgrade interaction.
-    local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
+    -- v2.0.40: upgrade progress is shown ONLY when an upgrade is actively in
+    -- progress (upgradelevel > 0). A fresh bot (upgradelevel == 0) keeps a clean
+    -- title with no "Upgrade" text. Once the player starts hammering with the
+    -- wrench, upgradelevel becomes > 0 and the "Upgrade: xx/xx" progress appears
+    -- in the name so the player can see how much has been invested.
+    local upgrade_str = ""
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel > 0 and inst.upgradelevel < 50 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/50"
+    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 and inst.upgradelevel_mk3 < 70 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
+    end
+    local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
 
-    -- Set on named component (always exists — added in fn())
+    -- Set on named component (always exists — added in fn()). named:SetName
+    -- also sets inst.name on the server and replicates to the client replica.
+    -- The displaynamefn (set in fn) returns named.name / replica.named.name,
+    -- so we do NOT need to override inst.GetDisplayName here — doing so caused
+    -- the butler hover name to render twice (displaynamefn + GetDisplayName
+    -- override both feeding the hover widget). v2.0.40: removed the override.
     if inst.components.named ~= nil then
         inst.components.named:SetName(name_str)
     end
-
-    -- Directly set inst.name and GetDisplayName for hover display
     inst.name = name_str
-    inst.GetDisplayName = function() return name_str end
 end
 
 -- Helper function to check if bot's owner has affinity skills
@@ -1163,24 +1172,19 @@ inst.components.burnable.ignorefuel = true
             end
         end)
 
-        -- Override name
+        -- v2.0.40: MK3 name is handled by the SAME UpdateButlerName function
+        -- that active2 already wired up (periodic task + fuelchange/healthdelta
+        -- events). UpdateButlerName checks inst.prefab == "williambutler3" and
+        -- uses "Butler Bot Mk. III" as the base. The previous separate
+        -- UpdateButler3Name used a DIFFERENT format ("Mk.III" with no space)
+        -- and fought with the periodic UpdateButlerName task, causing the MK3
+        -- hover name to flicker/alternate between two strings every 2s — which
+        -- looked like the name was "repeating". Removed the duplicate function.
         if inst.components.named == nil then
             inst:AddComponent("named")
         end
-        inst.components.named:SetName("Butler Bot Mk.III")
-        local function UpdateButler3Name(inst)
-            local base = "Butler Bot Mk.III"
-            local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
-            local hp = math.floor(inst.components.health.currenthealth)
-            local maxhp = math.floor(inst.components.health.maxhealth)
-            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
-            inst.components.named:SetName(name_str)
-            inst.name = name_str
-            inst.GetDisplayName = function() return name_str end
-        end
-        UpdateButler3Name(inst)
-        inst:ListenForEvent("fuelchange", function() UpdateButler3Name(inst) end)
-        inst:ListenForEvent("healthdelta", function() UpdateButler3Name(inst) end)
+        -- Set initial name immediately (periodic task will refresh every 2s).
+        UpdateButlerName(inst)
 
         -- v2.0.19: Butler haunt-resurrection is now a PLAIN revive.
         -- The bot dies and the player respawns (classic DST behavior).

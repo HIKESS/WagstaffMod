@@ -308,11 +308,50 @@ local function ApplyShadowBuff(player)
     -- 1b) Lifesteal 15%: heal for 15% of damage dealt. Ties survivability to
     --     offense (shadow theme: drain life as you fight). Scales with the
     --     +50% damage bonus above (more damage = more healing per hit).
+    -- v2.0.42 FIX: DST's "onattackother" event does NOT include damage in its
+    --     data payload (unlike the target-side "attacked" event). The old code
+    --     read data.damage which was always nil, so lifesteal NEVER fired.
+    --     Now we recalculate the damage the same way Combat:DoAttack does, via
+    --     Combat:CalcDamage(target, weapon). This mirrors how the batbat's
+    --     onattack callback heals, but scaled to a percentage — and WITHOUT
+    --     the sanity penalty the batbat applies (batbat drains sanity equal to
+    --     half the heal). No sanity penalty here, matching the shadow_battleaxe
+    --     / umbral weapon design (drain life, keep your mind).
     if player.components.health then
         player._wagstaff_shadow_lifesteal_fn = function(inst, data)
             if not data or not data.target then return end
-            local dmg = (data.damage or 0) + (data.spdamage or 0)
+            local target = data.target
+            if not target or not target:IsValid() then return end
+            -- No lifesteal from walls/structures (they have no life to drain).
+            if target:HasTag("wall") or target:HasTag("engineering") then return end
+            local target_health = target.components.health
+            if not target_health or target_health:IsDead() then return end
+
+            local c = inst.components.combat
+            if not c then return end
+
+            -- Recalculate the damage dealt for this attack. CalcDamage is
+            -- idempotent (pure calculation, no side effects) so calling it
+            -- again here is safe. It rolls the same variance/crit logic as
+            -- the actual attack, giving an accurate lifesteal value.
+            local dmg = 0
+            if c.CalcDamage then
+                local ok, val = pcall(c.CalcDamage, c, target, data.weapon)
+                if ok then dmg = val or 0 end
+            end
+            -- Fallback: weapon base damage * player damage multiplier (covers
+            -- any DST version where CalcDamage is unavailable/renamed).
+            if dmg <= 0 then
+                local weapon = data.weapon
+                if weapon and weapon.components and weapon.components.weapon then
+                    dmg = weapon.components.weapon.damage or 0
+                elseif c.defaultdamage then
+                    dmg = c.defaultdamage
+                end
+                dmg = dmg * (c.damagemultiplier or 1)
+            end
             if dmg <= 0 then return end
+
             local heal = dmg * SHADOW_LIFESTEAL_PCT
             local hp = inst.components.health
             -- v2.0.29 FIX: Health has no :IsAlive() — use :IsDead() inverse.
@@ -470,16 +509,19 @@ local function ApplyOnRevive(player)
     _dbgF("[AFFINITY] respawnfromghost: player=%s celestial=%s shadow=%s",
         tostring(player.prefab), tostring(celestial), tostring(shadow))
 
-    -- Slight delay so the revive (health restore, ghost->body transition) has
-    -- started and the player's tags/components have settled.
-    player:DoTaskInTime(0.1, function()
+    -- v2.0.42: Delay before applying the affinity ability, so the resurrection
+    -- animation (ghost->body materialization + the butler haunt-raise anim)
+    -- finishes before the buff/shield activates. Was 0.1s (too early — the
+    -- ability fired mid-animation). +0.5s as requested gives the animation
+    -- time to complete for a cleaner visual transition.
+    player:DoTaskInTime(0.6, function()
         if not player:IsValid() then
             _dbg("[AFFINITY] ApplyOnRevive: player invalid after delay, aborting")
             return
         end
         local cel = player:HasTag("wagstaff_celestial_possession")
         local shd = player:HasTag("wagstaff_shadow_possession")
-        _dbgF("[AFFINITY] ApplyOnRevive (after 0.1s): celestial=%s shadow=%s", tostring(cel), tostring(shd))
+        _dbgF("[AFFINITY] ApplyOnRevive (after 0.6s): celestial=%s shadow=%s", tostring(cel), tostring(shd))
         if cel then
             _dbg("[AFFINITY] ApplyOnRevive: -> ApplyCelestialBuff")
             ApplyCelestialBuff(player)

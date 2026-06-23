@@ -1780,13 +1780,13 @@ SetName("williambrute_builder", "Brute Bot")
 
 SetName("williamballistic_empty", "Ballistic Bot")
 
--- v2.0.33: removed SetName("williambutler2", "Butler Bot Mk.II") — it
--- re-added STRINGS.NAMES.WILLIAMBUTLER2 that was intentionally removed in
--- v2.0.19. The butler has displaynamefn (set in william_butler.lua fn)
--- which returns replica.named.name on the client. With STRINGS.NAMES
--- defined, the client's inst.name = "Butler Bot Mk.II" (from STRINGS)
--- interfered with the displaynamefn, causing the wrong hover name.
--- MK1/MK3 never had this SetName, so they worked correctly.
+-- v2.0.33: removed SetName("williambutler2", "Butler Bot Mk.II") — it used
+-- "Mk.II" (no space) which MISMATCHED the displaynamefn base "Butler Bot
+-- Mk. II" (with space), causing a "jumbled" hover. v2.0.41 re-adds
+-- STRINGS.NAMES.WILLIAMBUTLER2 with the CORRECT "Butler Bot Mk. II" (with
+-- space, matching displaynamefn) directly in the AddSimPostInit block
+-- below — see the v2.0.41 comment there for the full root-cause analysis
+-- of why STRINGS.NAMES are REQUIRED (not optional) for all bot tiers.
 
 SetName("williambuster2", "Buster Bot Mk.II")
 
@@ -2300,73 +2300,128 @@ end)
 
 -- Patch skill tree widget to remove tint for Wagstaff and fix favor overlay z-order
 AddClassPostConstruct("widgets/redux/skilltreewidget", function(self)
-    -- v2.0.36 FIX: The favor overlay (midlay — shadow hands / lunar clouds+gestalts)
-    -- was going BEHIND the bg_tree background after the player died and revived.
-    -- The original patch only called MoveToFront() in SpawnFavorOverlay, which runs
-    -- ONCE when the overlay is first spawned. After death/revive, the skill tree
-    -- panel refreshes and the bg_tree moves to front, pushing the midlay behind it.
-    -- Fix: hook into EVERY refresh/redraw method to re-assert midlay:MoveToFront(),
-    -- and also listen for the player's revive event to force a refresh.
+    -- v2.0.42 FIX (replaces v2.0.36): The favor overlay (midlay — shadow hands
+    -- for Shadow's Embrace / clouds+gestalts for Moon's Blessing) was STILL
+    -- going BEHIND the bg_tree parchment background after the player died and
+    -- revived, even with the v2.0.36 hooks in place.
+    --
+    -- Root cause: v2.0.36 only hooked high-level refresh methods (RefreshSkill,
+    -- RefreshAll, OnShow, SpawnFavorOverlay). After death/revive, the base game
+    -- aggressively refreshes the skill tree panel and calls bg_tree:MoveToFront()
+    -- in places our hooks didn't cover (and possibly in DoTaskInTime callbacks
+    -- that run AFTER our hooks in the same frame), re-pushing midlay behind.
+    --
+    -- Robust fix — THREE complementary layers:
+    --   1. CASCADE HOOK: wrap bg_tree:MoveToFront itself so that EVERY time
+    --      bg_tree is brought to front (by anyone, anytime), midlay immediately
+    --      follows it to the front. This is the key fix — it doesn't matter
+    --      what method or task moves bg_tree; midlay always stays on top.
+    --   2. METHOD HOOKS: keep hooking the high-level refresh methods as a fast
+    --      path (catches the common cases without waiting for the periodic task).
+    --   3. PERIODIC SAFETY NET: re-assert midlay:MoveToFront() every 0.25s while
+    --      the panel is open. Catches any edge case the other two layers miss
+    --      (e.g. a DoTaskInTime that moves bg_tree after our hooks ran). Auto-
+    --      cancels when the widget's entity is removed.
+    --
+    -- Note: the target == "wagstaff" gate from v2.0.36 is REMOVED. The fix now
+    -- applies to any skill tree widget that has a midlay (favor overlay). This
+    -- is correct behavior for all characters (the favor overlay should always
+    -- render on top of the parchment), and removes a fragile dependency on the
+    -- exact field name/value the base game uses for the character identifier.
 
-    local function EnsureMidlayFront(self2)
-        if self2.midlay and self2.target == "wagstaff" then
-            self2.midlay:MoveToFront()
+    local function ForceMidlayFront(w)
+        if w and w.midlay then
+            w.midlay:MoveToFront()
         end
     end
 
+    -- Layer 1: CASCADE HOOK on bg_tree:MoveToFront. Whenever bg_tree is moved
+    -- to front (by the base game's refresh logic), immediately move midlay to
+    -- front too. This is idempotent and safe — MoveToFront on an already-front
+    -- widget is a no-op.
+    local function HookBgTreeMoveToFront(w)
+        if not w or not w.bg_tree then return end
+        if w.bg_tree._wagstaff_midlay_hooked then return end
+        local orig = w.bg_tree.MoveToFront
+        if not orig then return end
+        w.bg_tree.MoveToFront = function(bg, ...)
+            orig(bg, ...)
+            if w.midlay then
+                w.midlay:MoveToFront()
+            end
+        end
+        w.bg_tree._wagstaff_midlay_hooked = true
+    end
+
+    -- Helper called after every hooked method: re-assert midlay front, and
+    -- ensure the bg_tree cascade hook is installed (bg_tree may be created
+    -- lazily after the widget constructs).
+    local function RefreshAndHook(w)
+        ForceMidlayFront(w)
+        HookBgTreeMoveToFront(w)
+    end
+
+    -- Layer 2: METHOD HOOKS on every refresh/redraw method we know about.
     local original_SpawnFavorOverlay = self.SpawnFavorOverlay
-    self.SpawnFavorOverlay = function(self2, pre)
-        original_SpawnFavorOverlay(self2, pre)
-        EnsureMidlayFront(self2)
-    end
-
-    -- Hook RefreshSkill (called when a skill's visual state updates — runs on
-    -- panel open, skill activation, and after revive state changes).
-    local original_RefreshSkill = self.RefreshSkill
-    if original_RefreshSkill then
-        self.RefreshSkill = function(self2, ...)
-            original_RefreshSkill(self2, ...)
-            EnsureMidlayFront(self2)
+    if original_SpawnFavorOverlay then
+        self.SpawnFavorOverlay = function(self2, pre)
+            original_SpawnFavorOverlay(self2, pre)
+            RefreshAndHook(self2)
         end
     end
 
-    -- Hook RefreshAll if it exists (bulk refresh of all skill nodes).
-    local original_RefreshAll = self.RefreshAll
-    if original_RefreshAll then
-        self.RefreshAll = function(self2, ...)
-            original_RefreshAll(self2, ...)
-            EnsureMidlayFront(self2)
+    for _, method in ipairs({"RefreshSkill", "RefreshAll", "OnShow", "Refresh",
+                              "RefreshTree", "SelectSkill", "BuildSkills",
+                              "OnSkillActivated", "RefreshSkillDetail"}) do
+        local original = self[method]
+        if original then
+            self[method] = function(self2, ...)
+                original(self2, ...)
+                RefreshAndHook(self2)
+            end
         end
     end
 
-    -- Hook OnShow (called when the skill tree panel is shown/reopened).
-    local original_OnShow = self.OnShow
-    if original_OnShow then
-        self.OnShow = function(self2, ...)
-            original_OnShow(self2, ...)
-            EnsureMidlayFront(self2)
-        end
+    -- Layer 3: PERIODIC SAFETY NET. Re-assert midlay:MoveToFront() every 0.25s
+    -- while the panel is open. Tied to the widget's inst entity so it auto-
+    -- cancels when the widget is destroyed. This is the final backstop that
+    -- catches any refresh path the other layers miss.
+    if self.inst and self.inst.DoPeriodicTask then
+        self.inst:DoPeriodicTask(0.25, function()
+            if not self or not self.inst or not self.inst:IsValid() then
+                return
+            end
+            ForceMidlayFront(self)
+            HookBgTreeMoveToFront(self)
+        end)
     end
 
-    -- v2.0.36: Client-side listener — when the player revives from ghost, the
-    -- skill tree panel (if open) refreshes its bg_tree which pushes the midlay
-    -- behind. Force a re-assert of the midlay z-order after a short delay
-    -- (gives the panel time to finish its post-revive refresh).
+    -- v2.0.42: Client-side revive listener. When the player revives from ghost,
+    -- the skill tree panel (if open) aggressively refreshes bg_tree. Try at
+    -- MULTIPLE delays (0.1s through 2.0s) to catch the refresh at every phase
+    -- — the base game's post-revive refresh can span several frames. Each tick
+    -- re-asserts midlay front AND installs the bg_tree cascade hook.
     if G.ThePlayer then
         G.ThePlayer:ListenForEvent("ms_respawnedfromghost", function()
-            G.TheWorld:DoTaskInTime(0.5, function()
-                -- Find the open skill tree widget and re-assert midlay order.
-                -- The skill tree panel is a child of the HUD's controls.
-                local hud = G.ThePlayer.HUD
-                if hud and hud.controls and hud.controls.skilltreebuilder then
+            for _, delay in ipairs({0.1, 0.3, 0.5, 1.0, 1.5, 2.0}) do
+                G.TheWorld:DoTaskInTime(delay, function()
+                    local hud = G.ThePlayer.HUD
+                    if not hud or not hud.controls then return end
                     local stb = hud.controls.skilltreebuilder
-                    -- The skilltreewidget is typically stb.tree or stb.skilltree
-                    local widget = stb.tree or stb.skilltree or stb
-                    if widget and widget.midlay and widget.target == "wagstaff" then
-                        widget.midlay:MoveToFront()
+                    if not stb then return end
+                    -- The skilltreewidget may be accessed via several field
+                    -- names depending on DST version. Try them all.
+                    local candidates = {stb.tree, stb.skilltree, stb.skilltreewidget, stb}
+                    for _, widget in ipairs(candidates) do
+                        if widget and widget.midlay then
+                            ForceMidlayFront(widget)
+                        end
+                        if widget and widget.bg_tree then
+                            HookBgTreeMoveToFront(widget)
+                        end
                     end
-                end
-            end)
+                end)
+            end
         end)
     end
 end)
@@ -3317,22 +3372,60 @@ AddSimPostInit(function()
 
     STRINGS.NAMES.WILLIAMGADGET = "Machine Hearth"
 
-    -- v2.0.19: removed STRINGS.NAMES.WILLIAMBUTLER / WILLIAMBUTLER2.
-    -- These made inst.name = "Butler Bot" on the CLIENT, which masked the
-    -- replica.named name (the one with "\nFuel: X% | HP: X/X"). MK3 worked
-    -- precisely because its STRINGS.NAMES was never defined, so inst.name
-    -- was nil and GetDisplayName fell through to replica.named. Now all
-    -- three tiers behave the same way — hover shows the fuel/HP string.
+    -- v2.0.41: RE-ADDED STRINGS.NAMES for all bot tiers (butler MK1/MK2/MK3
+    -- + buster3/brute3/ballistic3 that were missing).
+    --
+    -- BACKGROUND: v2.0.20 removed STRINGS.NAMES.WILLIAMBUTLER /
+    -- WILLIAMBUTLER2 because they "masked the replica.named name" — that
+    -- was true BEFORE displaynamefn existed (v2.0.18 added displaynamefn,
+    -- which has HIGHEST priority in GetDisplayName, so STRINGS.NAMES no
+    -- longer masks the fuel/HP string). The removal was based on outdated
+    -- reasoning.
+    --
+    -- ROOT CAUSE of the butler MK1 "name repeating" bug: without
+    -- STRINGS.NAMES, the engine's GetBasicDisplayName() falls back to
+    -- inst.name. On the CLIENT, inst.name is set to the FULL named string
+    -- ("Butler Bot\nFuel: X% | HP: X/X") by the named replica's netvar
+    -- sync. So GetBasicDisplayName() returns the full string, AND
+    -- GetDisplayName() (via displaynamefn) ALSO returns the full string.
+    -- Some hover UI elements show BOTH → the name appears twice (exact
+    -- repetition). Buster/brute/ballistic MK1/MK2 don't have this bug
+    -- because they HAVE STRINGS.NAMES, so GetBasicDisplayName() returns a
+    -- SHORT title ("Buster Bot") while GetDisplayName() returns the full
+    -- string — the short title is the first line of the full string, so it
+    -- looks like a normal tooltip (title + detail), not repetition.
+    --
+    -- FIX: define STRINGS.NAMES for every bot tier. The value MUST EXACTLY
+    -- MATCH the displaynamefn base name (the first line of the full
+    -- displaynamefn string) — otherwise the short title and the first line
+    -- of the detail differ, causing a "jumbled" appearance (this was the
+    -- v2.0.33 MK2 bug: STRINGS had "Mk.II" but displaynamefn had "Mk. II").
+    --
+    -- Butler uses "Mk. II" / "Mk. III" (WITH space after the dot) in its
+    -- displaynamefn base names, so the STRINGS values must use the same.
+    -- Buster/Brute/Ballistic use "Mk.II" / "Mk.III" (NO space) in theirs.
+
+    STRINGS.NAMES.WILLIAMBUTLER = "Butler Bot"
+
+    STRINGS.NAMES.WILLIAMBUTLER2 = "Butler Bot Mk. II"
+
+    STRINGS.NAMES.WILLIAMBUTLER3 = "Butler Bot Mk. III"
 
     STRINGS.NAMES.WILLIAMBUSTER = "Buster Bot"
+
+    STRINGS.NAMES.WILLIAMBUSTER3 = "Buster Bot Mk.III"
 
     STRINGS.NAMES.WILLIAMBRUTE = "Brute Bot"
 
     STRINGS.NAMES.WILLIAMBRUTE2 = "Brute Bot Mk.II"
 
+    STRINGS.NAMES.WILLIAMBRUTE3 = "Brute Bot Mk.III"
+
     STRINGS.NAMES.WILLIAMBUSTER2 = "Buster Bot Mk.II"
 
     STRINGS.NAMES.WILLIAMBALLISTIC2 = "Ballistic Bot Mk.II"
+
+    STRINGS.NAMES.WILLIAMBALLISTIC3 = "Ballistic Bot Mk.III"
 
     STRINGS.NAMES.WILLIAMBALLISTIC = "Ballistic Bot"
 
