@@ -6,7 +6,7 @@
 -- regardless of revive source (butler haunt, meat effigy, touch stone, amulet).
 --
 -- CELESTIAL (wagstaff_celestial_possession tag):
---   - Revive with FULL HP / sanity / hunger.
+--   - Revive with FULL HP (sanity/hunger NOT restored — v2.0.25 nerf).
 --   - +100 max-HP bonus (via DeltaMaxHealth).
 --   - 25% damage absorption for the duration.
 --   - 5 HP/sec regen for the duration (drives the health-badge up-arrow).
@@ -21,11 +21,12 @@
 --
 -- SHADOW (wagstaff_shadow_possession tag):
 --   - NO clone. (All clone-spawn logic removed in v2.0.24.)
+--   - Revive with FULL HP (no +max HP bonus, unlike celestial — v2.0.25).
 --   - Applies a SHADOW BUFF to the player for 60s:
 --       * Damage dealt:        +50%   (combat.damagemultiplier * 1.5)
---       * Attack speed:        +20%   (attackperiod * 0.8, re-enforced periodically
---                                      so weapon swaps don't drop the buff)
+--       * Attack speed:        +20%   (attackperiod * 0.8, re-enforced periodically)
 --       * Movement speed:      +15%   (locomotor external speed multiplier)
+--       * Lifesteal:           15%    (heal 15% of damage dealt — sustain via offense)
 --       * Duration:            60s
 --   - Visual: subtle dark tint on the player for the duration (cleared on expiry).
 --   - FX: statue_transition_2 spawn FX at 0.6s (synced with revive anim),
@@ -53,6 +54,7 @@ local SHADOW_DURATION        = 60   -- seconds
 local SHADOW_DAMAGE_MULT     = 1.50 -- +50% damage dealt
 local SHADOW_ATTACK_PERIOD   = 0.80 -- attackperiod * 0.80 = +20% attack speed
 local SHADOW_MOVE_SPEED_MULT = 1.15 -- +15% movement speed
+local SHADOW_LIFESTEAL_PCT   = 0.15 -- 15% of damage dealt healed (sustain via offense)
 local SHADOW_ENFORCE_INTERVAL = 0.5 -- re-apply attackperiod after weapon swaps
 
 -- v2.0.24: ALL debugs go through the mod's debug system (toggle on/off in the
@@ -105,13 +107,8 @@ end
 
 local function ApplyCelestialBuff(player)
     local health = player.components.health
-    local sanity = player.components.sanity
-    local hunger = player.components.hunger
 
-    -- Full sanity / hunger.
-    if sanity then sanity:SetPercent(1) end
-    if hunger then hunger:SetPercent(1) end
-
+    -- v2.0.25 NERF: no longer restores full sanity/hunger (only full HP).
     -- +100 max HP via DeltaMaxHealth. Fallback: SetMaxHealth.
     if health then
         if health.DeltaMaxHealth then
@@ -199,7 +196,7 @@ local function ApplyCelestialBuff(player)
         _dbgF("[AFFINITY] Celestial: buff expired after %ss", tostring(CELESTIAL_DURATION))
     end)
 
-    _dbgF("[AFFINITY] Celestial: full stats + %s HP + %s%% absorb + %s HP/s regen for %ss",
+    _dbgF("[AFFINITY] Celestial: full HP (no san/hunger) + %s max HP + %s%% absorb + %s HP/s regen for %ss",
         tostring(CELESTIAL_HP_BONUS), tostring(CELESTIAL_ABSORPTION * 100),
         tostring(CELESTIAL_REGEN_RATE), tostring(CELESTIAL_DURATION))
 end
@@ -220,6 +217,10 @@ local function ApplyShadowBuff(player)
     if player._wagstaff_shadow_expire_task then
         player._wagstaff_shadow_expire_task:Cancel()
     end
+    -- Remove any previous lifesteal listener (no stacking on re-revive).
+    if player._wagstaff_shadow_lifesteal_fn then
+        player:RemoveEventCallback("onattackother", player._wagstaff_shadow_lifesteal_fn)
+    end
     -- Restore previously-saved base values (so we don't compound on re-revive).
     if combat and player._wagstaff_shadow_dmg_orig then
         combat.damagemultiplier = player._wagstaff_shadow_dmg_orig
@@ -237,6 +238,12 @@ local function ApplyShadowBuff(player)
         player._wagstaff_shadow_tinted = nil
     end
 
+    -- 0) Full HP recovery (matches celestial's HP recovery, but WITHOUT the
+    --    +max HP bonus — just heal to current max).
+    if player.components.health then
+        player.components.health:SetPercent(1)
+    end
+
     -- 1) Damage +50%: multiply combat.damagemultiplier (NOT overwritten by
     --    weapon equip — it's a separate field from the weapon's damage).
     if combat then
@@ -244,6 +251,23 @@ local function ApplyShadowBuff(player)
         combat.damagemultiplier = player._wagstaff_shadow_dmg_orig * SHADOW_DAMAGE_MULT
     else
         _dbg("[AFFINITY] Shadow: WARN — player has no combat component; damage buff skipped")
+    end
+
+    -- 1b) Lifesteal 15%: heal for 15% of damage dealt. Ties survivability to
+    --     offense (shadow theme: drain life as you fight). Scales with the
+    --     +50% damage bonus above (more damage = more healing per hit).
+    if player.components.health then
+        player._wagstaff_shadow_lifesteal_fn = function(inst, data)
+            if not data or not data.target then return end
+            local dmg = (data.damage or 0) + (data.spdamage or 0)
+            if dmg <= 0 then return end
+            local heal = dmg * SHADOW_LIFESTEAL_PCT
+            local hp = inst.components.health
+            if hp and hp:IsAlive() and not hp:IsInvincible() then
+                hp:DoDelta(heal, nil, "wagstaff_shadow_lifesteal")
+            end
+        end
+        player:ListenForEvent("onattackother", player._wagstaff_shadow_lifesteal_fn)
     end
 
     -- 2) Attack speed +20%: reduce attackperiod by 20%. Weapon swaps re-set
@@ -312,6 +336,11 @@ local function ApplyShadowBuff(player)
             player._wagstaff_shadow_enforce_task:Cancel()
             player._wagstaff_shadow_enforce_task = nil
         end
+        -- Remove lifesteal listener.
+        if player._wagstaff_shadow_lifesteal_fn then
+            player:RemoveEventCallback("onattackother", player._wagstaff_shadow_lifesteal_fn)
+            player._wagstaff_shadow_lifesteal_fn = nil
+        end
         -- Restore damage multiplier.
         if player.components.combat and player._wagstaff_shadow_dmg_orig then
             player.components.combat.damagemultiplier = player._wagstaff_shadow_dmg_orig
@@ -344,9 +373,10 @@ local function ApplyShadowBuff(player)
         _dbgF("[AFFINITY] Shadow: buff expired after %ss", tostring(SHADOW_DURATION))
     end)
 
-    _dbgF("[AFFINITY] Shadow: buff applied — dmg x%s, atk speed x%s, move speed x%s, %ss",
+    _dbgF("[AFFINITY] Shadow: buff applied — full HP, dmg x%s, atk speed x%s, move speed x%s, lifesteal %s%%, %ss",
         tostring(SHADOW_DAMAGE_MULT), tostring(1 / SHADOW_ATTACK_PERIOD),
-        tostring(SHADOW_MOVE_SPEED_MULT), tostring(SHADOW_DURATION))
+        tostring(SHADOW_MOVE_SPEED_MULT), tostring(SHADOW_LIFESTEAL_PCT * 100),
+        tostring(SHADOW_DURATION))
 end
 
 ----------------------------------------------------------------
