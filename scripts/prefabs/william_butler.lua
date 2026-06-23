@@ -454,6 +454,27 @@ end
         inst:AddTag("tiddlevirusimmune")
     inst:SetPrefabNameOverride("williambutler")
 
+    -- v2.0.18 FIX: hover display on CLIENT. The client doesn't have
+    -- inst.GetDisplayName (set only on server) and inst.name resolves to
+    -- STRINGS.NAMES.WILLIAMBUTLER = "Butler Bot" (no fuel/HP info). The
+    -- engine's GetDisplayName checks inst.name BEFORE replica.named, so
+    -- MK1/MK2 showed "Butler Bot" on hover instead of the fuel/HP string.
+    -- MK3 worked because STRINGS.NAMES.WILLIAMBUTLER3 was never defined,
+    -- so inst.name was nil and it fell through to replica.named.
+    -- displaynamefn has the HIGHEST priority (checked before inst.name),
+    -- so setting it here (runs on BOTH server and client, before the
+    -- ismastersim return) forces hover to use the named component/replica
+    -- which has the correct "Butler Bot\nFuel: X% | HP: X/X" string.
+    inst.displaynamefn = function(inst)
+        if inst.components.named ~= nil then
+            return inst.components.named.name
+        end
+        if inst.replica.named ~= nil then
+            return inst.replica.named.name
+        end
+        return inst.name
+    end
+
         inst.entity:SetPristine()
 
         if not TheWorld.ismastersim then
@@ -1173,15 +1194,14 @@ inst.components.burnable.ignorefuel = true
         end
 
         -- v2.0.18: Celestial discharge FX for the revive moment.
-        -- Reworked: removed ghostlyelixir_shield_fx + sparklefx (didn't fit the
-        -- "machine discharging" theme). Now uses lunar-aligned white FX:
-        --   - archive_lockbox_dispawn_fx (white dissolve = energy dissolving away)
-        --   - moonstorm_spark (white sparks = energy escaping the chassis)
-        -- Plus a custom celestial light flash (white-blue, fades) — not a prefab,
-        -- so it doesn't conflict with any FX table.
+        -- Reworked: removed moonstorm_spark (it's a mobile entity that walks
+        -- around shocking things — not a visual FX). Now uses:
+        --   - archive_lockbox_dispawn_fx (white dissolve = energy dissolving)
+        --   - wortox_soul_spawn_fx (soul rising = the bot's essence leaving)
+        --   - winona_battery_high_fx (white electric energy = power draining)
+        -- Plus a custom celestial light flash (white-blue, fades).
         -- Anti-stacking: SpawnUnique skips spawning if an FX of the same prefab
-        -- already exists within 1.5 units (prevents duplicate FX when revive is
-        -- triggered repeatedly / haunt spam).
+        -- already exists within 1.5 units (prevents duplicate FX on haunt spam).
         local function PlayCelestialDischargeFX(pt)
             local x, y, z = pt.x, pt.y, pt.z
 
@@ -1210,9 +1230,13 @@ inst.components.burnable.ignorefuel = true
             -- energy dissolving away as it discharges. Lunar-aligned (celestial).
             SpawnUnique("archive_lockbox_dispawn_fx", 0.5, 1.2)
 
-            -- Secondary: white sparks (moonstorm_spark) — energy escaping the
-            -- chassis as the fuel hits zero.
-            SpawnUnique("moonstorm_spark", 0.3, 1.0)
+            -- Soul rising (wortox_soul_spawn_fx) — the bot's essence/soul
+            -- leaving the chassis. White-blue floating orb that ascends.
+            SpawnUnique("wortox_soul_spawn_fx", 0.8, 1.0)
+
+            -- Electric energy (winona_battery_high_fx) — white electric burst
+            -- as the fuel/power drains to zero.
+            SpawnUnique("winona_battery_high_fx", 0.3, 1.0)
 
             -- Brief celestial light flash (white-blue) that fades — the energy
             -- leaving the bot as it discharges. Custom entity (not a prefab FX),
@@ -1501,22 +1525,48 @@ inst.components.burnable.ignorefuel = true
 
     inst.components.lootdropper:SetChanceLootTable("butlergadget")
 
-    -- BUG FIX 5: Add fuel listener to enable ACTIVATE when refueled
+    -- v2.0.18 FIX: husk reactivation. The husk starts with HAMMER (dismantle)
+    -- and should switch to ACTIVATE (reactivate) when it has fuel. The old code
+    -- used RemoveComponent("workable") + AddComponent("workable") inside the
+    -- percentusedchange listener, which left the component in a broken state
+    -- and the right-click stayed "desativar" (HAMMER) even after refueling.
+    -- Now we use a helper that swaps the action directly (SetWorkAction) without
+    -- removing/re-adding the component, and we ALSO check on init (DoTaskInTime)
+    -- so a husk that already has fuel on spawn (e.g. loaded from save) starts
+    -- with ACTIVATE immediately.
     inst.components.fueled.accepting = true
+
+    local function SetHuskAction(inst, activate)
+        if not inst.components.workable then return end
+        if activate then
+            inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
+            inst.components.workable:SetWorkLeft(1)
+            inst.components.workable:SetOnWorkCallback(nil)
+            inst.components.workable:SetOnFinishCallback(function(inst, doer)
+                if doer and doer.components.petleash then
+                    MakeAlive(inst, doer)
+                end
+            end)
+        else
+            inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+            inst.components.workable:SetWorkLeft(3)
+            inst.components.workable:SetOnFinishCallback(OnHammered)
+            inst.components.workable:SetOnWorkCallback(onworked)
+        end
+    end
+
+    -- Check current fuel on init (handles save-load where husk already has fuel)
+    inst:DoTaskInTime(0, function(inst)
+        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
+            SetHuskAction(inst, true)
+        end
+    end)
+
+    -- Swap to ACTIVATE when fuel is added
     inst:ListenForEvent("percentusedchange", function(inst)
-        local fuel_pct = inst.components.fueled:GetPercent()
-        if fuel_pct > 0 and fuel_pct <= 1 then
-            -- Has fuel now, enable ACTIVATE
+        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
             if inst.components.workable and inst.components.workable.action ~= ACTIONS.ACTIVATE then
-                inst:RemoveComponent("workable")
-                inst:AddComponent("workable")
-                inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-                inst.components.workable:SetWorkLeft(1)
-                inst.components.workable:SetOnFinishCallback(function(inst, doer)
-                    if doer and doer.components.petleash then
-                        MakeAlive(inst, doer)
-                    end
-                end)
+                SetHuskAction(inst, true)
             end
         end
     end)
