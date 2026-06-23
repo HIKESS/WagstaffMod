@@ -154,10 +154,17 @@ local function SpawnShadowClone(parent_buster)
             if not parent_buster:IsValid() then return nil end
 
             -- 1) Priority: parent's current target (unchanged behavior).
+            -- v2.0.41 FIX: guard with components.health check — IsDead() is a
+            -- health COMPONENT method, not an entity method. Calling
+            -- parent_target:IsDead() crashes when the target has no health
+            -- component (e.g. a non-combat entity that somehow became the
+            -- parent's combat.target). Mirrors the guard pattern used at
+            -- lines 176, 208, 231, 245.
             if parent_buster.components.combat then
                 local parent_target = parent_buster.components.combat.target
                 if parent_target and parent_target:IsValid() and not parent_target:IsInLimbo()
-                    and not parent_target:IsDead() then
+                    and parent_target.components.health ~= nil
+                    and not parent_target.components.health:IsDead() then
                     return parent_target
                 end
             end

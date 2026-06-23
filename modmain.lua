@@ -1780,13 +1780,13 @@ SetName("williambrute_builder", "Brute Bot")
 
 SetName("williamballistic_empty", "Ballistic Bot")
 
--- v2.0.33: removed SetName("williambutler2", "Butler Bot Mk.II") — it
--- re-added STRINGS.NAMES.WILLIAMBUTLER2 that was intentionally removed in
--- v2.0.19. The butler has displaynamefn (set in william_butler.lua fn)
--- which returns replica.named.name on the client. With STRINGS.NAMES
--- defined, the client's inst.name = "Butler Bot Mk.II" (from STRINGS)
--- interfered with the displaynamefn, causing the wrong hover name.
--- MK1/MK3 never had this SetName, so they worked correctly.
+-- v2.0.33: removed SetName("williambutler2", "Butler Bot Mk.II") — it used
+-- "Mk.II" (no space) which MISMATCHED the displaynamefn base "Butler Bot
+-- Mk. II" (with space), causing a "jumbled" hover. v2.0.41 re-adds
+-- STRINGS.NAMES.WILLIAMBUTLER2 with the CORRECT "Butler Bot Mk. II" (with
+-- space, matching displaynamefn) directly in the AddSimPostInit block
+-- below — see the v2.0.41 comment there for the full root-cause analysis
+-- of why STRINGS.NAMES are REQUIRED (not optional) for all bot tiers.
 
 SetName("williambuster2", "Buster Bot Mk.II")
 
@@ -3317,22 +3317,60 @@ AddSimPostInit(function()
 
     STRINGS.NAMES.WILLIAMGADGET = "Machine Hearth"
 
-    -- v2.0.19: removed STRINGS.NAMES.WILLIAMBUTLER / WILLIAMBUTLER2.
-    -- These made inst.name = "Butler Bot" on the CLIENT, which masked the
-    -- replica.named name (the one with "\nFuel: X% | HP: X/X"). MK3 worked
-    -- precisely because its STRINGS.NAMES was never defined, so inst.name
-    -- was nil and GetDisplayName fell through to replica.named. Now all
-    -- three tiers behave the same way — hover shows the fuel/HP string.
+    -- v2.0.41: RE-ADDED STRINGS.NAMES for all bot tiers (butler MK1/MK2/MK3
+    -- + buster3/brute3/ballistic3 that were missing).
+    --
+    -- BACKGROUND: v2.0.20 removed STRINGS.NAMES.WILLIAMBUTLER /
+    -- WILLIAMBUTLER2 because they "masked the replica.named name" — that
+    -- was true BEFORE displaynamefn existed (v2.0.18 added displaynamefn,
+    -- which has HIGHEST priority in GetDisplayName, so STRINGS.NAMES no
+    -- longer masks the fuel/HP string). The removal was based on outdated
+    -- reasoning.
+    --
+    -- ROOT CAUSE of the butler MK1 "name repeating" bug: without
+    -- STRINGS.NAMES, the engine's GetBasicDisplayName() falls back to
+    -- inst.name. On the CLIENT, inst.name is set to the FULL named string
+    -- ("Butler Bot\nFuel: X% | HP: X/X") by the named replica's netvar
+    -- sync. So GetBasicDisplayName() returns the full string, AND
+    -- GetDisplayName() (via displaynamefn) ALSO returns the full string.
+    -- Some hover UI elements show BOTH → the name appears twice (exact
+    -- repetition). Buster/brute/ballistic MK1/MK2 don't have this bug
+    -- because they HAVE STRINGS.NAMES, so GetBasicDisplayName() returns a
+    -- SHORT title ("Buster Bot") while GetDisplayName() returns the full
+    -- string — the short title is the first line of the full string, so it
+    -- looks like a normal tooltip (title + detail), not repetition.
+    --
+    -- FIX: define STRINGS.NAMES for every bot tier. The value MUST EXACTLY
+    -- MATCH the displaynamefn base name (the first line of the full
+    -- displaynamefn string) — otherwise the short title and the first line
+    -- of the detail differ, causing a "jumbled" appearance (this was the
+    -- v2.0.33 MK2 bug: STRINGS had "Mk.II" but displaynamefn had "Mk. II").
+    --
+    -- Butler uses "Mk. II" / "Mk. III" (WITH space after the dot) in its
+    -- displaynamefn base names, so the STRINGS values must use the same.
+    -- Buster/Brute/Ballistic use "Mk.II" / "Mk.III" (NO space) in theirs.
+
+    STRINGS.NAMES.WILLIAMBUTLER = "Butler Bot"
+
+    STRINGS.NAMES.WILLIAMBUTLER2 = "Butler Bot Mk. II"
+
+    STRINGS.NAMES.WILLIAMBUTLER3 = "Butler Bot Mk. III"
 
     STRINGS.NAMES.WILLIAMBUSTER = "Buster Bot"
+
+    STRINGS.NAMES.WILLIAMBUSTER3 = "Buster Bot Mk.III"
 
     STRINGS.NAMES.WILLIAMBRUTE = "Brute Bot"
 
     STRINGS.NAMES.WILLIAMBRUTE2 = "Brute Bot Mk.II"
 
+    STRINGS.NAMES.WILLIAMBRUTE3 = "Brute Bot Mk.III"
+
     STRINGS.NAMES.WILLIAMBUSTER2 = "Buster Bot Mk.II"
 
     STRINGS.NAMES.WILLIAMBALLISTIC2 = "Ballistic Bot Mk.II"
+
+    STRINGS.NAMES.WILLIAMBALLISTIC3 = "Ballistic Bot Mk.III"
 
     STRINGS.NAMES.WILLIAMBALLISTIC = "Ballistic Bot"
 
