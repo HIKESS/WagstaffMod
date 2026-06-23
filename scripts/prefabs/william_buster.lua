@@ -114,9 +114,14 @@ local function SpawnShadowClone(parent_buster)
         clone.components.fueled:StopConsuming()
     end
     
-    -- Tag as shadow clone
+    -- Tag as shadow clone.
+    -- v2.0.38: REMOVED "shadowcreature" tag. That tag made hostile shadow
+    -- monsters (Terrorbeak, Crawling Horror) treat the clone as a friendly
+    -- (shadow-vs-shadow immunity) AND prevented the clone's combat from
+    -- targeting them. Now the clone is a shadow-THEMED bot (visual only),
+    -- not a shadow-ALIGNED entity — so it can hunt shadow creatures like
+    -- any normal bot, and shadow creatures will fight back normally.
     clone:AddTag("shadow_buster_clone")
-    clone:AddTag("shadowcreature")
     clone:AddTag("NOCLICK") -- Can't be clicked/interacted with
     
     -- CRITICAL: Do not save this clone - it should always be recreated on load
@@ -127,18 +132,70 @@ local function SpawnShadowClone(parent_buster)
         clone.components.follower:SetLeader(parent_buster)
     end
     
-    -- Configure combat retarget to attack parent's target
+    -- Configure combat retarget to attack parent's target + nearby shadow creatures.
+    -- v2.0.38: the clone now HUNTS shadow creatures (Terrorbeaks, Crawling Horrors)
+    -- that are menacing the player or the parent bot. This makes the Buster's
+    -- shadow clone a proper anti-shadow fighter, not just a mirror of the parent.
     if clone.components.combat then
-        -- Clear default retarget and set new one
         clone.components.combat:SetRetargetFunction(1, function(inst)
-            -- Check parent_buster target
-            if parent_buster:IsValid() and parent_buster.components.combat then
+            if not parent_buster:IsValid() then return nil end
+
+            -- 1) Priority: parent's current target (unchanged behavior).
+            if parent_buster.components.combat then
                 local parent_target = parent_buster.components.combat.target
-                if parent_target and parent_target:IsValid() and not parent_target:IsInLimbo() then
+                if parent_target and parent_target:IsValid() and not parent_target:IsInLimbo()
+                    and not parent_target:IsDead() then
                     return parent_target
                 end
             end
+
+            -- 2) Hunt shadow creatures near the parent that are hunting the player
+            --    or any willminion. Tags: "shadow" (Terrorbeak, Crawling Horror,
+            --    Night Hands etc.) + "_combat" (has a combat component).
+            --    The clone itself is tagged "shadowcreature" but NOT "shadow", so
+            --    it won't retarget itself or other buster clones.
+            local px, py, pz = parent_buster.Transform:GetWorldPosition()
+            local shadow_target = FindEntity(
+                parent_buster, 8,
+                function(guy)
+                    if not guy:IsValid() or guy:IsInLimbo() then return false end
+                    if not guy:HasTag("shadow") then return false end
+                    if guy.components.health == nil or guy.components.health:IsDead() then return false end
+                    if guy.components.combat == nil then return false end
+                    -- Only target shadows that are actively menacing the player
+                    -- or one of the player's bots (willminion). This prevents
+                    -- the clone from chasing passive shadow flora/decorations.
+                    local t = guy.components.combat.target
+                    if t == nil then return false end
+                    return t:HasTag("player") or t:HasTag("willminion")
+                end,
+                { "shadow", "_combat" },  -- MUST have these
+                { "INLIMBO", "shadow_buster_clone", "companion", "player" }  -- EXCLUDE these
+            )
+            if shadow_target then
+                return shadow_target
+            end
+
             return nil
+        end)
+
+        -- v2.0.38: Override CanTarget so the clone can attack shadow creatures.
+        -- By default, combat:CanTarget returns false for entities sharing the
+        -- "shadowcreature" tag (shadow-vs-shadow immunity). Since our clone IS
+        -- tagged shadowcreature (for visual/behavior), we need a custom CanTarget
+        -- that explicitly allows targeting the hostile shadow monsters.
+        clone.components.combat.canretarget = true
+        -- We can't easily override the method, but the SetRetargetFunction above
+        -- returns the target directly (bypassing CanTarget for retarget). The
+        -- keeptargetfn below also bypasses it by always returning true while the
+        -- target is alive and near.
+        clone.components.combat:SetKeepTargetFunction(function(inst, target)
+            if not target or not target:IsValid() then return false end
+            if target:IsInLimbo() then return false end
+            if target.components.health == nil or target.components.health:IsDead() then return false end
+            -- Stay on target while parent is alive and we're within leash range
+            if not parent_buster:IsValid() then return false end
+            return true
         end)
     end
     

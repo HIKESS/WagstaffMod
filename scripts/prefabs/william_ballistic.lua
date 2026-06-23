@@ -1717,11 +1717,13 @@ end
                         if inst2._aura_fx then inst2._aura_fx._parent = inst2 end
                     end
                 end
-                if TheWorld.state.isdusk and shadow then
-                    if inst2._shadow_clone == nil or not inst2._shadow_clone:IsValid() then
-                        inst2._shadow_clone = SpawnShadowClone(inst2)
-                    end
-                end
+                -- v2.0.38: REMOVED shadow clone spawn from Ballistic. The call to
+                -- SpawnShadowClone() was a latent crash — that function is `local`
+                -- in william_buster.lua and does NOT exist in this file's scope.
+                -- Ballistic is a ranged turret; the shadow-clone mechanic is the
+                -- Buster's role. Ballistic keeps its Fuelweaver Snare (fossil spikes)
+                -- which already excludes shadow creatures from its targeting, so it
+                -- neither attracts nor attacks shadow creatures — by design.
             end)
         end
 
