@@ -71,7 +71,10 @@ local function OnHit(inst, attacker, target)
     -- complexprojectile attacker.
     local sentry = inst.components.complexprojectile and inst.components.complexprojectile.attacker
     local aff = sentry and sentry.IsValid and sentry:IsValid() and sentry._aff_type or nil
-    local AffFX = _G.WagstaffAffFX
+    -- v2.0.47 FIX: use rawget to bypass strict.lua (avoids "variable not
+    -- declared" error if this prefab loads before esentry.lua registers the
+    -- global). Returns nil safely if the FX module isn't loaded yet.
+    local AffFX = rawget(_G, "WagstaffAffFX")
 
     -- Landed on the ocean
     if inst:IsOnOcean() then
