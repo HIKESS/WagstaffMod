@@ -921,8 +921,8 @@ inst.components.burnable.ignorefuel = true
                 if data and data.attacker and data.attacker:IsValid() then
                     local attacker = data.attacker
                     if attacker.components.health and not attacker.components.health:IsDead() then
-                        -- Deal 30 fire damage to the attacker only
-                        attacker.components.health:DoDelta(-30, false, "fire")
+                        -- v2.0.15: 30 -> 50 fire damage (was too weak vs Dispenser MK3 auras)
+                        attacker.components.health:DoDelta(-50, false, "fire")
                         -- Celestial FX on attacker (azul)
                         local fx = SpawnPrefab("electrichitsparks")
                         if fx then
@@ -943,7 +943,8 @@ inst.components.burnable.ignorefuel = true
                 if data and data.attacker and data.attacker:IsValid() then
                     local attacker = data.attacker
                     if attacker.components.health and not attacker.components.health:IsDead() then
-                        attacker.components.health:DoDelta(-15, false, "shadow")
+                        -- v2.0.15: 15 -> 25 shadow damage (proportional to celestial 30->50 buff)
+                        attacker.components.health:DoDelta(-25, false, "shadow")
                         -- Shadow FX on attacker
                         local fx = SpawnPrefab("shadow_puff")
                         if fx then
@@ -1287,11 +1288,11 @@ inst.components.burnable.ignorefuel = true
             return inst
         end
 
-        -- REMOVE os buffs extras do MK.II que foram adicionados por fn2()
-        -- Volta para os stats de MK.II (remover +1000 HP e +10 DMG extras)
-        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1000)
-        inst.components.health:DoDelta(-1000)
-        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BRUTE_DAMAGE + 10)
+        -- v2.0.15 FIX: MK3 now gets +500 HP (→3000) and +5 DMG (→32) over MK2
+        -- (was: reverting to MK2 stats — regression bug)
+        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1500)
+        inst.components.health:SetCurrentHealth(inst.components.health.maxhealth)
+        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BRUTE_DAMAGE + 15)
 
         -- Affinity pulse (MK3 only)
         AffinityPulse.Setup(inst, GetOwner)

@@ -201,7 +201,11 @@ end
 
         inst.components.health:SetAbsorptionAmount(0+inst.level*0.05)
         if inst.components.combat ~= nil then
-    inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BUSTER_DAMAGE+(inst.level*3))
+            -- v2.0.15 FIX: preserve tier bonus (MK2 +5, MK3 +10) instead of overriding it
+            local tier_bonus = 0
+            if inst.prefab == "williambuster2" then tier_bonus = 5
+            elseif inst.prefab == "williambuster3" then tier_bonus = 10 end
+            inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BUSTER_DAMAGE + tier_bonus + (inst.level*3))
         end
         end)
 end
@@ -1050,7 +1054,8 @@ inst.components.burnable.ignorefuel = true
                     local adjacents = TheSim:FindEntities(x, y, z, 3, {"_combat"}, {"player", "companion", "willminion", "INLIMBO"})
                     for _, ent in ipairs(adjacents) do
                         if ent ~= other and ent ~= inst and ent.components.health and not ent.components.health:IsDead() then
-                            ent.components.health:DoDelta(-damage * 0.3, false, "light_explosion")
+                            -- v2.0.15: AOE 30% -> 50% of hit damage (was too weak)
+                            ent.components.health:DoDelta(-damage * 0.5, false, "light_explosion")
                         end
                     end
                 end

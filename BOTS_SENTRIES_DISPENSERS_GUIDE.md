@@ -1,6 +1,6 @@
 # WAGSTAFF MOD — GUIA COMPLETO DE BOTS, SENTRIES & DISPENSERS
 
-> Dados extraidos diretamente do codigo-fonte do mod (v2.0.14, branch `GLM-5.1-Fixes`).
+> Dados extraidos diretamente do codigo-fonte do mod (v2.0.15, branch `GLM-5.1-Fixes`).
 > Valores sujeitos a mudancas em futuras atualizacoes.
 
 ---
@@ -51,7 +51,7 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 | | **MK.I** | **MK.II** | **MK.III** |
 |---|---|---|---|
-| **HP** | 200 | 200 | 200 |
+| **HP** | 200 | 200 | **300** (+100 v2.0.15) |
 | **DMG** | 30 | 30 | 30 |
 | **Fuel** | 1920s (32 min) | 1920s (32 min) | 1920s (32 min) |
 | **Cook Slots** | 1 | 3 | 3 |
@@ -64,10 +64,14 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 - **MK.II:** 3 slots de cook + corta madeira e minera (com skill MK.II), herda tudo do MK.I
 
-- **MK.III:** Herda MK.II + Celestial/Shadow affinity + Haunt Resurrection (revive com bonus)
-  - **Celestial (dia):** Comidas curam 40% do HP baseado no valor de fome
-  - **Shadow (dusk):** Comidas curam 40% da Sanidade baseado no valor de fome. MK.II pode reviver jogadores (so a noite)
-  - **Haunt Resurrection (MK3):** Se assombrado, reviva com 20% HP bonus do assombrador
+- **MK.III:** Herda MK.II + **+100 HP** (v2.0.15) + Celestial/Shadow affinity + **Haunt Resurrection reworked (v2.0.15)**
+  - **Comida (phase-locked, igual antes):**
+    - **Celestial (dia):** Comidas curam 40% do HP baseado no valor de fome
+    - **Shadow (dusk):** Comidas curam 40% da Sanidade baseado no valor de fome
+  - **Revive (all-day, v2.0.15) — afinidade funciona o dia todo:**
+    - **Default (sem afinidade):** Bot morre, jogador revive (classico)
+    - **Shadow (qualquer horario):** Procura o `meat_effigy` mais proximo do jogador fantasma e o **destroi no lugar do bot**. Bot **sobrevive** + bonus +30% sanidade max. Se nao tiver effigy, bot morre (fallback)
+    - **Celestial (qualquer horario):** Bot **descarrega para MK1** (perde todos os upgrades) e **sobrevive como MK1** + bonus +20% HP max. **Cooldown 1/dia** por owner. Se em cooldown, bot morre (fallback)
 
 ---
 
@@ -91,7 +95,8 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 - **MK.II:** +300 HP, +5 DMG, dano em AoE, chance de stun
 
 - **MK.III:** +600 HP total, +10 DMG total, **Explosive Punch** (30% chance: +50% dano bonus)
-  - **Celestial (dia):** Explosive Punch ganha AoE com explosao de luz
+  - **v2.0.15 FIX:** LevelUp agora preserva o bonus de tier (MK2 +5, MK3 +10) — antes, alimentar o bot REDUZIA o dano
+  - **Celestial (dia):** Explosive Punch ganha AoE com explosao de luz (**50% do dano** em inimigos proximos, era 30%)
   - **Shadow (dusk):** Invoca Shadow Clone (50% do dano original, invencivel, some no dia ou se Buster morre)
 
 ---
@@ -102,8 +107,8 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 | | **MK.I** | **MK.II** | **MK.III** |
 |---|---|---|---|
-| **HP** | 150 | 400 (+250) | 400 (herda MK.II) |
-| **DMG** | 16 (24/1.5) | 28 (+12) | 28 (herda MK.II) |
+| **HP** | 150 | 400 (+250) | **500** (+100 v2.0.15) |
+| **DMG** | 16 (24/1.5) | 28 (+12) | **33** (+5 v2.0.15) |
 | **Fuel** | 3630s (60.5 min) | 3630s (60.5 min) | 3630s (60.5 min) |
 | **Tipo** | Turret only | Turret only | Turret only |
 | **Custo Upgrade** | — | 70 Scrap (5/hit) | 90 Scrap (5/hit) |
@@ -115,13 +120,13 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 - **MK.II:** +250 HP, +12 DMG, herda tudo do MK.I
 
-- **MK.III:** Herda MK.II (mesmo HP/DMG), permanece **turret only** (o Ballistic Bot é exclusivamente uma torre fixa em **todos** os tiers — a melhoria de mobilidade está desativada no código), +:
+- **MK.III:** **+100 HP / +5 DMG** (v2.0.15 — antes herdava MK2 sem ganho), permanece **turret only**, +:
   - **Lantern Light (so a noite):** Luz fixa ~0.6x lanterna + pulso ~3x lanterna a cada 0.5s
   - **Rain Splash:** Ataques causam splash eletrico (30% dano) + chain lightning em inimigos proximos
   - **Tempest Call:** Chuva + combate = atrai relampagos automaticamente (auto-overcharge)
   - **Auto-Recharge:** Absorve energia de para-raios e baterias Winona num raio de 6 tiles
-  - **Celestial (dia):** Projeteil Brightshade (snare + dano em area) + luz protege sanidade
-  - **Shadow (dusk):** Aura de medo (2-3s) em inimigos hitados + chain lightning causa panico
+  - **Celestial (dia):** Projétil Brightshade (snare + dano em area) — **cooldown 10s** (era 15s, v2.0.15) + luz protege sanidade
+  - **Shadow (dusk):** Fuelweaver Snare (snara até 3 inimigos) — **cooldown 10s** (era 15s, v2.0.15)
 
 ---
 
@@ -131,27 +136,23 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 | | **MK.I** | **MK.II** | **MK.III** |
 |---|---|---|---|
-| **HP** | 1500 | 2500 (+1000) | 2500 (herda MK.II*) |
-| **DMG** | 17 | 27 (+10) | 27 (herda MK.II) |
+| **HP** | 1500 | 2500 (+1000) | **3000** (+500 v2.0.15) |
+| **DMG** | 17 | 27 (+10) | **32** (+5 v2.0.15) |
 | **Absorcao** | 8%/nivel | 8%/nivel | 8%/nivel |
 | **Regen** | 5+5*nivel HP/5s | 5+5*nivel HP/5s | 5+5*nivel HP/5s |
 | **Fuel** | 2400s (40 min) | 2400s (40 min) | 2400s (40 min) |
 | **Custo Upgrade** | — | 65 Scrap (5/hit) | 40 Scrap (5/hit) |
 | **Skill Necessaria** | — | Brute MK.II | Brute MK.III |
 
-*\*MK.III spawna com HP = 2500-1000 = 1500/2500 (DoDelta negativo no spawn)*
-
 **Habilidades por Tier:**
 
 - **MK.I:** Segue jogador, taunt criaturas em raio de 7 tiles, absorcao 8%/nivel (max 3 = 24%), regen 5+5*nivel HP/5s, Ataques em "monster" tag
 
 - **MK.II:** +1000 HP, +10 DMG, armazenamento (bau), segue jogador, tamanho maior, contra-ataque de fogo (30 fire dmg no atacante, sem cooldown)
-  - **Celestial:** Aura de calor, quando hitado causa 25 dano de fogo em TODOS inimigos no raio de aggro
-  - **Shadow:** Contra-ataque de sombra (15 shadow dmg), AOE "Void Weaken" reduz dano de inimigos em 50% por 3s no raio, atrai criaturas shadow como alvo prioritario absoluto + imune a dano planar
 
-- **MK.III:** Herda MK.II stats + **Container (bau de armazenamento de 9 slots)**
-  - **Celestial:** Mesmo do MK.II
-  - **Shadow:** Mesmo do MK.II + imune a onda de pa do Bearger
+- **MK.III:** **+500 HP / +5 DMG** (v2.0.15 — antes herda MK2 sem ganho) + **Container (bau de armazenamento de 9 slots)**
+  - **Celestial (dia):** Contra-ataque **50 fire dmg** (era 30, v2.0.15) no atacante
+  - **Shadow (dusk):** Contra-ataque **25 shadow dmg** (era 15, v2.0.15) + AOE "Void Weaken" reduz dano de inimigos em 50% por 3s no raio + atrai criaturas shadow como alvo prioritario + imune a dano planar
 
 ---
 
@@ -184,7 +185,7 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 - **LVL 3:** HP triplicado (900), municao triplicada (300), **Rockets** (dispara foguetes com splash AOE: 25 dano direto + splash 3 tiles a 60% = 15 dano), **Affinity System**:
   - **Celestial (dia):** +10% dano bonus vs shadow_aligned + visao shadow (tag shadowaligned_sight)
   - **Shadow (dusk):** +10% dano bonus vs lunar_aligned
-  - **x2 Damage (skill separada):** 15% chance de causar dano duplo (bonus igual ao dano base) — funciona em QUALQUER horario, MK3 only
+  - **x2 Damage (skill separada):** 10% chance de causar dano duplo (bonus igual ao dano base) — funciona em QUALQUER horario, MK3 only (v2.0.15: era 15%)
 
 ---
 
@@ -240,7 +241,7 @@ Cada afinidade ativa apenas na sua fase (Celestial=dia, Shadow=dusk). Ter as dua
 | **Skill** | x2-Damage |
 | **Custo de Insight** | 1 |
 | **Requisito** | Sentry MK.III |
-| **Efeito** | 15% de chance de causar dano duplo a cada hit da Sentry MK3 |
+| **Efeito** | 10% de chance de causar dano duplo a cada hit da Sentry MK3 (v2.0.15: era 15%) |
 | **Funciona** | Qualquer horario (nao depende de Celestial/Shadow) |
 
 ---
@@ -282,7 +283,7 @@ Cada afinidade ativa apenas na sua fase (Celestial=dia, Shadow=dusk). Ter as dua
 |---|---|
 | **Skill** | Mechanical Efficiency (root) |
 | **Custo de Insight** | 1 |
-| **Efeito** | 30% de chance que reparo, recarga e upgrade NAO custem scrap |
+| **Efeito** | 20% de chance que reparo, recarga e upgrade NAO custem scrap (v2.0.15: era 30%) |
 | **Aplica em** | TODOS bots, sentries e dispensers |
 
 ---
@@ -324,21 +325,21 @@ Cada afinidade ativa apenas na sua fase (Celestial=dia, Shadow=dusk). Ter as dua
 MECHANICAL (Root)
   ├── Sentry MK.II (1 insight)
   │   └── Sentry MK.III (1 insight)
-  │       └── x2-Damage (1 insight)  [Sentry MK3 only, 15% double damage]
+  │       └── x2-Damage (1 insight)  [Sentry MK3 only, 10% double damage] (v2.0.15)
   │
   └── Dispenser MK.II (1 insight)
       └── Dispenser MK.III (1 insight)
           └── Lucky Engineer (1 insight)  [Dispenser 20% rare drop + golden FX]
 
-ROBOTIC (Root, linear chain)
-  Brute MK.II (1 insight)
-  └── Brute MK.III (1 insight)
-      └── Buster MK.II (1 insight)
-          └── Buster MK.III (1 insight)
-              └── Ballistic MK.II (1 insight)
-                  └── Ballistic MK.III (1 insight)
-                      └── Butler MK.II (1 insight)
-                          └── Butler MK.III (1 insight)
+ROBOTIC (Root, linear chain — v2.0.15 reordered)
+  Butler MK.II (1 insight)         <- primeiro (suporte/cooking)
+  └── Butler MK.III (1 insight)
+      └── Brute MK.II (1 insight)
+          └── Brute MK.III (1 insight)
+              └── Buster MK.II (1 insight)
+                  └── Buster MK.III (1 insight)
+                      └── Ballistic MK.II (1 insight)
+                          └── Ballistic MK.III (1 insight)  <- ultimo (turret avançada)
 
 ALLEGIANCE (Boss-locked, mutual exclusion)
   ├── [Celestial Champion kill] -> Celestial Possession (1 insight)
@@ -350,6 +351,36 @@ ALLEGIANCE (Boss-locked, mutual exclusion)
 ---
 
 ## CHANGELOG
+
+### v2.0.15 — Reorganização da árvore + Fixes de balanceamento + Butler revive rework
+
+**Reorganização da skill tree robotic:**
+- Nova ordem: **Butler → Brute → Buster → Ballistic** (era Brute→Buster→Ballistic→Butler)
+- Justificativa: Butler é suporte early (cooking/gathering), Ballistic é turret avançada late-game
+- Sem reorder de FXs ou estrutura — apenas posições y e connects ajustados
+
+**Butler MK3 Haunt Resurrection rework (afinidade revive all-day):**
+- **Default (sem afinidade):** bot morre, jogador revive (classico)
+- **Shadow (all-day):** destroi o `meat_effigy` mais proximo do jogador no lugar do bot. Bot **sobrevive** + bonus +30% sanidade. Se nao tem effigy, bot morre (fallback)
+- **Celestial (all-day):** bot descarrega para MK1 (perde upgrades) e **sobrevive como MK1** + bonus +20% HP. Cooldown 1/dia por owner. Se em cooldown, bot morre (fallback)
+- **Comida affinity:** continua phase-locked (celestial=dia, shadow=dusk) — sem mudança
+- **+100 HP** no MK3 (200→300)
+
+**Fixes de bugs (regressões):**
+- **Buster LevelUp:** corrigido bug onde alimentar o bot REDUZIA o dano (sobrescrevia bonus de tier). Agora preserva MK2 +5 / MK3 +10
+- **Brute MK3:** corrigido bug onde MK3 tinha stats identicos ao MK2 (codigo revertia explicitamente). Agora +500 HP (→3000) e +5 DMG (→32)
+
+**Fixes de balanceamento:**
+- **Ballistic MK3:** +100 HP (→500) e +5 DMG (→33) — antes 150 scrap por zero ganho de stats
+- **E-Teleporter:** sanity cost 0 → 5 por uso (era fast-travel gratis ilimitado)
+- **Mechanical Efficiency:** 30% → 20% chance de scrap gratis (era muito forte para 1 insight)
+- **x2 Damage (Sentry):** 15% → 10% proc chance (era forte demais para 1 insight)
+
+**Bots MK3 auras buffed (para acompanhar o buff do Dispenser MK3 em v2.0.14):**
+- **Brute celestial counter-attack:** 30 → 50 fire dmg
+- **Brute shadow counter-attack:** 15 → 25 shadow dmg
+- **Buster celestial AOE:** 30% → 50% do dano do hit em inimigos proximos
+- **Ballistic affinity cooldown:** 15s → 10s (celestial brightshade + shadow snare)
 
 ### v2.0.14 — Balanceamento do Dispenser (Option B) + Afinidade Level 2
 

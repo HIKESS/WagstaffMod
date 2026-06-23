@@ -1056,13 +1056,17 @@ end
 
         -- Spawn pulse light as a registered prefab child (server-side).
         -- SpawnPrefab is required here because DST only replicates
-        -- registered prefabs over the network.
+        -- registered prefabs over the network. (TURBO-Fixes light FX rework)
         inst._pulse_light = SpawnPrefab("ballistic_pulse_light")
         inst._pulse_light.entity:SetParent(inst.entity)
         inst._pulse_light.Transform:SetPosition(0, 1, 0)
 
-        -- MK3 inherits MK2 stats (+250 HP, +12 DMG) — no additional stat bonus
-        -- MK3 is a TURRET (not mobile), keeps turret physics and brain
+        -- v2.0.15: MK3 now gets +100 HP (→500) and +5 DMG (→33) over MK2
+        -- (was: identical to MK2 stats — 150 scrap for zero stat gain)
+        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BALLISTIC_HEALTH + 350)
+        inst.components.health:SetCurrentHealth(inst.components.health.maxhealth)
+        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 17)
+
         inst:AddTag("ballistic_turret")
 
         -- Add follower for owner tracking only (affinity, save/load)
@@ -1393,7 +1397,7 @@ end
                             end
                         end
                         
-                        inst:DoTaskInTime(15, function() inst._special_attack_ready = true end)
+                        inst:DoTaskInTime(10, function() inst._special_attack_ready = true end)  -- v2.0.15: 15s -> 10s
                     end
                 end
             end
@@ -1403,7 +1407,7 @@ end
                 if data and data.target and data.target:IsValid() then
                     if not inst._fossil_snare_ready then return end
                     inst._fossil_snare_ready = false
-                    inst:DoTaskInTime(15, function() inst._fossil_snare_ready = true end)
+                    inst:DoTaskInTime(10, function() inst._fossil_snare_ready = true end)  -- v2.0.15: 15s -> 10s
 
                     local bx, by, bz = inst.Transform:GetWorldPosition()
 
