@@ -981,6 +981,63 @@ inst.components.burnable.ignorefuel = true
                         end
                     end
                 end
+
+                -- v2.0.49: CELESTIAL "Lunar Empowerment" AOE — mirrors the shadow
+                -- Brute's "Void Weaken" AOE. When hit, emits a lunar pulse that
+                -- EMPOWERS nearby allies (+50% damage dealt for 4s, 12s cooldown).
+                -- This is the symmetric counterpart to the shadow's -50% enemy
+                -- damage debuff: shadow weakens foes (defensive), celestial
+                -- strengthens friends (offensive). Same radius (6), duration (4s),
+                -- cooldown (12s) — balanced mirror.
+                local x, y, z = inst.Transform:GetWorldPosition()
+                local do_buff = not inst._lunar_pulse_cooldown
+
+                if do_buff then
+                    inst._lunar_pulse_cooldown = true
+                    inst:DoTaskInTime(12, function() inst._lunar_pulse_cooldown = nil end)
+
+                    -- Central lunar burst FX: celestial-blue sparkle explosion
+                    if inst.SoundEmitter then
+                        inst.SoundEmitter:PlaySound("dontstarve/common/lunar_sparkle")
+                    end
+                    local burst_fx = SpawnPrefab("sparklefx")
+                    if burst_fx then
+                        burst_fx.Transform:SetPosition(x, y + 0.5, z)
+                        burst_fx.Transform:SetScale(6.0, 6.0, 6.0)
+                        if burst_fx.AnimState then
+                            burst_fx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
+                            burst_fx.AnimState:SetAddColour(0.2, 0.3, 0.5, 0)
+                        end
+                        burst_fx:DoTaskInTime(1.5, function()
+                            if burst_fx:IsValid() then burst_fx:Remove() end
+                        end)
+                    end
+
+                    -- Find and empower allies within radius 6
+                    -- Allies = player + companion bots + willminion (all wagstaff bots)
+                    local ents = TheSim:FindEntities(x, y, z, 6, nil, {"INLIMBO"})
+                    for _, ent in ipairs(ents) do
+                        if ent:IsValid() and ent.components.combat
+                            and (ent:HasTag("player") or ent:HasTag("companion") or ent:HasTag("willminion")) then
+                            -- +50% damage dealt for 4 seconds (mirrors shadow's -50%)
+                            if ent.components.combat.externaldamagemultipliers then
+                                ent.components.combat.externaldamagemultipliers:SetModifier(inst, 1.5)
+                                ent:DoTaskInTime(4, function()
+                                    if ent:IsValid() and ent.components.combat and ent.components.combat.externaldamagemultipliers then
+                                        ent.components.combat.externaldamagemultipliers:RemoveModifier(inst)
+                                    end
+                                end)
+                            end
+                            -- Small celestial sparkle on each buffed ally
+                            local ally_fx = SpawnPrefab("sparklefx")
+                            if ally_fx and ally_fx.AnimState then
+                                ally_fx.Transform:SetPosition(ent.Transform:GetWorldPosition())
+                                ally_fx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
+                                ally_fx:DoTaskInTime(1, function() if ally_fx:IsValid() then ally_fx:Remove() end end)
+                            end
+                        end
+                    end
+                end
             end
 
             -- SHADOW POSSESSION: Void Weaken - retaliatory AOE damage reduction + shadow damage on hit (MK3 only)
