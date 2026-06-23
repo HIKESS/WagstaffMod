@@ -594,8 +594,8 @@ inst.components.burnable.ignorefuel = true
         local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
         local hp = math.floor(inst.components.health.currenthealth)
         local maxhp = math.floor(inst.components.health.maxhealth)
-        local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 75") or ""
-        local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+        -- v2.0.33: upgrade progress removed from name.
+        local displayname = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
         inst.components.named:SetName(displayname)
         inst.name = displayname
         inst.GetDisplayName = function() return displayname end
