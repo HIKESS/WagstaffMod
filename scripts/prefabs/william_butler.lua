@@ -1172,27 +1172,51 @@ inst.components.burnable.ignorefuel = true
             return false
         end
 
-        -- v2.0.17: Celestial "soul leaving" FX for the discharge/revive moment.
-        -- Uses LIGHT, celestial-themed effects (white-blue shield + ascending
-        -- sparkles + a light flash that fades) — deliberately NOT shadow/dark FX.
+        -- v2.0.18: Celestial discharge FX for the revive moment.
+        -- Reworked: removed ghostlyelixir_shield_fx + sparklefx (didn't fit the
+        -- "machine discharging" theme). Now uses lunar-aligned white FX:
+        --   - archive_lockbox_dispawn_fx (white dissolve = energy dissolving away)
+        --   - moonstorm_spark (white sparks = energy escaping the chassis)
+        -- Plus a custom celestial light flash (white-blue, fades) — not a prefab,
+        -- so it doesn't conflict with any FX table.
+        -- Anti-stacking: SpawnUnique skips spawning if an FX of the same prefab
+        -- already exists within 1.5 units (prevents duplicate FX when revive is
+        -- triggered repeatedly / haunt spam).
         local function PlayCelestialDischargeFX(pt)
             local x, y, z = pt.x, pt.y, pt.z
-            -- Celestial light shield (matches the MK3 menu affinity FX)
-            local shield = _G.SpawnPrefab("ghostlyelixir_shield_fx")
-            if shield then
-                shield.Transform:SetPosition(x, y + 0.5, z)
-                shield.Transform:SetScale(1.3, 1.3, 1.3)
-                if shield.AnimState then
-                    shield.AnimState:SetMultColour(1, 1, 1, 0.8)
+
+            -- Helper: spawn FX only if no existing FX of the same prefab is nearby.
+            -- "não repetir fx se já estiver em alguém" — prevents stacking.
+            local function SpawnUnique(prefab_name, offset_y, scale)
+                offset_y = offset_y or 0
+                scale = scale or 1
+                local nearby = _G.TheSim:FindEntities(x, y, z, 1.5)
+                for _, ent in ipairs(nearby) do
+                    if ent.prefab == prefab_name then
+                        return nil -- already present nearby, skip
+                    end
                 end
+                local fx = _G.SpawnPrefab(prefab_name)
+                if fx then
+                    fx.Transform:SetPosition(x, y + offset_y, z)
+                    if scale ~= 1 then
+                        fx.Transform:SetScale(scale, scale, scale)
+                    end
+                end
+                return fx
             end
-            -- Ascending sparkles (evokes a soul/essence rising from the chassis)
-            local sparkle = _G.SpawnPrefab("sparklefx")
-            if sparkle then
-                sparkle.Transform:SetPosition(x, y + 0.3, z)
-            end
+
+            -- Primary: white dissolve (archive_lockbox_dispawn_fx) — the bot's
+            -- energy dissolving away as it discharges. Lunar-aligned (celestial).
+            SpawnUnique("archive_lockbox_dispawn_fx", 0.5, 1.2)
+
+            -- Secondary: white sparks (moonstorm_spark) — energy escaping the
+            -- chassis as the fuel hits zero.
+            SpawnUnique("moonstorm_spark", 0.3, 1.0)
+
             -- Brief celestial light flash (white-blue) that fades — the energy
-            -- leaving the bot as it discharges. Built manually so it always exists.
+            -- leaving the bot as it discharges. Custom entity (not a prefab FX),
+            -- so no duplicate-check needed (it self-removes after 1.2s).
             local lightfx = _G.CreateEntity()
             if lightfx then
                 lightfx.entity:AddTransform()
