@@ -1,0 +1,620 @@
+     1→-- Wagstaff Skill Tree
+     2→-- Based on reference implementation pattern from working DST mod skill trees.
+     3→-- Key rules:
+     4→--   - root = true: marks entry-point skills (available immediately)
+     5→--   - connects: chains skills forward (parent -> child). Engine follows this graph.
+     6→--   - locks: only for prerequisite back-references to lock nodes with lock_open functions
+     7→--   - NO (9999,9999) hidden locks needed -- connects chains handle progression
+     8→--
+     9→-- Branches:
+    10→--   mechanical: Fork (sentry path + dispenser path)
+    11→--   robotic:    Linear chain (brute mk2 -> brute mk3 -> buster mk2 -> buster mk3 -> ballistic mk2 -> ballistic mk3 -> butler mk2 -> butler mk3)
+    12→--   allegiance: Boss-locked with mutual exclusion (shadow vs lunar)
+    13→
+    14→local GAP = 38
+    15→
+    16→-- Module-level locals for diagnostic logging flags.
+    17→-- These are used inside lock_open functions to print the unlock state exactly
+    18→-- once per skill tree open. Using module-level locals (NOT globals) is required
+    19→-- because DST ships with scripts/strict.lua which throws an error on any read
+    20→-- of an undeclared global variable. Reading `_WAGSTAFF_LOCK_LOGGED_*` without
+    21→-- declaring it first crashed the skill tree panel with:
+    22→--   variable '_WAGSTAFF_LOCK_LOGGED_FUELWEAVER' is not declared
+    23→local _lock_logged_fuelweaver = false
+    24→local _lock_logged_celestial = false
+    25→
+    26→-- ORDERS: one entry per branch with {x, y} header position in the skill tree UI.
+    27→-- Format matches DST's standard: {branch_name, {x_offset, y_offset}}.
+    28→-- x = horizontal center of the branch column, y = vertical position of branch header.
+    29→local ORDERS =
+    30→{
+    31→    {"mechanical", { -169, 202 }},
+    32→    {"robotic",    {    1, 202 }},
+    33→    {"allegiance", {  178, 130 }},
+    34→}
+    35→
+    36→local function BuildSkillsData(SkillTreeFns)
+    37→    local skills =
+    38→    {
+    39→        -- ================================================================
+    40→        -- COLUMN 1: MECHANICAL (Fork: sentry path + dispenser path)
+    41→        -- ================================================================
+    42→
+    43→        wagstaff_mechanical_1 = {
+    44→            name = "wagstaff_mechanical_1",
+    45→            title = "Mechanical Efficiency",
+    46→            desc = "Years of tinkering pay off.\nRepairs, upgrades, and maintenance have a chance to cost no Scrap.",
+    47→            icon = "Wrench",
+    48→            icon_atlas = "images/skilltree/Wrench.xml",
+    49→            pos = { -168.9, 164.9 },
+    50→            group = "mechanical",
+    51→            tags = {"mechanical"},
+    52→            root = true,
+    53→            defaultfocus = true,
+    54→            cost = 1,
+    55→            connects = {"wagstaff_sentry_mk2", "wagstaff_dispenser_mk2"},
+    56→            IsActivated = function(inst, skillsdata)
+    57→                return skillsdata ~= nil and skillsdata["wagstaff_mechanical_1"] == true
+    58→            end,
+    59→            onactivate = function(inst, fromload)
+    60→                inst:AddTag("wagstaff_mechanical_efficiency")
+    61→            end,
+    62→            ondeactivate = function(inst, fromload)
+    63→                inst:RemoveTag("wagstaff_mechanical_efficiency")
+    64→            end,
+    65→        },
+    66→
+    67→        -- Sentry path (left column of mechanical)
+    68→        wagstaff_sentry_mk2 = {
+    69→            name = "wagstaff_sentry_mk2",
+    70→            title = "Sentry Mk.II",
+    71→            desc = "Equips the Sentry with dual guns.\nIncreases durability, damage, and ammo capacity.",
+    72→            icon = "sentrymk2",
+    73→            icon_atlas = "images/skilltree/sentrymk2.xml",
+    74→            pos = { -206.7, 120.7 },
+    75→            group = "mechanical",
+    76→            tags = {"mechanical"},
+    77→            cost = 1,
+    78→            connects = {"wagstaff_sentry_mk3"},
+    79→            onactivate = function(inst, fromload)
+    80→                inst:AddTag("wagstaff_sentry_mk2")
+    81→            end,
+    82→            ondeactivate = function(inst, fromload)
+    83→                inst:RemoveTag("wagstaff_sentry_mk2")
+    84→            end,
+    85→        },
+    86→
+    87→        wagstaff_sentry_mk3 = {
+    88→            name = "wagstaff_sentry_mk3",
+    89→            title = "Sentry Mk.III",
+    90→            desc = "Unlocks the Sentry's full firepower.\nAdds rocket support and increases fire rate, durability, damage, and ammo capacity.",
+    91→            icon = "sentrymk3",
+    92→            icon_atlas = "images/skilltree/sentrymk3.xml",
+    93→            pos = { -206.7, 76.4 },
+    94→            group = "mechanical",
+    95→            tags = {"mechanical"},
+    96→            cost = 1,
+    97→            connects = {"wagstaff_x2_damage"},
+    98→            onactivate = function(inst, fromload)
+    99→                inst:AddTag("wagstaff_sentry_mk3")
+   100→            end,
+   101→            ondeactivate = function(inst, fromload)
+   102→                inst:RemoveTag("wagstaff_sentry_mk3")
+   103→            end,
+   104→        },
+   105→
+   106→        wagstaff_x2_damage = {
+   107→            name = "wagstaff_x2_damage",
+   108→            title = "x2-Damage",
+   109→            desc = "Sometimes one shot is all it takes.\nGives the Sentry a chance to deal double damage.",
+   110→            icon = "doubledamage",
+   111→            icon_atlas = "images/skilltree/doubledamage.xml",
+   112→            pos = { -206.7, 32.5 },
+   113→            group = "mechanical",
+   114→            tags = {"mechanical"},
+   115→            cost = 1,
+   116→            onactivate = function(inst, fromload)
+   117→                inst:AddTag("wagstaff_x2_damage")
+   118→            end,
+   119→            ondeactivate = function(inst, fromload)
+   120→                inst:RemoveTag("wagstaff_x2_damage")
+   121→            end,
+   122→        },
+   123→
+   124→        -- Dispenser path (right column of mechanical)
+   125→        wagstaff_dispenser_mk2 = {
+   126→            name = "wagstaff_dispenser_mk2",
+   127→            title = "Dispenser MK.II",
+   128→            desc = "Improves the Dispenser's production efficiency.",
+   129→            icon = "disp2",
+   130→            icon_atlas = "images/skilltree/disp2.xml",
+   131→            pos = { -131.2, 120.7 },
+   132→            group = "mechanical",
+   133→            tags = {"mechanical"},
+   134→            cost = 1,
+   135→            connects = {"wagstaff_dispenser_mk3"},
+   136→            onactivate = function(inst, fromload)
+   137→                inst:AddTag("wagstaff_dispenser_mk2")
+   138→            end,
+   139→            ondeactivate = function(inst, fromload)
+   140→                inst:RemoveTag("wagstaff_dispenser_mk2")
+   141→            end,
+   142→        },
+   143→
+   144→        wagstaff_dispenser_mk3 = {
+   145→            name = "wagstaff_dispenser_mk3",
+   146→            title = "Dispenser MK.III",
+   147→            desc = "Keeps the workshop running around the clock.\nProduces rarer resources and increases fuel capacity.",
+   148→            icon = "disp3",
+   149→            icon_atlas = "images/skilltree/disp3.xml",
+   150→            pos = { -131.2, 76.4 },
+   151→            group = "mechanical",
+   152→            tags = {"mechanical"},
+   153→            cost = 1,
+   154→            connects = {"wagstaff_lucky_engineer"},
+   155→            onactivate = function(inst, fromload)
+   156→                inst:AddTag("wagstaff_dispenser_mk3")
+   157→            end,
+   158→            ondeactivate = function(inst, fromload)
+   159→                inst:RemoveTag("wagstaff_dispenser_mk3")
+   160→            end,
+   161→        },
+   162→
+   163→        wagstaff_lucky_engineer = {
+   164→            name = "wagstaff_lucky_engineer",
+   165→            title = "Lucky Engineer",
+   166→            desc = "Fortune smiles on good craftsmanship.\nGives the Dispenser a chance to produce an additional rare resource.",
+   167→            icon = "luckyenginer",
+   168→            icon_atlas = "images/skilltree/luckyenginer.xml",
+   169→            pos = { -131.2, 32.5 },
+   170→            group = "mechanical",
+   171→            tags = {"mechanical"},
+   172→            cost = 1,
+   173→            onactivate = function(inst, fromload)
+   174→                inst:AddTag("wagstaff_lucky_engineer")
+   175→            end,
+   176→            ondeactivate = function(inst, fromload)
+   177→                inst:RemoveTag("wagstaff_lucky_engineer")
+   178→            end,
+   179→        },
+   180→
+   181→        -- ================================================================
+   182→        -- COLUMN 2: ROBOTIC (Linear chain: brute->buster->ballistic->butler)
+   183→        -- ================================================================
+   184→        -- Chain: brute_mk2 -> brute_mk3 -> buster_mk2 -> buster_mk3 ->
+   185→        --        ballistic_mk2 -> ballistic_mk3 -> butler_mk2 -> butler_mk3
+   186→
+   187→        wagstaff_robotic_1 = {
+   188→            name = "wagstaff_robotic_1",
+   189→            title = "Brute Bot MK. II",
+   190→            desc = "Reinforces the Brute's heavy frame.\nGreatly increases durability and damage.",
+   191→            icon = "brutemk2",
+   192→            icon_atlas = "images/skilltree/brutemk2.xml",
+   193→            pos = { -36.9, 164.2 },
+   194→            group = "robotic",
+   195→            tags = {"robotic"},
+   196→            root = true,
+   197→            cost = 1,
+   198→            connects = {"wagstaff_robotic_1_parallel"},
+   199→            onactivate = function(inst, fromload)
+   200→                print("[SKILL DEBUG] wagstaff_robotic_1 onactivate called, fromload:", fromload)
+   201→                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+   202→                inst:AddTag("wagstaff_brute_evolve")
+   203→                print("[SKILL DEBUG] Tag wagstaff_brute_evolve adicionada")
+   204→                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_brute_evolve"))
+   205→            end,
+   206→            ondeactivate = function(inst, fromload)
+   207→                print("[SKILL DEBUG] wagstaff_robotic_1 ondeactivate called")
+   208→                inst:RemoveTag("wagstaff_brute_evolve")
+   209→            end,
+   210→        },
+   211→
+   212→        wagstaff_robotic_1_parallel = {
+   213→            name = "wagstaff_robotic_1_parallel",
+   214→            title = "Brute Bot MK. III",
+   215→            desc = "Turns the Brute into a true pack mule.\nAdds a complete storage system.",
+   216→            icon = "brutemk3",
+   217→            icon_atlas = "images/skilltree/brutemk3.xml",
+   218→            pos = { 38.6, 164.2 },
+   219→            group = "robotic",
+   220→            tags = {"robotic"},
+   221→            cost = 1,
+   222→            connects = {"wagstaff_buster_evolve"},
+   223→            onactivate = function(inst, fromload)
+   224→                print("[SKILL DEBUG] wagstaff_robotic_1_parallel onactivate called, fromload:", fromload)
+   225→                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+   226→                inst:AddTag("wagstaff_brute_mk3")
+   227→                print("[SKILL DEBUG] Tag wagstaff_brute_mk3 adicionada")
+   228→                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_brute_mk3"))
+   229→            end,
+   230→            ondeactivate = function(inst, fromload)
+   231→                print("[SKILL DEBUG] wagstaff_robotic_1_parallel ondeactivate called")
+   232→                inst:RemoveTag("wagstaff_brute_mk3")
+   233→            end,
+   234→        },
+   235→
+   236→        wagstaff_buster_evolve = {
+   237→            name = "wagstaff_buster_evolve",
+   238→            title = "Buster Bot MK.II",
+   239→            desc = "Upgrades the Buster's combat chassis.\nIncreases its health and damage.",
+   240→            icon = "bustermk2",
+   241→            icon_atlas = "images/skilltree/bustermk2.xml",
+   242→            pos = { -36.9, 120.5 },
+   243→            group = "robotic",
+   244→            tags = {"robotic"},
+   245→            cost = 1,
+   246→            connects = {"wagstaff_buster_parallel"},
+   247→            onactivate = function(inst, fromload)
+   248→                print("[SKILL DEBUG] wagstaff_buster_evolve onactivate called, fromload:", fromload)
+   249→                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+   250→                inst:AddTag("wagstaff_buster_evolve")
+   251→                print("[SKILL DEBUG] Tag wagstaff_buster_evolve adicionada")
+   252→                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_buster_evolve"))
+   253→            end,
+   254→            ondeactivate = function(inst, fromload)
+   255→                print("[SKILL DEBUG] wagstaff_buster_evolve ondeactivate called")
+   256→                inst:RemoveTag("wagstaff_buster_evolve")
+   257→            end,
+   258→        },
+   259→
+   260→        wagstaff_buster_parallel = {
+   261→            name = "wagstaff_buster_parallel",
+   262→            title = "Buster Bot MK. III",
+   263→            desc = "Pushes its offensive systems to the limit.\nUnlocks explosive strike abilities.",
+   264→            icon = "bustermk3",
+   265→            icon_atlas = "images/skilltree/bustermk3.xml",
+   266→            pos = { 38.6, 120.5 },
+   267→            group = "robotic",
+   268→            tags = {"robotic"},
+   269→            cost = 1,
+   270→            connects = {"wagstaff_ballistic_evolve"},
+   271→            onactivate = function(inst, fromload)
+   272→                print("[SKILL DEBUG] wagstaff_buster_parallel onactivate called, fromload:", fromload)
+   273→                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+   274→                inst:AddTag("wagstaff_buster_mk3")
+   275→                print("[SKILL DEBUG] Tag wagstaff_buster_mk3 adicionada")
+   276→                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_buster_mk3"))
+   277→            end,
+   278→            ondeactivate = function(inst, fromload)
+   279→                print("[SKILL DEBUG] wagstaff_buster_parallel ondeactivate called")
+   280→                inst:RemoveTag("wagstaff_buster_mk3")
+   281→            end,
+   282→        },
+   283→
+   284→        wagstaff_ballistic_evolve = {
+   285→            name = "wagstaff_ballistic_evolve",
+   286→            title = "Ballistic Bot MK. II",
+   287→            desc = "Upgrades the Ballistic Bot's electrical systems.\nImproves durability and increases attack power.",
+   288→            icon = "balisticmk2",
+   289→            icon_atlas = "images/skilltree/balisticmk2.xml",
+   290→            pos = { -36.9, 76.4 },
+   291→            group = "robotic",
+   292→            tags = {"robotic"},
+   293→            cost = 1,
+   294→            connects = {"wagstaff_ballistic_parallel"},
+   295→            onactivate = function(inst, fromload)
+   296→                print("[SKILL DEBUG] wagstaff_ballistic_evolve onactivate called, fromload:", fromload)
+   297→                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+   298→                inst:AddTag("wagstaff_ballistic_evolve")
+   299→                print("[SKILL DEBUG] Tag wagstaff_ballistic_evolve adicionada")
+   300→                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_ballistic_evolve"))
+   301→            end,
+   302→            ondeactivate = function(inst, fromload)
+   303→                print("[SKILL DEBUG] wagstaff_ballistic_evolve ondeactivate called")
+   304→                inst:RemoveTag("wagstaff_ballistic_evolve")
+   305→            end,
+   306→        },
+   307→
+   308→        wagstaff_ballistic_parallel = {
+   309→            name = "wagstaff_ballistic_parallel",
+   310→            title = "Ballistic Bot MK.III",
+   311→            desc = "Unlocks its lightning platform.\nGains advanced electrical weaponry and emits its own light.",
+   312→            icon = "balisticmk3",
+   313→            icon_atlas = "images/skilltree/balisticmk3.xml",
+   314→            pos = { 38.6, 76.4 },
+   315→            group = "robotic",
+   316→            tags = {"robotic"},
+   317→            cost = 1,
+   318→            connects = {"wagstaff_thermal_upgrade"},
+   319→            onactivate = function(inst, fromload)
+   320→                print("[SKILL DEBUG] wagstaff_ballistic_parallel onactivate called, fromload:", fromload)
+   321→                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+   322→                inst:AddTag("wagstaff_ballistic_mk3")
+   323→                print("[SKILL DEBUG] Tag wagstaff_ballistic_mk3 adicionada")
+   324→                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_ballistic_mk3"))
+   325→            end,
+   326→            ondeactivate = function(inst, fromload)
+   327→                print("[SKILL DEBUG] wagstaff_ballistic_parallel ondeactivate called")
+   328→                inst:RemoveTag("wagstaff_ballistic_mk3")
+   329→            end,
+   330→        },
+   331→
+   332→        wagstaff_thermal_upgrade = {
+   333→            name = "wagstaff_thermal_upgrade",
+   334→            title = "Butler MK. II",
+   335→            desc = "Unlocks the Butler's gathering tools.\nAllows it to chop trees and mine.",
+   336→            icon = "buttlermk2",
+   337→            icon_atlas = "images/skilltree/buttlermk2.xml",
+   338→            pos = { -36.9, 32.5 },
+   339→            group = "robotic",
+   340→            tags = {"robotic"},
+   341→            cost = 1,
+   342→            connects = {"wagstaff_thermal_upgrade_parallel"},
+   343→            onactivate = function(inst, fromload)
+   344→                print("[SKILL DEBUG] wagstaff_thermal_upgrade onactivate called, fromload:", fromload)
+   345→                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+   346→                inst:AddTag("wagstaff_thermal_upgrade")
+   347→                print("[SKILL DEBUG] Tag wagstaff_thermal_upgrade adicionada")
+   348→                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_thermal_upgrade"))
+   349→            end,
+   350→            ondeactivate = function(inst, fromload)
+   351→                print("[SKILL DEBUG] wagstaff_thermal_upgrade ondeactivate called")
+   352→                inst:RemoveTag("wagstaff_thermal_upgrade")
+   353→            end,
+   354→        },
+   355→
+   356→        wagstaff_thermal_upgrade_parallel = {
+   357→            name = "wagstaff_thermal_upgrade_parallel",
+   358→            title = "Butler MK. III",
+   359→            desc = "Expands the Butler's capabilities far beyond household tasks.\nBrings memories back to life.",
+   360→            icon = "buttlermk3",
+   361→            icon_atlas = "images/skilltree/buttlermk3.xml",
+   362→            pos = { 38.6, 32.5 },
+   363→            group = "robotic",
+   364→            tags = {"robotic"},
+   365→            cost = 1,
+   366→            onactivate = function(inst, fromload)
+   367→                inst:AddTag("wagstaff_thermal_upgrade_mk3")
+   368→            end,
+   369→            ondeactivate = function(inst, fromload)
+   370→                inst:RemoveTag("wagstaff_thermal_upgrade_mk3")
+   371→            end,
+   372→        },
+   373→
+   374→        -- ================================================================
+   375→        -- ALLEGIANCE (Boss-locked with mutual exclusion: shadow vs lunar)
+   376→        -- ================================================================
+   377→        -- These lock nodes use real positions and lock_open functions,
+   378→        -- matching the pattern from reference mods (kodi, sdf).
+   379→
+   380→        wagstaff_allegiance_lock_shadow_boss = {
+   381→            desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_2_DESC or "Defeat Ancient Fuelweaver to unlock",
+   382→            pos = { 205.8, 91.9 + GAP*2 },
+   383→            group = "allegiance",
+   384→            tags = {"allegiance","lock"},
+   385→            root = true,
+   386→            lock_open = function(prefabname, activatedskills, readonly)
+   387→                -- Evaluate the REAL unlock condition FIRST. The previous code did
+   388→                -- `if readonly then return "question" end` unconditionally at the
+   389→                -- top, which made the skill tree UI render this node as a forever-
+   390→                -- locked "?" even AFTER the Fuelweaver was dead -- so the player
+   391→                -- could never click/activate the skill. Now we only hide as "?"
+   392→                -- when the boss is NOT yet killed (spoiler prevention).
+   393→                local unlocked = false
+   394→                local player = ThePlayer or (AllPlayers and AllPlayers[1])
+   395→
+   396→                -- PRIMARY: Player tag (always replicates server->client in DST).
+   397→                -- net_bool created in AddPrefabPostInit("world") does NOT reliably
+   398→                -- replicate because the world entity is already fully networked by
+   399→                -- the time PostInit runs. Player tags, by contrast, are part of
+   400→                -- DST's core entity networking and always replicate.
+   401→                if player and player.HasTag and player:HasTag("wagstaff_fuelweaver_killed") then
+   402→                    unlocked = true
+   403→                end
+   404→
+   405→                -- Fallback 1: net_bool (may work in some cases, kept for redundancy)
+   406→                if not unlocked and TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() then
+   407→                    unlocked = true
+   408→                end
+   409→
+   410→                -- Fallback 2: player profile stats (always available on client,
+   411→                -- works cross-shard -- important if the boss was killed in a
+   412→                -- different shard than where the skill tree is opened)
+   413→                if not unlocked and player and player.profile and player.profile.stats then
+   414→                    local fuelweaver_kills = player.profile.stats["killed_stalker_atrium"] or 0
+   415→                    if fuelweaver_kills > 0 then
+   416→                        unlocked = true
+   417→                    end
+   418→                end
+   419→
+   420→                -- Diagnostic logging (helps debug if still not unlocking).
+   421→                -- Uses module-level locals to avoid strict.lua crashes on
+   422→                -- undeclared global reads.
+   423→                if not _lock_logged_fuelweaver then
+   424→                    _lock_logged_fuelweaver = true
+   425→                    print("[Wagstaff LOCK] shadow_boss lock_open: tag=" .. tostring(player and player:HasTag("wagstaff_fuelweaver_killed") or false) ..
+   426→                          " net=" .. tostring(TheWorld and TheWorld.wagstaff_fuelweaver_killed_net and TheWorld.wagstaff_fuelweaver_killed_net:value() or false) ..
+   427→                          " stat=" .. tostring(player and player.profile and player.profile.stats and player.profile.stats["killed_stalker_atrium"] or 0) ..
+   428→                          " -> unlocked=" .. tostring(unlocked))
+   429→                end
+   430→
+   431→                -- Only show "?" when the lock is genuinely undiscovered (boss
+   432→                -- still alive). Once killed, return the real state so the UI
+   433→                -- marks the node as accessible/clickable.
+   434→                if readonly and not unlocked then
+   435→                    return "question"
+   436→                end
+   437→                return unlocked
+   438→            end,
+   439→            connects = {"wagstaff_shadow_possession"},
+   440→        },
+   441→
+   442→        wagstaff_allegiance_lock_lunar_boss = {
+   443→            desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_3_DESC or "Defeat Celestial Champion to unlock",
+   444→            pos = { 150.2, 91.3 + GAP*2 },
+   445→            group = "allegiance",
+   446→            tags = {"allegiance","lock"},
+   447→            root = true,
+   448→            lock_open = function(prefabname, activatedskills, readonly)
+   449→                -- Evaluate the REAL unlock condition FIRST. The previous code did
+   450→                -- `if readonly then return "question" end` unconditionally at the
+   451→                -- top, which made the skill tree UI render this node as a forever-
+   452→                -- locked "?" even AFTER the Celestial Champion was dead -- so the
+   453→                -- player could never click/activate the skill. Now we only hide
+   454→                -- as "?" when the boss is NOT yet killed (spoiler prevention).
+   455→                local unlocked = false
+   456→                local player = ThePlayer or (AllPlayers and AllPlayers[1])
+   457→
+   458→                -- PRIMARY: Player tag (always replicates server->client in DST).
+   459→                -- net_bool created in AddPrefabPostInit("world") does NOT reliably
+   460→                -- replicate because the world entity is already fully networked by
+   461→                -- the time PostInit runs. Player tags, by contrast, are part of
+   462→                -- DST's core entity networking and always replicate.
+   463→                if player and player.HasTag and player:HasTag("wagstaff_celestial_killed") then
+   464→                    unlocked = true
+   465→                end
+   466→
+   467→                -- Fallback 1: net_bool (may work in some cases, kept for redundancy)
+   468→                if not unlocked and TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() then
+   469→                    unlocked = true
+   470→                end
+   471→
+   472→                -- Fallback 2: player profile stats (always available on client,
+   473→                -- works cross-shard -- important if the boss was killed in a
+   474→                -- different shard than where the skill tree is opened)
+   475→                if not unlocked and player and player.profile and player.profile.stats then
+   476→                    local celestial_kills = player.profile.stats["killed_alterguardian_phase3"] or 0
+   477→                    if celestial_kills > 0 then
+   478→                        unlocked = true
+   479→                    end
+   480→                end
+   481→
+   482→                -- Diagnostic logging (helps debug if still not unlocking).
+   483→                -- Uses module-level locals to avoid strict.lua crashes on
+   484→                -- undeclared global reads.
+   485→                if not _lock_logged_celestial then
+   486→                    _lock_logged_celestial = true
+   487→                    print("[Wagstaff LOCK] lunar_boss lock_open: tag=" .. tostring(player and player:HasTag("wagstaff_celestial_killed") or false) ..
+   488→                          " net=" .. tostring(TheWorld and TheWorld.wagstaff_celestial_killed_net and TheWorld.wagstaff_celestial_killed_net:value() or false) ..
+   489→                          " stat=" .. tostring(player and player.profile and player.profile.stats and player.profile.stats["killed_alterguardian_phase3"] or 0) ..
+   490→                          " -> unlocked=" .. tostring(unlocked))
+   491→                end
+   492→
+   493→                -- Only show "?" when the lock is genuinely undiscovered (boss
+   494→                -- still alive). Once killed, return the real state so the UI
+   495→                -- marks the node as accessible/clickable.
+   496→                if readonly and not unlocked then
+   497→                    return "question"
+   498→                end
+   499→                return unlocked
+   500→            end,
+   501→            connects = {"wagstaff_celestial_possession"},
+   502→        },
+   503→
+   504→        -- Exclusion locks: block the opposite path if an affinity was chosen
+   505→        wagstaff_allegiance_lock_shadow_path = {
+   506→            desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_4_DESC or "Cannot choose if Celestial path taken",
+   507→            pos = { 205.8, 91.9 + GAP },
+   508→            group = "allegiance",
+   509→            tags = {"allegiance", "lock"},
+   510→            root = true,
+   511→            lock_open = function(prefabname, activatedskills, readonly)
+   512→                if SkillTreeFns.CountTags(prefabname, "lunar_favor", activatedskills) == 0 then
+   513→                    return true
+   514→                end
+   515→                return nil
+   516→            end,
+   517→            connects = {"wagstaff_shadow_possession"},
+   518→        },
+   519→
+   520→        wagstaff_allegiance_lock_lunar_path = {
+   521→            desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_5_DESC or "Cannot choose if Shadow path taken",
+   522→            pos = { 150.2, 91.3 + GAP },
+   523→            group = "allegiance",
+   524→            tags = {"allegiance", "lock"},
+   525→            root = true,
+   526→            lock_open = function(prefabname, activatedskills, readonly)
+   527→                if SkillTreeFns.CountTags(prefabname, "shadow_favor", activatedskills) == 0 then
+   528→                    return true
+   529→                end
+   530→                return nil
+   531→            end,
+   532→            connects = {"wagstaff_celestial_possession"},
+   533→        },
+   534→
+   535→        wagstaff_shadow_possession = {
+   536→            name = "wagstaff_shadow_possession",
+   537→            title = "Shadow Engineer Herald's Mark",
+   538→            desc = "The Void Masque recognizes the inventor as a kindred spirit."
+   539→            .. "\n"
+   540→            .. "One who also builds bodies to house other wills. Your bots now carry the mark of Tenebrae."
+   541→            .. "\n"
+   542→            .. ""
+   543→            .. "\n"
+   544→            .. "Butler: MK 2 can revive players (night only)."
+   545→            .. "\n"
+   546→            .. "Buster: Summons a Shadow Clone with 50% strength, immune to damage. Destroyed at day or when Buster dies."
+   547→            .. "\n"
+   548→            .. "Bouncer: Immune to planar damage + Bearger's Shovelwave. Shadow creatures target him as absolute priority."
+   549→            .. "\n"
+   550→            .. "Battery: Chain lightning causes fear (2-3s)",
+   551→            icon = "wolfgang_allegiance_shadow_3",
+   552→            pos = { 205.8, 91.9 },
+   553→            group = "allegiance",
+   554→            tags = {"allegiance", "shadow", "shadow_favor"},
+   555→            cost = 1,
+   556→            locks = {"wagstaff_allegiance_lock_shadow_boss", "wagstaff_allegiance_lock_shadow_path"},
+   557→            onactivate = function(inst, fromload)
+   558→                inst:AddTag("wagstaff_shadow_possession")
+   559→            end,
+   560→            ondeactivate = function(inst, fromload)
+   561→                inst:RemoveTag("wagstaff_shadow_possession")
+   562→            end,
+   563→        },
+   564→
+   565→        wagstaff_celestial_possession = {
+   566→            name = "wagstaff_celestial_possession",
+   567→            title = "Celestial Engineer Gestalt Resonance",
+   568→            desc = "The Gestalt that inhabits the chassis during the day synchronizes its frequency with the inventor's own."
+   569→            .. "\n"
+   570→            .. "Pushing each bot beyond its mechanical limits. The warmth of lunar light radiates through cold metal."
+   571→            .. "\n"
+   572→            .. ""
+   573→            .. "\n"
+   574→            .. "Butler: Foods restore 40% HP based on hunger value (day only). MK 2 can revive players."
+   575→            .. "\n"
+   576→            .. "Buster: Explosive punch gains AOE (light explosion)"
+   577→            .. "\n"
+   578→            .. "Bouncer: Heat aura. When hit, deals 25 fire damage to all enemies in aggro radius."
+   579→            .. "\n"
+   580→            .. "Battery: Light orb grants full sanity protection",
+   581→            icon = "wolfgang_allegiance_lunar_3",
+   582→            pos = { 150.2, 91.3 },
+   583→            group = "allegiance",
+   584→            tags = {"allegiance", "lunar", "lunar_favor"},
+   585→            cost = 1,
+   586→            locks = {"wagstaff_allegiance_lock_lunar_boss", "wagstaff_allegiance_lock_lunar_path"},
+   587→            onactivate = function(inst, fromload)
+   588→                inst:AddTag("wagstaff_celestial_possession")
+   589→            end,
+   590→            ondeactivate = function(inst, fromload)
+   591→                inst:RemoveTag("wagstaff_celestial_possession")
+   592→            end,
+   593→        },
+   594→    }
+   595→
+   596→    local BACKGROUND_SETTINGS = {
+   597→        background = "images/skilltree/wagstaff_background.xml",
+   598→        background_atlas = "images/skilltree/wagstaff_background.xml",
+   599→        tint_bright = false,
+   600→        tint_dim = false,
+   601→    }
+   602→
+   603→    -- Inject IsActivated into every skill (so widget shows "Skill Mastered" instead of "Learn")
+   604→    for skillname, skilldata in pairs(skills) do
+   605→        if skilldata.lock_open == nil and skilldata.IsActivated == nil then
+   606→            local _name = skillname  -- Fix closure capture in Lua
+   607→            skilldata.IsActivated = function(inst, skillsdata)
+   608→                return skillsdata ~= nil and skillsdata[_name] == true
+   609→            end
+   610→        end
+   611→    end
+   612→
+   613→    return {
+   614→        SKILLS = skills,
+   615→        ORDERS = ORDERS,
+   616→        BACKGROUND_SETTINGS = BACKGROUND_SETTINGS,
+   617→    }
+   618→end
+   619→
+   620→return BuildSkillsData
