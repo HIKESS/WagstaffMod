@@ -97,8 +97,39 @@ end
 local function TauntCreatures(inst)
     if not inst.components.health:IsDead() then
         local x, y, z = inst.Transform:GetWorldPosition()
-        for i, v in ipairs(TheSim:FindEntities(x, y, z, 7, { "_combat", "locomotor" }, { "INLIMBO", "player", "companion", "epic", "notaunt", "shadow" })) do
-            if IsTauntable(inst, v) then
+
+        -- v2.0.48: Affinity-aware taunt for MK3 brutes. Each affinity now tanks
+        -- its ENEMY faction (mirrors the sentry faction logic — lunar and shadow
+        -- are opposing rift factions). Previously the taunt was affinity-blind:
+        -- the shadow Brute would draw aggro from shadow-aligned creatures (its
+        -- own kin), which was thematically wrong.
+        --   Celestial (day) -> taunts shadow-aligned + neutral hostiles,
+        --                       EXCLUDES lunar-aligned (allies).
+        --   Shadow (dusk)   -> taunts lunar-aligned + neutral hostiles,
+        --                       EXCLUDES shadow-aligned (allies).
+        --   Base / MK1 / MK2 / affinity inactive -> original behavior
+        --                       (exclude the legacy "shadow" tag so basic
+        --                        brutes don't pull nightmare creatures).
+        local is_mk3 = inst.prefab == "williambrute3"
+        local celestial_active = is_mk3 and TheWorld.state.isday and OwnerHasCelestial(inst)
+        local shadow_active    = is_mk3 and TheWorld.state.isdusk and OwnerHasShadow(inst)
+
+        local cant_tags, affinity_filter
+        if celestial_active then
+            -- Celestial Brute tanks the shadow faction (its enemy).
+            cant_tags = { "INLIMBO", "player", "companion", "epic", "notaunt" }
+            affinity_filter = function(v) return not v:HasTag("lunar_aligned") end
+        elseif shadow_active then
+            -- Shadow Brute tanks the lunar faction (its enemy).
+            cant_tags = { "INLIMBO", "player", "companion", "epic", "notaunt" }
+            affinity_filter = function(v) return not v:HasTag("shadow_aligned") end
+        else
+            -- Base/MK1/MK2 or affinity inactive: original behavior.
+            cant_tags = { "INLIMBO", "player", "companion", "epic", "notaunt", "shadow" }
+        end
+
+        for i, v in ipairs(TheSim:FindEntities(x, y, z, 7, { "_combat", "locomotor" }, cant_tags)) do
+            if IsTauntable(inst, v) and (affinity_filter == nil or affinity_filter(v)) then
                 v.components.combat:SetTarget(inst)
             end
         end
