@@ -303,3 +303,27 @@ H. Teleporter ENGIE_BUILDINGLOSS uses /1.5 divisor (10 sanity) vs sentry's full 
    only asymmetric building-loss value. Minor inconsistency but not a balance problem.
 
 End of BAL-A report.
+
+---
+Task ID: V2017-REVIVE
+Agent: GLM (main)
+Task: v2.0.17 — Fix Butler shadow affinity REVIVE bug + rework celestial revive (full discharge + soul FX)
+
+Work Log:
+- Cloned https://github.com/HIKESS/DontStarve-logs.git and analyzed master_server_log.txt / client_log.txt.
+- Found a Lua error in the logs: skilltree_wagstaff.lua:411 — `_WAGSTAFF_LOCK_LOGGED_FUELWEAVER` undeclared (strict.lua crash). This was ALREADY FIXED in current repo (line 23 declares `local _lock_logged_fuelweaver = false`). The logs were from an older build before that fix. This crash blocked the skill tree UI → player could not activate shadow/celestial possession → no affinity tags → revive affinity never fired.
+- Confirmed wrench damage (59.5→30, below spear=34) and modicon (wagstaffgamelist icon + xml fix) were ALREADY done in commit 2f69a98. Only debug logs for COOK affinity were added there (wrong target — user clarified the bug is the REVIVE, not the cook).
+- Root cause of shadow revive bug: in william_butler.lua the haunt fn checked affinity tags ONLY via `GetOwner(inst)` (follower:GetLeader()). When the owner is DEAD (ghost), the follower leader link can be nil → OwnerHasShadow/OwnerHasCelestial returned false → butler always died (default path).
+- FIX: now check tags on BOTH owner AND haunter (the ghost player attempting revive). The haunter is always valid and its affinity tags persist through death. This was the root cause of "shadow affinity revive doesn't work".
+- CELESTIAL revive rework (per user request):
+  * Bot now FULLY DISCHARGES (fuel → 0) as the cost of revive. DowngradeButlerToMK1 gained a `discharge` param; celestial path calls it with discharge=true → new MK1 spawns with currentfuel=0 (inert, must be refueled).
+  * Replaced generic `small_puff` FX with a celestial "soul leaving" combination: ghostlyelixir_shield_fx (white-blue shield, matches MK3 menu affinity FX) + sparklefx (ascending sparkles = soul rising) + a manually-created celestial light flash (white-blue, fades over 1.2s). Deliberately NOT shadow/dark FX.
+- Added comprehensive [BUTLER REVIVE] debug print() logs at every branch (haunt entry, owner/shadow/celestial values, shadow effigy_found, celestial cooldown, which path taken). This mirrors the [BUTLER COOK] debug logs already added in 2f69a98, so the user's next test will reveal exactly where any remaining issue is.
+- Verified Lua syntax with luaparse (node): SYNTAX OK.
+
+Stage Summary:
+- Files changed: scripts/prefabs/william_butler.lua (revive block lines 1123-1333 rewritten).
+- NOT touched: cook affinity code (lines 180-270) — confirmed working, left intact per user instruction.
+- modinfo.lua already at version 2.0.17 (from commit 2f69a98); this commit completes the v2.0.17 revive fix.
+- Remaining for user: (1) pull latest, (2) open skill tree & activate shadow/celestial possession, (3) die, haunt Butler MK3, (4) share logs — the [BUTLER REVIVE] prints will confirm which path executes.
+- Pending Phase 2 (8 balance fixes) and Phase 3 (skill tree reorder + Butler revive rework details) still approved but not yet implemented.
