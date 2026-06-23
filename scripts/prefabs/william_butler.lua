@@ -1220,35 +1220,66 @@ inst.components.burnable.ignorefuel = true
             end
         end
 
-        -- v2.0.17: discharge param — when true (celestial revive), the new MK1
-        -- spawns with 0 fuel (fully discharged) as the cost of the revive.
+        -- v2.0.17: discharge param — when true (celestial revive), the butler
+        -- fully discharges (fuel -> 0) as the cost of the revive.
+        -- v2.0.18 FIX: when discharge=true, spawn the INERT HUSK (williambutler_empty)
+        -- directly instead of an active MK1 with currentfuel=0. The previous code
+        -- set currentfuel = 0 directly on an active MK1, which bypassed the fueled
+        -- component's SetDepletedFn (OnFuelEmpty) — so the bot never entered the
+        -- "powerdown" state and stayed active at 0% fuel indefinitely (infinite
+        -- discharge bug: bot kept walking/cooking/following with no fuel).
+        -- The husk sleeps (sleep_loop paused), accepts fuel, and reactivates as a
+        -- fresh MK1 via MakeAlive when the player refuels + ACTIVATEs it.
         local function DowngradeButlerToMK1(inst, owner, discharge)
             local pt = inst:GetPosition()
             local newbot = nil
-            -- Use petleash if available (proper pet registration)
-            if owner and owner.components.petleash then
-                newbot = owner.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambutler")
-            end
-            if newbot == nil then
-                newbot = _G.SpawnPrefab("williambutler")
+
+            if discharge then
+                -- CELESTIAL: spawn the inert husk directly (already sleeping,
+                -- paused anim, Notarget tag). Player must refuel + ACTIVATE.
+                newbot = _G.SpawnPrefab("williambutler_empty")
                 if newbot then
                     newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
-                end
-            end
-            if newbot then
-                newbot.Transform:SetRotation(inst.Transform:GetRotation())
-                if newbot.components.fueled then
-                    if discharge then
-                        -- CELESTIAL: bot FULLY DISCHARGES (fuel -> 0). Player must
-                        -- refuel the MK1 to bring it back online.
+                    newbot.Transform:SetRotation(inst.Transform:GetRotation())
+                    -- Husk starts fully discharged (the cost of the celestial revive)
+                    if newbot.components.fueled then
                         newbot.components.fueled.currentfuel = 0
-                    elseif inst.components.fueled then
-                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                    end
+                    -- Transfer current health (capped at husk max)
+                    if inst.components.health and newbot.components.health then
+                        newbot.components.health:SetCurrentHealth(
+                            math.min(inst.components.health.currenthealth,
+                                     newbot.components.health.maxhealth))
+                    end
+                    -- Celestial revive DOWNGRADES to MK1: explicitly clear all
+                    -- tier-upgrade flags so MakeAlive (on later refuel + ACTIVATE)
+                    -- spawns a fresh MK1, NOT the old MK2/MK3 tier.
+                    newbot.was_level2 = false
+                    newbot.was_mk3 = false
+                    newbot.saved_upgradelevel = 0
+                    newbot.saved_upgradelevel_mk3 = 0
+                end
+            else
+                -- Non-discharge path: spawn active MK1, carry over fuel (existing behavior)
+                if owner and owner.components.petleash then
+                    newbot = owner.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambutler")
+                end
+                if newbot == nil then
+                    newbot = _G.SpawnPrefab("williambutler")
+                    if newbot then
+                        newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
                     end
                 end
-                if inst.components.health and newbot.components.health then
-                    newbot.components.health:SetCurrentHealth(
-                        math.min(inst.components.health.currenthealth, newbot.components.health.maxhealth))
+                if newbot then
+                    newbot.Transform:SetRotation(inst.Transform:GetRotation())
+                    if newbot.components.fueled and inst.components.fueled then
+                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                    end
+                    if inst.components.health and newbot.components.health then
+                        newbot.components.health:SetCurrentHealth(
+                            math.min(inst.components.health.currenthealth,
+                                     newbot.components.health.maxhealth))
+                    end
                 end
             end
             inst:Remove()
