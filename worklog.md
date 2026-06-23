@@ -509,3 +509,39 @@ Stage Summary:
 - Non-celestial path (shadow revive, normal downgrade) is UNCHANGED.
 - All 8 Phase-2 balance fixes confirmed already applied (v2.0.15+).
 - Pending: user to test in-game — die with celestial possession active, haunt Butler MK3, confirm bot becomes inert husk (not walking), refuel + ACTIVATE to confirm MK1 reactivation.
+
+---
+Task ID: V2018-CELESTIAL-FX-REWORK
+Agent: GLM (main)
+Task: Rework butler celestial revive FX — remove elixir/sparkle, test celestial table, anti-stack
+
+Work Log:
+- User requested: remove ghostlyelixir_shield_fx + sparklefx (called "spawn_fx") from the butler celestial revive. Test celestial/white FX from provided table. Don't repeat FX if already on someone.
+- Located PlayCelestialDischargeFX (william_butler.lua:1175-1221). Old FX:
+    * ghostlyelixir_shield_fx (shield, scale 1.3) — REMOVE (elixir FX)
+    * sparklefx (ascending sparkles) — REMOVE (spawn_fx)
+    * manual celestial light flash (white-blue, fades 1.2s) — KEEP (custom entity, not a prefab)
+- Selected from celestial/white FX table:
+    * archive_lockbox_dispawn_fx (white dissolve) — PRIMARY: thematically perfect (bot's energy dissolves as it discharges). Lunar-aligned (celestial).
+    * moonstorm_spark (white sparks) — SECONDARY: energy escaping the chassis.
+- Considered but rejected:
+    * alterguardian_phase3_spawn — too big/dramatic (full Celestial Champion spawn)
+    * alterguardian_laserempty/laserhit — beam/impact, not fitting a discharge
+    * brilliance_projectile_blast_fx — explosion, too violent for a 'soul leaving'
+    * lunarhaildebris — falling debris, wrong direction
+    * winona_battery_high_fx — electric, not celestial enough
+- Implemented SpawnUnique(prefab, offset_y, scale) helper:
+    * Uses TheSim:FindEntities(x,y,z, 1.5) to find nearby entities
+    * Iterates and checks ent.prefab == prefab_name
+    * If found: returns nil (skip spawn) — prevents stacking
+    * If not found: SpawnPrefab, set position/scale, return fx
+    * Satisfies "não repetir fx se já estiver em alguém" (anti-stacking)
+- Kept the custom celestial light flash (not a prefab, self-removes in 1.2s, no duplicate check needed).
+- Verified bracket balance: () 777/777, {} 14/14, [] 49/49 — all balanced.
+- Committed as 91e8f90. Pushed to origin/GLM-5.1-Fixes: SUCCESS (5056033..91e8f90).
+
+Stage Summary:
+- v2.0.18 celestial FX rework is LIVE on remote GLM-5.1-Fixes (commit 91e8f90).
+- Butler celestial revive now plays: archive_lockbox_dispawn_fx (white dissolve) + moonstorm_spark (white sparks) + custom white-blue light flash. All lunar/celestial themed, no more elixir shield or generic sparkle.
+- Anti-stacking: if the same FX prefab is already present within 1.5 units of the butler, a new one won't spawn — prevents duplicate FX on haunt spam / repeated triggers.
+- Pending: user to test in-game and confirm the new FX fits. If archive_lockbox_dispawn_fx or moonstorm_spark don't exist in the user's DST build (both are vanilla RoT prefabs, should exist), the SpawnPrefab returns nil and the helper skips gracefully (no crash).
