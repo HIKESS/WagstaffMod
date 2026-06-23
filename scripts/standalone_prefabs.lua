@@ -790,7 +790,7 @@ local function wrench_fn()
         function(inst)
             inst:AddTag("hammer")
             inst:AddComponent("weapon")
-            inst.components.weapon:SetDamage(59.5)
+            inst.components.weapon:SetDamage(30)  -- v2.0.17: was 59.5 (above Spear=34), now below Spear
             inst:AddComponent("tool")
             inst:AddComponent("equippable")
             inst.components.equippable:SetOnEquip(function(i, owner)

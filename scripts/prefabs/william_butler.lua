@@ -213,6 +213,14 @@ if inst.components.fueled ~= nil then
 
         local product = inst.components.cooker:CookItem(ingredient, inst)
             if product ~= nil and doer ~= nil then
+                -- v2.0.17 DEBUG: trace affinity food logic
+                local _owner = GetOwner(inst)
+                local _has_celest = _owner and _owner:HasTag("wagstaff_celestial_possession")
+                local _has_shadow = _owner and _owner:HasTag("wagstaff_shadow_possession")
+                print(string.format("[BUTLER COOK] prefab=%s isday=%s isdusk=%s owner=%s celest=%s shadow=%s",
+                    inst.prefab, tostring(TheWorld.state.isday), tostring(TheWorld.state.isdusk),
+                    tostring(_owner ~= nil), tostring(_has_celest), tostring(_has_shadow)))
+
                 -- CELESTIAL POSSESSION: Foods restore HP% (MK3 only)
                 if inst.prefab == "williambutler3" and TheWorld.state.isday and OwnerHasCelestial(inst) then
                 if product.components.edible and product.components.edible.hungervalue then
@@ -221,6 +229,7 @@ if inst.components.fueled ~= nil then
                     -- Store the healing amount on the food item (40% of hunger = HP%)
                     product._celestial_hp_heal = hunger_percent * 40
                     product._celestial_hp_doer = doer
+                    print(string.format("[BUTLER COOK] CELESTIAL applied: heal=%.1f%% of max HP", product._celestial_hp_heal))
                     -- Listen for when food is eaten
                     local old_oneaten = product.components.edible.oneaten
                     product.components.edible:SetOnEatenFn(function(food, eater)
@@ -230,11 +239,12 @@ if inst.components.fueled ~= nil then
                             local max_hp = eater.components.health.maxhealth
                             local heal_amount = max_hp * (food._celestial_hp_heal / 100)
                             eater.components.health:DoDelta(heal_amount, false, "celestial_food")
+                            print(string.format("[BUTLER COOK] CELESTIAL eaten: healed %.1f HP", heal_amount))
                         end
                     end)
                 end
             end
-            
+
             -- SHADOW POSSESSION: Foods restore SANITY% (MK3 only)
             if inst.prefab == "williambutler3" and TheWorld.state.isdusk and OwnerHasShadow(inst) then
                 if product.components.edible and product.components.edible.hungervalue then
@@ -243,6 +253,7 @@ if inst.components.fueled ~= nil then
                     -- Store the sanity amount on the food item (40% of hunger = sanity%)
                     product._shadow_sanity_restore = hunger_percent * 40
                     product._shadow_sanity_doer = doer
+                    print(string.format("[BUTLER COOK] SHADOW applied: restore=%.1f%% of max sanity", product._shadow_sanity_restore))
                     -- Listen for when food is eaten
                     local old_oneaten = product.components.edible.oneaten
                     product.components.edible:SetOnEatenFn(function(food, eater)
@@ -252,6 +263,7 @@ if inst.components.fueled ~= nil then
                             local max_sanity = eater.components.sanity.max
                             local sanity_amount = max_sanity * (food._shadow_sanity_restore / 100)
                             eater.components.sanity:DoDelta(sanity_amount, false, "shadow_food")
+                            print(string.format("[BUTLER COOK] SHADOW eaten: restored %.1f sanity", sanity_amount))
                         end
                     end)
                 end
