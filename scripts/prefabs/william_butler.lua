@@ -1026,6 +1026,12 @@ inst.components.burnable.ignorefuel = true
             return inst
         end
 
+        -- v2.0.15: MK3 gets +100 HP (→300) so it survives longer as a follower
+        if inst.components.health then
+            inst.components.health:SetMaxHealth(TUNING.WILLIAM_BUTLER_HEALTH + 100)
+            inst.components.health:SetCurrentHealth(inst.components.health.maxhealth)
+        end
+
         -- Slightly larger with golden tint
         inst.Transform:SetScale(1.1, 1.1, 1.1)
         inst.AnimState:SetMultColour(1, 0.95, 0.7, 1)
@@ -1099,34 +1105,125 @@ inst.components.burnable.ignorefuel = true
         inst:ListenForEvent("fuelchange", function() UpdateButler3Name(inst) end)
         inst:ListenForEvent("healthdelta", function() UpdateButler3Name(inst) end)
 
-        -- HAUNT RESURRECTION: MK.III only - revive with celestial/shadow bonuses
+        -- v2.0.15: HAUNT RESURRECTION rework — affinity revive powers work ALL DAY
+        -- SHADOW (all day): consume haunter's nearest meat_effigy; butler SURVIVES
+        -- CELESTIAL (all day): downgrade butler to MK1; butler SURVIVES; 1/day cooldown
+        -- Default (no affinity): bot dies, player revives (classic behavior)
+
+        local function FindAndConsumeEffigy(player)
+            if not player or not player.Transform then return false end
+            local nearest = nil
+            local nearest_dist = math.huge
+            for _, ent in pairs(_G.Ents) do
+                if ent and ent:IsValid() and ent.prefab == "meat_effigy" and not ent:IsInLimbo() then
+                    -- Ownership check: DST meat_effigies store builder userid
+                    -- If userid field exists, only match this player's effigies (MP-safe)
+                    -- If no userid tracking, accept as candidate (SP fallback)
+                    local owned = (ent.userid == nil) or (ent.userid == player.userid)
+                    if owned then
+                        local dist = player:GetDistanceSqToInst(ent)
+                        if dist < nearest_dist then
+                            nearest = ent
+                            nearest_dist = dist
+                        end
+                    end
+                end
+            end
+            if nearest then
+                local ex, ey, ez = nearest.Transform:GetWorldPosition()
+                if nearest.components.lootdropper then
+                    nearest.components.lootdropper:DropLoot()
+                end
+                local fx = _G.SpawnPrefab("collapse_small")
+                if fx then
+                    fx.Transform:SetPosition(ex, ey, ez)
+                    fx:SetMaterial("wood")
+                end
+                nearest:Remove()
+                return true
+            end
+            return false
+        end
+
+        local function DowngradeButlerToMK1(inst, owner)
+            local pt = inst:GetPosition()
+            local newbot = nil
+            -- Use petleash if available (proper pet registration)
+            if owner and owner.components.petleash then
+                newbot = owner.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambutler")
+            end
+            if newbot == nil then
+                newbot = _G.SpawnPrefab("williambutler")
+                if newbot then
+                    newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
+                end
+            end
+            if newbot then
+                newbot.Transform:SetRotation(inst.Transform:GetRotation())
+                if inst.components.fueled and newbot.components.fueled then
+                    newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                end
+                if inst.components.health and newbot.components.health then
+                    newbot.components.health:SetCurrentHealth(
+                        math.min(inst.components.health.currenthealth, newbot.components.health.maxhealth))
+                end
+                _G.SpawnPrefab("small_puff").Transform:SetPosition(pt.x, pt.y, pt.z)
+            end
+            inst:Remove()
+        end
+
         inst:AddComponent("hauntable")
         inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
             if haunter:HasTag("playerghost") and inst.prefab == "williambutler3" then
                 -- Standard revive
                 haunter:PushEvent("respawnfromghost", { source = inst })
-                
-                -- CELESTIAL POSSESSION: Revive during day gives bonus HP
-                if TheWorld.state.isday and OwnerHasCelestial(inst) then
-                    haunter:DoTaskInTime(0.5, function()
-                        if haunter:IsValid() and haunter.components.health then
-                            local bonus_hp = haunter.components.health.maxhealth * 0.2
-                            haunter.components.health:DoDelta(bonus_hp)
-                        end
-                    end)
+
+                local owner = GetOwner(inst)
+                local celestial = OwnerHasCelestial(inst)
+                local shadow    = OwnerHasShadow(inst)
+
+                -- v2.0.15 SHADOW (all day): consume haunter's meat_effigy, butler survives
+                if shadow then
+                    if FindAndConsumeEffigy(haunter) then
+                        -- Butler survives! Bonus sanity (+30% max)
+                        haunter:DoTaskInTime(0.5, function()
+                            if haunter:IsValid() and haunter.components.sanity then
+                                local bonus_sanity = haunter.components.sanity.max * 0.3
+                                haunter.components.sanity:DoDelta(bonus_sanity)
+                            end
+                        end)
+                        -- Bot does NOT die — effigy took its place
+                        return true
+                    end
+                    -- No effigy found — fall through to default (bot dies)
                 end
-                
-                -- SHADOW POSSESSION: Revive during dusk gives bonus sanity
-                if TheWorld.state.isdusk and OwnerHasShadow(inst) then
-                    haunter:DoTaskInTime(0.5, function()
-                        if haunter:IsValid() and haunter.components.sanity then
-                            local bonus_sanity = haunter.components.sanity.max * 0.3
-                            haunter.components.sanity:DoDelta(bonus_sanity)
-                        end
-                    end)
+
+                -- v2.0.15 CELESTIAL (all day): downgrade to MK1, 1/day cooldown, butler survives
+                if celestial then
+                    local today = TheWorld.state.cycles
+                    local last_day = owner and owner._celestial_butler_revive_day or -1
+                    if last_day ~= today then
+                        -- Cooldown available — use it
+                        if owner then owner._celestial_butler_revive_day = today end
+                        -- Bonus HP (+20% max)
+                        haunter:DoTaskInTime(0.5, function()
+                            if haunter:IsValid() and haunter.components.health then
+                                local bonus_hp = haunter.components.health.maxhealth * 0.2
+                                haunter.components.health:DoDelta(bonus_hp)
+                            end
+                        end)
+                        -- Downgrade butler to MK1 (bot survives as MK1)
+                        haunter:DoTaskInTime(1.0, function()
+                            if inst:IsValid() then
+                                DowngradeButlerToMK1(inst, owner)
+                            end
+                        end)
+                        return true
+                    end
+                    -- On cooldown — fall through to default (bot dies)
                 end
-                
-                -- Bot dies on revive (standard mechanic)
+
+                -- Default: bot dies on revive (no affinity, or affinity fallback)
                 inst.components.health:Kill()
                 return true
             end

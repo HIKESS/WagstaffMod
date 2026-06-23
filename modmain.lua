@@ -545,7 +545,7 @@ TUNING.SENTRY_ROCKET_DAMAGE = 50
 
 TUNING.SENTRY_WRENCH_HEAL = 10
 
-TUNING.ETELEPORT_PENALTY = 0
+TUNING.ETELEPORT_PENALTY = 5  -- v2.0.15: sanity cost per teleport (was 0 = free unlimited travel)
 
 TUNING.ENGIE_BUILDINGLOSS = 15
 
@@ -2252,7 +2252,8 @@ end)
 
 rawset(G, "WagstaffMechanicalEfficiencyRoll", function(worker, base_cost)
 
-    if worker and worker:HasTag("wagstaff_mechanical_efficiency") and G.math.random() < 0.30 then
+    -- v2.0.15: 30% -> 20% free scrap roll (was too strong for 1 insight)
+    if worker and worker:HasTag("wagstaff_mechanical_efficiency") and G.math.random() < 0.20 then
 
         return 0
 

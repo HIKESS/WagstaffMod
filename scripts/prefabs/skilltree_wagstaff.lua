@@ -179,10 +179,55 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         -- ================================================================
-        -- COLUMN 2: ROBOTIC (Linear chain: brute->buster->ballistic->butler)
+        -- COLUMN 2: ROBOTIC (Linear chain: butler->brute->buster->ballistic)
         -- ================================================================
-        -- Chain: brute_mk2 -> brute_mk3 -> buster_mk2 -> buster_mk3 ->
-        --        ballistic_mk2 -> ballistic_mk3 -> butler_mk2 -> butler_mk3
+        -- v2.0.15: Reordered — Butler first (support early), Ballistic last (turret late)
+        -- Chain: butler_mk2 -> butler_mk3 -> brute_mk2 -> brute_mk3 ->
+        --        buster_mk2 -> buster_mk3 -> ballistic_mk2 -> ballistic_mk3
+
+        wagstaff_thermal_upgrade = {
+            name = "wagstaff_thermal_upgrade",
+            title = "Butler MK. II",
+            desc = "Unlocks the Butler's gathering tools.\nAllows it to chop trees and mine.",
+            icon = "buttlermk2",
+            icon_atlas = "images/skilltree/buttlermk2.xml",
+            pos = { -36.9, 164.2 },
+            group = "robotic",
+            tags = {"robotic"},
+            root = true,
+            cost = 1,
+            connects = {"wagstaff_thermal_upgrade_parallel"},
+            onactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_thermal_upgrade onactivate called, fromload:", fromload)
+                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
+                inst:AddTag("wagstaff_thermal_upgrade")
+                print("[SKILL DEBUG] Tag wagstaff_thermal_upgrade adicionada")
+                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_thermal_upgrade"))
+            end,
+            ondeactivate = function(inst, fromload)
+                print("[SKILL DEBUG] wagstaff_thermal_upgrade ondeactivate called")
+                inst:RemoveTag("wagstaff_thermal_upgrade")
+            end,
+        },
+
+        wagstaff_thermal_upgrade_parallel = {
+            name = "wagstaff_thermal_upgrade_parallel",
+            title = "Butler MK. III",
+            desc = "Expands the Butler's capabilities far beyond household tasks.\nBrings memories back to life.",
+            icon = "buttlermk3",
+            icon_atlas = "images/skilltree/buttlermk3.xml",
+            pos = { 38.6, 164.2 },
+            group = "robotic",
+            tags = {"robotic"},
+            cost = 1,
+            connects = {"wagstaff_robotic_1"},
+            onactivate = function(inst, fromload)
+                inst:AddTag("wagstaff_thermal_upgrade_mk3")
+            end,
+            ondeactivate = function(inst, fromload)
+                inst:RemoveTag("wagstaff_thermal_upgrade_mk3")
+            end,
+        },
 
         wagstaff_robotic_1 = {
             name = "wagstaff_robotic_1",
@@ -190,10 +235,9 @@ local function BuildSkillsData(SkillTreeFns)
             desc = "Reinforces the Brute's heavy frame.\nGreatly increases durability and damage.",
             icon = "brutemk2",
             icon_atlas = "images/skilltree/brutemk2.xml",
-            pos = { -36.9, 164.2 },
+            pos = { -36.9, 120.5 },
             group = "robotic",
             tags = {"robotic"},
-            root = true,
             cost = 1,
             connects = {"wagstaff_robotic_1_parallel"},
             onactivate = function(inst, fromload)
@@ -215,7 +259,7 @@ local function BuildSkillsData(SkillTreeFns)
             desc = "Turns the Brute into a true pack mule.\nAdds a complete storage system.",
             icon = "brutemk3",
             icon_atlas = "images/skilltree/brutemk3.xml",
-            pos = { 38.6, 164.2 },
+            pos = { 38.6, 120.5 },
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
@@ -239,7 +283,7 @@ local function BuildSkillsData(SkillTreeFns)
             desc = "Upgrades the Buster's combat chassis.\nIncreases its health and damage.",
             icon = "bustermk2",
             icon_atlas = "images/skilltree/bustermk2.xml",
-            pos = { -36.9, 120.5 },
+            pos = { -36.9, 76.4 },
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
@@ -263,7 +307,7 @@ local function BuildSkillsData(SkillTreeFns)
             desc = "Pushes its offensive systems to the limit.\nUnlocks explosive strike abilities.",
             icon = "bustermk3",
             icon_atlas = "images/skilltree/bustermk3.xml",
-            pos = { 38.6, 120.5 },
+            pos = { 38.6, 76.4 },
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
@@ -287,7 +331,7 @@ local function BuildSkillsData(SkillTreeFns)
             desc = "Upgrades the Ballistic Bot's electrical systems.\nImproves durability and increases attack power.",
             icon = "balisticmk2",
             icon_atlas = "images/skilltree/balisticmk2.xml",
-            pos = { -36.9, 76.4 },
+            pos = { -36.9, 32.5 },
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
@@ -311,11 +355,10 @@ local function BuildSkillsData(SkillTreeFns)
             desc = "Unlocks its lightning platform.\nGains advanced electrical weaponry and emits its own light.",
             icon = "balisticmk3",
             icon_atlas = "images/skilltree/balisticmk3.xml",
-            pos = { 38.6, 76.4 },
+            pos = { 38.6, 32.5 },
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            connects = {"wagstaff_thermal_upgrade"},
             onactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_ballistic_parallel onactivate called, fromload:", fromload)
                 print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -326,48 +369,6 @@ local function BuildSkillsData(SkillTreeFns)
             ondeactivate = function(inst, fromload)
                 print("[SKILL DEBUG] wagstaff_ballistic_parallel ondeactivate called")
                 inst:RemoveTag("wagstaff_ballistic_mk3")
-            end,
-        },
-
-        wagstaff_thermal_upgrade = {
-            name = "wagstaff_thermal_upgrade",
-            title = "Butler MK. II",
-            desc = "Unlocks the Butler's gathering tools.\nAllows it to chop trees and mine.",
-            icon = "buttlermk2",
-            icon_atlas = "images/skilltree/buttlermk2.xml",
-            pos = { -36.9, 32.5 },
-            group = "robotic",
-            tags = {"robotic"},
-            cost = 1,
-            connects = {"wagstaff_thermal_upgrade_parallel"},
-            onactivate = function(inst, fromload)
-                print("[SKILL DEBUG] wagstaff_thermal_upgrade onactivate called, fromload:", fromload)
-                print("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
-                inst:AddTag("wagstaff_thermal_upgrade")
-                print("[SKILL DEBUG] Tag wagstaff_thermal_upgrade adicionada")
-                print("[SKILL DEBUG] HasTag check:", inst:HasTag("wagstaff_thermal_upgrade"))
-            end,
-            ondeactivate = function(inst, fromload)
-                print("[SKILL DEBUG] wagstaff_thermal_upgrade ondeactivate called")
-                inst:RemoveTag("wagstaff_thermal_upgrade")
-            end,
-        },
-
-        wagstaff_thermal_upgrade_parallel = {
-            name = "wagstaff_thermal_upgrade_parallel",
-            title = "Butler MK. III",
-            desc = "Expands the Butler's capabilities far beyond household tasks.\nBrings memories back to life.",
-            icon = "buttlermk3",
-            icon_atlas = "images/skilltree/buttlermk3.xml",
-            pos = { 38.6, 32.5 },
-            group = "robotic",
-            tags = {"robotic"},
-            cost = 1,
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_thermal_upgrade_mk3")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_thermal_upgrade_mk3")
             end,
         },
 
