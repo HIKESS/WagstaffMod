@@ -605,7 +605,7 @@ end
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 70") or ""
+            local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 100") or ""
             local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
             inst.components.named:SetName(name_str)
             inst.name = name_str
