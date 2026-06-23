@@ -431,8 +431,9 @@ local function onload(inst, data)
                 local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
                 local hp = math.floor(inst.components.health.currenthealth)
                 local maxhp = math.floor(inst.components.health.maxhealth)
-                local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 90") or ""
-                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str)
+                -- v2.0.36: upgrade progress removed from name (should only show
+                -- with skill + wrench, via the wrench upgrade interaction).
+                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp)
             end
             UpdateBuster2Name(inst)
         elseif inst.prefab == "williambuster3" and inst.components.named then
@@ -493,6 +494,25 @@ end
         inst:AddTag("companion")
         inst:AddTag("NOBLOCK")
         inst:AddTag("mech")
+
+        -- v2.0.36 FIX: hover display on CLIENT. The client doesn't have
+        -- inst.GetDisplayName (set only on server) and inst.name resolves to
+        -- STRINGS.NAMES.WILLIAMBUSTER = "Buster Bot" (no fuel/HP info). The
+        -- engine's GetDisplayName checks inst.name BEFORE replica.named, so
+        -- MK1 showed "Buster Bot" on hover instead of the fuel/HP string.
+        -- displaynamefn has the HIGHEST priority (checked before inst.name),
+        -- so setting it here (runs on BOTH server and client, before the
+        -- ismastersim return) forces hover to use the named component/replica
+        -- which has the correct "Buster Bot\nFuel: X% | HP: X/X" string.
+        inst.displaynamefn = function(inst)
+            if inst.components.named ~= nil then
+                return inst.components.named.name
+            end
+            if inst.replica.named ~= nil then
+                return inst.replica.named.name
+            end
+            return inst.name
+        end
 
         inst.entity:SetPristine()
 
@@ -790,8 +810,9 @@ inst.components.burnable.ignorefuel = true
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. " / 90") or ""
-            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+            -- v2.0.36: upgrade progress removed from name (should only show
+            -- with skill + wrench, via the wrench upgrade interaction).
+            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
             inst.components.named:SetName(name_str)
             inst.name = name_str
             inst.GetDisplayName = function() return name_str end
