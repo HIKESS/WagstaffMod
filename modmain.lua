@@ -1780,7 +1780,13 @@ SetName("williambrute_builder", "Brute Bot")
 
 SetName("williamballistic_empty", "Ballistic Bot")
 
-SetName("williambutler2", "Butler Bot Mk.II")
+-- v2.0.33: removed SetName("williambutler2", "Butler Bot Mk.II") — it
+-- re-added STRINGS.NAMES.WILLIAMBUTLER2 that was intentionally removed in
+-- v2.0.19. The butler has displaynamefn (set in william_butler.lua fn)
+-- which returns replica.named.name on the client. With STRINGS.NAMES
+-- defined, the client's inst.name = "Butler Bot Mk.II" (from STRINGS)
+-- interfered with the displaynamefn, causing the wrong hover name.
+-- MK1/MK3 never had this SetName, so they worked correctly.
 
 SetName("williambuster2", "Buster Bot Mk.II")
 

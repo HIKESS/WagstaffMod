@@ -439,8 +439,8 @@ local function onload(inst, data)
                 local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
                 local hp = math.floor(inst.components.health.currenthealth)
                 local maxhp = math.floor(inst.components.health.maxhealth)
-                local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 100") or ""
-                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str)
+                -- v2.0.33: upgrade progress removed from name.
+                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp)
             end
             UpdateBallisticName(inst)
         end
@@ -602,15 +602,15 @@ end
         -- Upgrade progress tracking (must be before named update)
         inst.upgradelevel = inst.upgradelevel or 0
 
-        -- Named status display (Fuel | HP | Upgrade)
+        -- Named status display (Fuel | HP)
         inst._periodic_name_tasks = inst._periodic_name_tasks or {}
         local function UpdateBallisticName(inst)
             local base = "Ballistic Bot"
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. " / 100") or ""
-            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+            -- v2.0.33: upgrade progress removed from name.
+            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
             inst.components.named:SetName(name_str)
             inst.name = name_str
             inst.GetDisplayName = function() return name_str end

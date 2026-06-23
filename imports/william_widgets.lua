@@ -132,15 +132,24 @@ local containers_widgetsetup = containers.widgetsetup
 
 function containers.widgetsetup(container, prefab, data)
     local t = prefab or container.inst.prefab
-    if t == "williambutler" or t == "williambutler2" or t == "williambrute3" then
-        local t = params[t]
-        if t ~= nil then
-            for k, v in pairs(t) do
+    -- v2.0.32 FIX: williambutler3 (MK3) must be in this check. The server
+    -- explicitly calls WidgetSetup("williambutler2") (inherited via active3->
+    -- active2), but the CLIENT's container_replica calls WidgetSetup() with NO
+    -- explicit prefab, falling back to container.inst.prefab = "williambutler3".
+    -- Without this entry, the client's widget stays nil -> crash at
+    -- containerwidget.lua:32 (attempt to index local 'widget' (a nil value)).
+    -- MK3 uses the same container layout as MK2 (3 cook slots).
+    if t == "williambutler" or t == "williambutler2" or t == "williambutler3" or t == "williambrute3" then
+        -- MK3 (williambutler3) reuses the MK2 (williambutler2) widget params.
+        local paramskey = (t == "williambutler3") and "williambutler2" or t
+        local p = params[paramskey]
+        if p ~= nil then
+            for k, v in pairs(p) do
                 container[k] = v
             end
             local numslots = container.slots ~= nil and #container.slots or 0
             if numslots == 0 then
-                container:SetNumSlots(t.widget.slotpos ~= nil and #t.widget.slotpos or 0)
+                container:SetNumSlots(p.widget.slotpos ~= nil and #p.widget.slotpos or 0)
             end
         end
     else
