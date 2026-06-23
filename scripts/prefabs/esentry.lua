@@ -774,7 +774,16 @@ local function fn()
         -- Fires on every bullet hit (the sentry's weapon projectile).
         inst.components.combat.onhitotherfn = function(i, other, dmg)
             if not other or not other:IsValid() then return end
+            -- v2.0.51: adaptive affinity per-target. For single-affinity owners
+            -- this resolves to _aff_type as before. For dual-affinity owners
+            -- (rare) it picks the affinity matching THIS target's faction, so
+            -- the ramp applies to whichever aligned mob is being hit.
             local aff = i._aff_type
+            if i._owner_celestial and other:HasTag("shadow_aligned") then
+                aff = "celestial"
+            elseif i._owner_shadow and other:HasTag("lunar_aligned") then
+                aff = "shadow"
+            end
             local aligned_tag = GetAlignedTag(aff)
             local is_aligned = aligned_tag and other:HasTag(aligned_tag) or false
 
@@ -810,25 +819,53 @@ local function fn()
 
         -- Periodic task: refresh the affinity type + x2 flag from the owner
         -- and the world phase. No more onhitotherfn swapping.
+        -- v2.0.51: Removed the day/dusk phase lock. The sentry is a STATIC
+        -- defensive turret — locking its affinity to one phase of day made it
+        -- useless half the time (e.g. the shadow sentry only fought
+        -- lunar-aligned at dusk, but you explore the lunar island by day; the
+        -- celestial sentry only fought shadow-aligned by day, but shadow rifts
+        -- invade at night). Affinity is now active 24/7 based on the owner's
+        -- possession tag. The affinity defines WHO the sentry fights (enemy
+        -- faction), not WHEN — consistent with the Brute taunt (v2.0.48).
         inst:DoPeriodicTask(1, function()
             local owner = GetSentryOwner(inst)
             local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
             local shadow    = owner and owner:HasTag("wagstaff_shadow_possession")
             inst._aff_x2_damage = owner and owner:HasTag("wagstaff_x2_damage") or false
+            -- Cache owner affinity flags for the adaptive onhitotherfn.
+            inst._owner_celestial = celestial or false
+            inst._owner_shadow = shadow or false
 
-            if TheWorld.state.isday and celestial then
-                inst._aff_type = "celestial"
+            -- Sight tags let the sentry DETECT aligned mobs (which have stealth
+            -- against normal observers). Set whichever matches the owner's
+            -- path(s). Dual-affinity owners get both sight tags so they can
+            -- see both factions.
+            if celestial then
                 inst:AddTag("shadowaligned_sight")
-                inst:RemoveTag("lunarcurse_sight")
-            elseif TheWorld.state.isdusk and shadow then
-                inst._aff_type = "shadow"
+            else
                 inst:RemoveTag("shadowaligned_sight")
+            end
+            if shadow then
                 inst:AddTag("lunarcurse_sight")
             else
-                inst._aff_type = nil
-                inst:RemoveTag("shadowaligned_sight")
                 inst:RemoveTag("lunarcurse_sight")
-                -- Affinity went inactive — drop any accumulated ramp.
+            end
+
+            -- Default affinity for FX/fallback. For dual-affinity owners the
+            -- onhitotherfn picks the matching affinity per-target, so this
+            -- default only affects non-aligned hits (no ramp anyway).
+            -- Priority: celestial > shadow (arbitrary but deterministic).
+            local new_aff
+            if celestial then
+                new_aff = "celestial"
+            elseif shadow then
+                new_aff = "shadow"
+            end
+
+            -- If affinity changed (owner switched path / first setup), reset
+            -- the ramp so stale stacks don't carry over.
+            if new_aff ~= inst._aff_type then
+                inst._aff_type = new_aff
                 ResetAffRamp(inst)
             end
         end)
