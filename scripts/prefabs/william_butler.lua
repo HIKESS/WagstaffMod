@@ -33,6 +33,7 @@ local brain = require "brains/williambutlerbrain"
 local AffinityPulse = _G.AffinityPulse
 
 local function UpdateButlerName(inst)
+    if not inst.components.fueled or not inst.components.health then return end
     local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
     local hp = math.floor(inst.components.health.currenthealth)
     local maxhp = math.floor(inst.components.health.maxhealth)
@@ -42,21 +43,21 @@ local function UpdateButlerName(inst)
     elseif inst.prefab == "williambutler3" then
         base_name = "Butler Bot Mk. III"
     end
-    
-    -- Build name string with fuel, HP and upgrade info
+
+    -- Build name string with fuel, HP and upgrade info (show progress from 0)
     local upgrade_str = ""
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 55 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/55"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/50"
+    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
         upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
     end
     local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
-    
-    -- Set on named component if exists
+
+    -- Set on named component (always exists — added in fn())
     if inst.components.named ~= nil then
         inst.components.named:SetName(name_str)
     end
-    
+
     -- Directly set inst.name and GetDisplayName for hover display
     inst.name = name_str
     inst.GetDisplayName = function() return name_str end
@@ -294,10 +295,10 @@ local function getstatus(inst, viewer)
     
     -- Upgrade status
     local upgrade_str = ""
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 65 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/65"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/60"
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/50"
+    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
     end
     
     -- Combined status
@@ -325,10 +326,10 @@ local function GetButlerDescription(inst, viewer)
     
     desc = desc .. "Fuel: " .. fuel_pct .. "%"
     
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 65 then
-        desc = desc .. "\nUpgrade: " .. inst.upgradelevel .. "/65"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
-        desc = desc .. "\nUpgrade: " .. inst.upgradelevel_mk3 .. "/60"
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
+        desc = desc .. "\nUpgrade: " .. inst.upgradelevel .. "/50"
+    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
+        desc = desc .. "\nUpgrade: " .. inst.upgradelevel_mk3 .. "/70"
     end
     
     return desc
@@ -573,7 +574,7 @@ inst.components.burnable.ignorefuel = true
 
     --==================================================================================
     -- BUTLER UPGRADE: Wrench upgrade spawns williambutler2 with 3 cook slots
-    -- 65 scraps total, variable cost per hit. Progress shown in bot name.
+    -- v2.0.16: 50 scraps total, 10 per hit (5 hits). Progress shown in bot name.
     -- Requires wagstaff_thermal_upgrade skill to be learned.
     --==================================================================================
     inst.upgradelevel = 0
@@ -672,9 +673,9 @@ inst.components.burnable.ignorefuel = true
             print("[DEBUG UPGRADE] Scrap count no inventario:", scrap_count)
             
             -- Determine cost based on current upgrade level
-            local upgrade_cost_table = {10, 10, 10, 10, 15}  -- Total: 55 scraps
+            local upgrade_cost_table = {10, 10, 10, 10, 10}  -- v2.0.16: 50 scraps total (was 55)
             local hits_so_far = math.floor(inst.upgradelevel / 10)  -- 0-5 hits
-            local base_cost = upgrade_cost_table[hits_so_far + 1] or 15
+            local base_cost = upgrade_cost_table[hits_so_far + 1] or 10
             local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, base_cost)
             print("[DEBUG UPGRADE] Upgrade level atual:", inst.upgradelevel, "hits_so_far:", hits_so_far, "base_cost:", base_cost, "upgrade_cost (com eficiencia):", upgrade_cost)
             
@@ -693,7 +694,7 @@ inst.components.burnable.ignorefuel = true
             print("[DEBUG UPGRADE] Novo upgrade level:", inst.upgradelevel)
             UpdateButlerName(inst)
 
-            if inst.upgradelevel >= 55 then
+            if inst.upgradelevel >= 50 then
                 print("[DEBUG UPGRADE] UPGRADE COMPLETO! Spawnando williambutler2...")
                 inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                 if worker.components.talker then
@@ -883,12 +884,14 @@ inst.components.burnable.ignorefuel = true
         end)
     end
 
-        -- BUTLER MK.II -> MK.III UPGRADE (60 scraps total, 5 per hit)
+        -- BUTLER MK.II -> MK.III UPGRADE (70 scraps total, 5 per hit)
         inst.upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
 
         UpdateButlerName(inst)
         inst:ListenForEvent("fuelchange", function() UpdateButlerName(inst) end)
         inst:ListenForEvent("healthdelta", function() UpdateButlerName(inst) end)
+        -- v2.0.16: Add periodic task for MK2 (was missing — hover not refreshing)
+        inst:DoPeriodicTask(2, function() UpdateButlerName(inst) end)
 
         inst:AddComponent("engieworkable")
         inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
