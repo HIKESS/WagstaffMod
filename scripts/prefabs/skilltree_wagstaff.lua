@@ -552,7 +552,7 @@ local function BuildSkillsData(SkillTreeFns)
             .. "\n"
             .. ""
             .. "\n"
-            .. "Butler: Haunting the MK III revives you and spawns a Shadow Clone of yourself (150 HP, voidcloth gear, 120s) to fight for you."
+            .. "Butler: Haunting the MK III revives you and grants a Shadow Buff for 60s (+50% damage, +20% attack speed, +15% move speed)."
             .. "\n"
             .. "Buster: Summons a Shadow Clone with 50% strength, immune to damage. Destroyed at day or when Buster dies."
             .. "\n"
