@@ -348,3 +348,58 @@ Stage Summary:
 - v2.0.17 butler revive fix is now LIVE on remote GLM-5.1-Fixes (commit 1444009).
 - User should: (1) pull latest, (2) REVOKE the PAT on GitHub (it was pasted in chat — regenerate it), (3) test the revive in-game, (4) share logs — [BUTLER REVIVE] prints will confirm which path runs.
 - Pending: Phase 2 (8 balance fixes) and Phase 3 (skill tree reorder details) still approved but not yet implemented.
+
+---
+Task ID: V2017-DEBUG-GATE
+Agent: GLM (main)
+Task: Gate all debug print() calls behind the mod's "Debug mode" config button
+
+Work Log:
+- Found existing debug infrastructure in modmain.lua: G.WagstaffDebugEnabled (reads modinfo "debug" config), G.WagstaffDebug() (heavy helper with tableToString + prefix), G.c_wagstaff_debug() (runtime console toggle), and the "Debug mode" button in modinfo configuration_options (default OFF).
+- Problem: my debug prints ([BUTLER COOK], [BUTLER REVIVE], [DEBUG UPGRADE], [DEBUG], [SKILL DEBUG], [Wagstaff LOCK]) used print() directly — ignoring the button, so they ran (and spammed logs) even when debug was OFF.
+- Added two LIGHTWEIGHT helpers to modmain.lua (after the existing WagstaffDebug alias, ~line 258):
+    G.WagstaffDbg(...)   — early-returns when debug OFF, else print(...) with same args
+    G.WagstaffDbgF(fmt, ...) — early-returns when debug OFF, else print(string.format(fmt, ...))
+  Both do a single boolean check first, so zero I/O / zero formatting cost when OFF.
+- Added local aliases at the top of each prefab file (after assets block):
+    local _dbg  = _G.WagstaffDbg  or function(...) end  -- fallback noop if modmain not loaded
+    local _dbgF = _G.WagstaffDbgF or function(...) end
+- Converted ALL debug prints (164 total) across 5 files:
+    william_butler.lua:    45 prints ([BUTLER COOK] 5, [BUTLER REVIVE] 8, [DEBUG UPGRADE] 32)
+    william_buster.lua:    23 prints ([DEBUG])
+    william_brute.lua:     25 prints ([DEBUG])
+    william_ballistic.lua: 24 prints ([DEBUG])
+    skilltree_wagstaff.lua: 37 prints ([SKILL DEBUG] 35, [Wagstaff LOCK] 2)
+  Format-style prints (print(string.format(...))) → _dbgF(fmt, ...) so string.format is also skipped when OFF.
+  Direct prints (print("[TAG] ...", args)) → _dbg("[TAG] ...", args).
+- Verified with luaparse: ALL 6 files (5 prefabs + modmain) SYNTAX OK.
+- Verified alias defined BEFORE first use in every file (line number comparison).
+- Verified no debug-tagged prints remain using print() directly.
+- Legitimate non-debug prints (modmain error/info messages, [Wagstaff Debug] prefix prints) were NOT touched.
+
+Stage Summary:
+- All debug logging is now gated by the "Debug mode" button in the mod config menu (default OFF = zero cost).
+- Runtime toggle still works: c_wagstaff_debug() in console flips G.WagstaffDebugEnabled on/off.
+- Debugs are PRESERVED (not removed) for future diagnosis — just silenced unless explicitly enabled.
+- Behavior when ON is identical to before (same tags, same output, same log location).
+- Files changed: modmain.lua (helpers), william_butler.lua, william_buster.lua, william_brute.lua, william_ballistic.lua, skilltree_wagstaff.lua (aliases + print→_dbg/_dbgF conversions).
+
+---
+Task ID: V2017-DEBUG-GATE-PUSH
+Agent: GLM (main)
+Task: Push debug gating commit to remote
+
+Work Log:
+- Committed as d475fd3 locally.
+- Push rejected: remote GLM-5.1-Fixes had advanced (merges from main + commit 0223cf6 "fix: correct in-game mod icon + remaining hover display values").
+- Fetched remote, inspected divergence: remote had 4 commits I didn't have; I had 1 commit remote didn't have.
+- Checked 0223cf6 — it touched william_ballistic.lua and william_buster.lua hover values (different lines from my debug print conversions), so no conflict expected.
+- Rebased d475fd3 onto FETCH_HEAD: clean, no conflicts. Commit rebased to 637f386.
+- Verified syntax of all 6 files after rebase: ALL OK.
+- Pushed 637f386 to origin/GLM-5.1-Fixes: SUCCESS (1b0119b..637f386).
+- Post-push security: reset remote URL to clean (no creds), unset WAGSTAFF_PAT env var.
+
+Stage Summary:
+- v2.0.17 debug gating is now LIVE on remote GLM-5.1-Fixes (commit 637f386).
+- All 164 debug prints across the mod are now gated by the "Debug mode" config button (default OFF = zero cost).
+- PAT still valid (was NOT revoked despite being pasted in chat previously) — user should still revoke it for safety.
