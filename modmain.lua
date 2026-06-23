@@ -3279,7 +3279,7 @@ AddSimPostInit(function()
 
     AddRecipe2("esentry",
 
-        {Ingredient("scrap", 20, eimg("scrap")), Ingredient("gears", 3)},
+        {Ingredient("scrap", 30, eimg("scrap")), Ingredient("gears", 3)},  -- v2.0.16: 20 -> 30 (was too cheap for MK3 turret)
 
         TECH.MAGIC_ONE,
 

@@ -33,6 +33,7 @@ local brain = require "brains/williambutlerbrain"
 local AffinityPulse = _G.AffinityPulse
 
 local function UpdateButlerName(inst)
+    if not inst.components.fueled or not inst.components.health then return end
     local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
     local hp = math.floor(inst.components.health.currenthealth)
     local maxhp = math.floor(inst.components.health.maxhealth)
@@ -42,21 +43,21 @@ local function UpdateButlerName(inst)
     elseif inst.prefab == "williambutler3" then
         base_name = "Butler Bot Mk. III"
     end
-    
-    -- Build name string with fuel, HP and upgrade info
+
+    -- Build name string with fuel, HP and upgrade info (show progress from 0)
     local upgrade_str = ""
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 55 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/55"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/50"
+    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
         upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
     end
     local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
-    
-    -- Set on named component if exists
+
+    -- Set on named component (always exists — added in fn())
     if inst.components.named ~= nil then
         inst.components.named:SetName(name_str)
     end
-    
+
     -- Directly set inst.name and GetDisplayName for hover display
     inst.name = name_str
     inst.GetDisplayName = function() return name_str end
@@ -212,6 +213,14 @@ if inst.components.fueled ~= nil then
 
         local product = inst.components.cooker:CookItem(ingredient, inst)
             if product ~= nil and doer ~= nil then
+                -- v2.0.17 DEBUG: trace affinity food logic
+                local _owner = GetOwner(inst)
+                local _has_celest = _owner and _owner:HasTag("wagstaff_celestial_possession")
+                local _has_shadow = _owner and _owner:HasTag("wagstaff_shadow_possession")
+                print(string.format("[BUTLER COOK] prefab=%s isday=%s isdusk=%s owner=%s celest=%s shadow=%s",
+                    inst.prefab, tostring(TheWorld.state.isday), tostring(TheWorld.state.isdusk),
+                    tostring(_owner ~= nil), tostring(_has_celest), tostring(_has_shadow)))
+
                 -- CELESTIAL POSSESSION: Foods restore HP% (MK3 only)
                 if inst.prefab == "williambutler3" and TheWorld.state.isday and OwnerHasCelestial(inst) then
                 if product.components.edible and product.components.edible.hungervalue then
@@ -220,6 +229,7 @@ if inst.components.fueled ~= nil then
                     -- Store the healing amount on the food item (40% of hunger = HP%)
                     product._celestial_hp_heal = hunger_percent * 40
                     product._celestial_hp_doer = doer
+                    print(string.format("[BUTLER COOK] CELESTIAL applied: heal=%.1f%% of max HP", product._celestial_hp_heal))
                     -- Listen for when food is eaten
                     local old_oneaten = product.components.edible.oneaten
                     product.components.edible:SetOnEatenFn(function(food, eater)
@@ -229,11 +239,12 @@ if inst.components.fueled ~= nil then
                             local max_hp = eater.components.health.maxhealth
                             local heal_amount = max_hp * (food._celestial_hp_heal / 100)
                             eater.components.health:DoDelta(heal_amount, false, "celestial_food")
+                            print(string.format("[BUTLER COOK] CELESTIAL eaten: healed %.1f HP", heal_amount))
                         end
                     end)
                 end
             end
-            
+
             -- SHADOW POSSESSION: Foods restore SANITY% (MK3 only)
             if inst.prefab == "williambutler3" and TheWorld.state.isdusk and OwnerHasShadow(inst) then
                 if product.components.edible and product.components.edible.hungervalue then
@@ -242,6 +253,7 @@ if inst.components.fueled ~= nil then
                     -- Store the sanity amount on the food item (40% of hunger = sanity%)
                     product._shadow_sanity_restore = hunger_percent * 40
                     product._shadow_sanity_doer = doer
+                    print(string.format("[BUTLER COOK] SHADOW applied: restore=%.1f%% of max sanity", product._shadow_sanity_restore))
                     -- Listen for when food is eaten
                     local old_oneaten = product.components.edible.oneaten
                     product.components.edible:SetOnEatenFn(function(food, eater)
@@ -251,6 +263,7 @@ if inst.components.fueled ~= nil then
                             local max_sanity = eater.components.sanity.max
                             local sanity_amount = max_sanity * (food._shadow_sanity_restore / 100)
                             eater.components.sanity:DoDelta(sanity_amount, false, "shadow_food")
+                            print(string.format("[BUTLER COOK] SHADOW eaten: restored %.1f sanity", sanity_amount))
                         end
                     end)
                 end
@@ -294,10 +307,10 @@ local function getstatus(inst, viewer)
     
     -- Upgrade status
     local upgrade_str = ""
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 65 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/65"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
-        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/60"
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel .. "/50"
+    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
+        upgrade_str = " | Upgrade: " .. inst.upgradelevel_mk3 .. "/70"
     end
     
     -- Combined status
@@ -325,10 +338,10 @@ local function GetButlerDescription(inst, viewer)
     
     desc = desc .. "Fuel: " .. fuel_pct .. "%"
     
-    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 65 then
-        desc = desc .. "\nUpgrade: " .. inst.upgradelevel .. "/65"
-    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0 then
-        desc = desc .. "\nUpgrade: " .. inst.upgradelevel_mk3 .. "/60"
+    if inst.prefab == "williambutler" and inst.upgradelevel and inst.upgradelevel < 50 then
+        desc = desc .. "\nUpgrade: " .. inst.upgradelevel .. "/50"
+    elseif inst.prefab == "williambutler2" and inst.upgradelevel_mk3 and inst.upgradelevel_mk3 < 70 then
+        desc = desc .. "\nUpgrade: " .. inst.upgradelevel_mk3 .. "/70"
     end
     
     return desc
@@ -573,7 +586,7 @@ inst.components.burnable.ignorefuel = true
 
     --==================================================================================
     -- BUTLER UPGRADE: Wrench upgrade spawns williambutler2 with 3 cook slots
-    -- 65 scraps total, variable cost per hit. Progress shown in bot name.
+    -- v2.0.16: 50 scraps total, 10 per hit (5 hits). Progress shown in bot name.
     -- Requires wagstaff_thermal_upgrade skill to be learned.
     --==================================================================================
     inst.upgradelevel = 0
@@ -672,9 +685,9 @@ inst.components.burnable.ignorefuel = true
             print("[DEBUG UPGRADE] Scrap count no inventario:", scrap_count)
             
             -- Determine cost based on current upgrade level
-            local upgrade_cost_table = {10, 10, 10, 10, 15}  -- Total: 55 scraps
+            local upgrade_cost_table = {10, 10, 10, 10, 10}  -- v2.0.16: 50 scraps total (was 55)
             local hits_so_far = math.floor(inst.upgradelevel / 10)  -- 0-5 hits
-            local base_cost = upgrade_cost_table[hits_so_far + 1] or 15
+            local base_cost = upgrade_cost_table[hits_so_far + 1] or 10
             local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, base_cost)
             print("[DEBUG UPGRADE] Upgrade level atual:", inst.upgradelevel, "hits_so_far:", hits_so_far, "base_cost:", base_cost, "upgrade_cost (com eficiencia):", upgrade_cost)
             
@@ -693,7 +706,7 @@ inst.components.burnable.ignorefuel = true
             print("[DEBUG UPGRADE] Novo upgrade level:", inst.upgradelevel)
             UpdateButlerName(inst)
 
-            if inst.upgradelevel >= 55 then
+            if inst.upgradelevel >= 50 then
                 print("[DEBUG UPGRADE] UPGRADE COMPLETO! Spawnando williambutler2...")
                 inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
                 if worker.components.talker then
@@ -883,12 +896,14 @@ inst.components.burnable.ignorefuel = true
         end)
     end
 
-        -- BUTLER MK.II -> MK.III UPGRADE (60 scraps total, 5 per hit)
+        -- BUTLER MK.II -> MK.III UPGRADE (70 scraps total, 5 per hit)
         inst.upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
 
         UpdateButlerName(inst)
         inst:ListenForEvent("fuelchange", function() UpdateButlerName(inst) end)
         inst:ListenForEvent("healthdelta", function() UpdateButlerName(inst) end)
+        -- v2.0.16: Add periodic task for MK2 (was missing — hover not refreshing)
+        inst:DoPeriodicTask(2, function() UpdateButlerName(inst) end)
 
         inst:AddComponent("engieworkable")
         inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
@@ -1105,10 +1120,17 @@ inst.components.burnable.ignorefuel = true
         inst:ListenForEvent("fuelchange", function() UpdateButler3Name(inst) end)
         inst:ListenForEvent("healthdelta", function() UpdateButler3Name(inst) end)
 
-        -- v2.0.15: HAUNT RESURRECTION rework — affinity revive powers work ALL DAY
+        -- v2.0.17: HAUNT RESURRECTION rework — affinity revive powers work ALL DAY
         -- SHADOW (all day): consume haunter's nearest meat_effigy; butler SURVIVES
-        -- CELESTIAL (all day): downgrade butler to MK1; butler SURVIVES; 1/day cooldown
+        -- CELESTIAL (all day): butler FULLY DISCHARGES (fuel->0) + downgrades to MK1;
+        --   butler SURVIVES as inert MK1 (must be refueled); 1/day cooldown; celestial FX
         -- Default (no affinity): bot dies, player revives (classic behavior)
+        --
+        -- v2.0.17 BUGFIX: affinity tags were checked ONLY on GetOwner() (follower
+        -- leader). When the owner is DEAD (ghost), the follower leader link can be
+        -- nil, so OwnerHasShadow/OwnerHasCelestial returned false and the butler
+        -- always died. Now we ALSO check the tags on the haunter (the ghost player
+        -- attempting the revive) — its tags persist through death.
 
         local function FindAndConsumeEffigy(player)
             if not player or not player.Transform then return false end
@@ -1116,9 +1138,9 @@ inst.components.burnable.ignorefuel = true
             local nearest_dist = math.huge
             for _, ent in pairs(_G.Ents) do
                 if ent and ent:IsValid() and ent.prefab == "meat_effigy" and not ent:IsInLimbo() then
-                    -- Ownership check: DST meat_effigies store builder userid
-                    -- If userid field exists, only match this player's effigies (MP-safe)
-                    -- If no userid tracking, accept as candidate (SP fallback)
+                    -- Ownership check: DST meat_effigies store builder userid.
+                    -- If userid field exists, only match this player's effigies (MP-safe).
+                    -- If no userid tracking, accept as candidate (SP/console fallback).
                     local owned = (ent.userid == nil) or (ent.userid == player.userid)
                     if owned then
                         local dist = player:GetDistanceSqToInst(ent)
@@ -1145,7 +1167,57 @@ inst.components.burnable.ignorefuel = true
             return false
         end
 
-        local function DowngradeButlerToMK1(inst, owner)
+        -- v2.0.17: Celestial "soul leaving" FX for the discharge/revive moment.
+        -- Uses LIGHT, celestial-themed effects (white-blue shield + ascending
+        -- sparkles + a light flash that fades) — deliberately NOT shadow/dark FX.
+        local function PlayCelestialDischargeFX(pt)
+            local x, y, z = pt.x, pt.y, pt.z
+            -- Celestial light shield (matches the MK3 menu affinity FX)
+            local shield = _G.SpawnPrefab("ghostlyelixir_shield_fx")
+            if shield then
+                shield.Transform:SetPosition(x, y + 0.5, z)
+                shield.Transform:SetScale(1.3, 1.3, 1.3)
+                if shield.AnimState then
+                    shield.AnimState:SetMultColour(1, 1, 1, 0.8)
+                end
+            end
+            -- Ascending sparkles (evokes a soul/essence rising from the chassis)
+            local sparkle = _G.SpawnPrefab("sparklefx")
+            if sparkle then
+                sparkle.Transform:SetPosition(x, y + 0.3, z)
+            end
+            -- Brief celestial light flash (white-blue) that fades — the energy
+            -- leaving the bot as it discharges. Built manually so it always exists.
+            local lightfx = _G.CreateEntity()
+            if lightfx then
+                lightfx.entity:AddTransform()
+                lightfx.entity:AddLight()
+                lightfx.Light:SetRadius(4)
+                lightfx.Light:SetIntensity(0.9)
+                lightfx.Light:SetFalloff(0.7)
+                lightfx.Light:SetColour(0.7, 0.85, 1) -- celestial white-blue
+                lightfx.Light:Enable(true)
+                lightfx.Transform:SetPosition(x, y + 0.5, z)
+                lightfx.persists = false
+                lightfx:DoTaskInTime(0.4, function()
+                    if lightfx and lightfx:IsValid() and lightfx.Light then
+                        lightfx.Light:SetIntensity(0.5)
+                    end
+                end)
+                lightfx:DoTaskInTime(0.8, function()
+                    if lightfx and lightfx:IsValid() and lightfx.Light then
+                        lightfx.Light:SetIntensity(0.2)
+                    end
+                end)
+                lightfx:DoTaskInTime(1.2, function()
+                    if lightfx and lightfx:IsValid() then lightfx:Remove() end
+                end)
+            end
+        end
+
+        -- v2.0.17: discharge param — when true (celestial revive), the new MK1
+        -- spawns with 0 fuel (fully discharged) as the cost of the revive.
+        local function DowngradeButlerToMK1(inst, owner, discharge)
             local pt = inst:GetPosition()
             local newbot = nil
             -- Use petleash if available (proper pet registration)
@@ -1160,14 +1232,19 @@ inst.components.burnable.ignorefuel = true
             end
             if newbot then
                 newbot.Transform:SetRotation(inst.Transform:GetRotation())
-                if inst.components.fueled and newbot.components.fueled then
-                    newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                if newbot.components.fueled then
+                    if discharge then
+                        -- CELESTIAL: bot FULLY DISCHARGES (fuel -> 0). Player must
+                        -- refuel the MK1 to bring it back online.
+                        newbot.components.fueled.currentfuel = 0
+                    elseif inst.components.fueled then
+                        newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+                    end
                 end
                 if inst.components.health and newbot.components.health then
                     newbot.components.health:SetCurrentHealth(
                         math.min(inst.components.health.currenthealth, newbot.components.health.maxhealth))
                 end
-                _G.SpawnPrefab("small_puff").Transform:SetPosition(pt.x, pt.y, pt.z)
             end
             inst:Remove()
         end
@@ -1175,21 +1252,35 @@ inst.components.burnable.ignorefuel = true
         inst:AddComponent("hauntable")
         inst.components.hauntable:SetOnHauntFn(function(inst, haunter)
             if haunter:HasTag("playerghost") and inst.prefab == "williambutler3" then
-                -- Standard revive
+                local owner = GetOwner(inst)
+                -- v2.0.17 BUGFIX: check tags on BOTH owner and haunter. The follower
+                -- leader (owner) can be nil when the owner is dead; the haunter (the
+                -- ghost player) is always valid and its affinity tags persist through
+                -- death. This was the root cause of "shadow affinity revive doesn't work".
+                local shadow = (owner and owner:HasTag("wagstaff_shadow_possession"))
+                            or haunter:HasTag("wagstaff_shadow_possession")
+                local celestial = (owner and owner:HasTag("wagstaff_celestial_possession"))
+                              or haunter:HasTag("wagstaff_celestial_possession")
+
+                print(string.format("[BUTLER REVIVE] haunt by ghost=%s owner=%s shadow=%s celestial=%s",
+                    tostring(haunter and haunter.prefab),
+                    tostring(owner and owner.prefab or "NIL"),
+                    tostring(shadow), tostring(celestial)))
+
+                -- Standard revive (player respawns)
                 haunter:PushEvent("respawnfromghost", { source = inst })
 
-                local owner = GetOwner(inst)
-                local celestial = OwnerHasCelestial(inst)
-                local shadow    = OwnerHasShadow(inst)
-
-                -- v2.0.15 SHADOW (all day): consume haunter's meat_effigy, butler survives
+                -- v2.0.17 SHADOW (all day): consume haunter's meat_effigy, butler survives
                 if shadow then
-                    if FindAndConsumeEffigy(haunter) then
+                    local found = FindAndConsumeEffigy(haunter)
+                    print(string.format("[BUTLER REVIVE] SHADOW path: effigy_found=%s", tostring(found)))
+                    if found then
                         -- Butler survives! Bonus sanity (+30% max)
                         haunter:DoTaskInTime(0.5, function()
                             if haunter:IsValid() and haunter.components.sanity then
                                 local bonus_sanity = haunter.components.sanity.max * 0.3
                                 haunter.components.sanity:DoDelta(bonus_sanity)
+                                print(string.format("[BUTLER REVIVE] SHADOW: +%.0f sanity applied", bonus_sanity))
                             end
                         end)
                         -- Bot does NOT die — effigy took its place
@@ -1198,32 +1289,43 @@ inst.components.burnable.ignorefuel = true
                     -- No effigy found — fall through to default (bot dies)
                 end
 
-                -- v2.0.15 CELESTIAL (all day): downgrade to MK1, 1/day cooldown, butler survives
+                -- v2.0.17 CELESTIAL (all day): FULL DISCHARGE + downgrade to MK1,
+                -- 1/day cooldown, butler survives as inert MK1. Celestial soul FX.
                 if celestial then
                     local today = TheWorld.state.cycles
-                    local last_day = owner and owner._celestial_butler_revive_day or -1
+                    local player_for_cd = owner or haunter
+                    local last_day = player_for_cd and player_for_cd._celestial_butler_revive_day or -1
+                    print(string.format("[BUTLER REVIVE] CELESTIAL path: today=%s last_day=%s",
+                        tostring(today), tostring(last_day)))
                     if last_day ~= today then
                         -- Cooldown available — use it
-                        if owner then owner._celestial_butler_revive_day = today end
+                        if player_for_cd then player_for_cd._celestial_butler_revive_day = today end
+                        -- Celestial "soul leaving" discharge FX (NOT shadow)
+                        local pt = inst:GetPosition()
+                        PlayCelestialDischargeFX(pt)
                         -- Bonus HP (+20% max)
                         haunter:DoTaskInTime(0.5, function()
                             if haunter:IsValid() and haunter.components.health then
                                 local bonus_hp = haunter.components.health.maxhealth * 0.2
                                 haunter.components.health:DoDelta(bonus_hp)
+                                print(string.format("[BUTLER REVIVE] CELESTIAL: +%.0f HP applied", bonus_hp))
                             end
                         end)
-                        -- Downgrade butler to MK1 (bot survives as MK1)
+                        -- Downgrade butler to MK1 with FULL DISCHARGE (fuel -> 0)
                         haunter:DoTaskInTime(1.0, function()
                             if inst:IsValid() then
-                                DowngradeButlerToMK1(inst, owner)
+                                DowngradeButlerToMK1(inst, owner, true)
+                                print("[BUTLER REVIVE] CELESTIAL: downgraded to MK1, fuel=0 (discharged)")
                             end
                         end)
                         return true
                     end
                     -- On cooldown — fall through to default (bot dies)
+                    print("[BUTLER REVIVE] CELESTIAL: on cooldown, falling to default")
                 end
 
                 -- Default: bot dies on revive (no affinity, or affinity fallback)
+                print("[BUTLER REVIVE] DEFAULT path: butler dies")
                 inst.components.health:Kill()
                 return true
             end

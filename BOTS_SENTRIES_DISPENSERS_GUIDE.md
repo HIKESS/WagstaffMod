@@ -1,6 +1,6 @@
 # WAGSTAFF MOD — GUIA COMPLETO DE BOTS, SENTRIES & DISPENSERS
 
-> Dados extraidos diretamente do codigo-fonte do mod (v2.0.15, branch `GLM-5.1-Fixes`).
+> Dados extraidos diretamente do codigo-fonte do mod (v2.0.17, branch `GLM-5.1-Fixes`).
 > Valores sujeitos a mudancas em futuras atualizacoes.
 
 ---
@@ -55,7 +55,7 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 | **DMG** | 30 | 30 | 30 |
 | **Fuel** | 1920s (32 min) | 1920s (32 min) | 1920s (32 min) |
 | **Cook Slots** | 1 | 3 | 3 |
-| **Custo Upgrade** | — | 85 Scrap (10,10,10,10,10,15) | 120 Scrap (5/hit) |
+| **Custo Upgrade** | — | 50 Scrap (10×5 hits) | 70 Scrap (5/hit × 14) |
 | **Skill Necessaria** | — | Butler MK.II | Butler MK.III |
 
 **Habilidades por Tier:**
@@ -68,10 +68,11 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
   - **Comida (phase-locked, igual antes):**
     - **Celestial (dia):** Comidas curam 40% do HP baseado no valor de fome
     - **Shadow (dusk):** Comidas curam 40% da Sanidade baseado no valor de fome
-  - **Revive (all-day, v2.0.15) — afinidade funciona o dia todo:**
+  - **Revive (all-day, v2.0.17) — afinidade funciona o dia todo:**
     - **Default (sem afinidade):** Bot morre, jogador revive (classico)
     - **Shadow (qualquer horario):** Procura o `meat_effigy` mais proximo do jogador fantasma e o **destroi no lugar do bot**. Bot **sobrevive** + bonus +30% sanidade max. Se nao tiver effigy, bot morre (fallback)
-    - **Celestial (qualquer horario):** Bot **descarrega para MK1** (perde todos os upgrades) e **sobrevive como MK1** + bonus +20% HP max. **Cooldown 1/dia** por owner. Se em cooldown, bot morre (fallback)
+    - **Celestial (qualquer horario):** Bot **DESCARREGA COMPLETAMENTE (fuel → 0)** e **desce para MK1** (perde todos os upgrades) + **sobrevive como MK1 inerte** (precisa ser reabastecido) + bonus +20% HP max + FX celestial de "alma saindo" (escudo de luz branco-azul + sparkles + flash de luz). **Cooldown 1/dia** por owner. Se em cooldown, bot morre (fallback)
+    - **Bugfix v2.0.17:** os tags de afinidade agora sao checados no `haunter` (jogador fantasma) tambem, nao so no owner via follower leader. Antes, quando o dono morria, o link de follower podia ficar nil → afinidade nunca detectada → bot sempre morria.
 
 ---
 
@@ -85,7 +86,7 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 | **DMG** | 36 | 41 (+5) | 46 (+10) |
 | **Absorcao** | 5%/nivel | 5%/nivel | 5%/nivel |
 | **Fuel** | 1440s (24 min) | 1440s (24 min) | 1440s (24 min) |
-| **Custo Upgrade** | — | 70 Scrap (5/hit) | 85 Scrap (5/hit) |
+| **Custo Upgrade** | — | 85 Scrap (5/hit × 17) | 90 Scrap (5/hit × 18, v2.0.16: era 120) |
 | **Skill Necessaria** | — | Buster MK.II | Buster MK.III |
 
 **Habilidades por Tier:**
@@ -111,7 +112,7 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 | **DMG** | 16 (24/1.5) | 28 (+12) | **33** (+5 v2.0.15) |
 | **Fuel** | 3630s (60.5 min) | 3630s (60.5 min) | 3630s (60.5 min) |
 | **Tipo** | Turret only | Turret only | Turret only |
-| **Custo Upgrade** | — | 70 Scrap (5/hit) | 90 Scrap (5/hit) |
+| **Custo Upgrade** | — | 100 Scrap (5/hit × 20) | 150 Scrap (5/hit × 30) |
 | **Skill Necessaria** | — | Ballistic MK.II | Ballistic MK.III |
 
 **Habilidades por Tier:**
@@ -141,7 +142,7 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 | **Absorcao** | 8%/nivel | 8%/nivel | 8%/nivel |
 | **Regen** | 5+5*nivel HP/5s | 5+5*nivel HP/5s | 5+5*nivel HP/5s |
 | **Fuel** | 2400s (40 min) | 2400s (40 min) | 2400s (40 min) |
-| **Custo Upgrade** | — | 65 Scrap (5/hit) | 40 Scrap (5/hit) |
+| **Custo Upgrade** | — | 75 Scrap (5/hit × 15) | 90 Scrap (5/hit × 18) |
 | **Skill Necessaria** | — | Brute MK.II | Brute MK.III |
 
 **Habilidades por Tier:**
@@ -162,7 +163,8 @@ Todas as receitas do mod sao fabricadas no menu proprio do Wagstaff (`builder_ta
 
 ### SENTRY GUN
 
-**Fabricacao:** 20 Scrap + 3 Gears *(Magic Two — Shadow Manipulator / Manipulador de Sombras)*
+**Fabricacao:** 30 Scrap + 3 Gears *(Magic Two — Shadow Manipulator / Manipulador de Sombras)*  
+> v2.0.16: era 20 Scrap (aumentado para equilibrar com o custo baixo de upgrade)
 
 | | **LVL 1** | **LVL 2** | **LVL 3** |
 |---|---|---|---|
@@ -351,6 +353,23 @@ ALLEGIANCE (Boss-locked, mutual exclusion)
 ---
 
 ## CHANGELOG
+
+### v2.0.17 — Butler revive bugfix + celestial discharge rework + wrench/modicon
+
+**Butler MK3 Haunt Resurrection — BUGFIX do shadow affinity revive:**
+- **Root cause:** os tags de afinidade (`wagstaff_shadow_possession`/`wagstaff_celestial_possession`) eram checados APENAS via `GetOwner(inst)` (follower:GetLeader()). Quando o dono morre e vira fantasma, o link de follower pode ficar nil → afinidade nunca detectada → bot sempre morria no path default. Este era o bug "shadow affinity do butler não funciona".
+- **Fix:** agora checa os tags tambem no `haunter` (o jogador fantasma que esta hauntando). O haunter é sempre valido e seus tags persistem após a morte.
+- Adicionados logs `[BUTLER REVIVE]` em todos os branches para diagnostico.
+
+**Celestial revive rework (pedido do usuario):**
+- Bot agora **DESCARREGA COMPLETAMENTE (fuel → 0)** ao reviver via celestial. O novo MK1 nasce inerte — precisa ser reabastecido para voltar a funcionar. Este é o custo do revive celestial.
+- FX celestial de "alma saindo" (NÃO sombrio): `ghostlyelixir_shield_fx` (escudo branco-azul, combina com o FX do menu) + `sparklefx` (sparkles ascendendo = alma subindo) + flash de luz celestial manual (branco-azul, fading 1.2s). Substitui o `small_puff` generico.
+- Shadow revive e cook affinity: **sem mudança** (cook continua funcionando como antes).
+
+**Outros (commit 2f69a98):**
+- tf2wrench damage 59.5 → 30 (abaixo da spear vanilla = 34)
+- modicon corrigido (wagstaffgamelist icon + xml que referenciava arquivo inexistente)
+- Logs de debug `[BUTLER COOK]` adicionados (diagnostico do cook affinity)
 
 ### v2.0.15 — Reorganização da árvore + Fixes de balanceamento + Butler revive rework
 

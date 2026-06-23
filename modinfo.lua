@@ -23,7 +23,7 @@ Features:
 Original character by Hornet, reworked by Niko. Skill tree + integration by Wholemaker Team.]]
 id = "wagstaff_standalone"
 author = "Wholemaker Team (standalone) — original by Hornet/Niko"
-version = "2.0.15"
+version = "2.0.17"
 
 api_version = 10
 

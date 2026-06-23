@@ -217,8 +217,8 @@ local function StopLightOrb(inst)
 end
 
 local function maketurret(inst, pt, charge)
-    local is_mk3 = inst.was_mk3 or (inst.upgradelevel_mk3 ~= nil and inst.upgradelevel_mk3 >= 90)
-    local is_mk2 = is_mk3 or inst.was_mk2 or (inst.upgradelevel ~= nil and inst.upgradelevel >= 70)
+    local is_mk3 = inst.was_mk3 or (inst.upgradelevel_mk3 ~= nil and inst.upgradelevel_mk3 >= 150)
+    local is_mk2 = is_mk3 or inst.was_mk2 or (inst.upgradelevel ~= nil and inst.upgradelevel >= 100)
     local prefab = is_mk3 and "williamballistic3" or (is_mk2 and "williamballistic2" or "williamballistic")
     local bot = SpawnPrefab(prefab)
     if bot ~= nil then
