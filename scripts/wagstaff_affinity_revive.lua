@@ -29,8 +29,9 @@
 --       * Lifesteal:           15%    (heal 15% of damage dealt — sustain via offense)
 --       * Duration:            60s
 --   - Visual: subtle dark tint on the player for the duration (cleared on expiry).
---   - FX: statue_transition_2 spawn FX at 0.6s (synced with revive anim),
---         shadow_despawn FX on expiry.
+--   - FX: PERSISTENT shadow_shield1 shield (parented, 60s, removed on expiry),
+--         spawned at 0.6s synced with revive anim. ghost_spawn sound on spawn.
+--         (v2.0.30: substituiu statue_transition_2 spawn + shadow_despawn despawn.)
 --
 -- ALL debug output is routed through the mod's debug system (G.WagstaffDbg /
 -- G.WagstaffDbgF), gated by the "Debug mode" config toggle. Zero-cost when off.
@@ -191,7 +192,9 @@ local function ApplyCelestialBuff(player)
             player._wagstaff_celestial_shield_fx:Remove()
         end
         player._wagstaff_celestial_shield_fx = nil
-        if health and health:IsAlive() then
+        -- v2.0.29 FIX: Health component has no :IsAlive() method (crash at line 194
+        -- in v2.0.27/v2.0.28). The canonical DST API is :IsDead(). Use the inverse.
+        if health and not health:IsDead() then
             if health.DeltaMaxHealth then
                 health:DeltaMaxHealth(-CELESTIAL_HP_BONUS)
             else
@@ -249,6 +252,11 @@ local function ApplyShadowBuff(player)
         player.AnimState:SetAddColour(0, 0, 0, 0)
         player._wagstaff_shadow_tinted = nil
     end
+    -- Remove previous shadow_shield1 (no orphan shield on re-revive).
+    if player._wagstaff_shadow_shield_fx and player._wagstaff_shadow_shield_fx:IsValid() then
+        player._wagstaff_shadow_shield_fx:Remove()
+    end
+    player._wagstaff_shadow_shield_fx = nil
 
     -- 0) Full HP recovery (matches celestial's HP recovery, but WITHOUT the
     --    +max HP bonus — just heal to current max).
@@ -275,7 +283,8 @@ local function ApplyShadowBuff(player)
             if dmg <= 0 then return end
             local heal = dmg * SHADOW_LIFESTEAL_PCT
             local hp = inst.components.health
-            if hp and hp:IsAlive() and not hp:IsInvincible() then
+            -- v2.0.29 FIX: Health has no :IsAlive() — use :IsDead() inverse.
+            if hp and not hp:IsDead() and not hp:IsInvincible() then
                 hp:DoDelta(heal, nil, "wagstaff_shadow_lifesteal")
             end
         end
@@ -327,16 +336,33 @@ local function ApplyShadowBuff(player)
         end)
     end
 
-    -- Spawn FX at 0.6s (synced with the revive animation — ghost->body).
+    -- v2.0.30: PERSISTENT shadow_shield1 shield (substitui statue_transition_2
+    -- spawn + shadow_despawn despawn). Espelha a estrutura do celestial
+    -- (forcefieldfx): parented ao player, persiste pelos 60s do buff, removido
+    -- no expire. Spawn aos 0.6s sincronizado com a anim de reviver.
     player:DoTaskInTime(0.6, function()
-        if not player:IsValid() then return end
-        local px, py, pz = player.Transform:GetWorldPosition()
-        local fx = G.SpawnPrefab("statue_transition_2")
-        if fx then fx.Transform:SetPosition(px, py, pz) end
+        if not player:IsValid() or not player.entity then return end
+        -- Remove shield leftover de buff anterior.
+        if player._wagstaff_shadow_shield_fx and player._wagstaff_shadow_shield_fx:IsValid() then
+            player._wagstaff_shadow_shield_fx:Remove()
+        end
+        local fx = G.SpawnPrefab("shadow_shield1")
+        if fx then
+            fx.entity:SetParent(player.entity)
+            if fx.AnimState then
+                -- Tint roxo escuro (shadow theme).
+                fx.AnimState:SetMultColour(0.45, 0.30, 0.55, 1.0)
+                fx.AnimState:SetAddColour(0.12, 0.0, 0.18, 0)
+            end
+            player._wagstaff_shadow_shield_fx = fx
+            _dbgF("[AFFINITY] Shadow: shadow_shield1 spawned (persistent), parent=%s", tostring(player.prefab))
+        else
+            _dbg("[AFFINITY] Shadow: WARN — SpawnPrefab('shadow_shield1') returned nil")
+        end
+        -- Som de reviver mantido (nao e FX visual).
         if player.SoundEmitter then
             player.SoundEmitter:PlaySound("dontstarve/common/ghost_spawn")
         end
-        _dbg("[AFFINITY] Shadow: spawn FX (statue_transition_2) + sound played (synced with revive anim)")
     end)
 
     -- Expire the buff after the duration.
@@ -371,12 +397,11 @@ local function ApplyShadowBuff(player)
             player.AnimState:SetAddColour(0, 0, 0, 0)
             player._wagstaff_shadow_tinted = nil
         end
-        -- Despawn FX.
-        if player:IsValid() then
-            local px, py, pz = player.Transform:GetWorldPosition()
-            local fx = G.SpawnPrefab("shadow_despawn")
-            if fx then fx.Transform:SetPosition(px, py, pz) end
+        -- Remove shadow_shield1 shield (persistente — deve Remove()).
+        if player._wagstaff_shadow_shield_fx and player._wagstaff_shadow_shield_fx:IsValid() then
+            player._wagstaff_shadow_shield_fx:Remove()
         end
+        player._wagstaff_shadow_shield_fx = nil
         -- Clear saved state.
         player._wagstaff_shadow_dmg_orig = nil
         player._wagstaff_shadow_ap_base = nil
