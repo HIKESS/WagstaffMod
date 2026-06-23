@@ -21,6 +21,149 @@ local brain = require "brains/eyeturretbrain" --borrow
 local easing = require("easing")
 local AffinityPulse = _G.AffinityPulse
 
+----------------------------------------------------------------
+-- v2.0.43: Affinity Ramp System + Hit/Blast FX for Sentry MK3
+----------------------------------------------------------------
+-- Ramp: each hit on an aligned mob (shadow_aligned for celestial,
+-- lunar_aligned for shadow) adds +10% base damage as bonus, stacking
+-- up to 6 times (+60%). The ramp resets if the sentry doesn't attack
+-- for 3 seconds OR gets hit (mirror of shadow_battleaxe ramp design).
+-- The x2-Damage proc (10% chance) doubles the CURRENT total damage
+-- (base + ramp bonus), not just the base — so a fully-ramped x2 proc
+-- is a big burst.
+--
+-- FX: bullet hits spawn a brightsmithy-style sparkle (celestial) or
+-- shadowcraft-style dark spike (shadow). Rocket impacts spawn a
+-- bomb_lunarplant explosion FX (altered — tinted black for shadow).
+-- All spawns are pcall-guarded with fallbacks so a missing DST prefab
+-- never crashes the server.
+
+local AFF_RAMP_MAX        = 6
+local AFF_RAMP_PCT        = 0.10   -- +10% base damage per stack
+local AFF_RAMP_RESET_TIME = 3      -- seconds without a hit before reset
+local AFF_X2_PROC_CHANCE  = 0.10   -- 10% chance to double current total
+
+local function _safeSpawn(name)
+    local ok, inst = pcall(function() return _G.SpawnPrefab(name) end)
+    if ok and inst then return inst end
+    return nil
+end
+
+-- Ramp state helpers (operate on the sentry inst).
+local function ResetAffRamp(inst)
+    if not inst or not inst:IsValid() then return end
+    inst._aff_ramp_stacks = 0
+    if inst._aff_ramp_reset_task then
+        inst._aff_ramp_reset_task:Cancel()
+        inst._aff_ramp_reset_task = nil
+    end
+end
+
+local function BumpAffRamp(inst)
+    if not inst or not inst:IsValid() then return end
+    if inst._aff_ramp_stacks == nil then inst._aff_ramp_stacks = 0 end
+    if inst._aff_ramp_stacks < AFF_RAMP_MAX then
+        inst._aff_ramp_stacks = inst._aff_ramp_stacks + 1
+    end
+    -- (Re)schedule the 3s no-hit decay timer.
+    if inst._aff_ramp_reset_task then
+        inst._aff_ramp_reset_task:Cancel()
+    end
+    inst._aff_ramp_reset_task = inst:DoTaskInTime(AFF_RAMP_RESET_TIME, function()
+        ResetAffRamp(inst)
+    end)
+end
+
+local function GetAffRampBonus(inst, base_dmg)
+    if not inst or not inst._aff_type then return 0 end
+    local stacks = inst._aff_ramp_stacks or 0
+    if stacks <= 0 then return 0 end
+    return base_dmg * AFF_RAMP_PCT * stacks
+end
+
+-- Determine the aligned-tag for a given affinity type.
+local function GetAlignedTag(aff_type)
+    if aff_type == "celestial" then return "shadow_aligned" end
+    if aff_type == "shadow"    then return "lunar_aligned"  end
+    return nil
+end
+
+-- FX module: exposed globally so esentry_rocket can use it too.
+local WagstaffAffFX = _G.WagstaffAffFX or {}
+
+-- Bullet hit FX: brightsmithy sparkle (celestial) / shadowcraft spike (shadow).
+WagstaffAffFX.HitFX = function(target, aff_type)
+    if not target or not target:IsValid() then return end
+    local x, y, z = target.Transform:GetWorldPosition()
+    local fx = nil
+    if aff_type == "celestial" then
+        -- Try the brightsmithy (lunarplant) weapon hit sparkle variants.
+        fx = _safeSpawn("lunarplant_sparkle_fx")
+          or _safeSpawn("lunarplant_knife_fx")
+          or _safeSpawn("sparklefx")
+    elseif aff_type == "shadow" then
+        -- Try the shadowcraft weapon hit spike variants.
+        fx = _safeSpawn("shadow_spikes_fx")
+          or _safeSpawn("shadowtar_fx")
+          or _safeSpawn("shadowstrike_fx")
+    end
+    -- Fallback: recolored standard impact (guaranteed to exist in DST).
+    if not fx then
+        fx = _safeSpawn("impact")
+        if fx and fx.AnimState then
+            if aff_type == "celestial" then
+                fx.AnimState:SetAddColour(0.25, 0.35, 0.55, 0)
+            elseif aff_type == "shadow" then
+                fx.AnimState:SetMultColour(0.30, 0.10, 0.40, 1)
+                fx.AnimState:SetAddColour(0.10, 0.00, 0.20, 0)
+            end
+        end
+    end
+    if fx then
+        fx.Transform:SetPosition(x, y + 1, z)
+        fx.persists = false
+        fx:DoTaskInTime(2, function() if fx and fx:IsValid() then fx:Remove() end end)
+    end
+end
+
+-- Rocket impact FX: bomb_lunarplant explosion (celestial) / same tinted
+-- black (shadow). The bomb item is spawned but its damage components are
+-- stripped so it is purely visual ("the FX, not the bomb" — slightly altered).
+WagstaffAffFX.BlastFX = function(host, aff_type)
+    if not host or not host:IsValid() then return end
+    local x, y, z = host.Transform:GetWorldPosition()
+    local fx = nil
+    -- Try the pure-FX prefabs first, then the bomb item itself.
+    fx = _safeSpawn("bomb_lunarplant_fx")
+      or _safeSpawn("lunarplant_bomb_fx")
+      or _safeSpawn("bomb_lunarplant")
+      or _safeSpawn("explode_small")   -- guaranteed fallback
+    if not fx then return end
+    fx.Transform:SetPosition(x, y, z)
+    -- Strip damage so it's purely visual (safe-guarded with pcall).
+    pcall(function()
+        if fx.components.explosive then fx:RemoveComponent("explosive") end
+    end)
+    pcall(function()
+        if fx.components.combat then fx:RemoveComponent("combat") end
+    end)
+    pcall(function()
+        if fx.components.burnable then fx:RemoveComponent("burnable") end
+    end)
+    -- Tint: celestial keeps the default lunarplant blue/silver; shadow = black.
+    if aff_type == "shadow" and fx.AnimState then
+        fx.AnimState:SetMultColour(0.08, 0.05, 0.12, 1)
+        fx.AnimState:SetAddColour(0.05, 0.00, 0.10, 0)
+    elseif aff_type == "celestial" and fx.AnimState then
+        -- Slight enhancement: brighter blue/silver for the celestial blast.
+        fx.AnimState:SetAddColour(0.10, 0.15, 0.25, 0)
+    end
+    fx.persists = false
+    fx:DoTaskInTime(4, function() if fx and fx:IsValid() then fx:Remove() end end)
+end
+
+_G.WagstaffAffFX = WagstaffAffFX
+
 local function OnNameDelta(inst)
         local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
         if builder or inst.maker then
@@ -603,54 +746,82 @@ local function fn()
 
         AffinityPulse.Setup(inst, GetSentryOwner)
 
+        -- v2.0.43: Ramp state. The periodic task below only SETS the affinity
+        -- type flag + x2 flag — the actual damage logic lives in a SINGLE
+        -- onhitotherfn set once here (no more swapping onhitotherfn every
+        -- tick, which was fragile and reset closures constantly).
+        inst._aff_ramp_stacks = 0
+        inst._aff_ramp_reset_task = nil
+        inst._aff_type = nil         -- "celestial" | "shadow" | nil
+        inst._aff_x2_damage = false  -- owner has wagstaff_x2_damage skill
+
+        -- Expose ramp helpers on the inst so esentry_rocket can call them
+        -- (the rocket reads sentry._aff_type / calls sentry.BumpAffRamp etc.
+        -- to apply the ramp bonus + x2 on rocket direct hits).
+        inst.ResetAffRamp   = ResetAffRamp
+        inst.BumpAffRamp    = BumpAffRamp
+        inst.GetAffRampBonus = GetAffRampBonus
+
+        -- Unified onhitotherfn: handles ramp + x2 + FX for bullets.
+        -- Fires on every bullet hit (the sentry's weapon projectile).
+        inst.components.combat.onhitotherfn = function(i, other, dmg)
+            if not other or not other:IsValid() then return end
+            local aff = i._aff_type
+            local aligned_tag = GetAlignedTag(aff)
+            local is_aligned = aligned_tag and other:HasTag(aligned_tag) or false
+
+            -- Ramp: bump + apply bonus damage ONLY on aligned hits.
+            local ramp_bonus = 0
+            if is_aligned then
+                BumpAffRamp(i)
+                ramp_bonus = GetAffRampBonus(i, dmg)
+                if ramp_bonus > 0 and other.components.health then
+                    other.components.health:DoDelta(-ramp_bonus, false, "affinity_ramp")
+                end
+                -- Bullet hit FX (brightsmithy sparkle / shadowcraft spike).
+                if WagstaffAffFX and WagstaffAffFX.HitFX then
+                    WagstaffAffFX.HitFX(other, aff)
+                end
+            end
+
+            -- x2-Damage: 10% proc, doubles the CURRENT total (base dmg + ramp bonus).
+            -- Works on ALL targets (aligned or not) as long as the owner has the skill.
+            if i._aff_x2_damage and math.random() < AFF_X2_PROC_CHANCE then
+                local total = dmg + ramp_bonus
+                if other.components.health then
+                    other.components.health:DoDelta(-total, false, "x2_damage")
+                end
+            end
+        end
+
+        -- Reset the ramp when the sentry gets hit (mirror shadow_battleaxe design:
+        -- ramp rewards sustained offense, getting hit punishes it).
+        inst:ListenForEvent("attacked", function(i)
+            ResetAffRamp(i)
+        end)
+
+        -- Periodic task: refresh the affinity type + x2 flag from the owner
+        -- and the world phase. No more onhitotherfn swapping.
         inst:DoPeriodicTask(1, function()
             local owner = GetSentryOwner(inst)
             local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
             local shadow    = owner and owner:HasTag("wagstaff_shadow_possession")
-            local x2_damage = owner and owner:HasTag("wagstaff_x2_damage")
+            inst._aff_x2_damage = owner and owner:HasTag("wagstaff_x2_damage") or false
 
             if TheWorld.state.isday and celestial then
+                inst._aff_type = "celestial"
                 inst:AddTag("shadowaligned_sight")
                 inst:RemoveTag("lunarcurse_sight")
-                inst.components.combat.onhitotherfn = function(i, other, dmg)
-                    -- x2 damage check first: apply extra damage equal to base damage
-                    -- v2.0.15: proc 15% -> 10%
-                    if x2_damage and math.random() < 0.10 then
-                        if other.components.health then
-                            other.components.health:DoDelta(-dmg, false, "x2_damage")
-                        end
-                    end
-                    if other:HasTag("shadow_aligned") and other.components.health then
-                        other.components.health:DoDelta(-dmg * 0.10, false, "celestial_bonus")
-                    end
-                end
             elseif TheWorld.state.isdusk and shadow then
+                inst._aff_type = "shadow"
                 inst:RemoveTag("shadowaligned_sight")
                 inst:AddTag("lunarcurse_sight")
-                inst.components.combat.onhitotherfn = function(i, other, dmg)
-                    -- x2 damage check first: apply extra damage equal to base damage
-                    -- v2.0.15: proc 15% -> 10%
-                    if x2_damage and math.random() < 0.10 then
-                        if other.components.health then
-                            other.components.health:DoDelta(-dmg, false, "x2_damage")
-                        end
-                    end
-                    if other:HasTag("lunar_aligned") and other.components.health then
-                        other.components.health:DoDelta(-dmg * 0.10, false, "shadow_bonus")
-                    end
-                end
             else
+                inst._aff_type = nil
                 inst:RemoveTag("shadowaligned_sight")
                 inst:RemoveTag("lunarcurse_sight")
-                inst.components.combat.onhitotherfn = function(i, other, dmg)
-                    -- x2 damage check even without affinity: apply extra damage equal to base damage
-                    -- v2.0.15: proc 15% -> 10%
-                    if x2_damage and math.random() < 0.10 then
-                        if other.components.health then
-                            other.components.health:DoDelta(-dmg, false, "x2_damage")
-                        end
-                    end
-                end
+                -- Affinity went inactive — drop any accumulated ramp.
+                ResetAffRamp(inst)
             end
         end)
     end
