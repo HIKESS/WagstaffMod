@@ -19,7 +19,7 @@ Features:
 
 id = "wagstaff_standalone"
 author = "Auror4Gam3"
-version = "2.0.30"
+version = "2.0.31"
 
 api_version = 10
 
