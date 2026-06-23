@@ -122,6 +122,33 @@ local UpdateDispenserName
 local setmeterlevl
 local upgrade
 
+-- v2.0.42: Minimal interior light for MK2/MK3 dispenser. The MK3 affinity
+-- aura light (radius 1.5-2.5) is a real, usable light source — but when the
+-- affinity is inactive (wrong time of day / no affinity player nearby), MK3
+-- had NO light at all while MK2 appeared to glow. This minimal light gives
+-- MK2 and MK3 a subtle "powered on" interior glow for visual consistency,
+-- but is intentionally too weak to exploit as a free light source:
+--   radius 0.5  — Charlie requires ~1.5+ radius to be warded off, so this
+--                  only illuminates the dispenser model itself, not the area.
+--   intensity 0.4 — dim, just enough to read as "lit" on the sprite.
+--   warm orange   — matches the dispenser's existing meter/UI color palette.
+-- The MK3 affinity light overrides this when active (stronger radius/color).
+local DISP_MINIMAL_LIGHT_RADIUS    = 0.5
+local DISP_MINIMAL_LIGHT_INTENSITY = 0.4
+local DISP_MINIMAL_LIGHT_FALLOFF   = 0.9
+local DISP_MINIMAL_LIGHT_R         = 235/255
+local DISP_MINIMAL_LIGHT_G         = 121/255
+local DISP_MINIMAL_LIGHT_B         = 12/255
+
+local function SetMinimalInteriorLight(inst)
+    if not inst.Light then return end
+    inst.Light:SetRadius(DISP_MINIMAL_LIGHT_RADIUS)
+    inst.Light:SetIntensity(DISP_MINIMAL_LIGHT_INTENSITY)
+    inst.Light:SetFalloff(DISP_MINIMAL_LIGHT_FALLOFF)
+    inst.Light:SetColour(DISP_MINIMAL_LIGHT_R, DISP_MINIMAL_LIGHT_G, DISP_MINIMAL_LIGHT_B)
+    inst.Light:Enable(true)
+end
+
 local function onbuilt(inst, builder)
     if builder and builder.engieID then
         inst.dispenserID = builder.engieID
@@ -156,6 +183,8 @@ function upgrade(inst)
         -- Mk.II: max fuel 6 (was 4) — v2.0.14 balance
         inst.components.fueled.maxfuel = 6
         UpdateDispenserName(inst)
+        -- v2.0.42: MK2 minimal interior light (visual glow, not exploitable).
+        SetMinimalInteriorLight(inst)
     end
     if inst.upgradelevel >= 70 then
         inst:AddTag("lvl3")
@@ -230,7 +259,13 @@ function upgrade(inst)
                     if inst._healfx ~= nil then
                         inst._healfx:Hide()
                     end
-                    inst.Light:Enable(false)
+                    -- v2.0.42: When affinity is inactive, fall back to the minimal
+                    -- interior light (visual glow) instead of disabling the light
+                    -- entirely. This keeps MK3 visually "lit" like MK2 without
+                    -- providing a usable light source. The minimal light is too
+                    -- weak (radius 0.5) to ward off Charlie or serve as a base
+                    -- light — it only glows on the dispenser model itself.
+                    SetMinimalInteriorLight(inst)
                 end
             end
 
@@ -271,6 +306,12 @@ function upgrade(inst)
                 end
             end)
         end
+        -- v2.0.42: Set the minimal interior light immediately on MK3 upgrade.
+        -- The aura task (DoPeriodicTask) first runs at +0.5s; until then this
+        -- gives MK3 the same subtle glow MK2 has. UpdateAuraFX will override
+        -- with the stronger affinity light when a celestial/shadow player is
+        -- nearby, and fall back to this minimal light otherwise.
+        SetMinimalInteriorLight(inst)
     end
 end
 
@@ -559,6 +600,12 @@ local function onunequip(inst, owner)
     if inst:HasTag("lvl3") then
         inst.AnimState:PlayAnimation("upgrade2")
         inst.AnimState:PlayAnimation("upgrade3", false)
+    end
+    -- v2.0.42: Re-enable the minimal interior light when placed back in the
+    -- world (onequip disabled it while carried). MK3's aura task will override
+    -- with the affinity light within 0.5s if a celestial/shadow player is near.
+    if inst:HasTag("lvl2") or inst:HasTag("lvl3") then
+        SetMinimalInteriorLight(inst)
     end
 end
 

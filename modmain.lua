@@ -2300,73 +2300,128 @@ end)
 
 -- Patch skill tree widget to remove tint for Wagstaff and fix favor overlay z-order
 AddClassPostConstruct("widgets/redux/skilltreewidget", function(self)
-    -- v2.0.36 FIX: The favor overlay (midlay — shadow hands / lunar clouds+gestalts)
-    -- was going BEHIND the bg_tree background after the player died and revived.
-    -- The original patch only called MoveToFront() in SpawnFavorOverlay, which runs
-    -- ONCE when the overlay is first spawned. After death/revive, the skill tree
-    -- panel refreshes and the bg_tree moves to front, pushing the midlay behind it.
-    -- Fix: hook into EVERY refresh/redraw method to re-assert midlay:MoveToFront(),
-    -- and also listen for the player's revive event to force a refresh.
+    -- v2.0.42 FIX (replaces v2.0.36): The favor overlay (midlay — shadow hands
+    -- for Shadow's Embrace / clouds+gestalts for Moon's Blessing) was STILL
+    -- going BEHIND the bg_tree parchment background after the player died and
+    -- revived, even with the v2.0.36 hooks in place.
+    --
+    -- Root cause: v2.0.36 only hooked high-level refresh methods (RefreshSkill,
+    -- RefreshAll, OnShow, SpawnFavorOverlay). After death/revive, the base game
+    -- aggressively refreshes the skill tree panel and calls bg_tree:MoveToFront()
+    -- in places our hooks didn't cover (and possibly in DoTaskInTime callbacks
+    -- that run AFTER our hooks in the same frame), re-pushing midlay behind.
+    --
+    -- Robust fix — THREE complementary layers:
+    --   1. CASCADE HOOK: wrap bg_tree:MoveToFront itself so that EVERY time
+    --      bg_tree is brought to front (by anyone, anytime), midlay immediately
+    --      follows it to the front. This is the key fix — it doesn't matter
+    --      what method or task moves bg_tree; midlay always stays on top.
+    --   2. METHOD HOOKS: keep hooking the high-level refresh methods as a fast
+    --      path (catches the common cases without waiting for the periodic task).
+    --   3. PERIODIC SAFETY NET: re-assert midlay:MoveToFront() every 0.25s while
+    --      the panel is open. Catches any edge case the other two layers miss
+    --      (e.g. a DoTaskInTime that moves bg_tree after our hooks ran). Auto-
+    --      cancels when the widget's entity is removed.
+    --
+    -- Note: the target == "wagstaff" gate from v2.0.36 is REMOVED. The fix now
+    -- applies to any skill tree widget that has a midlay (favor overlay). This
+    -- is correct behavior for all characters (the favor overlay should always
+    -- render on top of the parchment), and removes a fragile dependency on the
+    -- exact field name/value the base game uses for the character identifier.
 
-    local function EnsureMidlayFront(self2)
-        if self2.midlay and self2.target == "wagstaff" then
-            self2.midlay:MoveToFront()
+    local function ForceMidlayFront(w)
+        if w and w.midlay then
+            w.midlay:MoveToFront()
         end
     end
 
+    -- Layer 1: CASCADE HOOK on bg_tree:MoveToFront. Whenever bg_tree is moved
+    -- to front (by the base game's refresh logic), immediately move midlay to
+    -- front too. This is idempotent and safe — MoveToFront on an already-front
+    -- widget is a no-op.
+    local function HookBgTreeMoveToFront(w)
+        if not w or not w.bg_tree then return end
+        if w.bg_tree._wagstaff_midlay_hooked then return end
+        local orig = w.bg_tree.MoveToFront
+        if not orig then return end
+        w.bg_tree.MoveToFront = function(bg, ...)
+            orig(bg, ...)
+            if w.midlay then
+                w.midlay:MoveToFront()
+            end
+        end
+        w.bg_tree._wagstaff_midlay_hooked = true
+    end
+
+    -- Helper called after every hooked method: re-assert midlay front, and
+    -- ensure the bg_tree cascade hook is installed (bg_tree may be created
+    -- lazily after the widget constructs).
+    local function RefreshAndHook(w)
+        ForceMidlayFront(w)
+        HookBgTreeMoveToFront(w)
+    end
+
+    -- Layer 2: METHOD HOOKS on every refresh/redraw method we know about.
     local original_SpawnFavorOverlay = self.SpawnFavorOverlay
-    self.SpawnFavorOverlay = function(self2, pre)
-        original_SpawnFavorOverlay(self2, pre)
-        EnsureMidlayFront(self2)
-    end
-
-    -- Hook RefreshSkill (called when a skill's visual state updates — runs on
-    -- panel open, skill activation, and after revive state changes).
-    local original_RefreshSkill = self.RefreshSkill
-    if original_RefreshSkill then
-        self.RefreshSkill = function(self2, ...)
-            original_RefreshSkill(self2, ...)
-            EnsureMidlayFront(self2)
+    if original_SpawnFavorOverlay then
+        self.SpawnFavorOverlay = function(self2, pre)
+            original_SpawnFavorOverlay(self2, pre)
+            RefreshAndHook(self2)
         end
     end
 
-    -- Hook RefreshAll if it exists (bulk refresh of all skill nodes).
-    local original_RefreshAll = self.RefreshAll
-    if original_RefreshAll then
-        self.RefreshAll = function(self2, ...)
-            original_RefreshAll(self2, ...)
-            EnsureMidlayFront(self2)
+    for _, method in ipairs({"RefreshSkill", "RefreshAll", "OnShow", "Refresh",
+                              "RefreshTree", "SelectSkill", "BuildSkills",
+                              "OnSkillActivated", "RefreshSkillDetail"}) do
+        local original = self[method]
+        if original then
+            self[method] = function(self2, ...)
+                original(self2, ...)
+                RefreshAndHook(self2)
+            end
         end
     end
 
-    -- Hook OnShow (called when the skill tree panel is shown/reopened).
-    local original_OnShow = self.OnShow
-    if original_OnShow then
-        self.OnShow = function(self2, ...)
-            original_OnShow(self2, ...)
-            EnsureMidlayFront(self2)
-        end
+    -- Layer 3: PERIODIC SAFETY NET. Re-assert midlay:MoveToFront() every 0.25s
+    -- while the panel is open. Tied to the widget's inst entity so it auto-
+    -- cancels when the widget is destroyed. This is the final backstop that
+    -- catches any refresh path the other layers miss.
+    if self.inst and self.inst.DoPeriodicTask then
+        self.inst:DoPeriodicTask(0.25, function()
+            if not self or not self.inst or not self.inst:IsValid() then
+                return
+            end
+            ForceMidlayFront(self)
+            HookBgTreeMoveToFront(self)
+        end)
     end
 
-    -- v2.0.36: Client-side listener — when the player revives from ghost, the
-    -- skill tree panel (if open) refreshes its bg_tree which pushes the midlay
-    -- behind. Force a re-assert of the midlay z-order after a short delay
-    -- (gives the panel time to finish its post-revive refresh).
+    -- v2.0.42: Client-side revive listener. When the player revives from ghost,
+    -- the skill tree panel (if open) aggressively refreshes bg_tree. Try at
+    -- MULTIPLE delays (0.1s through 2.0s) to catch the refresh at every phase
+    -- — the base game's post-revive refresh can span several frames. Each tick
+    -- re-asserts midlay front AND installs the bg_tree cascade hook.
     if G.ThePlayer then
         G.ThePlayer:ListenForEvent("ms_respawnedfromghost", function()
-            G.TheWorld:DoTaskInTime(0.5, function()
-                -- Find the open skill tree widget and re-assert midlay order.
-                -- The skill tree panel is a child of the HUD's controls.
-                local hud = G.ThePlayer.HUD
-                if hud and hud.controls and hud.controls.skilltreebuilder then
+            for _, delay in ipairs({0.1, 0.3, 0.5, 1.0, 1.5, 2.0}) do
+                G.TheWorld:DoTaskInTime(delay, function()
+                    local hud = G.ThePlayer.HUD
+                    if not hud or not hud.controls then return end
                     local stb = hud.controls.skilltreebuilder
-                    -- The skilltreewidget is typically stb.tree or stb.skilltree
-                    local widget = stb.tree or stb.skilltree or stb
-                    if widget and widget.midlay and widget.target == "wagstaff" then
-                        widget.midlay:MoveToFront()
+                    if not stb then return end
+                    -- The skilltreewidget may be accessed via several field
+                    -- names depending on DST version. Try them all.
+                    local candidates = {stb.tree, stb.skilltree, stb.skilltreewidget, stb}
+                    for _, widget in ipairs(candidates) do
+                        if widget and widget.midlay then
+                            ForceMidlayFront(widget)
+                        end
+                        if widget and widget.bg_tree then
+                            HookBgTreeMoveToFront(widget)
+                        end
                     end
-                end
-            end)
+                end)
+            end
         end)
     end
 end)
