@@ -3250,9 +3250,12 @@ AddSimPostInit(function()
 
     STRINGS.NAMES.WILLIAMGADGET = "Machine Hearth"
 
-    STRINGS.NAMES.WILLIAMBUTLER = "Butler Bot"
-
-    STRINGS.NAMES.WILLIAMBUTLER2 = "Butler Bot Mk.II"
+    -- v2.0.19: removed STRINGS.NAMES.WILLIAMBUTLER / WILLIAMBUTLER2.
+    -- These made inst.name = "Butler Bot" on the CLIENT, which masked the
+    -- replica.named name (the one with "\nFuel: X% | HP: X/X"). MK3 worked
+    -- precisely because its STRINGS.NAMES was never defined, so inst.name
+    -- was nil and GetDisplayName fell through to replica.named. Now all
+    -- three tiers behave the same way — hover shows the fuel/HP string.
 
     STRINGS.NAMES.WILLIAMBUSTER = "Buster Bot"
 

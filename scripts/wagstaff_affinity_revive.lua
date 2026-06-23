@@ -7,8 +7,9 @@
 --
 -- CELESTIAL (wagstaff_celestial_possession tag):
 --   - Revive with FULL HP / sanity / hunger.
---   - +100 max-HP bonus (via DeltaMaxHealth -> health badge up-arrow indicator).
+--   - +100 max-HP bonus (via DeltaMaxHealth).
 --   - 25% damage absorption for the duration.
+--   - 5 HP/sec regen for the duration (guarantees the health-badge up-arrow).
 --   - Duration: 60s (a "revive protection window").
 --   - FX: ruinshat-style shield (forcefield prefab) recolored celestial blue,
 --         respawned CONTINUOUSLY (every 2.5s) so the shield persists the full
@@ -17,37 +18,39 @@
 --
 -- SHADOW (wagstaff_shadow_possession tag):
 --   - Spawns a SHADOW CLONE that fights for Wagstaff.
---   - Clone is a recolored Wagstaff body (spawned from the "wagstaff" prefab,
---     stripped of player-ness), tinted fully shadow-black.
+--   - Clone base: vanilla `shadowwaxwell` (Maxwell's shadow duelist NPC) — has
+--     built-in combat AI, follower brain, proper NPC setup. Reliable spawn.
 --   - Clone HP: 150 (Wagstaff's HP), NON-invincible (can take damage / die).
---   - Clone is equipped with armor_voidcloth + voidcloth_scythe, also tinted
---     fully shadow-black (matching the Buster clone's black tint).
+--   - Clone damage: 34 (voidcloth scythe ballpark).
+--   - Voidcloth gear visual via OverrideSymbol (armor_voidcloth body + scythe).
 --   - Duration: 120s (a combat-assist window after revive).
---   - FX: statue_transition_2 (same as the Buster clone spawn), synced with
---         the clone's spawn animation.
---   - Despawn FX: shadow_despawn when the clone expires or dies.
+--   - FX: statue_transition_2 spawn (same as Buster clone) + shadow_despawn
+--         despawn (same as Buster clone).
 --
--- Balance notes (chosen values, easy to tune):
---   * Celestial +100 HP / 25% absorb / 60s: a strong but short revive-protection
---     window. Revive is rare (you died), so a generous buff is fair; 60s is long
---     enough to escape/recover but not a permanent state.
---   * Shadow clone 150 HP / 120s: matches Wagstaff's own HP, lasts long enough
---     to meaningfully assist in a fight, but is killable so it isn't a permanent
---     meat-shield.
+-- Balance: celestial +100 HP / 25% / 60s, shadow 150 HP / 120s / 34 dmg / non-invincine.
 
 local G = GLOBAL
 
 local CELESTIAL_DURATION   = 60     -- seconds
 local CELESTIAL_HP_BONUS   = 100    -- +max HP
 local CELESTIAL_ABSORPTION = 0.25   -- 25% damage absorption
+local CELESTIAL_REGEN_RATE = 5      -- HP per second (also drives the badge up-arrow)
 local CELESTIAL_SHIELD_RESPAWN_INTERVAL = 2.5  -- seconds between shield FX respawns
 
 local SHADOW_CLONE_DURATION = 120   -- seconds
 local SHADOW_CLONE_HP       = 150
 local SHADOW_CLONE_DAMAGE   = 34    -- voidcloth scythe ballpark
 
-local _dbg  = G.WagstaffDbg  or function(...) end
-local _dbgF = G.WagstaffDbgF or function(...) end
+-- v2.0.19: unconditional debug prints (always visible in server log) so the
+-- user can diagnose spawn issues without enabling Debug mode.
+local function _log(msg)
+    print("[AFFINITY REVIVE] " .. tostring(msg))
+end
+local function _logF(fmt, ...)
+    print("[AFFINITY REVIVE] " .. string.format(fmt, ...))
+end
+local _dbg  = G.WagstaffDbg  or _log
+local _dbgF = G.WagstaffDbgF or _logF
 
 ----------------------------------------------------------------
 -- CELESTIAL
@@ -62,12 +65,7 @@ local function ApplyCelestialBuff(player)
     if sanity then sanity:SetPercent(1) end
     if hunger then hunger:SetPercent(1) end
 
-    -- +100 max HP via DeltaMaxHealth (the canonical DST API for max-HP changes,
-    -- same one Wolfgang/WX-78 use). This triggers the health badge's built-in
-    -- up-arrow indicator (golden frame / boosted-max marker) so the player sees
-    -- the buff is active -- "a seta up no canto onde marca o HP". After
-    -- DeltaMaxHealth, current HP scales proportionally; SetPercent(1) then
-    -- fills it to the new (boosted) max = full HP.
+    -- +100 max HP via DeltaMaxHealth (canonical DST API). Fallback: SetMaxHealth.
     if health then
         if health.DeltaMaxHealth then
             health:DeltaMaxHealth(CELESTIAL_HP_BONUS)
@@ -81,6 +79,14 @@ local function ApplyCelestialBuff(player)
     if health then
         player._wagstaff_celestial_old_absorb = health.absorb or 0
         health:SetAbsorptionAmount(CELESTIAL_ABSORPTION)
+    end
+
+    -- 5 HP/sec regen — this GUARANTEES the health-badge up-arrow (green pulsing
+    -- arrow) is visible for the full duration. DeltaMaxHealth alone may not
+    -- trigger the badge indicator in all DST builds; regen always does.
+    -- Thematically appropriate: celestial light actively healing you.
+    if health and health.SetRegen then
+        health:SetRegen(CELESTIAL_REGEN_RATE, 1)
     end
 
     -- Cancel any previous buff/shield tasks (no stacking on repeated revives).
@@ -98,10 +104,7 @@ local function ApplyCelestialBuff(player)
     player._wagstaff_celestial_shield_fx = nil
 
     -- FX: ruinshat-style shield (forcefield) recolored celestial blue,
-    -- respawned CONTINUOUSLY so the shield visual persists the full 60s
-    -- duration (forcefield self-removes after ~2-3s, so we refresh it).
-    -- Initial spawn delayed ~0.6s to sync with the ghost->body materialization
-    -- (NOT on the ghost), per user request.
+    -- respawned CONTINUOUSLY so the shield visual persists the full 60s.
     local function SpawnShield()
         if not player:IsValid() or not player.entity then return end
         -- Remove previous shield if still around (anti-stack / refresh).
@@ -112,17 +115,24 @@ local function ApplyCelestialBuff(player)
         if fx then
             fx.entity:SetParent(player.entity)
             -- Recolor to celestial blue (default forcefield is greenish).
+            -- v2.0.19 FIX: SetMultColour/SetAddColour need 4 args (r,g,b,a).
+            -- The previous code passed only 3 args, which left alpha nil/0
+            -- and made the shield invisible.
             if fx.AnimState then
-                fx.AnimState:SetMultColour(0.45, 0.6, 1.0)
-                fx.AnimState:SetAddColour(0.1, 0.2, 0.45)
+                fx.AnimState:SetMultColour(0.45, 0.6, 1.0, 1.0)
+                fx.AnimState:SetAddColour(0.1, 0.2, 0.45, 0)
             end
             player._wagstaff_celestial_shield_fx = fx
+            _logF("SpawnShield: forcefield spawned, parent=%s", tostring(player.prefab))
+        else
+            _log("SpawnShield: WARN — SpawnPrefab('forcefield') returned nil")
         end
     end
 
     -- Initial shield at 0.6s (sync with spawn anim), then continuous respawns.
     player:DoTaskInTime(0.6, function()
         if not player:IsValid() then return end
+        _log("Celestial: initial SpawnShield + starting periodic respawns")
         SpawnShield()
         player._wagstaff_celestial_shield_task =
             player:DoPeriodicTask(CELESTIAL_SHIELD_RESPAWN_INTERVAL, SpawnShield)
@@ -131,6 +141,7 @@ local function ApplyCelestialBuff(player)
     -- Expire the buff after the duration.
     player._wagstaff_celestial_expire_task = player:DoTaskInTime(CELESTIAL_DURATION, function()
         if not player:IsValid() then return end
+        _log("Celestial: buff expiring")
         -- Stop the continuous shield respawns.
         if player._wagstaff_celestial_shield_task then
             player._wagstaff_celestial_shield_task:Cancel()
@@ -141,8 +152,7 @@ local function ApplyCelestialBuff(player)
             player._wagstaff_celestial_shield_fx:Remove()
         end
         player._wagstaff_celestial_shield_fx = nil
-        -- Remove the +100 max HP. DeltaMaxHealth scales current proportionally
-        -- and clears the badge up-arrow. Fallback: SetMaxHealth + clamp.
+        -- Remove the +100 max HP.
         if health and health:IsAlive() then
             if health.DeltaMaxHealth then
                 health:DeltaMaxHealth(-CELESTIAL_HP_BONUS)
@@ -150,17 +160,21 @@ local function ApplyCelestialBuff(player)
                 health:SetMaxHealth(math.max(1, health.maxhealth - CELESTIAL_HP_BONUS))
             end
         end
+        -- Stop regen (clears the badge up-arrow).
+        if health and health.SetRegen then
+            health:SetRegen(0, 0)
+        end
         -- Restore absorption.
         if health then
             health:SetAbsorptionAmount(player._wagstaff_celestial_old_absorb or 0)
         end
         player._wagstaff_celestial_expire_task = nil
-        _dbgF("[AFFINITY REVIVE] CELESTIAL: buff expired after %ss", tostring(CELESTIAL_DURATION))
+        _logF("Celestial: buff expired after %ss", tostring(CELESTIAL_DURATION))
     end)
 
-    _dbgF("[AFFINITY REVIVE] CELESTIAL: full stats + %s HP (DeltaMaxHealth) + %s%% absorb for %ss, shield continuous FX every %ss",
+    _logF("Celestial: full stats + %s HP + %s%% absorb + %s HP/s regen for %ss",
         tostring(CELESTIAL_HP_BONUS), tostring(CELESTIAL_ABSORPTION * 100),
-        tostring(CELESTIAL_DURATION), tostring(CELESTIAL_SHIELD_RESPAWN_INTERVAL))
+        tostring(CELESTIAL_REGEN_RATE), tostring(CELESTIAL_DURATION))
 end
 
 ----------------------------------------------------------------
@@ -174,13 +188,16 @@ local function RemoveShadowClone(player)
         local fx = G.SpawnPrefab("shadow_despawn")
         if fx then fx.Transform:SetPosition(cx, cy, cz) end
         clone:Remove()
+        _log("SHADOW: clone removed (shadow_despawn FX)")
     end
     player._wagstaff_shadow_clone = nil
 end
 
 local function SpawnShadowClone(player)
+    _log("SHADOW: SpawnShadowClone called")
     -- Remove any existing clone first (no stacking on repeated revives).
     if player._wagstaff_shadow_clone and player._wagstaff_shadow_clone:IsValid() then
+        _log("SHADOW: removing existing clone first")
         RemoveShadowClone(player)
     end
 
@@ -190,49 +207,34 @@ local function SpawnShadowClone(player)
     local sx = px + math.cos(angle) * offset
     local sz = pz + math.sin(angle) * offset
 
-    -- Use the wagstaff prefab as the base so the clone looks like Wagstaff,
-    -- then strip its player-ness and turn it into a shadow NPC fighter.
-    local clone = G.SpawnPrefab("wagstaff")
+    -- v2.0.19 FIX: use vanilla `shadowwaxwell` (Maxwell's shadow duelist) as the
+    -- base instead of `wagstaff` (player prefab). Player prefabs cannot be
+    -- reliably spawned as NPCs via SpawnPrefab — they require the engine's player
+    -- spawn system, and direct SpawnPrefab creates a broken/invisible entity that
+    -- gets cleaned up. `shadowwaxwell` is a vanilla NPC with built-in combat AI,
+    -- follower brain, and proper NPC setup — it spawns reliably.
+    -- Appearance: dark shadow humanoid (shadow-Maxwell duelist look).
+    -- Voidcloth gear visual is applied via OverrideSymbol (best-effort — if the
+    -- symbol names don't match the shadowwaxwell build, it's a safe no-op).
+    local clone = G.SpawnPrefab("shadowwaxwell")
     if not clone then
-        _dbg("[AFFINITY REVIVE] SHADOW: failed to spawn wagstaff clone")
+        _log("SHADOW: ERROR — SpawnPrefab('shadowwaxwell') returned nil")
         return
     end
+    _log("SHADOW: shadowwaxwell spawned successfully")
     clone.Transform:SetPosition(sx, 0, sz)
 
-    -- Strip player-ness so it behaves as an NPC, not a second player.
-    clone:RemoveTag("player")
-    clone:RemoveTag("playerghost")
-    -- Strip Wagstaff character-identity tags added by common_postinit so the
-    -- clone doesn't trigger Wagstaff-specific mechanics (projection, nearsight,
-    -- soulless, etc.). It is a shadow duplicate, not a second Wagstaff.
-    clone:RemoveTag("outofworldprojected")
-    clone:RemoveTag("nearsighted")
-    clone:RemoveTag("soulless")
-    clone:RemoveTag("weakstomach")
-    clone:RemoveTag("tinkerer")
-    -- Tag as a shadow clone.
+    -- Tag as a shadow clone (for identification / retarget exclusion).
     clone:AddTag("shadow_wagstaff_clone")
     clone:AddTag("shadowcreature")
-    clone:AddTag("NOCLICK")
     -- Don't persist (always recreated on next revive).
     clone.persists = false
 
-    -- Rename (avoid hover showing a player name).
+    -- Rename.
     if clone.components.named then
         clone.components.named:SetName("Shadow Wagstaff")
     end
     clone.name = "Shadow Wagstaff"
-
-    -- Tint fully shadow-black (same approach as the Buster shadow clone).
-    local function ApplyBlackTint()
-        if clone:IsValid() and clone.AnimState then
-            clone.AnimState:SetMultColour(0.01, 0.01, 0.01, 0.55)
-            clone.AnimState:SetAddColour(0, 0, 0, 0)
-        end
-    end
-    ApplyBlackTint()
-    -- Re-apply periodically (some anim events reset the tint).
-    clone:DoPeriodicTask(0.1, ApplyBlackTint)
 
     -- HP 150, NON-invincible (can take damage / die).
     if clone.components.health then
@@ -240,22 +242,23 @@ local function SpawnShadowClone(player)
         clone.components.health:SetCurrentHealth(SHADOW_CLONE_HP)
         clone.components.health:SetInvincible(false)
         clone.components.health:SetAbsorptionAmount(0)
+    else
+        _log("SHADOW: WARN — clone has no health component")
     end
 
-    -- Combat: shadow-scythe damage + retarget (player's target / nearby hostiles).
+    -- Combat: shadow-scythe damage.
     if clone.components.combat then
         clone.components.combat:SetDefaultDamage(SHADOW_CLONE_DAMAGE)
         clone.components.combat:SetAttackPeriod(2)
         clone.components.combat:SetRange(3)
+        -- Retarget: prefer player's target, else nearby hostiles.
         clone.components.combat:SetRetargetFunction(2, function(inst)
-            -- Prefer the player's current target.
             if player and player:IsValid() and player.components.combat then
                 local pt = player.components.combat.target
                 if pt and pt:IsValid() and not pt:IsInLimbo() and inst.components.combat:CanTarget(pt) then
                     return pt
                 end
             end
-            -- Otherwise find nearby hostiles.
             local x, y, z = inst.Transform:GetWorldPosition()
             local ents = G.TheSim:FindEntities(x, y, z, 10, nil,
                 {"player", "shadowcreature", "wall", "INLIMBO"})
@@ -271,40 +274,30 @@ local function SpawnShadowClone(player)
         clone.components.combat:SetKeepTargetFunction(function(inst, target)
             return target ~= nil and target:IsValid() and not target:IsInLimbo()
         end)
+    else
+        _log("SHADOW: WARN — clone has no combat component")
     end
 
-    -- Follow the player (follower component drives following; the periodic
-    -- driver below also handles movement so the clone stays close).
-    if not clone.components.follower then
-        clone:AddComponent("follower")
-    end
-    clone.components.follower:SetLeader(player)
-
-    -- Locomotor: use the shadow duplicate's run speed so it keeps up.
-    if clone.components.locomotor then
-        clone.components.locomotor.runspeed = G.TUNING.SHADOWWAXWELL_SPEED or 8
+    -- Follow the player (shadowwaxwell has a follower component + brain that
+    -- handles following and fighting automatically — no manual driver needed).
+    if clone.components.follower then
+        clone.components.follower:SetLeader(player)
+    else
+        _log("SHADOW: WARN — clone has no follower component")
     end
 
-    -- Equip voidcloth armor + scythe (wagstaff has an inventory component).
-    if clone.components.inventory then
-        local armor = G.SpawnPrefab("armor_voidcloth")
-        if armor then
-            if armor.AnimState then
-                armor.AnimState:SetMultColour(0.01, 0.01, 0.01, 0.55)
-            end
-            clone.components.inventory:Equip(armor)
-        end
-        local scythe = G.SpawnPrefab("voidcloth_scythe")
-        if scythe then
-            if scythe.AnimState then
-                scythe.AnimState:SetMultColour(0.01, 0.01, 0.01, 0.55)
-            end
-            clone.components.inventory:Equip(scythe)
-        end
+    -- Voidcloth gear visual via OverrideSymbol (best-effort).
+    -- armor_voidcloth body + voidcloth_scythe weapon. If the shadowwaxwell's
+    -- build doesn't have these symbols, the calls are safe no-ops.
+    if clone.AnimState then
+        clone.AnimState:OverrideSymbol("swap_body", "armor_voidcloth", "swap_body")
+        clone.AnimState:OverrideSymbol("swap_object", "swap_voidcloth_scythe", "swap_voidcloth_scythe")
+        -- Tint slightly darker to match the shadow theme.
+        clone.AnimState:SetMultColour(0.5, 0.5, 0.5, 1.0)
     end
 
-    -- Spawn FX: same as the Buster clone (statue_transition_2), synced with the
-    -- clone's spawn animation (the clone's anim starts immediately at spawn).
+    -- Spawn FX: same as the Buster clone (statue_transition_2), synced with
+    -- the clone's spawn animation.
     local spawn_fx = G.SpawnPrefab("statue_transition_2")
     if spawn_fx then
         spawn_fx.Transform:SetPosition(sx, 0, sz)
@@ -312,60 +305,19 @@ local function SpawnShadowClone(player)
     if clone.SoundEmitter then
         clone.SoundEmitter:PlaySound("dontstarve/common/ghost_spawn")
     end
+    _log("SHADOW: spawn FX (statue_transition_2) + sound played")
 
-    -- Movement / attack driver. The wagstaff prefab has no brain by default
-    -- (characters are player-driven), so we drive the clone directly via its
-    -- locomotor + combat components. This pushes the same "locomote" / "doattack"
-    -- events that SGwilson already handles.
-    clone:DoPeriodicTask(0.3, function()
-        if not clone:IsValid() or not player:IsValid() then return end
-        local combat = clone.components.combat
-        local locomotor = clone.components.locomotor
-        if not combat or not locomotor then return end
-
-        local target = combat.target
-        if target and (not target:IsValid() or target:IsInLimbo()) then
-            target = nil
-        end
-        if not target then
-            -- retarget fn runs on its own schedule, but read the current result
-            target = combat.target
-        end
-
-        if target then
-            local distsq = clone:GetDistanceSqToInst(target)
-            local range = (combat.attackrange or 3)
-            if distsq <= range * range then
-                -- In range: stop and attack.
-                locomotor:Stop()
-                combat:TryAttack(target)
-            else
-                -- Chase the target.
-                local tx, ty, tz = target.Transform:GetWorldPosition()
-                locomotor:GoToPoint(G.Vector3(tx, ty, tz), true)
-            end
-        else
-            -- No target: follow the player.
-            local pdistsq = clone:GetDistanceSqToInst(player)
-            if pdistsq > 4 * 4 then
-                local ppx, ppy, ppz = player.Transform:GetWorldPosition()
-                locomotor:GoToPoint(G.Vector3(ppx, ppy, ppz), true)
-            else
-                locomotor:Stop()
-            end
-        end
-    end)
-
-    -- Despawn after duration (or when the player dies again).
+    -- Despawn after duration.
     clone:DoTaskInTime(SHADOW_CLONE_DURATION, function()
         if clone and clone:IsValid() then
+            _logF("SHADOW: clone duration (%ss) expired, removing", tostring(SHADOW_CLONE_DURATION))
             RemoveShadowClone(player)
         end
     end)
 
     player._wagstaff_shadow_clone = clone
-    _dbgF("[AFFINITY REVIVE] SHADOW: clone spawned, HP=%s duration=%ss",
-        tostring(SHADOW_CLONE_HP), tostring(SHADOW_CLONE_DURATION))
+    _logF("SHADOW: clone ready, HP=%s dmg=%s duration=%ss",
+        tostring(SHADOW_CLONE_HP), tostring(SHADOW_CLONE_DAMAGE), tostring(SHADOW_CLONE_DURATION))
 end
 
 ----------------------------------------------------------------
@@ -378,17 +330,28 @@ local function ApplyOnRevive(player)
     local celestial = player:HasTag("wagstaff_celestial_possession")
     local shadow    = player:HasTag("wagstaff_shadow_possession")
 
-    _dbgF("[AFFINITY REVIVE] respawnfromghost: celestial=%s shadow=%s",
-        tostring(celestial), tostring(shadow))
+    _logF("respawnfromghost: player=%s celestial=%s shadow=%s",
+        tostring(player.prefab), tostring(celestial), tostring(shadow))
 
     -- Slight delay so the revive (health restore, ghost->body transition) has
     -- started and the player's tags/components have settled.
     player:DoTaskInTime(0.1, function()
-        if not player:IsValid() then return end
-        if celestial then
+        if not player:IsValid() then
+            _log("ApplyOnRevive: player invalid after delay, aborting")
+            return
+        end
+        -- Re-check tags after delay (tags should persist but be safe).
+        local cel = player:HasTag("wagstaff_celestial_possession")
+        local shd = player:HasTag("wagstaff_shadow_possession")
+        _logF("ApplyOnRevive (after 0.1s): celestial=%s shadow=%s", tostring(cel), tostring(shd))
+        if cel then
+            _log("ApplyOnRevive: -> ApplyCelestialBuff")
             ApplyCelestialBuff(player)
-        elseif shadow then
+        elseif shd then
+            _log("ApplyOnRevive: -> SpawnShadowClone")
             SpawnShadowClone(player)
+        else
+            _log("ApplyOnRevive: no affinity tag — no ability applied")
         end
     end)
 end
@@ -396,9 +359,13 @@ end
 -- Hook: listen for the player's revive event. This fires for ANY revive source
 -- (butler haunt, meat effigy, touch stone, amulet). The skill tree's exclusion
 -- locks guarantee a Wagstaff has at most one of the two affinity tags.
+_log("Module loaded — registering AddPrefabPostInit('wagstaff') revive listener")
 AddPrefabPostInit("wagstaff", function(inst)
     if not G.TheWorld or not G.TheWorld.ismastersim then return end
-    inst:ListenForEvent("respawnfromghost", function()
+    inst:ListenForEvent("respawnfromghost", function(inst, data)
+        _logF("respawnfromghost EVENT FIRED on %s, source=%s",
+            tostring(inst.prefab), tostring(data and data.source and data.source.prefab or "nil"))
         ApplyOnRevive(inst)
     end)
+    _log("AddPrefabPostInit('wagstaff'): revive listener registered")
 end)

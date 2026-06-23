@@ -384,6 +384,7 @@ local function BuildSkillsData(SkillTreeFns)
         -- matching the pattern from reference mods (kodi, sdf).
 
         wagstaff_allegiance_lock_shadow_boss = {
+            title = "Shadow Allegiance — Fuelweaver",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_2_DESC or "Defeat Ancient Fuelweaver to unlock",
             pos = { 205.8, 91.9 + GAP*2 },
             group = "allegiance",
@@ -446,6 +447,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_allegiance_lock_lunar_boss = {
+            title = "Celestial Allegiance — Champion",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_3_DESC or "Defeat Celestial Champion to unlock",
             pos = { 150.2, 91.3 + GAP*2 },
             group = "allegiance",
@@ -509,6 +511,7 @@ local function BuildSkillsData(SkillTreeFns)
 
         -- Exclusion locks: block the opposite path if an affinity was chosen
         wagstaff_allegiance_lock_shadow_path = {
+            title = "Shadow Path",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_4_DESC or "Cannot choose if Celestial path taken",
             pos = { 205.8, 91.9 + GAP },
             group = "allegiance",
@@ -524,6 +527,7 @@ local function BuildSkillsData(SkillTreeFns)
         },
 
         wagstaff_allegiance_lock_lunar_path = {
+            title = "Celestial Path",
             desc = STRINGS and STRINGS.SKILLTREE and STRINGS.SKILLTREE.ALLEGIANCE_LOCK_5_DESC or "Cannot choose if Shadow path taken",
             pos = { 150.2, 91.3 + GAP },
             group = "allegiance",

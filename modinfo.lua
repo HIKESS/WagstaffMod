@@ -1,7 +1,7 @@
-name = "Wagstaff Standalone"
-description = [[Standalone Wagstaff character mod — The Cryptic Founder.
+name = "Wagstaff Aurora"
+description = [[Wagstaff Aurora — The Cryptic Founder.
 
-A great inventor, nearsighted, with a delicate stomach. Now a fully self-contained mod with integrated skill tree progression, engineer bots, sentry guns, dispensers, and teleporters.
+A great inventor, nearsighted, with a delicate stomach. A fully self-contained character mod with integrated skill tree progression, engineer bots, sentry guns, dispensers, teleporters, and a dual-path affinity system.
 
 Features:
 - Wagstaff character with nearsightedness & weak stomach mechanics
@@ -9,13 +9,13 @@ Features:
 - Spygoggles investigation system (peculiar objects in the world)
 - Telebrella + Telipad teleport network
 - Thumper ground-pounding harvester
-- FULL SKILL TREE (15 insights, per-world persistence, 3 branches: Mechanical/Robotic/Allegiance)
+- FULL SKILL TREE (17 insights, per-world persistence, 3 branches: Mechanical/Robotic/Allegiance)
 - Engineer bots: Butler, Buster, Brute, Ballistic (each with MK2/MK3 upgrades)
 - Sentry Gun (MK2/MK3 upgrades with rockets + double damage)
 - Dispenser (MK2/MK3 upgrades with health regen + lucky drops)
 - Engineer Teleporter (entrance + exit, sanity cost reducible via skill)
 - TF2 Wrench (calibrated via skill to consume less durability)
-- Affinity system: Shadow Engineer vs Celestial Engineer (boss-gated)
+- Affinity system: Shadow Engineer vs Celestial Engineer (boss-gated, grants unique revive abilities — shadow clone or celestial shield)
 - Per-world progression: XP/insights saved per world, not per profile
 - Forge (Lava Arena) and Gorge (Quagmire) mode support
 - Blur shader for nearsighted vision
@@ -23,7 +23,7 @@ Features:
 Original character by Hornet, reworked by Niko. Skill tree + integration by Wholemaker Team.]]
 id = "wagstaff_standalone"
 author = "Wholemaker Team (standalone) — original by Hornet/Niko"
-version = "2.0.19"
+version = "2.0.20"
 
 api_version = 10
 
