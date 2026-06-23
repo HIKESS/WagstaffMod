@@ -12,20 +12,24 @@ local prefabs =
 -- v2.0.17: debug helpers gated by the "Debug mode" mod config button.
 local _dbg  = _G.WagstaffDbg  or function(...) end
 local _dbgF = _G.WagstaffDbgF or function(...) end
+-- v2.0.35: Design correto = williamgadget (100% via lootsetfn) + 50% de UM item
+-- so (o material principal do recipe). Antes v2.0.34 tinha 50% por material (2
+-- itens), mas o design original era 50% para 1 item so.
+-- Ballistic recipe: williamgadget + nitre(4) + transistor(2) -> material principal = nitre
 SetSharedLootTable("ballistic",
 {
-    {'nitre',          1},
+    {'nitre',             0.50},
 })
 
 SetSharedLootTable("ballisticgadget",
 {
-    {'williamgadget',          1.00},  -- 100% drop ALWAYS
-    {'goldnugget',             0.50},  -- 50% chance
-    {'nitre',                  0.50},  -- 50% chance
+    {'williamgadget',          1.00},  -- 100% drop ALWAYS (legacy, mantido para compat)
 })
 
 local function lootsetfn(lootdropper)
-    local loot = {}
+    -- v2.0.34: williamgadget (core) sempre dropa. gears adicionais por level
+    -- (recompensa de level up, nao e bonus aleatorio).
+    local loot = {"williamgadget"}
     local amount = lootdropper.inst.level*0.75
         if amount < 1 then amount = 1 end
 
@@ -34,7 +38,7 @@ local function lootsetfn(lootdropper)
             table.insert(loot, "gears")
                 end
                 end
-                
+
 
     lootdropper:SetLoot(loot)
 end
@@ -367,11 +371,9 @@ local function onworked(inst)
 end
 
 local function OnHammered(inst, worker)
-        if inst:HasTag("alive") then
-    inst.components.lootdropper:SetChanceLootTable("ballisticgadget")
-        else
-            inst.components.lootdropper:SetChanceLootTable(nil)
-        end
+    -- v2.0.34: lootsetfn garante williamgadget (100%) + gears por level.
+    -- Chance table "ballistic" da 50% nitre + 50% transistor (bonus alinhado ao recipe).
+    -- FIX: antes tinha if alive/else que dropava NADA se nao estivesse alive.
     inst.components.lootdropper:DropLoot()
         local fx = SpawnPrefab("collapse_small")
         fx.Transform:SetPosition(inst.Transform:GetWorldPosition())

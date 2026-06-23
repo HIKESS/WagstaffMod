@@ -14,13 +14,13 @@ local prefabs =
 local _dbg  = _G.WagstaffDbg  or function(...) end
 local _dbgF = _G.WagstaffDbgF or function(...) end
 
+-- v2.0.35: Design correto = williamgadget (100% via lootsetfn) + 50% de UM item
+-- so (o material principal do recipe). Antes v2.0.34 tinha 50% por material (2
+-- itens), mas o design original era 50% para 1 item so.
+-- Buster recipe: williamgadget + marble(3) + transistor(2) -> material principal = marble
 SetSharedLootTable("buster",
 {
-    {'cutstone',          1},
-    {'transistor',          1},
-    {'cutstone',          1},
-    {'pigskin',          1},
-
+    {'marble',            0.50},
 })
 
 SetSharedLootTable("bustergadget",
@@ -29,7 +29,9 @@ SetSharedLootTable("bustergadget",
 })
 
 local function lootsetfn(lootdropper)
-    local loot = {}
+    -- v2.0.34: williamgadget (core) sempre dropa. gears adicionais por level
+    -- (recompensa de level up, nao e bonus aleatorio).
+    local loot = {"williamgadget"}
     local amount = lootdropper.inst.level*0.75
         if amount < 1 then amount = 1 end
 
@@ -38,7 +40,7 @@ local function lootsetfn(lootdropper)
             table.insert(loot, "gears")
                 end
                 end
-                
+
 
     lootdropper:SetLoot(loot)
 end
@@ -358,7 +360,8 @@ local function onworked(inst)
 end
 
 local function OnHammered(inst, worker)
-    inst.components.lootdropper:SetChanceLootTable("bustergadget")
+    -- v2.0.34: lootsetfn garante williamgadget (100%) + gears por level.
+    -- Chance table "buster" da 50% marble + 50% transistor (bonus alinhado ao recipe).
     inst.components.lootdropper:DropLoot()
     local fx = SpawnPrefab("collapse_small")
     fx.Transform:SetPosition(inst.Transform:GetWorldPosition())

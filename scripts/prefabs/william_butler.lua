@@ -15,19 +15,25 @@ local prefabs =
         Asset("SOUND", "sound/maxwell.fsb"),
     }
 
+-- v2.0.35: Design correto = williamgadget (100% via lootsetfn) + 50% de UM item
+-- so (o material principal do recipe). Antes v2.0.34 tinha 50% por material (2
+-- itens), mas o design original era 50% para 1 item so.
+-- Butler recipe: williamgadget + boards(4) + transistor(2) -> material principal = boards
 SetSharedLootTable("butler",
 {
-    {'cutstone',          1},
-    {'transistor',          1},
-    {'goldnugget',          1},
-    {'silk',          1},
-
+    {'boards',            0.50},
 })
 
 SetSharedLootTable("butlergadget",
 {
     {'williamgadget',          1},
 })
+
+-- v2.0.34: lootsetfn garante 1 williamgadget (core) sempre que DropLoot e chamado
+-- (tanto em morte por combate quanto em hammer). Sem gears pois butler nao tem level.
+local function lootsetfn(lootdropper)
+    lootdropper:SetLoot({"williamgadget"})
+end
 
 local brain = require "brains/williambutlerbrain"
 local AffinityPulse = _G.AffinityPulse
@@ -205,17 +211,10 @@ local function OnHammered(inst, worker)
         inst.components.container:DropEverything()
     end
 
-    -- Exactly 1 core — clear preset tables so DropLoot does not stack gadgets
-    inst.components.lootdropper:SetLoot({"williamgadget"})
-    inst.components.lootdropper:SetChanceLootTable(nil)
+    -- v2.0.34: lootsetfn garante williamgadget (100%), chance table "butler" da
+    -- 50% boards + 50% transistor (bonus alinhado ao recipe). Uma unica chamada
+    -- DropLoot cobre morte e hammer.
     inst.components.lootdropper:DropLoot()
-
-    -- 50% bonus materials only (butler table never includes williamgadget)
-    if math.random() < 0.5 then
-        inst.components.lootdropper:SetLoot({})
-        inst.components.lootdropper:SetChanceLootTable("butler")
-        inst.components.lootdropper:DropLoot()
-    end
 
     local fx = SpawnPrefab("collapse_small")
     fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
@@ -528,6 +527,7 @@ end
         inst.components.health.redirect = nodebrisdmg
                 inst:AddComponent("lootdropper")
     inst.components.lootdropper:SetChanceLootTable("butler")
+    inst.components.lootdropper:SetLootSetupFn(lootsetfn)
 
     inst:AddComponent("inspectable")
     inst.components.inspectable.getstatus = getstatus
@@ -1309,7 +1309,10 @@ inst.components.burnable.ignorefuel = true
 
 --    inst.components.fueled.currentfuel = 0
 
-    inst.components.lootdropper:SetChanceLootTable("butlergadget")
+    -- v2.0.34: empty husk usa o mesmo loot do butler ativo (lootsetfn da fn()
+    -- ja garante williamgadget + chance table "butler" da 50% boards/transistor).
+    -- Antes o husk sobreecrevia para "butlergadget" (so gadget), mas isso
+    -- deixava o husk sem bonus de materiais. Agora e consistente com o bot ativo.
 
     -- v2.0.18 FIX: husk reactivation. The husk starts with HAMMER (dismantle)
     -- and should switch to ACTIVATE (reactivate) when it has fuel. The old code
