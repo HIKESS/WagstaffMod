@@ -15,12 +15,13 @@ local prefabs =
         Asset("SOUND", "sound/maxwell.fsb"),
     }
 
--- v2.0.34: Bonus table alinhado com o recipe do butler (williamgadget + boards + transistor).
--- O williamgadget (core) e garantido pelo lootsetfn. A chance table so tem os materiais bonus.
+-- v2.0.35: Design correto = williamgadget (100% via lootsetfn) + 50% de UM item
+-- so (o material principal do recipe). Antes v2.0.34 tinha 50% por material (2
+-- itens), mas o design original era 50% para 1 item so.
+-- Butler recipe: williamgadget + boards(4) + transistor(2) -> material principal = boards
 SetSharedLootTable("butler",
 {
     {'boards',            0.50},
-    {'transistor',        0.50},
 })
 
 SetSharedLootTable("butlergadget",
