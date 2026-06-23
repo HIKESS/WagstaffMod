@@ -245,6 +245,24 @@ if inst.components.fueled ~= nil then
                             local heal_amount = max_hp * (food._celestial_hp_heal / 100)
                             eater.components.health:DoDelta(heal_amount, false, "celestial_food")
                             _dbgF("[BUTLER COOK] CELESTIAL eaten: healed %.1f HP", heal_amount)
+                            -- v2.0.28: celestial heal FX + sound on eat (ghostlyelixir_shield_fx
+                            -- = same FX family as OnOpen, so the player links it to celestial
+                            -- possession; gemsparkle sound is already used by dispenser.lua).
+                            if eater:IsValid() and eater.Transform then
+                                local x, y, z = eater.Transform:GetWorldPosition()
+                                local heal_fx = SpawnPrefab("ghostlyelixir_shield_fx")
+                                if heal_fx then
+                                    heal_fx.Transform:SetPosition(x, y + 1.0, z) -- chest height
+                                    heal_fx.Transform:SetScale(0.6, 0.6, 0.6)
+                                    if heal_fx.AnimState then
+                                        -- celestial blue tint, slightly transparent
+                                        heal_fx.AnimState:SetMultColour(0.7, 0.9, 1.0, 0.85)
+                                    end
+                                end
+                                if eater.SoundEmitter then
+                                    eater.SoundEmitter:PlaySound("dontstarve/common/gemsparkle")
+                                end
+                            end
                         end
                     end)
                 end
@@ -269,6 +287,16 @@ if inst.components.fueled ~= nil then
                             local sanity_amount = max_sanity * (food._shadow_sanity_restore / 100)
                             eater.components.sanity:DoDelta(sanity_amount, false, "shadow_food")
                             _dbgF("[BUTLER COOK] SHADOW eaten: restored %.1f sanity", sanity_amount)
+                            -- v2.0.28: shadow sanity FX on eat (shadow_shield1 = same FX
+                            -- family as OnOpen, so the player links it to shadow possession).
+                            if eater:IsValid() and eater.Transform then
+                                local x, y, z = eater.Transform:GetWorldPosition()
+                                local shadow_fx = SpawnPrefab("shadow_shield1")
+                                if shadow_fx then
+                                    shadow_fx.Transform:SetPosition(x, y + 1.0, z) -- chest height
+                                    shadow_fx.Transform:SetScale(0.6, 0.6, 0.6)
+                                end
+                            end
                         end
                     end)
                 end
