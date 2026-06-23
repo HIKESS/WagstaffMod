@@ -9,11 +9,8 @@ Features:
 - Telebrella + Telipad teleport network
 - Thumper ground-pounding harvester
 - SKILL Tree (17 Skills & tree branch Mechanical/Robotic/Allegiance)
-- Engineer bots: Butler, Buster, Brute, Ballistic (each with MK2/MK3 upgrades)
-- Butler MK III haunt-revive: your ghost haunts the bot to resurrect you
-- Sentry Gun (MK2/MK3 upgrades with rockets + double damage)
-- Dispenser (MK2/MK3 upgrades with health regen + lucky drops)
-- Engineer Teleporter (entrance + exit, sanity cost reducible via skill)
+- Robotics: Butler, Buster, Brute, Ballistic (MK2/MK3)
+- Mechanical: Sentry Gun, Dispenser, Teleporter(MK2/MK3)
 - TF2 Wrench (calibrated via skill to consume less durability)
 - Affinity system: Shadow Engineer vs Celestial Engineer (boss-gated, grants unique revive abilities — shadow clone or celestial shield)
 - Per-world progression: XP/insights saved per world, not per profile
@@ -22,8 +19,8 @@ Features:
 
 Original character by Hornet, reworked by Niko. Skill tree + integration by Wholemaker Team.]]
 id = "wagstaff_standalone"
-author = "Wholemaker Team (standalone) — original by Hornet/Niko"
-version = "2.0.22"
+author = "Auror4Gam3"
+version = "2.0.23"
 
 api_version = 10
 
