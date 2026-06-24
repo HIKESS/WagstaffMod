@@ -252,7 +252,14 @@ local function MakeAlive(inst)
 end
 
 
-local function OnAddFuel(inst)
+local function OnAddFuel(inst, doer, fuelitem)
+        -- v2.0.63: reject fuel when already full (vanilla-style feedback).
+        if inst.components.fueled and inst.components.fueled:IsFull() then
+            if doer and doer.components.talker then
+                doer.components.talker:Say("It's already full!")
+            end
+            return false  -- reject — item stays in doer's inventory
+        end
         inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
         if inst.components.inventoryitem == nil then 
     inst.sg:GoToState("fed")
@@ -260,7 +267,7 @@ local function OnAddFuel(inst)
 --      local pt = Vector3(inst.Transform:GetWorldPosition())
 --      maketurret(inst, pt)
         end
-        
+        return true
 end
 
 local function fuelupdate(inst)
@@ -1190,6 +1197,16 @@ end
             ZapFX(inst)
             inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
 
+            -- v2.0.63: invoke a lightning strike on the bot to symbolize the
+            -- overcharge powering on (visual drama, moved from the removed
+            -- rain-combat Tempest Call). The strike is flagged _invoked_lightning
+            -- so the lightningstrike handler does NOT recharge fuel (would create
+            -- an infinite loop: toggle on -> free 100% refill -> drain -> ...).
+            -- The strike is purely cosmetic here.
+            inst._invoked_lightning = true
+            local x, y, z = inst.Transform:GetWorldPosition()
+            TheWorld:PushEvent("ms_sendlightningstrike", Vector3(x, y, z))
+
             -- Fuel drain task: overcharge burns fuel fast. Ends when fuel runs out.
             if inst._overcharge_drain_task ~= nil then inst._overcharge_drain_task:Cancel() end
             inst._overcharge_drain_task = inst:DoPeriodicTask(1, function()
@@ -1233,11 +1250,24 @@ end
 
         -- v2.0.61: Expose the toggle so the SCENE action (modmain.lua) can call
         -- it. Runs master-side only (action fn runs on server).
+        -- v2.0.63: toggle cooldown so the lightning-strike "power on" FX can't
+        -- be spammed. 3 seconds between toggles.
+        local OVERCHARGE_TOGGLE_CD = 3
+        inst._overcharge_toggle_cd_until = 0
+
         inst.ToggleOvercharge = function(inst, doer)
             if not TheWorld.ismastersim then return end
             if inst.components.inventoryitem ~= nil then return end  -- not deployed
+            -- Cooldown gate (prevents lightning-FX spam on rapid toggle)
+            if GetTime() < inst._overcharge_toggle_cd_until then
+                if doer and doer.components.talker then
+                    doer.components.talker:Say("Wait a moment...")
+                end
+                return
+            end
             if inst._overcharge then
                 RemoveOvercharge(inst)
+                inst._overcharge_toggle_cd_until = GetTime() + OVERCHARGE_TOGGLE_CD
                 if doer and doer.components.talker then
                     doer.components.talker:Say("Overcharge: OFF")
                 end
@@ -1249,6 +1279,7 @@ end
                     return
                 end
                 ApplyOvercharge(inst)
+                inst._overcharge_toggle_cd_until = GetTime() + OVERCHARGE_TOGGLE_CD
                 if doer and doer.components.talker then
                     doer.components.talker:Say("Overcharge: ON")
                 end
@@ -1263,10 +1294,12 @@ end
         inst:ListenForEvent("death", function() RemoveOvercharge(inst) end)
 
         -- Lightning handler: NATURAL rain lightning recharges the battery (free
-        -- weather recharge). INVOKED lightning (Tempest Call) does NOT recharge
-        -- — it would create an infinite overcharge loop (manual overcharge drains
-        -- fuel, a free 100% refill per tempest call would make it endless).
-        -- Overcharge is no longer triggered by lightning at all (manual toggle).
+        -- weather recharge). INVOKED lightning (the overcharge power-on FX) does
+        -- NOT recharge — it would create an infinite overcharge loop (manual
+        -- overcharge drains fuel, a free 100% refill per toggle would be endless).
+        -- v2.0.63: Tempest Call (the auto rain-combat lightning invoker) was
+        -- removed entirely — its strike served no gameplay purpose anymore.
+        -- The only invoked strike now is the overcharge power-on FX.
         inst._invoked_lightning = false
         local old_onlightning = onlightning
         inst:RemoveEventCallback("lightningstrike", onlightning)
@@ -1280,10 +1313,8 @@ end
                 ZapFX(inst)
                 inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
             end
-            -- Invoked (Tempest Call) lightning: no recharge, no overcharge.
-            -- The Tempest Call still fires during rain combat for the chain-
-            -- lightning splash (handled in onhitotherfn), but its strike no
-            -- longer refuels or overcharges the bot.
+            -- Invoked (overcharge power-on) lightning: no recharge, just the
+            -- cosmetic strike + hit animation (the "powering on" FX).
 
             if inst.sg ~= nil then
                 inst.sg:GoToState("hit")
@@ -1408,10 +1439,14 @@ end
             end
         end)
 
-        -- TEMPEST CALL: Auto lightning strike during rain combat for overcharge
-        inst._tempest_cooldown = false
+        -- v2.0.63: Tempest Call removed — it auto-invoked a lightning strike on
+        -- the bot during rain combat, but the strike served no gameplay purpose
+        -- anymore (overcharge is now a manual toggle, not lightning-triggered).
+        -- The lightningrod tag stays: it still attracts NATURAL rain lightning
+        -- for the free weather recharge. The overcharge power-on FX invokes its
+        -- own (flagged) strike from ApplyOvercharge.
 
-        -- Lightning rod tag: attracts natural rain lightning (recharge only, NO overcharge)
+        -- Lightning rod tag: attracts natural rain lightning (recharge only)
         inst:AddTag("lightningrod")
 
         -- Affinity pulse (shared module)
@@ -1434,23 +1469,8 @@ end
         inst._special_attack_ready = true
         inst._fossil_snare_ready = true
         inst:ListenForEvent("onattackother", function(inst, data)
-            -- AUTO TEMPEST CALL: During combat in rain, automatically call lightning on self
-            if TheWorld.state.israining and inst.on ~= false then
-                if not inst._tempest_cooldown and not inst.components.inventoryitem then
-                    inst._tempest_cooldown = true
-                    
-                    local x, y, z = inst.Transform:GetWorldPosition()
-                    
-                    -- Mark as invoked lightning so the handler knows to overcharge
-                    inst._invoked_lightning = true
-                    TheWorld:PushEvent("ms_sendlightningstrike", Vector3(x, y, z))
-                    
-                    -- Reset cooldown after 60 seconds
-                    inst:DoTaskInTime(60, function() 
-                        inst._tempest_cooldown = false 
-                    end)
-                end
-            end
+            -- v2.0.63: Tempest Call (auto rain-combat lightning) removed — see
+            -- comment above the tag. No more auto-strike on self during rain.
             
             -- CELESTIAL POSSESSION: Brightshade projectile (day + celestial only, MK3)
             if inst.prefab == "williamballistic3" and TheWorld.state.isday and OwnerHasCelestial(inst) and inst.on ~= false then

@@ -323,6 +323,13 @@ local VALID_BUSTER_FUELS = {
 }
 
 local function OnAddFuel(inst, doer, fuelitem)
+    -- v2.0.63: reject fuel when already full (vanilla-style feedback).
+    if inst.components.fueled and inst.components.fueled:IsFull() then
+        if doer and doer.components.talker then
+            doer.components.talker:Say("It's already full!")
+        end
+        return false
+    end
     -- Only accept generator fuel (gears, etc.), reject common fuel like wood
     if fuelitem and fuelitem.prefab then
         if not VALID_BUSTER_FUELS[fuelitem.prefab] then
