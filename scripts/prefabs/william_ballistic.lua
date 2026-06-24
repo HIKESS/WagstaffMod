@@ -1146,24 +1146,34 @@ end
         local task = inst:DoPeriodicTask(2, UpdateBallistic3Name)
         table.insert(inst._periodic_name_tasks, task)
 
-        -- OVERCHARGE system: triggered by lightning strike while deployed
-        -- Daily limit: 1 overcharge per day, resets each new cycle
+        -- v2.0.61: OVERCHARGE is now a MANUAL TOGGLE (left-click the deployed
+        -- bot). No more lightning-triggered 1/day 60s burst. The player decides
+        -- when to overcharge, and the duration is FUEL-BASED: while overcharged,
+        -- the bot burns fuel at an accelerated rate (1.5% of max per second on
+        -- top of normal consumption). Overcharge ends when the player toggles it
+        -- off, the fuel runs out, or the bot is picked up / dies.
+        --
+        -- This fixes the core issue: the old overcharge only worked during rain
+        -- (Tempest Call required rain), so the ultimate was offline all winter
+        -- and summer. The manual toggle works year-round. The Tempest Call auto-
+        -- lightning still fires during rain combat for flavor + chain lightning,
+        -- but its lightning NO LONGER RECHARGES the bot (that would create an
+        -- infinite overcharge loop: drain fuel -> tempest call -> free 100%
+        -- refill -> drain again). Only NATURAL rain lightning recharges now.
         inst._overcharge = false
-        inst._overchargetask = nil
-        inst._overcharge_daily_count = 0
-        inst._overcharge_daily_limit = 1
+        inst._overcharge_drain_task = nil
+        local OVERCHARGE_DRAIN_PCT_PER_SEC = 0.015  -- 1.5% of max fuel / sec extra
 
-        -- Reset daily counter on new day
-        inst:WatchWorldState("cycles", function()
-            inst._overcharge_daily_count = 0
-            UpdateBallistic3Name(inst)
-        end)
+        -- Forward declaration: ApplyOvercharge's drain task references
+        -- RemoveOvercharge, which is defined below. Without this, Lua resolves
+        -- the reference to a nil global at runtime (crash when fuel runs out).
+        local RemoveOvercharge
 
         local function ApplyOvercharge(inst)
             if inst._overcharge then return end
-            if inst._overcharge_daily_count >= inst._overcharge_daily_limit then return end
+            if inst.components.inventoryitem ~= nil then return end  -- not deployed
+            if inst.components.fueled and inst.components.fueled:IsEmpty() then return end
             inst._overcharge = true
-            inst._overcharge_daily_count = inst._overcharge_daily_count + 1
             inst:AddTag("overcharged")
 
             -- 3x boost: Attack Rate, DMG, HP, Regen
@@ -1179,41 +1189,83 @@ end
             ZapFX(inst)
             inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
 
+            -- Fuel drain task: overcharge burns fuel fast. Ends when fuel runs out.
+            if inst._overcharge_drain_task ~= nil then inst._overcharge_drain_task:Cancel() end
+            inst._overcharge_drain_task = inst:DoPeriodicTask(1, function()
+                if not inst._overcharge then return end
+                if inst.components.inventoryitem ~= nil then RemoveOvercharge(inst); return end
+                if inst.components.fueled then
+                    local cur = inst.components.fueled:GetPercent()
+                    if cur <= OVERCHARGE_DRAIN_PCT_PER_SEC then
+                        RemoveOvercharge(inst)  -- ran out of fuel
+                    else
+                        inst.components.fueled:SetPercent(cur - OVERCHARGE_DRAIN_PCT_PER_SEC)
+                    end
+                end
+            end)
+
             UpdateBallistic3Name(inst)
         end
 
-        local function RemoveOvercharge(inst)
+        RemoveOvercharge = function(inst)
             if not inst._overcharge then return end
             inst._overcharge = false
             inst:RemoveTag("overcharged")
 
-            -- Revert stats to MK2 base: +12 DMG
+            -- Revert stats to MK3 base: +12 DMG
             inst.components.combat:SetAttackPeriod(TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD)
             inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 12)
             inst.components.health:SetMaxHealth(inst.components.health.maxhealth - 500)
             inst.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN, TUNING.WILLIAM_ROBOT_REGENPERIOD)
             inst.AnimState:ClearBloomEffectHandle()
 
-            -- DISCHARGE: Drain battery completely after overcharge ends
-            if inst.components.fueled then
-                inst.components.fueled:SetPercent(0)
-                -- Trigger fuel empty to turn off the bot
-                if inst.components.fueled:IsEmpty() then
-                    inst.components.fueled:SetDepletedFn(OnDismantle)
-                end
-            end
-
-            if inst._overchargetask ~= nil then
-                inst._overchargetask:Cancel()
-                inst._overchargetask = nil
+            -- v2.0.61: no longer force-drains the battery to 0. The overcharge
+            -- drain task already consumed fuel at an accelerated rate; whatever
+            -- fuel remains stays for normal operation.
+            if inst._overcharge_drain_task ~= nil then
+                inst._overcharge_drain_task:Cancel()
+                inst._overcharge_drain_task = nil
             end
 
             UpdateBallistic3Name(inst)
         end
 
-        -- Lightning handler: differentiates NATURAL rain lightning vs INVOKED (tempest) lightning
-        -- Natural rain lightning: recharges battery ONLY (unlimited, no overcharge)
-        -- Invoked lightning (tempest call): recharges battery + overcharge (1/day limit)
+        -- v2.0.61: Expose the toggle so the SCENE action (modmain.lua) can call
+        -- it. Runs master-side only (action fn runs on server).
+        inst.ToggleOvercharge = function(inst, doer)
+            if not TheWorld.ismastersim then return end
+            if inst.components.inventoryitem ~= nil then return end  -- not deployed
+            if inst._overcharge then
+                RemoveOvercharge(inst)
+                if doer and doer.components.talker then
+                    doer.components.talker:Say("Overcharge: OFF")
+                end
+            else
+                if inst.components.fueled and inst.components.fueled:IsEmpty() then
+                    if doer and doer.components.talker then
+                        doer.components.talker:Say("No fuel for overcharge!")
+                    end
+                    return
+                end
+                ApplyOvercharge(inst)
+                if doer and doer.components.talker then
+                    doer.components.talker:Say("Overcharge: ON")
+                end
+            end
+        end
+
+        -- Tag enables the left-click "Toggle Overcharge" SCENE action (modmain.lua).
+        inst:AddTag("william_overcharge_toggle")
+
+        -- Cleanup overcharge if the bot is picked up or dies mid-overcharge.
+        inst:ListenForEvent("onremove", function() RemoveOvercharge(inst) end)
+        inst:ListenForEvent("death", function() RemoveOvercharge(inst) end)
+
+        -- Lightning handler: NATURAL rain lightning recharges the battery (free
+        -- weather recharge). INVOKED lightning (Tempest Call) does NOT recharge
+        -- — it would create an infinite overcharge loop (manual overcharge drains
+        -- fuel, a free 100% refill per tempest call would make it endless).
+        -- Overcharge is no longer triggered by lightning at all (manual toggle).
         inst._invoked_lightning = false
         local old_onlightning = onlightning
         inst:RemoveEventCallback("lightningstrike", onlightning)
@@ -1221,20 +1273,16 @@ end
             local was_invoked = inst._invoked_lightning
             inst._invoked_lightning = false  -- Reset flag immediately
 
-            -- ALWAYS: Refuel battery (natural or invoked)
-            inst.components.fueled:SetPercent(1)
-            ZapFX(inst)
-            inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
-
-            -- OVERCHARGE: only from INVOKED lightning (tempest call), limited to 1/day
-            -- Natural rain lightning only recharges, does NOT trigger overcharge
-            if was_invoked and not inst.components.inventoryitem then
-                ApplyOvercharge(inst)
-                if inst._overchargetask ~= nil then
-                    inst._overchargetask:Cancel()
-                end
-                inst._overchargetask = inst:DoTaskInTime(60, RemoveOvercharge)
+            -- NATURAL rain lightning only: free weather recharge.
+            if not was_invoked then
+                inst.components.fueled:SetPercent(1)
+                ZapFX(inst)
+                inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
             end
+            -- Invoked (Tempest Call) lightning: no recharge, no overcharge.
+            -- The Tempest Call still fires during rain combat for the chain-
+            -- lightning splash (handled in onhitotherfn), but its strike no
+            -- longer refuels or overcharges the bot.
 
             if inst.sg ~= nil then
                 inst.sg:GoToState("hit")
@@ -1700,11 +1748,10 @@ end
                     end
                 end)
             end
-            -- Restore overcharge
-            if data ~= nil and data.overcharge then
-                ApplyOvercharge(inst2)
-                inst2._overchargetask = inst2:DoTaskInTime(60, RemoveOvercharge)
-            end
+            -- v2.0.61: Overcharge is no longer restored on load. It's a transient
+            -- manual-toggle combat state — the player re-toggles it after reload.
+            -- (The old 60s lightning-triggered burst was auto-restored, but the
+            -- new fuel-drain model would desync vs the restored fuel amount.)
             -- Restore upgradelevel
             if data ~= nil and data.upgradelevel ~= nil then
                 inst2.upgradelevel = data.upgradelevel

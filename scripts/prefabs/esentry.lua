@@ -43,7 +43,15 @@ local AFF_RAMP_MAX        = 4      -- v2.0.50: was 6. Max 4 stacks (+40% total)
                                     -- the x2-Damage proc doubling the total.
 local AFF_RAMP_PCT        = 0.10   -- +10% base damage per stack
 local AFF_RAMP_RESET_TIME = 3      -- seconds without a hit before reset
-local AFF_X2_PROC_CHANCE  = 0.10   -- 10% chance to double current total
+-- v2.0.61: x2-Damage reworked. Base proc is now 4% (down from 10%),
+-- scaling +2.5% per MK3 sentry the owner has clustered nearby (cached count
+-- refreshed every few seconds in the periodic task). A 4-second per-target
+-- cooldown prevents melting a single enemy with back-to-back procs.
+-- This nerfs the oppressive early/mid-game burst (one MK3 sentry = 6.5%)
+-- while rewarding late-game multi-sentry bases (3 MK3 = 11.5%).
+local AFF_X2_BASE_CHANCE    = 0.04   -- 4% base
+local AFF_X2_PER_MK3_BONUS  = 0.025  -- +2.5% per MK3 sentry (incl. self)
+local AFF_X2_TARGET_CD      = 4.0    -- seconds per-target cooldown
 
 local function _safeSpawn(name)
     local ok, inst = pcall(function() return _G.SpawnPrefab(name) end)
@@ -349,6 +357,13 @@ local function onload(inst, data)
         inst.components.named:SetName(data.name)
     end
     upgrade(inst)
+    -- v2.0.61: restore the MK3 tag for pre-existing MK3 sentries (the tag is
+    -- normally added when upgradelevel hits 70 via wrench, but a sentry that
+    -- was already MK3 before this version needs it on load for the x2-Damage
+    -- count scaling to work).
+    if inst.upgradelevel and inst.upgradelevel >= 70 then
+        inst:AddTag("william_sentry_mk3")
+    end
 end
 
 local function onbuilt(inst, builder)
@@ -399,9 +414,15 @@ local function workup(inst, worker)
             worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
         end
         inst.upgradelevel = inst.upgradelevel + 1
-        if inst.upgradelevel == 30 or inst.upgradelevel == 70 then
+        if inst.upgradelevel == 30 then
             inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
             upgrade(inst)
+        elseif inst.upgradelevel == 70 then
+            inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+            upgrade(inst)
+            -- v2.0.61: tag MK3 sentries so nearby sentries can count them for
+            -- the x2-Damage proc scaling.
+            inst:AddTag("william_sentry_mk3")
         end
     end
         local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
@@ -801,12 +822,20 @@ local function fn()
                 end
             end
 
-            -- x2-Damage: 10% proc, doubles the CURRENT total (base dmg + ramp bonus).
-            -- Works on ALL targets (aligned or not) as long as the owner has the skill.
-            if i._aff_x2_damage and math.random() < AFF_X2_PROC_CHANCE then
-                local total = dmg + ramp_bonus
-                if other.components.health then
-                    other.components.health:DoDelta(-total, false, "x2_damage")
+            -- x2-Damage (v2.0.61 rework): 4% base + 2.5% per nearby MK3 sentry,
+            -- with a 4s per-target cooldown so a single enemy can't be melted
+            -- by back-to-back procs. Doubles the CURRENT total (base dmg + ramp).
+            if i._aff_x2_damage then
+                local cd_until = other._william_x2_cd or 0
+                if GetTime() >= cd_until then
+                    local chance = i._x2_proc_chance or AFF_X2_BASE_CHANCE
+                    if math.random() < chance then
+                        local total = dmg + ramp_bonus
+                        if other.components.health then
+                            other.components.health:DoDelta(-total, false, "x2_damage")
+                        end
+                        other._william_x2_cd = GetTime() + AFF_X2_TARGET_CD
+                    end
                 end
             end
         end
@@ -835,6 +864,26 @@ local function fn()
             -- Cache owner affinity flags for the adaptive onhitotherfn.
             inst._owner_celestial = celestial or false
             inst._owner_shadow = shadow or false
+
+            -- v2.0.61: Refresh the nearby MK3 sentry count (used by the x2-Damage
+            -- proc scaling). Scanned every 3 ticks (3s) instead of every tick to
+            -- keep the FindEntities cost low when multiple sentries are deployed.
+            -- Counts self + other MK3 sentries within 25 units (base cluster range).
+            inst._count_tick = (inst._count_tick or 0) + 1
+            if inst._count_tick >= 3 then
+                inst._count_tick = 0
+                if inst._aff_x2_damage then
+                    local x, y, z = inst.Transform:GetWorldPosition()
+                    local sentries = TheSim:FindEntities(x, y, z, 25, {"william_sentry_mk3"}, {"INLIMBO"})
+                    inst._mk3_sentry_count = #sentries
+                    -- v2.0.61: cache the computed proc chance so the bullet
+                    -- onhitotherfn AND esentry_rocket read the same value.
+                    inst._x2_proc_chance = AFF_X2_BASE_CHANCE + AFF_X2_PER_MK3_BONUS * (inst._mk3_sentry_count or 1)
+                else
+                    inst._mk3_sentry_count = nil
+                    inst._x2_proc_chance = nil
+                end
+            end
 
             -- Sight tags let the sentry DETECT aligned mobs (which have stealth
             -- against normal observers). Set whichever matches the owner's

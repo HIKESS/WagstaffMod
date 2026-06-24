@@ -104,6 +104,14 @@ local function TryLuckyDrop(inst)
         --          balanced against the now-weaker x2-Damage + ramp combo.
         if math.random() < 0.25 then
             local item = weighted_random_choice(lucky_rare)
+            -- v2.0.61: Jackpot — 5% chance the lucky drop is upgraded to an
+            -- end-game rift resource (pure_horror / moon_shard). Keeps Lucky
+            -- Engineer relevant in the late game when basic rares (thulecite,
+            -- gems) are already farmed out, without inflating the common drops.
+            if math.random() < 0.05 then
+                local jackpot = math.random() < 0.5 and "pure_horror" or "moon_shard"
+                item = jackpot
+            end
             inst.components.lootdropper:SpawnLootPrefab(item)
             -- Golden FX so the player sees the lucky proc (reuses ehealfx with gold tint)
             local fx = _G.SpawnPrefab("ehealfx")
