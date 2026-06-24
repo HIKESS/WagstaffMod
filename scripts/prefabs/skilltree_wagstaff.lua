@@ -116,13 +116,13 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_x2_damage = {
             name = "wagstaff_x2_damage",
             title = "x2-Damage",
-            desc = "Sometimes one shot is all it takes.\nGives the Sentry a chance to deal double damage.\n\nCapstone skill — costs 2 points. You will not be able to learn all three capstones (x2-Damage, Lucky Engineer, Ballistic MK.III), so choose wisely.",
+            desc = "Sometimes one shot is all it takes.\nGives the Sentry a chance to deal double damage.",
             icon = "doubledamage",
             icon_atlas = "images/skilltree/doubledamage.xml",
             pos = { -206.7, 32.5 },
             group = "mechanical",
             tags = {"mechanical"},
-            cost = 2,
+            cost = 1,
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_x2_damage")
             end,
@@ -173,13 +173,13 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_lucky_engineer = {
             name = "wagstaff_lucky_engineer",
             title = "Lucky Engineer",
-            desc = "Fortune smiles on good craftsmanship.\nGives the Dispenser a chance to produce an additional rare resource.\n\nCapstone skill — costs 2 points. You will not be able to learn all three capstones (x2-Damage, Lucky Engineer, Ballistic MK.III), so choose wisely.",
+            desc = "Fortune smiles on good craftsmanship.\nGives the Dispenser a chance to produce an additional rare resource.",
             icon = "luckyenginer",
             icon_atlas = "images/skilltree/luckyenginer.xml",
             pos = { -131.2, 32.5 },
             group = "mechanical",
             tags = {"mechanical"},
-            cost = 2,
+            cost = 1,
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_lucky_engineer")
             end,
@@ -362,13 +362,13 @@ local function BuildSkillsData(SkillTreeFns)
         wagstaff_ballistic_parallel = {
             name = "wagstaff_ballistic_parallel",
             title = "Ballistic Bot MK.III",
-            desc = "Unlocks its lightning platform.\nGains advanced electrical weaponry and emits its own light.\n\nCapstone skill — costs 2 points. You will not be able to learn all three capstones (x2-Damage, Lucky Engineer, Ballistic MK.III), so choose wisely.",
+            desc = "Unlocks its lightning platform.\nGains advanced electrical weaponry and emits its own light.",
             icon = "balisticmk3",
             icon_atlas = "images/skilltree/balisticmk3.xml",
             pos = { 38.6, 32.5 },
             group = "robotic",
             tags = {"robotic"},
-            cost = 2,
+            cost = 1,
             onactivate = function(inst, fromload)
                 _dbg("[SKILL DEBUG] wagstaff_ballistic_parallel onactivate called, fromload:", fromload)
                 _dbg("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
