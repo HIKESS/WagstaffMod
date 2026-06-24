@@ -1,0 +1,349 @@
+[h1]Wagstaff Aurora — The Cryptic Founder[/h1]
+
+[b]A fully self-contained character mod for Don't Starve Together.[/b]
+
+Play as Wagstaff, the nearsighted inventor with a delicate stomach — featuring a 17-node skill tree, 4 robotic bots (MK2/MK3 tiers), automated sentry guns, dispensers, teleporters, and a dual-path affinity system (Shadow vs Celestial) with unique revive buffs.
+
+[h1]About the Character[/h1]
+
+Wagstaff is the "Cryptic Founder" — an inventor who found himself exactly where he wanted to be: in the Constant. Unlike the other survivors who were tricked into the realm, Wagstaff came by choice.
+
+[b]Perks[/b]
+[list]
+[*]Exclusive engineering crafting (bots, sentries, dispensers, teleporters)
+[*]17-node skill tree across 3 branches (Mechanical / Robotic / Allegiance)
+[*]Calibrated Wrench — builds and repairs machinery, durability optimized via skill
+[*]Dual affinity system — choose Shadow Engineer or Celestial Engineer, each with unique abilities and revive buffs
+[*]Per-world progression — XP/insights saved per world, not per profile
+[/list]
+
+[b]Drawbacks[/b]
+[list]
+[*]Nearsighted — without goggles the world is blurred (blur shader). Needs goggles to spot hidden dangers
+[*]Weak stomach — eating raw/unprepared food causes damage (configurable: -1 to -100)
+[*]Unstable projection — below a configurable HP %, Wagstaff's projection starts to distort/flicker
+[/list]
+
+[b]Stats[/b]
+[list]
+[*]Health: 150
+[*]Hunger: 200
+[*]Sanity: 200
+[/list]
+
+[h1]Goggles (4 types)[/h1]
+
+Wagstaff starts with basic goggles and can unlock superior types. Without goggles he suffers blurred vision and cannot spot hidden dangers.
+
+[list]
+[*][b]Spectoggles[/b] — Basic super goggles. Reveal hidden dangers in "peculiar" trees/rocks
+[*][b]Infroggles[/b] — Heat vision. "Is everything hot or not"
+[*][b]Visor[/b] — Armored lenses (protection)
+[*][b]Fryfocals[/b] — Static boom focusing apparatus (shoots a static charge)
+[/list]
+
+Config option: restrict goggles to Wagstaff only.
+
+[h1]Hamlet Items[/h1]
+
+[list]
+[*][b]Telebrella[/b] — Revolutionary walker that teleports the player to the nearest Telipad. Activation by item (right-click) or by point (click a telipad on the ground). Limited uses and configurable cooldown.
+[*][b]Telipad[/b] — The Telebrella's destination. Place several to build a teleport network.
+[*][b]Thumper[/b] — Revolutionary harvester. Pounds the ground to harvest resources automatically.
+[/list]
+
+Config: Telebrella uses (5-50), cooldown (0-30s), activation mode (item/point), and "misfire" (may teleport to a random telipad instead of the nearest).
+
+[h1]Engineering Buildings[/h1]
+
+Engineering constructions (Mechanical branch of the skill tree), each with MK2/MK3 tiers.
+
+[h2]Sentry Gun (Automatic Turret)[/h2]
+[list]
+[*]Static defensive turret that auto-fires at enemies
+[*][b]MK.II[/b] — damage/range improvements
+[*][b]MK.III[/b] — affinity active 24/7 (not phase-locked), ramp-up damage against aligned enemies, projectiles (bullets + rockets), and [b]x2-Damage[/b] chance (10% proc, doubles total damage)
+[*]Synergizes with the [b]wagstaff_x2_damage[/b] skill
+[*]Supports ammo and rockets
+[/list]
+
+[h2]Dispenser[/h2]
+[list]
+[*]Restores health and hunger (and sanity per affinity)
+[*][b]Two-tier aura system (v2.0.54+)[/b]:
+  [list]
+  [*][b]STRONG tier[/b] (affinity-active phase): 2 HP/tick (4 HP/s) for celestial at DAY, 35 sanity/min for shadow at DUSK — with visual pulse + healfx
+  [*][b]WEAK tier[/b] (passive phase): 1 HP/tick (2 HP/s) celestial at DUSK/NIGHT, 20 sanity/min shadow at DAY/NIGHT — no pulse, silent
+  [/list]
+[*][b]MK.II/MK.III[/b] — larger radius, healing improvements, "Lucky Engineer" (golden proc)
+[*]It is a RESOURCE item (not combat) — the pulse is proximity-gated, not battle-gated
+[/list]
+
+[h2]Teleporter[/h2]
+[list]
+[*]Entrance + Exit pair for instant travel between two points
+[*]Sanity cost per teleport (configurable, default 5)
+[*][b]MK.II/MK.III[/b] — lower cost, higher range
+[/list]
+
+[h1]Robotics: Bots[/h1]
+
+Four robotic bots (Robotic branch of the skill tree), each with MK2/MK3 tiers. All consume fuel, have regenerable health, and follow their owner.
+
+[h2]Butler Bot[/h2]
+[list]
+[*]Cook — automatically prepares food
+[*]Revive — can resurrect the owner (haunt-resurrection)
+[*]Has inventory (chest) at MK3
+[*][b]MK.II[/b] — Thermal Upgrade (heating)
+[*][b]MK.III[/b] — affinity food buffs, light aura
+[/list]
+
+[h2]Buster Bot[/h2]
+[list]
+[*]Melee combat — direct attacks, follows the owner's target
+[*][b]Explosive Punch[/b] (MK3) — 30% chance of bonus damage + explosion FX + knockback
+[*][b]Shadow Clone[/b] (MK3 + Shadow affinity) — summons a shadow clone that mirrors the parent's target (40% of parent's damage, finite HP 50%, 50% absorption)
+[*][b]MK.II/MK.III[/b] — +600 HP, +10 damage
+[/list]
+
+[h2]Brute Bot[/h2]
+[list]
+[*]Tank — high health, taunts enemies
+[*]Has inventory (chest) at MK3
+[*][b]Affinity-aware taunt[/b] (MK3) — celestial taunts shadow-aligned enemies, shadow taunts lunar-aligned (does not attack its own faction's kin)
+[*][b]MK.II/MK.III[/b] — +1100 HP, +15 damage
+[/list]
+
+[h2]Ballistic Bot[/h2]
+[list]
+[*]Ranged combat — projectile attacks
+[*][b]Tempest Call[/b] (MK3) — during rain, auto lightning strikes for overcharge
+[*][b]Celestial[/b] — Brightshade projectile / [b]Shadow[/b] — Fuelweaver snare
+[*][b]Light Orb[/b] — at night, activates a light orb
+[*]Attracts natural lightning (lightningrod tag) — recharge only, no overcharge
+[/list]
+
+[h1]Skill Tree (17 skills)[/h1]
+
+Three branches with progression unlocked via XP/insights (per world).
+
+[h2]Mechanical Branch (7 skills)[/h2]
+[list=1]
+[*]Mechanical Efficiency
+[*]Sentry Mk.II
+[*]Sentry Mk.III
+[*]x2-Damage
+[*]Dispenser MK.II
+[*]Dispenser MK.III
+[*]Lucky Engineer
+[/list]
+
+[h2]Robotic Branch (8 skills)[/h2]
+[list=1]
+[*]Butler MK. II
+[*]Butler MK. III
+[*]Brute Bot MK. II
+[*]Brute Bot MK. III
+[*]Buster Bot MK.II
+[*]Buster Bot MK. III
+[*]Ballistic Bot MK. II
+[*]Ballistic Bot MK.III
+[/list]
+
+[h2]Allegiance Branch (2 skills)[/h2]
+[list=1]
+[*]Shadow's Embrace — Shadow affinity (wagstaff_shadow_possession)
+[*]Moon's Blessing — Celestial affinity (wagstaff_celestial_possession)
+[/list]
+
+XP thresholds: 0, 3, 6, 10, 14, 18, 23, 28, 33, 38, 43, 48, 53, 58, 63, 68
+
+[h1]Affinity System (Shadow vs Celestial)[/h1]
+
+The Allegiance branch lets you choose an affinity path (boss-gated). The choice affects MK3 bot behavior, MK3 building behavior, and grants a [b]unique revive buff[/b] to the player (regardless of revive source — butler haunt, meat effigy, touch stone, amulet).
+
+[h2]Shadow Engineer (Shadow's Embrace)[/h2]
+
+For offensive players who want combat sustain:
+
+[list]
+[*]Damage dealt: [b]+50%[/b]
+[*]Attack speed: [b]+25%[/b] (attack period x 0.8)
+[*]Movement speed: [b]+20%[/b]
+[*]Lifesteal: [b]15%[/b] of damage dealt (heals)
+[*]HP on revive: Full (100%)
+[*]Duration: 60s
+[*]Visual: Dark tint + black/purple forcefieldfx shield
+[/list]
+
+[list]
+[*]MK3 shadow bots: visual pulse active during [b]DUSK[/b] (affinity-active window)
+[*]Buster MK3: summons [b]Shadow Clone[/b]
+[*]Brute MK3: taunts lunar-aligned enemies
+[/list]
+
+[h2]Celestial Engineer (Moon's Blessing)[/h2]
+
+For defensive players who want survivability:
+
+[list]
+[*]Damage dealt: [b]+15%[/b]
+[*]Max HP bonus: [b]+100[/b]
+[*]Damage absorption: [b]25%[/b]
+[*]HP regen: [b]5 HP/s[/b]
+[*]HP on revive: Full (100%)
+[*]Duration: 60s
+[*]Visual: White/blue forcefieldfx shield (ruinshat-style)
+[/list]
+
+[list]
+[*]MK3 celestial bots: visual pulse active during [b]DAY[/b] (affinity-active window)
+[*]Celestial dispenser: heals HP (2 HP/tick at DAY, strong tier)
+[/list]
+
+[h2]Two-Tier Pulse System (v2.0.54+)[/h2]
+
+MK3 bots and dispensers have an affinity visual pulse that follows gating rules:
+[list]
+[*][b]Bots (combat)[/b]: pulse active only when (owner near) AND (in combat) AND (affinity-active phase: DAY+celestial OR DUSK+shadow). Sentry is the exception — affinity active 24/7.
+[*][b]Dispenser (resource)[/b]: pulse active only when (builder in aura radius) AND (affinity-active phase). Not battle-gated.
+[*][b]Weak/passive tier[/b]: no pulse, no healfx — just the silent reduced effect.
+[/list]
+
+[h1]Weapons & Equipment[/h1]
+
+[list]
+[*][b]Calibrated Wrench[/b] — primary tool for building and repairing machinery. Durability optimized via skill.
+[*][b]Static Flail (Tesla Flail)[/b] — electrified weapon
+[*][b]Hard Hat[/b] — protective helmet
+[*][b]Gibus Hat[/b] — a true engineer's hat
+[*][b]Locational Harness (CompassVest)[/b] — protection + navigational aid
+[*][b]Mini-Mill / Paper Pulveriser / Cuttings Coiler / Granite Grinder[/b] — automated refineries (boards, papyrus, rope, cut stone)
+[*][b]Scrap Metal[/b] — engineering material
+[/list]
+
+[h1]Configuration[/h1]
+
+The mod offers presets and granular options. Options marked with [b]*[/b] are not overwritten by presets.
+
+[h2]Presets[/h2]
+[list]
+[*][b]None[/b] — does not apply a preset (uses individual options)
+[*][b]Default[/b] — balanced default configuration
+[*][b]Old Wagstaff[/b] — classic Wagstaff configuration
+[*][b]Hamlet[/b] — Hamlet-style configuration
+[/list]
+
+[h2]Individual Options[/h2]
+
+[list]
+[*][b]Language[/b] — Auto / English / Chinese — Default: Auto
+[*][b]*Distortion threshold[/b] — HP % below which the projection flickers — Default: 75%
+[*][b]*Poor vision blur[/b] — enable the blur shader — Default: Yes
+[*][b]*Restrict goggles[/b] — only Wagstaff can wear the goggles — Default: No
+[*][b]*Debug mode[/b] — debug logging — Default: No
+[*][b]Peculiar object chance[/b] — chance for trees/rocks to be "peculiar" — Default: 3%
+[*][b]Peculiar fail chance[/b] — chance an investigation yields nothing — Default: 40%
+[*][b]Peculiar uncommon chance[/b] — chance of an uncommon reward — Default: 70%
+[*][b]Weak Stomach Damage[/b] — damage from eating raw food — Default: -3
+[*][b]Telebrella activation[/b] — Item (right-click) / Point (click telipad) — Default: Item
+[*][b]Telebrella Misfire[/b] — may teleport to a random telipad — Default: Yes
+[*][b]Telebrella Uses[/b] — uses before it breaks — Default: 15
+[*][b]Telebrella Cooldown[/b] — seconds between teleports — Default: 10s
+[/list]
+
+[h1]Compatibility[/h1]
+
+[list]
+[*]Don't Starve Together (main)
+[*]Forge (Lava Arena) — full support
+[*]Gorge (Quagmire) — full support
+[*]Not compatible with Don't Starve vanilla / Reign of Giants / Shipwrecked
+[/list]
+
+[b]Server filter tags:[/b] character, wagstaff, inventor, hamlet
+
+[h1]Multiplayer[/h1]
+
+[list]
+[*][b]all_clients_require_mod = true[/b] — all clients need the mod
+[*]Works on dedicated host and listen server
+[*]Bots/buildings belong to the player who built them (builder tracking)
+[*]Affinity system synced between host and clients (replica)
+[*]XP/insights saved [b]per world[/b], not per profile
+[/list]
+
+[h1]Changelog (recent versions)[/h1]
+
+[b]v2.0.57[/b]
+[list]
+[*]Fix visual: shadow buster clone no longer loses its dark tint when the player walks away (dormancy fix via entitywake listener)
+[*]Clone damage: 35% to 40% of parent's damage
+[*]Shadow revive speed buff: +15% to +20%
+[/list]
+
+[b]v2.0.56[/b]
+[list]
+[*]Fix visual: bots (buster, brute, butler, ballistic) no longer activate the affinity pulse during the weak passive phase — the pulse now only shows in the affinity-active window (DAY+celestial OR DUSK+shadow)
+[/list]
+
+[b]v2.0.55[/b]
+[list]
+[*]Fix crash: butler spawn crashed because named_replica:SetName received author=nil (now passes empty string)
+[/list]
+
+[b]v2.0.54[/b]
+[list]
+[*]Dispenser: two-tier aura system (strong/passive) with phase-gating and proximity-gating
+[*]AffinityPulse: added opts table (proximity_only, proximity_range, phase_check)
+[/list]
+
+[b]v2.0.53[/b]
+[list]
+[*]Fix butler hover: shows fuel/HP/upgrade (re-add GetDisplayName override)
+[*]Fix 5 bugs: Brute MK3 HP, dispenser auras, shadow revive, butler hover
+[/list]
+
+[b]v2.0.52[/b]
+[list]
+[*]AffinityPulse: battle + proximity gating (no longer always-on)
+[/list]
+
+[b]v2.0.51[/b]
+[list]
+[*]Sentry: affinity no longer phase-locked — active 24/7 based on owner's possession tag
+[/list]
+
+Full version history in the repository.
+
+[h1]Credits[/h1]
+
+[list]
+[*][b]Author[/b]: Auror4Gam3
+[*][b]Character[/b]: Wagstaff (based on the Hamlet character, adapted for DST as a standalone mod)
+[*][b]Thanks[/b]: to the DST community for testing and feedback
+[/list]
+
+[h1]Quick Start Guide[/h1]
+
+[list=1]
+[*]Select Wagstaff in the character menu
+[*]Start with Spectoggles — equip them to see
+[*]Collect Scrap Metal and craft a Wrench
+[*]Build a Dispenser for sustain (healing/hunger)
+[*]Progress the skill tree: choose Mechanical (buildings) or Robotic (bots)
+[*]In the Allegiance branch, choose Shadow or Celestial after defeating the appropriate boss
+[*]Upgrade bots/buildings to MK2/MK3 with the Wrench
+[*]Use the Telebrella + Telipads for mobility
+[/list]
+
+[h1]Links & Info[/h1]
+
+[list]
+[*][b]Current version[/b]: 2.0.57
+[*][b]API[/b]: 10
+[*][b]Languages[/b]: English, Chinese (auto-detect)
+[/list]
+
+Leave feedback in the comments! Bugs and suggestions are welcome.
