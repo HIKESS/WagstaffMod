@@ -131,10 +131,19 @@ local function OnUpdateProjectile(inst)
                 -- Main rocket damage.
                 target.components.combat:GetAttacked(inst, SENTRYROCKET_DAMAGE, nil)
 
-                -- x2-Damage: 10% proc, doubles the CURRENT total (base + ramp).
+                -- x2-Damage (v2.0.61): uses the sentry's cached proc chance
+                -- (4% base + 2.5% per MK3 sentry) + 4s per-target cooldown,
+                -- same as bullet hits. Shares the cooldown field with bullets.
                 if sentry and sentry.IsValid and sentry:IsValid()
-                   and sentry._aff_x2_damage and math.random() < 0.10 then
-                    target.components.combat:GetAttacked(inst, SENTRYROCKET_DAMAGE + ramp_bonus, nil, "x2_damage")
+                   and sentry._aff_x2_damage then
+                    local cd_until = target._william_x2_cd or 0
+                    if GetTime() >= cd_until then
+                        local chance = sentry._x2_proc_chance or 0.04
+                        if math.random() < chance then
+                            target.components.combat:GetAttacked(inst, SENTRYROCKET_DAMAGE + ramp_bonus, nil, "x2_damage")
+                            target._william_x2_cd = GetTime() + 4.0
+                        end
+                    end
                 end
 
                                 OnHit(inst)-- We don't want rockets to pass through, destroy on impact
