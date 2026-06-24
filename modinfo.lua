@@ -14,7 +14,7 @@ Features:
 - Mechanical: Sentry Gun, Dispenser, Teleporter(MK2/MK3+Gear)
 - Wrench Repair & Upgrade System
 - Affinity system: Shadow vs Celestial
-
+]]
 
 id = "wagstaff_standalone"
 author = "Auror4Gam3"
