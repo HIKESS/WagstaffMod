@@ -1,21 +1,20 @@
 name = "Wagstaff Aurora"
 description = [[Wagstaff Aurora — The Cryptic Founder.
 
-A great inventor, nearsighted, with a delicate stomach. A fully self-contained character mod with integrated skill tree progression, engineer bots, sentry guns, dispensers, teleporters, and a dual-path affinity system.
+A great inventor, nearsighted, with a delicate stomach. 
+A reworked character mod with integrated skill tree progression, engineer bots, sentry guns, dispensers, teleporters, and a dual-path affinity system.
 
 Features:
 - Nearsighted & weak stomach mechanics
 - 4 goggle types (Normal, Heat Vision, Armor, Fryfocals/Shoot)
-- Telebrella + Telipad teleport network
+- Telebrella & Telipad teleport 
 - Thumper ground-pounding harvester
-- SKILL Tree (17 Skills & tree branch Mechanical/Robotic/Allegiance)
-- Robotics: Butler, Buster, Brute, Ballistic (MK2/MK3)
-- Mechanical: Sentry Gun, Dispenser, Teleporter(MK2/MK3)
-- Wrench (calibrated via skill to consume less durability)
-- Affinity system: Shadow Engineer vs Celestial Engineer (boss-gated, grants unique revive buffs — shadow combat buff or celestial shield)
-- Per-world progression: XP/insights saved per world, not per profile
-- Forge (Lava Arena) and Gorge (Quagmire) mode support
-- Blur shader for nearsighted vision]]
+- Skill Tree (17 Skills & tree branch Mechanical/Robotic/Allegiance)
+- Robotics: Butler, Buster, Brute, Ballistic (MK2/MK3+Gear)
+- Mechanical: Sentry Gun, Dispenser, Teleporter(MK2/MK3+Gear)
+- Wrench Repair & Upgrade System
+- Affinity system: Shadow vs Celestial
+
 
 id = "wagstaff_standalone"
 author = "Auror4Gam3"
