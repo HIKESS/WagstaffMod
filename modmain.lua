@@ -1591,6 +1591,35 @@ AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETE
 AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETELEPORT, "doshortaction"))
 
 
+-- v2.0.61: Ballistic MK3 Overcharge toggle. Left-click the deployed bot to
+-- toggle its manual overcharge mode on/off. Bound to the `fueled` component
+-- (which the bot has) but gated by the `william_overcharge_toggle` tag so only
+-- the Ballistic MK3 shows the prompt — not every fueled entity.
+local WILLIAM_OVERCHARGE_TOGGLE = AddAction("WILLIAM_OVERCHARGE_TOGGLE", "Toggle Overcharge", function(act)
+    if act.target ~= nil and act.target:IsValid() and act.target:HasTag("william_overcharge_toggle") then
+        if act.target.ToggleOvercharge ~= nil then
+            act.target:ToggleOvercharge(act.doer)
+            return true
+        end
+    end
+    return false
+end)
+WILLIAM_OVERCHARGE_TOGGLE.priority = 5
+
+AddComponentAction("SCENE", "fueled", function(inst, doer, actions, right)
+    if right then return end
+    if inst:HasTag("william_overcharge_toggle")
+       and not inst:HasTag("INLIMBO")
+       and inst.components.inventoryitem == nil
+       and doer:HasTag("williamcrafter") then
+        table.insert(actions, GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_TOGGLE)
+    end
+end)
+
+AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_TOGGLE, "doshortaction"))
+AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_TOGGLE, "doshortaction"))
+
+
 -- ENGIEWORKABLE: right-click with tf2wrench on wrenchable engineer buildings
 
 local ENGIEWORKABLE = G.Action()
