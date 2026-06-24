@@ -1591,11 +1591,15 @@ AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETE
 AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETELEPORT, "doshortaction"))
 
 
--- v2.0.61: Ballistic MK3 Overcharge toggle. Left-click the deployed bot to
--- toggle its manual overcharge mode on/off. Bound to the `fueled` component
--- (which the bot has) but gated by the `william_overcharge_toggle` tag so only
--- the Ballistic MK3 shows the prompt — not every fueled entity.
-local WILLIAM_OVERCHARGE_TOGGLE = AddAction("WILLIAM_OVERCHARGE_TOGGLE", "Toggle Overcharge", function(act)
+-- v2.0.62: Overcharge toggle stays on LEFT-CLICK but is now visually consistent
+-- with Repair/Packup: it lives in the same action-prompt area (no longer in the
+-- bot's name), uses a discreet tag-style label, and the icon is "marked/painted"
+-- when overcharge is active (filled circle prefix ●). Two state-driven actions
+-- drive the marker. Priority -1 keeps Repair (wrench) / Packup (no wrench) as
+-- the PRIMARY left-click; Overcharge is the secondary left-click action reached
+-- via the action-cycle key — visually like the two, not mechanically replacing
+-- them.
+local function WilliamOverchargeToggleFn(act)
     if act.target ~= nil and act.target:IsValid() and act.target:HasTag("william_overcharge_toggle") then
         if act.target.ToggleOvercharge ~= nil then
             act.target:ToggleOvercharge(act.doer)
@@ -1603,21 +1607,32 @@ local WILLIAM_OVERCHARGE_TOGGLE = AddAction("WILLIAM_OVERCHARGE_TOGGLE", "Toggle
         end
     end
     return false
-end)
-WILLIAM_OVERCHARGE_TOGGLE.priority = 5
+end
+
+local WILLIAM_OVERCHARGE_ON  = AddAction("WILLIAM_OVERCHARGE_ON",  "\u25CF Overcharge", WilliamOverchargeToggleFn)
+local WILLIAM_OVERCHARGE_OFF = AddAction("WILLIAM_OVERCHARGE_OFF", "Overcharge",        WilliamOverchargeToggleFn)
+WILLIAM_OVERCHARGE_ON.priority  = -1
+WILLIAM_OVERCHARGE_OFF.priority = -1
 
 AddComponentAction("SCENE", "fueled", function(inst, doer, actions, right)
-    if right then return end
+    if right then return end  -- LEFT-CLICK (stays on left, like Repair/Packup)
     if inst:HasTag("william_overcharge_toggle")
        and not inst:HasTag("INLIMBO")
        and inst.components.inventoryitem == nil
        and doer:HasTag("williamcrafter") then
-        table.insert(actions, GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_TOGGLE)
+        -- State-driven label: the filled circle marks the active (painted) state.
+        if inst:HasTag("overcharged") then
+            table.insert(actions, GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_ON)
+        else
+            table.insert(actions, GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_OFF)
+        end
     end
 end)
 
-AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_TOGGLE, "doshortaction"))
-AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_TOGGLE, "doshortaction"))
+AddStategraphActionHandler("wilson",        GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_ON,  "doshortaction"))
+AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_ON,  "doshortaction"))
+AddStategraphActionHandler("wilson",        GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_OFF, "doshortaction"))
+AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_OFF, "doshortaction"))
 
 
 -- ENGIEWORKABLE: right-click with tf2wrench on wrenchable engineer buildings

@@ -430,8 +430,9 @@ local function onload(inst, data)
                 local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
                 local hp = math.floor(inst.components.health.currenthealth)
                 local maxhp = math.floor(inst.components.health.maxhealth)
-                local oc = inst._overcharge and "OVERCHARGED" or ""
-                local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. (oc ~= "" and " | " .. oc or "")
+                -- v2.0.62: overcharge state no longer in the name; shown via the
+                -- right-click action label ("● Overcharge" when active) + bloom FX.
+                local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
                 inst.components.named:SetName(name_str)
                 inst.name = name_str
             end
@@ -1135,9 +1136,9 @@ end
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
             local hp = math.floor(inst.components.health.currenthealth)
             local maxhp = math.floor(inst.components.health.maxhealth)
-            local oc = inst._overcharge and "OVERCHARGED" or ""
+            -- v2.0.62: overcharge state moved out of the name; shown via the
+            -- right-click action label ("● Overcharge" when active) + bloom FX.
             local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
-            if oc ~= "" then name_str = name_str .. " | " .. oc end
             inst.components.named:SetName(name_str)
             inst.name = name_str
             inst.GetDisplayName = function() return name_str end
