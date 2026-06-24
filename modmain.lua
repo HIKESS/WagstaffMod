@@ -1591,14 +1591,18 @@ AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETE
 AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETELEPORT, "doshortaction"))
 
 
--- v2.0.62: Overcharge toggle stays on LEFT-CLICK but is now visually consistent
--- with Repair/Packup: it lives in the same action-prompt area (no longer in the
--- bot's name), uses a discreet tag-style label, and the icon is "marked/painted"
--- when overcharge is active (filled circle prefix ●). Two state-driven actions
--- drive the marker. Repair (wrench, via ENGIEWORKABLE) stays the PRIMARY left-
--- click; Pack Up (WILLPACKUP, rmb=true) stays on RIGHT-CLICK — unaffected.
--- Overcharge is the secondary LEFT-click action (priority -1) reached via the
--- action-cycle key — visually like the two, not mechanically replacing them.
+-- v2.0.64: Overcharge toggle on LEFT-CLICK, visually consistent with how
+-- Pack Up / Deploy is ONE button that toggles state. Two state-driven actions
+-- share one click slot:
+--   * ON  state -> "\226\151\143 overcharged" (● marker + lowercase state text)
+--   * OFF state -> "" (empty label — only the bot's name shows, no prompt text)
+-- The toggle is always available on left-click (like unpack/deploy is always
+-- available on right-click). When OFF the hover shows just the bot name; when
+-- ON the ● marker + "overcharged" shows. Click either state to toggle.
+-- NOTE: Lua 5.1 (DST) does NOT support \u escapes — "\u25CF" renders as literal
+-- "u25CF" text. Using \226\151\143 (decimal byte escapes = UTF-8 E2 97 8F = ●).
+-- Repair (wrench, ENGIEWORKABLE) stays PRIMARY left-click; Pack Up (WILLPACKUP,
+-- rmb=true) stays on RIGHT-CLICK — unaffected. Overcharge is secondary left.
 local function WilliamOverchargeToggleFn(act)
     if act.target ~= nil and act.target:IsValid() and act.target:HasTag("william_overcharge_toggle") then
         if act.target.ToggleOvercharge ~= nil then
@@ -1609,18 +1613,19 @@ local function WilliamOverchargeToggleFn(act)
     return false
 end
 
-local WILLIAM_OVERCHARGE_ON  = AddAction("WILLIAM_OVERCHARGE_ON",  "\u25CF Overcharge", WilliamOverchargeToggleFn)
-local WILLIAM_OVERCHARGE_OFF = AddAction("WILLIAM_OVERCHARGE_OFF", "Overcharge",        WilliamOverchargeToggleFn)
+local WILLIAM_OVERCHARGE_ON  = AddAction("WILLIAM_OVERCHARGE_ON",  "\226\151\143 overcharged", WilliamOverchargeToggleFn)
+local WILLIAM_OVERCHARGE_OFF = AddAction("WILLIAM_OVERCHARGE_OFF", "",                         WilliamOverchargeToggleFn)
 WILLIAM_OVERCHARGE_ON.priority  = -1
 WILLIAM_OVERCHARGE_OFF.priority = -1
 
 AddComponentAction("SCENE", "fueled", function(inst, doer, actions, right)
-    if right then return end  -- LEFT-CLICK (stays on left, like Repair/Packup)
+    if right then return end  -- LEFT-CLICK only
     if inst:HasTag("william_overcharge_toggle")
        and not inst:HasTag("INLIMBO")
        and inst.components.inventoryitem == nil
        and doer:HasTag("williamcrafter") then
-        -- State-driven label: the filled circle marks the active (painted) state.
+        -- ON shows the ● marker + "overcharged"; OFF shows nothing (empty str).
+        -- Both are clickable to toggle — like unpack/deploy is one toggle button.
         if inst:HasTag("overcharged") then
             table.insert(actions, GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_ON)
         else
