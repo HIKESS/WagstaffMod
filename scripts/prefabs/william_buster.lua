@@ -232,8 +232,14 @@ local function SpawnShadowClone(parent_buster)
             return
         end
 
-        -- Check if dusk ended (not dusk anymore) or parent is dead
-        if not TheWorld.state.isdusk or not parent_buster.components.health or parent_buster.components.health:IsDead() then
+        -- v2.0.58: Despawn when the parent's shadow pulse fades too — not only
+        -- when dusk ends. The pulse (parent_buster._aff_active) turns off when
+        -- the owner leaves combat or walks out of range, so the clone fades with
+        -- it, keeping pulse + clone in sync. (At dusk, _aff_active implies the
+        -- shadow path is active, so this check is safe.)
+        local parent_dead = not parent_buster.components.health or parent_buster.components.health:IsDead()
+        local pulse_faded = not TheWorld.state.isdusk or parent_buster._aff_active ~= true
+        if parent_dead or pulse_faded then
             -- FX: shadow despawn (NO SOUND)
             local remove_fx = SpawnPrefab("shadow_despawn")
             if remove_fx then
@@ -1076,10 +1082,9 @@ inst.components.burnable.ignorefuel = true
                     end
                 end
                 
-                -- Remove shadow clone reference if exists
-                if inst._shadow_clone and inst._shadow_clone:IsValid() then
-                    inst._shadow_clone = nil
-                end
+                -- v2.0.58: shadow clone lifecycle is now owned by the dedicated
+                -- 0.5s sync task below (no reference clearing here — the task
+                -- despawns the clone entity properly when the pulse fades).
             else
                 -- Remove effects
                 if inst.Light then
@@ -1092,13 +1097,12 @@ inst.components.burnable.ignorefuel = true
                 end
             end
             
-            -- SHADOW POSSESSION: Auto-spawn Shadow Clone (MK3 only)
+            -- v2.0.58: Shadow clone spawn/despawn moved out of this 3s task into
+            -- a dedicated 0.5s task (below) that is tightly synced to the
+            -- AffinityPulse's _aff_active flag, so the clone and the shadow pulse
+            -- always turn on/off together. This block only keeps the celestial-
+            -- light disable + colour reset for the parent buster.
             if inst.prefab == "williambuster3" and TheWorld.state.isdusk and OwnerHasShadow(inst) then
-                -- Spawn shadow clone if not already active
-                if not inst._shadow_clone or not inst._shadow_clone:IsValid() then
-                    inst._shadow_clone = SpawnShadowClone(inst)
-                end
-                
                 if inst.Light then
                     inst.Light:Enable(false)
                 end
@@ -1110,8 +1114,43 @@ inst.components.burnable.ignorefuel = true
                         inst.AnimState:SetAddColour(0, 0, 0, 0)
                     end
                 end
-                -- Cleanup shadow clone reference if dusk ended
+            end
+        end)
+
+        -- v2.0.58: Shadow clone lifecycle — synced to the AffinityPulse.
+        -- The pulse (inst._aff_active) is true only during DUSK+shadow while the
+        -- owner is near AND in combat. The clone now mirrors this exactly: it
+        -- spawns the instant the shadow pulse lights up and despawns the instant
+        -- it fades (owner left combat, walked out of range, or dusk ended). This
+        -- guarantees the Buster never has a clone spawned without the shadow pulse
+        -- (or a shadow pulse without the clone) — they are always in sync.
+        inst:DoPeriodicTask(0.5, function()
+            if inst.prefab ~= "williambuster3" then return end
+            if not TheWorld.ismastersim then return end
+
+            -- At dusk the phase_check only passes via the shadow path, so
+            -- _aff_active being true at dusk implies: shadow owner + near + in
+            -- combat. That is exactly the condition the clone should live under.
+            local shadow_pulse_active = TheWorld.state.isdusk and inst._aff_active == true
+
+            if shadow_pulse_active then
+                if not inst._shadow_clone or not inst._shadow_clone:IsValid() then
+                    inst._shadow_clone = SpawnShadowClone(inst)
+                end
+            else
+                -- Pulse stopped (left battle / owner far / dusk ended / owner
+                -- lost shadow): despawn the clone with the shadow fade FX so it
+                -- never lingers without a pulse.
                 if inst._shadow_clone and inst._shadow_clone:IsValid() then
+                    local cx, cy, cz = inst._shadow_clone.Transform:GetWorldPosition()
+                    local remove_fx = SpawnPrefab("shadow_despawn")
+                    if remove_fx then
+                        remove_fx.Transform:SetPosition(cx, cy, cz)
+                        if remove_fx.SoundEmitter then
+                            remove_fx.SoundEmitter:KillAllSounds()
+                        end
+                    end
+                    inst._shadow_clone:Remove()
                     inst._shadow_clone = nil
                 end
             end
@@ -1303,11 +1342,11 @@ inst.components.burnable.ignorefuel = true
                         if inst2._aura_fx then inst2._aura_fx._parent = inst2 end
                     end
                 end
-                if TheWorld.state.isdusk and shadow then
-                    if inst2._shadow_clone == nil or not inst2._shadow_clone:IsValid() then
-                        inst2._shadow_clone = SpawnShadowClone(inst2)
-                    end
-                end
+                -- v2.0.58: Don't spawn the clone on reload — the dedicated 0.5s
+                -- sync task will spawn it within ~0.5s once the AffinityPulse's
+                -- RefreshGate confirms dusk + shadow + owner near + in combat.
+                -- Spawning here unconditionally would flash a clone that despawns
+                -- right away if the buster isn't in combat on load.
             end)
         end
 
