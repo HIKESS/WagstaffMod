@@ -1595,10 +1595,10 @@ AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.
 -- with Repair/Packup: it lives in the same action-prompt area (no longer in the
 -- bot's name), uses a discreet tag-style label, and the icon is "marked/painted"
 -- when overcharge is active (filled circle prefix ●). Two state-driven actions
--- drive the marker. Priority -1 keeps Repair (wrench) / Packup (no wrench) as
--- the PRIMARY left-click; Overcharge is the secondary left-click action reached
--- via the action-cycle key — visually like the two, not mechanically replacing
--- them.
+-- drive the marker. Repair (wrench, via ENGIEWORKABLE) stays the PRIMARY left-
+-- click; Pack Up (WILLPACKUP, rmb=true) stays on RIGHT-CLICK — unaffected.
+-- Overcharge is the secondary LEFT-click action (priority -1) reached via the
+-- action-cycle key — visually like the two, not mechanically replacing them.
 local function WilliamOverchargeToggleFn(act)
     if act.target ~= nil and act.target:IsValid() and act.target:HasTag("william_overcharge_toggle") then
         if act.target.ToggleOvercharge ~= nil then
