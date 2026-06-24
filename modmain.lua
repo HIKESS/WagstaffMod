@@ -1016,12 +1016,31 @@ do
     -- change (affinity active 24/7, but combat-driven).
     -- Call sites still gate AffinityPulse.Setup to MK3-only entities (bots in
     -- fn3(), sentry in SetupMK3Affinity w/ lvl3 tag, dispenser at lvl >= 70).
-    AffinityPulse.Setup = function(inst, GetOwnerFn)
+    --
+    -- v2.0.54: Added opts table for call-site-specific gating:
+    --   opts.proximity_only  (bool)     — skip the battle check (resource items
+    --                                     like the dispenser shouldn't be
+    --                                     battle-gated; they're not combat items).
+    --   opts.proximity_range (number)   — override the proximity radius (default
+    --                                     20). Dispenser uses its AURA radius
+    --                                     (DISP_RANGE = 4) so the pulse only
+    --                                     lights up when the player is actually
+    --                                     standing in the aura.
+    --   opts.phase_check     (fn(inst, owner) -> bool) — optional extra gate.
+    --                                     Dispenser uses this to confine the
+    --                                     pulse to the DUSK affinity-active
+    --                                     phase only (no pulse during the weak
+    --                                     DAY/NIGHT passive tier).
+    AffinityPulse.Setup = function(inst, GetOwnerFn, opts)
+        opts = opts or {}
         inst._aff_step   = 1
         inst._aff_dir    = 1
         inst._aff_active = false
 
-        local PROXIMITY_RANGE_SQ = 20 * 20   -- "in range or vision" (~1.3 screens)
+        local proximity_only  = opts.proximity_only == true
+        local proximity_range = opts.proximity_range or 20
+        local phase_check     = opts.phase_check
+        local PROXIMITY_RANGE_SQ = proximity_range * proximity_range
         local COMBAT_SCAN_RADIUS = 12        -- hostiles targeting owner, near owner
 
         -- Gate refresh on a slower cadence (0.5s) so the FindEntities scan stays
@@ -1034,11 +1053,28 @@ do
             local owner = GetOwnerFn and GetOwnerFn(inst)
             if not (owner and owner:IsValid()) then inst._aff_active = false; return end
 
+            -- v2.0.54: Optional phase check (dispenser confines the pulse to
+            -- the DUSK affinity-active phase only; no pulse during the weak
+            -- DAY/NIGHT passive tier).
+            if phase_check and not phase_check(inst, owner) then
+                inst._aff_active = false
+                return
+            end
+
             -- Proximity: owner within range / vision of the entity.
             local near = false
             pcall(function()
                 near = inst:GetDistanceSqToInst(owner) <= PROXIMITY_RANGE_SQ
             end)
+
+            -- v2.0.54: proximity-only mode (resource items like the dispenser
+            -- are NOT battle-gated — they're not combat items, so the pulse
+            -- should light up whenever the player stands in the aura, not only
+            -- mid-fight).
+            if proximity_only then
+                inst._aff_active = near
+                return
+            end
 
             -- Battle: owner has a combat target, OR the entity itself has a
             -- combat target, OR a nearby hostile is targeting the owner.
