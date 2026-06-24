@@ -47,10 +47,9 @@ local AFF_RAMP_RESET_TIME = 3      -- seconds without a hit before reset
 -- scaling +2.5% per MK3 sentry the owner has clustered nearby (cached count
 -- refreshed every few seconds in the periodic task). A 4-second per-target
 -- cooldown prevents melting a single enemy with back-to-back procs.
--- This nerfs the oppressive early/mid-game burst (one MK3 sentry = 6.5%)
--- while rewarding late-game multi-sentry bases (3 MK3 = 11.5%).
+-- v2.0.65: per-sentry bonus 2.5% -> 3%. One MK3 sentry = 7%, two = 10%.
 local AFF_X2_BASE_CHANCE    = 0.04   -- 4% base
-local AFF_X2_PER_MK3_BONUS  = 0.025  -- +2.5% per MK3 sentry (incl. self)
+local AFF_X2_PER_MK3_BONUS  = 0.03   -- +3% per MK3 sentry (incl. self)
 local AFF_X2_TARGET_CD      = 4.0    -- seconds per-target cooldown
 
 local function _safeSpawn(name)
