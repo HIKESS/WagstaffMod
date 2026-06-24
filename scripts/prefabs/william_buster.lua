@@ -84,27 +84,39 @@ local function SpawnShadowClone(parent_buster)
     
     -- Make it look like a SHADOW version - TOTALLY BLACK (no color)
     -- Apply immediately to prevent any visible color flash
-    if clone.AnimState then
-        clone.AnimState:SetMultColour(0.01, 0.01, 0.01, 0.55)
-        clone.AnimState:SetAddColour(0, 0, 0, 0)
-    end
-    
-    -- Keep enforcing black + semi-transparent color constantly to prevent any reset
-    clone:DoPeriodicTask(0.05, function()
-        if clone:IsValid() and clone.AnimState then
-            clone.AnimState:SetMultColour(0.01, 0.01, 0.01, 0.55)
-            clone.AnimState:SetAddColour(0, 0, 0, 0)
+    local function ApplyCloneTint(c)
+        if c:IsValid() and c.AnimState then
+            c.AnimState:SetMultColour(0.01, 0.01, 0.01, 0.55)
+            c.AnimState:SetAddColour(0, 0, 0, 0)
         end
-    end)
+    end
+    ApplyCloneTint(clone)
+    
+    -- Keep enforcing black + semi-transparent color constantly to prevent any reset.
+    -- v2.0.57 FIX: clone was losing its dark tint when the player walked away.
+    -- Root cause: DoPeriodicTask is PAUSED while the entity is asleep (DST
+    -- dormancy — entities far from any player enter sleepstate and their
+    -- periodic tasks stop ticking). During dormancy the SG 'spawn'/'revived'
+    -- states (and some engine colour resets) could wipe the tint, and the
+    -- paused re-tint task couldn't correct it. Now we ALSO listen for
+    -- 'entitywake' (fires when the entity wakes back up as the player
+    -- approaches) and re-apply the tint immediately — closing the window
+    -- where the clone renders at full colour while far from the player.
+    clone:DoPeriodicTask(0.05, function() ApplyCloneTint(clone) end)
+    clone:ListenForEvent("entitywake", function(c) ApplyCloneTint(c) end)
+    -- Also re-apply on 'onremove'/'onpreload' is unnecessary — the clone is
+    -- transient (persists = false). But guard the SG 'spawn'/'revived' states
+    -- as well (already guarded in SGwilliambuster via shadow_buster_clone tag).
     
     -- Set up combat stats.
-    -- v2.0.39: clone damage 50% -> 35% of parent. Combined with the v2.0.38
-    -- change (clone now HUNTS shadow creatures), 50% was too strong — the clone
-    -- could solo-kill Terrorbeaks faster than the parent. 35% keeps it as a
-    -- support fighter, not a replacement for the parent.
+    -- v2.0.39: clone damage 50% -> 35% of parent.
+    -- v2.0.57: clone damage 35% -> 40% of parent per user request (35% felt
+    -- too weak after the v2.0.50 revert stopped the clone hunting shadow
+    -- creatures — the clone now only mirrors the parent's target, so a bit
+    -- more damage keeps it a meaningful support fighter).
     if clone.components.combat then
         local parent_damage = parent_buster.components.combat and parent_buster.components.combat.defaultdamage or TUNING.WILLIAM_BUSTER_DAMAGE
-        clone.components.combat:SetDefaultDamage(parent_damage * 0.35)
+        clone.components.combat:SetDefaultDamage(parent_damage * 0.40)
     end
 
     -- v2.0.39: clone HP is now FINITE (50% of parent max HP) instead of

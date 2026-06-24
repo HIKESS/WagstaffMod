@@ -26,7 +26,7 @@
 --   - Applies a SHADOW BUFF to the player for 60s:
 --       * Damage dealt:        +50%   (combat.damagemultiplier * 1.5)
 --       * Attack speed:        +25%   (GetAttackPeriod hook returns base * 0.8)
---       * Movement speed:      +15%   (locomotor external speed multiplier)
+--       * Movement speed:      +20%   (locomotor external speed multiplier; v2.0.57: +15% -> +20%)
 --       * Lifesteal:           15%    (heal 15% of damage dealt — sustain via offense)
 --       * Duration:            60s
 --   - Visual: subtle dark tint on the player for the duration (cleared on expiry).
@@ -72,7 +72,12 @@ local CELESTIAL_DAMAGE_MULT = 1.15  -- +15% damage dealt
 local SHADOW_DURATION        = 60   -- seconds
 local SHADOW_DAMAGE_MULT     = 1.50 -- +50% damage dealt
 local SHADOW_ATTACK_PERIOD   = 0.80 -- GetAttackPeriod * 0.80 = +25% attack speed (1/0.8)
-local SHADOW_MOVE_SPEED_MULT = 1.15 -- +15% movement speed
+-- v2.0.57: movement speed +15% -> +20% per user request ("uma pequena melhora"
+-- to the butler shadow revive movement-speed buff). The shadow revive is an
+-- offensive-combat buff (damage + atk speed + lifesteal), and a slightly
+-- stronger speed edge helps reposition / chase during the 60s window without
+-- making it a pure mobility buff (still well below coffee's +33%).
+local SHADOW_MOVE_SPEED_MULT = 1.20 -- +20% movement speed
 local SHADOW_LIFESTEAL_PCT   = 0.15 -- 15% of damage dealt healed (sustain via offense)
 local SHADOW_ENFORCE_INTERVAL = 0.5 -- re-apply speed multiplier (cleared by some state transitions)
 
