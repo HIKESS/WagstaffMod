@@ -1006,87 +1006,113 @@ do
 
     }
 
+    -- v2.0.52: Battle + proximity gating. The affinity "breathing glow" used to
+    -- run all day (celestial) / all dusk (shadow), so the pulse FX was
+    -- permanently on and visually noisy. Now it only lights up when the owner
+    -- is CLOSE to the entity (in range / vision) AND in active combat — owner
+    -- fighting, the entity itself fighting, or a nearby hostile targeting the
+    -- owner ("algo me atacando"). Idle => neutral colours, no pulse. This also
+    -- drops the day/dusk phase lock, consistent with the v2.0.51 sentry ramp
+    -- change (affinity active 24/7, but combat-driven).
+    -- Call sites still gate AffinityPulse.Setup to MK3-only entities (bots in
+    -- fn3(), sentry in SetupMK3Affinity w/ lvl3 tag, dispenser at lvl >= 70).
     AffinityPulse.Setup = function(inst, GetOwnerFn)
+        inst._aff_step   = 1
+        inst._aff_dir    = 1
+        inst._aff_active = false
 
-        inst._aff_step = 1
+        local PROXIMITY_RANGE_SQ = 20 * 20   -- "in range or vision" (~1.3 screens)
+        local COMBAT_SCAN_RADIUS = 12        -- hostiles targeting owner, near owner
 
-        inst._aff_dir  = 1
+        -- Gate refresh on a slower cadence (0.5s) so the FindEntities scan stays
+        -- cheap even with several MK3 entities on the server. Sets the
+        -- inst._aff_active flag consumed by the 0.18s colour-cycling task below.
+        local function RefreshGate()
+            if not inst:IsValid() then return end
+            if inst:HasTag("shadow_buster_clone") then inst._aff_active = false; return end
+
+            local owner = GetOwnerFn and GetOwnerFn(inst)
+            if not (owner and owner:IsValid()) then inst._aff_active = false; return end
+
+            -- Proximity: owner within range / vision of the entity.
+            local near = false
+            pcall(function()
+                near = inst:GetDistanceSqToInst(owner) <= PROXIMITY_RANGE_SQ
+            end)
+
+            -- Battle: owner has a combat target, OR the entity itself has a
+            -- combat target, OR a nearby hostile is targeting the owner.
+            local in_combat = false
+            if owner.components.combat and owner.components.combat.target then
+                in_combat = true
+            elseif inst.components.combat and inst.components.combat.target then
+                in_combat = true
+            end
+
+            if not in_combat and near then
+                -- Only scan when the owner is actually near (perf guard).
+                local ox, oy, oz = owner.Transform:GetWorldPosition()
+                local ents = GLOBAL.TheSim:FindEntities(ox, oy, oz,
+                    COMBAT_SCAN_RADIUS, nil, { "INLIMBO", "playerghost" }, nil)
+                for _, v in ipairs(ents) do
+                    if v ~= owner and v ~= inst
+                       and v.components.combat
+                       and v.components.combat.target == owner then
+                        in_combat = true
+                        break
+                    end
+                end
+            end
+
+            inst._aff_active = near and in_combat
+        end
+
+        inst:DoPeriodicTask(0.5, RefreshGate)
 
         inst:DoPeriodicTask(PULSE_PERIOD, function()
-
             if not inst:IsValid() then return end
-
             if inst:HasTag("shadow_buster_clone") then return end
 
-            -- NOTE: Do NOT filter by prefab name here. All call sites already
-            -- gate AffinityPulse.Setup to MK3-only entities:
-            --   - Bots (butler/buster/brute/ballistic): called inside fn3() (MK3 upgrade fn)
-            --   - Sentry (esentry): called inside SetupMK3Affinity(), which only
-            --     runs when inst:HasTag("lvl3")
-            --   - Dispenser: called inside `if inst.upgradelevel >= 70` (MK3)
-            -- The previous is_mk3 prefab-name check here broke the sentry and
-            -- dispenser pulse because they use the "lvl3" tag (not a separate
-            -- MK3 prefab name like the bots do), so the check always failed and
-            -- the pulse color was never applied to them.
+            -- Idle (owner not near OR not in combat): no glow.
+            if not inst._aff_active then
+                inst.AnimState:SetAddColour(0, 0, 0, 0)
+                inst.AnimState:SetMultColour(1, 1, 1, 1)
+                inst._aff_step = 1
+                inst._aff_dir  = 1
+                return
+            end
 
-            local owner   = GetOwnerFn and GetOwnerFn(inst)
-
-            local isday   = GLOBAL.TheWorld.state.isday
-
-            local isdusk  = GLOBAL.TheWorld.state.isdusk
-
+            -- Active: pick the palette from the owner's affinity path (no longer
+            -- phase-locked). Dual-affinity owners default to celestial.
+            local owner     = GetOwnerFn and GetOwnerFn(inst)
             local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
-
             local shadow    = owner and owner:HasTag("wagstaff_shadow_possession")
 
-            if isday and celestial then
-
+            if celestial then
                 local s = CELESTIAL_STEPS[inst._aff_step]
-
                 inst.AnimState:SetAddColour(s.add[1], s.add[2], s.add[3], s.add[4])
-
                 inst.AnimState:SetMultColour(s.mul[1], s.mul[2], s.mul[3], s.mul[4])
-
-            elseif isdusk and shadow then
-
+            elseif shadow then
                 local s = SHADOW_STEPS[inst._aff_step]
-
                 inst.AnimState:SetAddColour(s.add[1], s.add[2], s.add[3], s.add[4])
-
                 inst.AnimState:SetMultColour(s.mul[1], s.mul[2], s.mul[3], s.mul[4])
-
             else
-
                 inst.AnimState:SetAddColour(0, 0, 0, 0)
-
                 inst.AnimState:SetMultColour(1, 1, 1, 1)
-
                 inst._aff_step = 1
-
                 inst._aff_dir  = 1
-
                 return
-
             end
 
             inst._aff_step = inst._aff_step + inst._aff_dir
-
             if inst._aff_step > #CELESTIAL_STEPS then
-
                 inst._aff_step = #CELESTIAL_STEPS - 1
-
                 inst._aff_dir  = -1
-
             elseif inst._aff_step < 1 then
-
                 inst._aff_step = 2
-
                 inst._aff_dir  = 1
-
             end
-
         end)
-
     end
 
 end

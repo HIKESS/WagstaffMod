@@ -121,16 +121,34 @@ local function UpdateButlerName(inst)
     end
     local name_str = base_name .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
 
-    -- Set on named component (always exists — added in fn()). named:SetName
-    -- also sets inst.name on the server and replicates to the client replica.
-    -- The displaynamefn (set in fn) returns named.name / replica.named.name,
-    -- so we do NOT need to override inst.GetDisplayName here — doing so caused
-    -- the butler hover name to render twice (displaynamefn + GetDisplayName
-    -- override both feeding the hover widget). v2.0.40: removed the override.
+    -- v2.0.53: Re-added the inst.GetDisplayName override (was removed in v2.0.40
+    -- due to "double render"). The double render was caused by STRINGS.NAMES
+    -- being MISSING at the time (removed in v2.0.20, re-added in v2.0.41) —
+    -- without a short STRINGS title, GetBasicDisplayName returned inst.name
+    -- (the full string), so both GetDisplayName and GetBasicDisplayName showed
+    -- the full string = double render. Now that STRINGS.NAMES are defined AND
+    -- SetPrefabNameOverride matches the displaynamefn first line (v2.0.53 fix),
+    -- the title is a short string that matches the first line of the detail —
+    -- same pattern as the buster bot, which has always had this override and
+    -- works correctly. This is what makes the hover show fuel/HP/upgrade on
+    -- the HOST (ismastersim = true), which is the common play scenario.
+    -- Also explicitly sync the replica for dedicated-server CLIENTS: DST's
+    -- named component SetName does NOT auto-call replica:SetName, so without
+    -- this the client's replica.named.name netvar stays empty and the client
+    -- only sees the short STRINGS title (no fuel/HP).
     if inst.components.named ~= nil then
         inst.components.named:SetName(name_str)
     end
+    -- Explicitly push the name to the replica's net_string so dedicated-server
+    -- clients receive it (the base game's named:SetName does NOT do this).
+    if inst.replica and inst.replica.named ~= nil then
+        inst.replica.named:SetName(name_str)
+    end
     inst.name = name_str
+    -- Direct override (matches buster pattern). On the host this is what the
+    -- hover widget calls — guarantees the full string shows regardless of
+    -- displaynamefn / replica sync timing.
+    inst.GetDisplayName = function() return name_str end
 end
 
 -- Helper function to check if bot's owner has affinity skills
@@ -509,12 +527,29 @@ end
     -- so setting it here (runs on BOTH server and client, before the
     -- ismastersim return) forces hover to use the named component/replica
     -- which has the correct "Butler Bot\nFuel: X% | HP: X/X" string.
+    -- v2.0.53: Made the replica path robust — inst.replica.named.name can be
+    -- a net_string OBJECT (not a plain string) on some DST versions, which
+    -- displaynamefn would return as-is and GetDisplayName couldn't render.
+    -- Now extracts the string value via :value() / tostring() with nil/empty
+    -- guards so it never falls through to inst.name (the short STRINGS title)
+    -- when the replica actually has data.
     inst.displaynamefn = function(inst)
         if inst.components.named ~= nil then
             return inst.components.named.name
         end
         if inst.replica.named ~= nil then
-            return inst.replica.named.name
+            local name = inst.replica.named.name
+            if name ~= nil then
+                if type(name) == "string" then
+                    if name ~= "" then return name end
+                else
+                    -- net_string object: extract the value safely.
+                    local ok, val = pcall(function() return name:value() end)
+                    if ok and val and val ~= "" then return val end
+                    local ok2, val2 = pcall(function() return tostring(name) end)
+                    if ok2 and val2 and val2 ~= "" then return val2 end
+                end
+            end
         end
         return inst.name
     end
@@ -882,6 +917,15 @@ inst.components.burnable.ignorefuel = true
     --==================================================================================
     local function active2(inst)
         local inst = fn(inst)
+        -- v2.0.53 FIX: MK2 hover was broken. fn() sets
+        -- SetPrefabNameOverride("williambutler") for ALL tiers, so MK2's short
+        -- title (GetBasicDisplayName via STRINGS.NAMES.WILLIAMBUTLER) was
+        -- "Butler Bot" — which does NOT match the displaynamefn first line
+        -- "Butler Bot Mk. II". That mismatch made the hover render the title
+        -- AND the detail's first line ("Butler Bot" + "Butler Bot Mk. II\n...")
+        -- producing the "repeating"/jumbled hover the user reported. MK3
+        -- already overrode this (line ~1108); MK2 was missing the override.
+        inst:SetPrefabNameOverride("williambutler2")
         MakeCharacterPhysics(inst, 50, .5)
 
         inst.MiniMapEntity:SetCanUseCache(false)

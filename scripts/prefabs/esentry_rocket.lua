@@ -105,6 +105,14 @@ local function OnUpdateProjectile(inst)
                 local aff = nil
                 if sentry and sentry.IsValid and sentry:IsValid() and sentry._aff_type then
                     aff = sentry._aff_type
+                    -- v2.0.51: adaptive affinity per-target (matches the bullet
+                    -- onhitotherfn). Dual-affinity owners get the matching
+                    -- affinity for the target's faction.
+                    if sentry._owner_celestial and target:HasTag("shadow_aligned") then
+                        aff = "celestial"
+                    elseif sentry._owner_shadow and target:HasTag("lunar_aligned") then
+                        aff = "shadow"
+                    end
                     local aligned_tag = (aff == "celestial") and "shadow_aligned" or "lunar_aligned"
                     if target:HasTag(aligned_tag) then
                         -- Bump the sentry's ramp (rockets count as hits too).

@@ -1399,9 +1399,12 @@ inst.components.burnable.ignorefuel = true
             return inst
         end
 
-        -- v2.0.15 FIX: MK3 now gets +500 HP (→3000) and +5 DMG (→32) over MK2
-        -- (was: reverting to MK2 stats — regression bug)
-        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1500)
+        -- v2.0.53 FIX: MK3 HP was still using the OLD MK2 bonus (+1000) baked
+        -- into the +1500 total. v2.0.39 nerfed the MK2 HP bonus from +1000 to
+        -- +600, but fn3 kept +1500 over base (= old +1000 MK2 + +500 MK3 incr).
+        -- Now correctly: base + MK2 bonus (600) + MK3 increment (500) = +1100.
+        -- DMG unchanged (+15 over base = +5 over MK2's +10).
+        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1100)
         inst.components.health:SetCurrentHealth(inst.components.health.maxhealth)
         inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BRUTE_DAMAGE + 15)
 
