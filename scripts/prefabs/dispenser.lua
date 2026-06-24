@@ -226,16 +226,46 @@ function upgrade(inst)
             end
 
             -- Affinity pulse visual (shared module)
-            AffinityPulse.Setup(inst, GetBuilder)
+            -- v2.0.54: Dispenser is a RESOURCE item, not a combat item — its
+            -- AffinityPulse is now PROXIMITY-ONLY (no battle gate) and confined
+            -- to the aura radius (DISP_RANGE = 4 units). The pulse only lights
+            -- up during the affinity-active phase (DAY+celestial OR DUSK+shadow)
+            -- via the phase_check; the weak DAY/NIGHT passive tier has NO pulse.
+            AffinityPulse.Setup(inst, GetBuilder, {
+                proximity_only  = true,
+                proximity_range = _G.TUNING.DISP_RANGE,  -- 4 units = aura radius
+                phase_check = function(inst, owner)
+                    if not (owner and owner:IsValid()) then return false end
+                    local celestial = owner:HasTag("wagstaff_celestial_possession")
+                    local shadow    = owner:HasTag("wagstaff_shadow_possession")
+                    return (TheWorld.state.isday and celestial)
+                        or (TheWorld.state.isdusk and shadow)
+                end,
+            })
 
             -- Spawn/remove healfx based on affinity, color per affinity
+            -- v2.0.54: healfx only shows during the STRONG tier (affinity-active
+            -- phase + builder in aura radius). The WEAK passive tier (DAY/NIGHT)
+            -- has no healfx — the player still gets the reduced effect, but no
+            -- visual pulse. This matches the user's "Não ativa pulse" rule for
+            -- the day/night tier.
             local function UpdateAuraFX(inst)
                 local builder = GetBuilder(inst)
                 local celestial = builder and builder:HasTag("wagstaff_celestial_possession")
                 local shadow    = builder and builder:HasTag("wagstaff_shadow_possession")
                 local active = (TheWorld.state.isday and celestial) or (TheWorld.state.isdusk and shadow)
 
-                if active then
+                -- v2.0.54: healfx only renders when the builder is actually
+                -- standing in the aura radius (DISP_RANGE). This ties the visual
+                -- pulse to "player in aura radius" per the user's spec.
+                local in_aura = false
+                if active and builder then
+                    pcall(function()
+                        in_aura = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
+                    end)
+                end
+
+                if active and in_aura then
                     if inst._healfx == nil then
                         local x, y, z = inst.Transform:GetWorldPosition()
                         inst._healfx = _G.SpawnPrefab("ehealfx")
@@ -271,6 +301,8 @@ function upgrade(inst)
                     -- providing a usable light source. The minimal light is too
                     -- weak (radius 0.5) to ward off Charlie or serve as a base
                     -- light — it only glows on the dispenser model itself.
+                    -- v2.0.54: This also applies to the WEAK passive tier
+                    -- (DAY/NIGHT) — no healfx, just the minimal glow.
                     SetMinimalInteriorLight(inst)
                 end
             end
@@ -288,7 +320,7 @@ function upgrade(inst)
                 -- Update FX
                 UpdateAuraFX(inst)
 
-                -- SHADOW (dusk): Sanity aura — AOE to all nearby players.
+                -- SHADOW sanity aura — AOE to all nearby players.
                 -- v2.0.46: SWAPPED powers. Shadow now gets the sanity aura (was
                 -- celestial's). Rationale: shadow already has the more valuable
                 -- drops (pure_horror/dark_tatters vs moonglass/moon_moth), so
@@ -300,13 +332,23 @@ function upgrade(inst)
                 -- anyone near the dispenser all dusk. Reduced to 25/min (between
                 -- SMALL=10 and MED=30). Still useful for offsetting night sanity
                 -- drain but no longer free full sanity.
+                -- v2.0.54: TWO-TIER per user spec. Instead of a flat 25/min only
+                -- during dusk, the dispenser now has a STRONG tier (35/min during
+                -- DUSK + shadow — the affinity-active phase, with pulse) and a
+                -- WEAK passive tier (20/min during DAY/NIGHT — no pulse). The
+                -- weak tier keeps the dispenser useful outside the affinity
+                -- window without making it a free full-sanity top-off. The
+                -- strong tier (35/min) is slightly above the v2.0.53 value
+                -- (25/min) to reward being in the affinity-active phase.
                 if TheWorld.state.isdusk and shadow then
-                    inst.components.sanityaura.aura = 25
+                    inst.components.sanityaura.aura = 35   -- STRONG tier (affinity-active)
+                elseif shadow then
+                    inst.components.sanityaura.aura = 20   -- WEAK passive (DAY/NIGHT)
                 else
                     inst.components.sanityaura.aura = 0
                 end
 
-                -- CELESTIAL (day): HP heal — builder only.
+                -- CELESTIAL HP heal — builder only.
                 -- v2.0.46: SWAPPED powers. Celestial now gets the HP heal (was
                 -- shadow's). This compensates for celestial's weaker drops
                 -- (moonglass/moon_moth) by giving it the stronger combat-sustain
@@ -317,13 +359,29 @@ function upgrade(inst)
                 -- full HP in ~30s of standing near the dispenser. Halved to
                 -- 1 HP/tick (2 HP/sec). Still strong sustain, but no longer a
                 -- trivial full-heal.
-                if TheWorld.state.isday and celestial and builder ~= nil then
+                -- v2.0.54: TWO-TIER per user spec. Instead of a flat 1 HP/tick
+                -- only during day, the dispenser now has a STRONG tier (2 HP/tick
+                -- = 4 HP/sec during DAY + celestial — the affinity-active phase,
+                -- with pulse) and a WEAK passive tier (1 HP/tick = 2 HP/sec
+                -- during DUSK/NIGHT — no pulse). The weak tier keeps the
+                -- dispenser useful outside the affinity window. The strong tier
+                -- reverts the v2.0.53 halving — the two-tier structure means the
+                -- 4 HP/sec is now confined to the affinity-active phase only,
+                -- not 24/7, so the original "free full HP in 30s" concern is
+                -- addressed by the phase gating rather than a flat nerf.
+                if builder ~= nil and celestial
+                    and builder.components.health
+                    and not builder.components.health:IsDead()
+                    and builder.components.health.currenthealth < builder.components.health.maxhealth then
                     local in_range = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
-                    if in_range
-                        and builder.components.health
-                        and not builder.components.health:IsDead()
-                        and builder.components.health.currenthealth < builder.components.health.maxhealth then
-                        builder.components.health:DoDelta(1, true, nil, true)
+                    if in_range then
+                        if TheWorld.state.isday then
+                            -- STRONG tier (affinity-active): 2 HP/tick = 4 HP/sec
+                            builder.components.health:DoDelta(2, true, nil, true)
+                        else
+                            -- WEAK passive (DUSK/NIGHT): 1 HP/tick = 2 HP/sec
+                            builder.components.health:DoDelta(1, true, nil, true)
+                        end
                     end
                 end
             end)
