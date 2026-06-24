@@ -1176,7 +1176,20 @@ inst.components.burnable.ignorefuel = true
         inst.was_mk3 = true
 
         -- Affinity pulse (MK3 only)
-        AffinityPulse.Setup(inst, GetOwner)
+        -- v2.0.55: Phase-gate the pulse to match the affinity effect's active
+        -- window. The butler's affinity cooking/effect only fires during
+        -- DAY+celestial or DUSK+shadow (see cook + food checks). Without this
+        -- gate the pulse lit up during battle even in the "weak" passive phase,
+        -- which was visually misleading.
+        AffinityPulse.Setup(inst, GetOwner, {
+            phase_check = function(inst, owner)
+                if not (owner and owner:IsValid()) then return false end
+                local celestial = owner:HasTag("wagstaff_celestial_possession")
+                local shadow    = owner:HasTag("wagstaff_shadow_possession")
+                return (TheWorld.state.isday and celestial)
+                    or (TheWorld.state.isdusk and shadow)
+            end,
+        })
 
         -- Celestial light + aura (MK3 only)
         inst._celestial_light = nil

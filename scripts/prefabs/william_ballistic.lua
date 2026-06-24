@@ -1366,7 +1366,20 @@ end
         inst:AddTag("lightningrod")
 
         -- Affinity pulse (shared module)
-        AffinityPulse.Setup(inst, GetOwner)
+        -- v2.0.55: Phase-gate the pulse to match the affinity effect's active
+        -- window. The ballistic's affinity special attacks only fire during
+        -- DAY+celestial or DUSK+shadow (see special attack checks). Without
+        -- this gate the pulse lit up during battle even in the "weak" passive
+        -- phase, which was visually misleading.
+        AffinityPulse.Setup(inst, GetOwner, {
+            phase_check = function(inst, owner)
+                if not (owner and owner:IsValid()) then return false end
+                local celestial = owner:HasTag("wagstaff_celestial_possession")
+                local shadow    = owner:HasTag("wagstaff_shadow_possession")
+                return (TheWorld.state.isday and celestial)
+                    or (TheWorld.state.isdusk and shadow)
+            end,
+        })
 
         -- CELESTIAL POSSESSION: Brightshade Projectile + SHADOW POSSESSION: Fuelweaver Snare
         inst._special_attack_ready = true

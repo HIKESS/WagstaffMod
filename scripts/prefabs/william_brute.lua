@@ -1409,7 +1409,20 @@ inst.components.burnable.ignorefuel = true
         inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BRUTE_DAMAGE + 15)
 
         -- Affinity pulse (MK3 only)
-        AffinityPulse.Setup(inst, GetOwner)
+        -- v2.0.55: Phase-gate the pulse to match the affinity effect's active
+        -- window. The brute's affinity taunt/bonus only fires during
+        -- DAY+celestial or DUSK+shadow (see taunt + damage checks). Without
+        -- this gate the pulse lit up during battle even in the "weak" passive
+        -- phase, which was visually misleading.
+        AffinityPulse.Setup(inst, GetOwner, {
+            phase_check = function(inst, owner)
+                if not (owner and owner:IsValid()) then return false end
+                local celestial = owner:HasTag("wagstaff_celestial_possession")
+                local shadow    = owner:HasTag("wagstaff_shadow_possession")
+                return (TheWorld.state.isday and celestial)
+                    or (TheWorld.state.isdusk and shadow)
+            end,
+        })
 
         -- Container (chest) for MK3 - ÚNICA adição do MK.III
         inst:AddTag("container")
