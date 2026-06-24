@@ -141,8 +141,14 @@ local function UpdateButlerName(inst)
     end
     -- Explicitly push the name to the replica's net_string so dedicated-server
     -- clients receive it (the base game's named:SetName does NOT do this).
+    -- v2.0.55: FIX CRASH. named_replica:SetName(name, author) calls
+    -- self._author_netid:set(author) internally, and net_string:set(nil)
+    -- throws "calling 'set' on bad self (string expected, got nil)". The
+    -- butler has no author, so we pass an empty string. This crashed every
+    -- time a butler was spawned (OnBuiltFn -> SpawnPrefab -> fn ->
+    -- UpdateButlerName) on v2.0.54.
     if inst.replica and inst.replica.named ~= nil then
-        inst.replica.named:SetName(name_str)
+        inst.replica.named:SetName(name_str, "")
     end
     inst.name = name_str
     -- Direct override (matches buster pattern). On the host this is what the
