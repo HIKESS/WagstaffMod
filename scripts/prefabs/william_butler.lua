@@ -882,6 +882,15 @@ inst.components.burnable.ignorefuel = true
     --==================================================================================
     local function active2(inst)
         local inst = fn(inst)
+        -- v2.0.53 FIX: MK2 hover was broken. fn() sets
+        -- SetPrefabNameOverride("williambutler") for ALL tiers, so MK2's short
+        -- title (GetBasicDisplayName via STRINGS.NAMES.WILLIAMBUTLER) was
+        -- "Butler Bot" — which does NOT match the displaynamefn first line
+        -- "Butler Bot Mk. II". That mismatch made the hover render the title
+        -- AND the detail's first line ("Butler Bot" + "Butler Bot Mk. II\n...")
+        -- producing the "repeating"/jumbled hover the user reported. MK3
+        -- already overrode this (line ~1108); MK2 was missing the override.
+        inst:SetPrefabNameOverride("williambutler2")
         MakeCharacterPhysics(inst, 50, .5)
 
         inst.MiniMapEntity:SetCanUseCache(false)

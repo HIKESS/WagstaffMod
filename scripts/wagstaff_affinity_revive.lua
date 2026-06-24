@@ -25,7 +25,7 @@
 --   - Revive with FULL HP (no +max HP bonus, unlike celestial — v2.0.25).
 --   - Applies a SHADOW BUFF to the player for 60s:
 --       * Damage dealt:        +50%   (combat.damagemultiplier * 1.5)
---       * Attack speed:        +20%   (attackperiod * 0.8, re-enforced periodically)
+--       * Attack speed:        +25%   (GetAttackPeriod hook returns base * 0.8)
 --       * Movement speed:      +15%   (locomotor external speed multiplier)
 --       * Lifesteal:           15%    (heal 15% of damage dealt — sustain via offense)
 --       * Duration:            60s
@@ -71,10 +71,10 @@ local CELESTIAL_DAMAGE_MULT = 1.15  -- +15% damage dealt
 
 local SHADOW_DURATION        = 60   -- seconds
 local SHADOW_DAMAGE_MULT     = 1.50 -- +50% damage dealt
-local SHADOW_ATTACK_PERIOD   = 0.80 -- attackperiod * 0.80 = +20% attack speed
+local SHADOW_ATTACK_PERIOD   = 0.80 -- GetAttackPeriod * 0.80 = +25% attack speed (1/0.8)
 local SHADOW_MOVE_SPEED_MULT = 1.15 -- +15% movement speed
 local SHADOW_LIFESTEAL_PCT   = 0.15 -- 15% of damage dealt healed (sustain via offense)
-local SHADOW_ENFORCE_INTERVAL = 0.5 -- re-apply attackperiod after weapon swaps
+local SHADOW_ENFORCE_INTERVAL = 0.5 -- re-apply speed multiplier (cleared by some state transitions)
 
 -- v2.0.24: ALL debugs go through the mod's debug system (toggle on/off in the
 -- config menu "Debug mode"). No-op when WagstaffDbg is unavailable.
@@ -272,8 +272,10 @@ local function ApplyShadowBuff(player)
     if combat and player._wagstaff_shadow_dmg_orig then
         combat.damagemultiplier = player._wagstaff_shadow_dmg_orig
     end
-    if combat and player._wagstaff_shadow_ap_base then
-        combat.attackperiod = player._wagstaff_shadow_ap_base
+    -- v2.0.53: restore the hooked GetAttackPeriod (was: restore combat.attackperiod
+    -- field, which did nothing because GetAttackPeriod ignores it when armed).
+    if combat and player._wagstaff_shadow_orig_getap then
+        combat.GetAttackPeriod = player._wagstaff_shadow_orig_getap
     end
     if locomotor then
         locomotor:RemoveExternalSpeedMultiplier(player, "wagstaff_shadow_buff")
@@ -362,18 +364,32 @@ local function ApplyShadowBuff(player)
         player:ListenForEvent("onattackother", player._wagstaff_shadow_lifesteal_fn)
     end
 
-    -- 2) Attack speed +20%: reduce attackperiod by 20%. Weapon swaps re-set
-    --    attackperiod via the weapon's onequip, so we re-enforce periodically.
+    -- 2) Attack speed: HOOK GetAttackPeriod. v2.0.53 FIX — the old approach
+    --    wrote combat.attackperiod directly, but DST's GetAttackPeriod() checks
+    --    the WEAPON's attackperiod FIRST and ignores combat.attackperiod when
+    --    a weapon is equipped. So the buff did NOTHING in combat (you're always
+    --    armed when fighting). Hooking GetAttackPeriod is the single source of
+    --    truth the stategraph + CanAttack use, so the reduction now applies to
+    --    every weapon automatically and survives weapon swaps with no enforce
+    --    task needed.
     if combat then
-        player._wagstaff_shadow_ap_base = combat.attackperiod or (G.TUNING and G.TUNING.WILSON_ATTACK_PERIOD) or 2
-        player._wagstaff_shadow_ap_buffed = player._wagstaff_shadow_ap_base * SHADOW_ATTACK_PERIOD
-        combat.attackperiod = player._wagstaff_shadow_ap_buffed
+        player._wagstaff_shadow_orig_getap = combat.GetAttackPeriod
+        combat.GetAttackPeriod = function(self, ...)
+            local base = player._wagstaff_shadow_orig_getap(self, ...)
+            if base and base > 0 then
+                return base * SHADOW_ATTACK_PERIOD
+            end
+            return base
+        end
     else
         _dbg("[AFFINITY] Shadow: WARN — player has no combat component; attack-speed buff skipped")
     end
 
     -- 3) Movement speed +15%: external speed multiplier (clean DST API,
-    --    survives weapon swaps / state changes, used by coffee etc.).
+    --    used by coffee etc.). v2.0.53: added periodic re-enforcement below —
+    --    some state transitions (boat mount/dismount, knockback, certain anim
+    --    states) can clear external multipliers, silently dropping the buff
+    --    mid-duration. The enforce task re-applies it every 0.5s.
     if locomotor and locomotor.SetExternalSpeedMultiplier then
         locomotor:SetExternalSpeedMultiplier(player, "wagstaff_shadow_buff", SHADOW_MOVE_SPEED_MULT)
     else
@@ -387,25 +403,17 @@ local function ApplyShadowBuff(player)
         player._wagstaff_shadow_tinted = true
     end
 
-    -- Re-enforce the attackperiod reduction every 0.5s (catches weapon swaps
-    -- that reset attackperiod to the new weapon's base). When a swap is
-    -- detected, adopt the new base and re-apply the 20% reduction.
-    if combat then
-        player._wagstaff_shadow_enforce_task = player:DoPeriodicTask(SHADOW_ENFORCE_INTERVAL, function()
-            if not player:IsValid() or not player.components.combat then return end
-            local c = player.components.combat
-            local cur = c.attackperiod
-            if cur == nil then return end
-            -- If the current attackperiod matches our buffed value, it's still
-            -- our buff — nothing to do. Otherwise a weapon swap reset it to a
-            -- new base: adopt it and re-apply the reduction.
-            if cur ~= player._wagstaff_shadow_ap_buffed then
-                player._wagstaff_shadow_ap_base = cur
-                player._wagstaff_shadow_ap_buffed = cur * SHADOW_ATTACK_PERIOD
-                c.attackperiod = player._wagstaff_shadow_ap_buffed
-            end
-        end)
-    end
+    -- v2.0.53: Single enforce task — re-applies the SPEED MULTIPLIER only.
+    -- The GetAttackPeriod hook above is self-sustaining (no field to reset),
+    -- so only the locomotor multiplier needs re-enforcement against state
+    -- transitions that clear external multipliers.
+    player._wagstaff_shadow_enforce_task = player:DoPeriodicTask(SHADOW_ENFORCE_INTERVAL, function()
+        if not player:IsValid() then return end
+        local loc = player.components.locomotor
+        if loc and loc.SetExternalSpeedMultiplier then
+            loc:SetExternalSpeedMultiplier(player, "wagstaff_shadow_buff", SHADOW_MOVE_SPEED_MULT)
+        end
+    end)
 
     -- v2.0.37: PERSISTENT forcefieldfx shield (SAME prefab as celestial revive),
     -- recolored BLACK/dark-purple for the shadow theme. Unlike shadow_shield1
@@ -463,9 +471,10 @@ local function ApplyShadowBuff(player)
         if player.components.combat and player._wagstaff_shadow_dmg_orig then
             player.components.combat.damagemultiplier = player._wagstaff_shadow_dmg_orig
         end
-        -- Restore attack period to the tracked base.
-        if player.components.combat and player._wagstaff_shadow_ap_base then
-            player.components.combat.attackperiod = player._wagstaff_shadow_ap_base
+        -- v2.0.53: restore the hooked GetAttackPeriod (was: restore
+        -- combat.attackperiod field, which GetAttackPeriod ignores when armed).
+        if player.components.combat and player._wagstaff_shadow_orig_getap then
+            player.components.combat.GetAttackPeriod = player._wagstaff_shadow_orig_getap
         end
         -- Remove speed multiplier.
         if player.components.locomotor then
@@ -484,8 +493,7 @@ local function ApplyShadowBuff(player)
         player._wagstaff_shadow_shield_fx = nil
         -- Clear saved state.
         player._wagstaff_shadow_dmg_orig = nil
-        player._wagstaff_shadow_ap_base = nil
-        player._wagstaff_shadow_ap_buffed = nil
+        player._wagstaff_shadow_orig_getap = nil
         player._wagstaff_shadow_expire_task = nil
         _dbgF("[AFFINITY] Shadow: buff expired after %ss", tostring(SHADOW_DURATION))
     end)

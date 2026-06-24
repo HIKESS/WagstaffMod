@@ -288,33 +288,42 @@ function upgrade(inst)
                 -- Update FX
                 UpdateAuraFX(inst)
 
-                -- SHADOW (dusk): Sanity aura LARGE — AOE to all nearby players.
+                -- SHADOW (dusk): Sanity aura — AOE to all nearby players.
                 -- v2.0.46: SWAPPED powers. Shadow now gets the sanity aura (was
                 -- celestial's). Rationale: shadow already has the more valuable
                 -- drops (pure_horror/dark_tatters vs moonglass/moon_moth), so
                 -- giving the stronger combat-sustain power (HP heal) to celestial
                 -- and the lighter sanity aura to shadow balances the two paths.
                 -- Shadow's shorter dusk window is offset by its better drops.
+                -- v2.0.53: BALANCE. SANITYAURA_LARGE (~50/min) was too strong —
+                -- a free Glommer-tier aura that passively topped off sanity for
+                -- anyone near the dispenser all dusk. Reduced to 25/min (between
+                -- SMALL=10 and MED=30). Still useful for offsetting night sanity
+                -- drain but no longer free full sanity.
                 if TheWorld.state.isdusk and shadow then
-                    inst.components.sanityaura.aura = _G.TUNING.SANITYAURA_LARGE
+                    inst.components.sanityaura.aura = 25
                 else
                     inst.components.sanityaura.aura = 0
                 end
 
-                -- CELESTIAL (day): HP heal 2/tick (4 HP/sec) — builder only.
+                -- CELESTIAL (day): HP heal — builder only.
                 -- v2.0.46: SWAPPED powers. Celestial now gets the HP heal (was
-                -- shadow's), kept at 4 HP/sec per user request. This compensates
-                -- for celestial's weaker drops (moonglass/moon_moth) by giving it
-                -- the stronger combat-sustain power. Range bug fix from v2.0.45
-                -- is retained — heal only fires when builder is within DISP_RANGE
-                -- (4 units) of the dispenser (NOT the 40-unit GetBuilder fallback).
+                -- shadow's). This compensates for celestial's weaker drops
+                -- (moonglass/moon_moth) by giving it the stronger combat-sustain
+                -- power. Range bug fix from v2.0.45 is retained — heal only fires
+                -- when builder is within DISP_RANGE (4 units) of the dispenser
+                -- (NOT the 40-unit GetBuilder fallback).
+                -- v2.0.53: BALANCE. 2 HP/tick (4 HP/sec) was too strong — free
+                -- full HP in ~30s of standing near the dispenser. Halved to
+                -- 1 HP/tick (2 HP/sec). Still strong sustain, but no longer a
+                -- trivial full-heal.
                 if TheWorld.state.isday and celestial and builder ~= nil then
                     local in_range = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
                     if in_range
                         and builder.components.health
                         and not builder.components.health:IsDead()
                         and builder.components.health.currenthealth < builder.components.health.maxhealth then
-                        builder.components.health:DoDelta(2, true, nil, true)
+                        builder.components.health:DoDelta(1, true, nil, true)
                     end
                 end
             end)
