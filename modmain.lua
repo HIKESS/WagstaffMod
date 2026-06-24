@@ -2720,13 +2720,13 @@ AddComponentPostInit("builder", function(self)
 
             eteleporter_exit = { max = 2, prefabs = {"eteleporter_exit"} },
 
-            williambutler_builder = { max = 1, prefabs = {"williambutler", "williambutler_empty", "williambutler2"} },
+            williambutler_builder = { max = 1, prefabs = {"williambutler", "williambutler_empty", "williambutler2", "williambutler3"} },
 
             williambuster_builder = { max = 1, prefabs = {"williambuster", "williambuster_empty", "williambuster2", "williambuster3"} },
 
             williambrute_builder = { max = 1, prefabs = {"williambrute", "williambrute_empty", "williambrute_gary", "williambrute2", "williambrute3"} },
 
-            williamballistic_empty = { max = 1, prefabs = {"williamballistic", "williamballistic_empty", "williamballistic2"} }
+            williamballistic_empty = { max = 1, prefabs = {"williamballistic", "williamballistic_empty", "williamballistic2", "williamballistic3"} }
 
         }
 
