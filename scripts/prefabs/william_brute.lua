@@ -400,13 +400,21 @@ local function OnFuelEmpty(inst)
     inst.components.willyraise:Lower()
 end
 
-local function OnAddFuel(inst)
+local function OnAddFuel(inst, doer, fuelitem)
+        -- v2.0.63: reject fuel when already full (vanilla-style feedback).
+        if inst.components.fueled and inst.components.fueled:IsFull() then
+            if doer and doer.components.talker then
+                doer.components.talker:Say("It's already full!")
+            end
+            return false
+        end
         inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
     if inst.on == false then
         inst.components.willyraise:Rise()
     else
         inst.sg:GoToState("fed")
     end
+        return true
 end
 
 local function LevelUp(inst, amount)
