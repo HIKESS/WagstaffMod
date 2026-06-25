@@ -1467,53 +1467,30 @@ end
 
 --    inst.components.fueled.currentfuel = 0
 
-    -- v2.0.71 FIX: husk reactivation (mirrors butler v2.0.18 fix).
-    -- The husk starts with HAMMER (dismantle) and should switch to ACTIVATE
-    -- (reactivate) when it has fuel. The old code used
-    -- RemoveComponent("workable") + AddComponent("workable") inside the
-    -- percentusedchange listener, which left the component in a broken state
-    -- and the right-click stayed "Dismantle" (HAMMER) even after refueling —
-    -- so the player could not reactivate the buster. Now we use a helper
-    -- (SetHuskAction) that swaps the action directly (SetWorkAction) without
-    -- removing/re-adding the component, and we ALSO check on init
-    -- (DoTaskInTime) so a husk that already has fuel on spawn (e.g. loaded
-    -- from save) starts with ACTIVATE immediately.
+    -- v2.0.72 FIX: reverted to original mod's husk design.
+    -- The husk needs only TWO things for reactivation to work:
+    --   1. `willyraise` component (inherited from fn()) — gives the right-click
+    --      WILLYRAISE action. When the player right-clicks the fueled husk,
+    --      WILLYRAISE.fn calls willyraise:Rise(doer) → MakeAlive(inst, doer)
+    --      → spawns a new active buster at the correct MK level.
+    --   2. `workable` HAMMER — for dismantling with a hammer.
+    --
+    -- The previous code (v2.0.71 and the old BUG FIX 6) added a
+    -- percentusedchange listener that swapped workable's action from HAMMER
+    -- to ACTIVATE when fuel was present. This BROKE reactivation because:
+    --   - When workable has ACTIVATE, DST shows ACTIVATE as the right-click
+    --     action instead of WILLYRAISE (workable takes priority).
+    --   - The ACTIVATE path calls workable's OnFinishCallback, which is a
+    --     different code path than willyraise:Rise → MakeAlive.
+    --   - The RemoveComponent+AddComponent dance (pre-v2.0.71) also left
+    --     workable in a broken state.
+    --
+    -- The original mod (2607507857 & 3665517849) never had this ACTIVATE
+    -- swap — it relied purely on willyraise for reactivation. This commit
+    -- matches that design. The husk has no follower component (follower is
+    -- added in active(), not fn()), so the WILLYRAISE action condition
+    -- (inst.replica.follower == nil) passes and the action appears.
     inst.components.fueled.accepting = true
-
-    local function SetHuskAction(inst, activate)
-        if not inst.components.workable then return end
-        if activate then
-            inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-            inst.components.workable:SetWorkLeft(1)
-            inst.components.workable:SetOnWorkCallback(nil)
-            inst.components.workable:SetOnFinishCallback(function(inst, doer)
-                if doer and doer.components.petleash then
-                    MakeAlive(inst, doer)
-                end
-            end)
-        else
-            inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
-            inst.components.workable:SetWorkLeft(3)
-            inst.components.workable:SetOnFinishCallback(OnHammered)
-            inst.components.workable:SetOnWorkCallback(onworked)
-        end
-    end
-
-    -- Check current fuel on init (handles save-load where husk already has fuel)
-    inst:DoTaskInTime(0, function(inst)
-        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
-            SetHuskAction(inst, true)
-        end
-    end)
-
-    -- Swap to ACTIVATE when fuel is added
-    inst:ListenForEvent("percentusedchange", function(inst)
-        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
-            if inst.components.workable and inst.components.workable.action ~= ACTIONS.ACTIVATE then
-                SetHuskAction(inst, true)
-            end
-        end
-    end)
 
     MakeHauntableWork(inst)
 
