@@ -1405,51 +1405,33 @@ inst.components.burnable.ignorefuel = true
     -- Antes o husk sobreecrevia para "butlergadget" (so gadget), mas isso
     -- deixava o husk sem bonus de materiais. Agora e consistente com o bot ativo.
 
-    -- v2.0.18 FIX: husk reactivation. The husk starts with HAMMER (dismantle)
-    -- and should switch to ACTIVATE (reactivate) when it has fuel. The old code
-    -- used RemoveComponent("workable") + AddComponent("workable") inside the
-    -- percentusedchange listener, which left the component in a broken state
-    -- and the right-click stayed "desativar" (HAMMER) even after refueling.
-    -- Now we use a helper that swaps the action directly (SetWorkAction) without
-    -- removing/re-adding the component, and we ALSO check on init (DoTaskInTime)
-    -- so a husk that already has fuel on spawn (e.g. loaded from save) starts
-    -- with ACTIVATE immediately.
+    -- v2.0.74 FIX: reverted to original mod's husk design (mirrors buster v2.0.72).
+    -- The husk needs only TWO things for reactivation to work:
+    --   1. `willyraise` component (inherited from fn()) — gives the right-click
+    --      WILLYRAISE action. When the player right-clicks the fueled husk,
+    --      WILLYRAISE.fn calls willyraise:Rise(doer) -> MakeAlive(inst, doer)
+    --      -> spawns a new active butler at the correct MK level.
+    --   2. `workable` HAMMER — for dismantling with a hammer.
+    --
+    -- The previous code (v2.0.18 "fix") added a SetHuskAction helper +
+    -- percentusedchange listener that swapped workable's action from HAMMER
+    -- to ACTIVATE when fuel was present. This BROKE reactivation in-session
+    -- because:
+    --   - When workable has ACTIVATE, DST shows ACTIVATE as the right-click
+    --     action instead of WILLYRAISE (workable takes priority).
+    --   - The ACTIVATE path calls workable's OnFinishCallback, which is a
+    --     different code path than willyraise:Rise -> MakeAlive.
+    --   - The percentusedchange listener only fired reliably after save/load,
+    --     so the player had to relog to reactivate the husk.
+    --
+    -- User reported: "o butler esta com o bug de acabou o fuel nao ativa
+    -- mais mesmo que reabastecca, tem que relogar." This is the exact same
+    -- bug the buster had (fixed in v2.0.72). Applying the same revert.
+    --
+    -- The husk has no follower component (follower is added in active(), not
+    -- fn()), so the WILLYRAISE action condition (inst.replica.follower == nil)
+    -- passes and the action appears on right-click.
     inst.components.fueled.accepting = true
-
-    local function SetHuskAction(inst, activate)
-        if not inst.components.workable then return end
-        if activate then
-            inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-            inst.components.workable:SetWorkLeft(1)
-            inst.components.workable:SetOnWorkCallback(nil)
-            inst.components.workable:SetOnFinishCallback(function(inst, doer)
-                if doer and doer.components.petleash then
-                    MakeAlive(inst, doer)
-                end
-            end)
-        else
-            inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
-            inst.components.workable:SetWorkLeft(3)
-            inst.components.workable:SetOnFinishCallback(OnHammered)
-            inst.components.workable:SetOnWorkCallback(onworked)
-        end
-    end
-
-    -- Check current fuel on init (handles save-load where husk already has fuel)
-    inst:DoTaskInTime(0, function(inst)
-        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
-            SetHuskAction(inst, true)
-        end
-    end)
-
-    -- Swap to ACTIVATE when fuel is added
-    inst:ListenForEvent("percentusedchange", function(inst)
-        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
-            if inst.components.workable and inst.components.workable.action ~= ACTIONS.ACTIVATE then
-                SetHuskAction(inst, true)
-            end
-        end
-    end)
 
     -- Save/load husk state (for reactivating at correct level)
     local function OnSaveHusk(inst, data)

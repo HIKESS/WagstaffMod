@@ -554,9 +554,23 @@ end),
         husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
         husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
         -- Save upgrade state for reload
-        if inst.prefab == "williambutler2" then
+        -- v2.0.74 FIX: added williambutler3 (MK3) branch. Previously MK3 was
+        -- NOT handled here, so a MK3 butler that ran out of fuel would be
+        -- reactivated as MK1 (MakeAlive checks was_mk3 first, then was_level2,
+        -- but neither was set for MK3). Now MK3 sets both was_mk3 and
+        -- was_level2 (MK3 is also level 2+), preserving the MK level across
+        -- the husk -> reactivation cycle.
+        if inst.prefab == "williambutler3" then
+            husk.was_mk3 = true
             husk.was_level2 = true
             husk.saved_upgradelevel = 70
+            husk.saved_upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
+        elseif inst.prefab == "williambutler2" then
+            husk.was_level2 = true
+            husk.saved_upgradelevel = 70
+            if inst.upgradelevel_mk3 then
+                husk.saved_upgradelevel_mk3 = inst.upgradelevel_mk3
+            end
         elseif inst.prefab == "williambutler" and inst.upgradelevel then
             husk.saved_upgradelevel = inst.upgradelevel
         end
