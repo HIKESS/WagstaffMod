@@ -669,3 +669,48 @@ Work Log:
 Stage Summary:
 - Recipes do eteleporter e eteleporter_exit agora são IDÊNTICOS: 25 scrap + 2 gears + 3 transistor, TECH.MAGIC_TWO, builder_tag "tinkerer".
 - Redução de custo: Entrance ficou mais barato (30→25 scrap, 5→2 gears, 5→3 transistor). Exit ficou levemente mais barato (3→2 gears).
+
+---
+Task ID: BUG-UPGRADE-HP-FULL-BLOCK
+Agent: main (Z.ai Code)
+Task: Fixar bug "HP is already full" que bloqueava o upgrade MK1→MK2 de todos os bots (reportado pelo usuário: "quando eu tento dar upgrade no brute agora aparece 'hp is already full', agora já tenho a skill").
+
+Work Log:
+- Investiguei o fluxo de upgrade do brute MK1→MK2 em william_brute.lua (OnFinishCallback do engieworkable, linhas 682-794).
+- Encontrei o bug: na v2.0.67 foi adicionado um bloco "HP is already full" (linhas 710-716) com `return` ANTES do upgrade path. Fluxo bugado:
+    1. if HP < max → repair + return (PRIORITY 1)
+    2. if HP >= max → "HP is already full!" + return  ← BUG: bloqueia upgrade
+    3. upgrade path (skill check, scrap, spawn MK2) ← NUNCA alcançado com HP cheio
+- Verifiquei TODOS os bots com grep por "HP is already full": encontrei o MESMO bug em:
+    * william_brute.lua MK1→MK2 (linhas 710-716) — BUG
+    * william_buster.lua MK1→MK2 (linhas 792-798) — BUG (mesmo padrão, mesmo comentário v2.0.67)
+    * william_ballistic.lua MK1→MK2 (linhas 792-798) — BUG (mesmo padrão, mesmo comentário v2.0.67)
+- Confirmei que os OUTROS casos de "HP is already full" NÃO são bugs:
+    * brute MK2→MK3 (linha 1264): if/else fallback DEPOIS do upgrade path — OK
+    * brute MK3 (linha 1458): if/else, MK3 só tem repair — OK
+    * butler MK3 (linha 1332): MK3 só tem repair — OK
+    * buster MK2+ (linha 875): fallback depois do upgrade path — OK
+    * buster MK2→MK3 (linha 1055): if/else fallback — OK
+    * buster MK3 (linha 1348): if/else, MK3 só repair — OK
+    * ballistic MK2+ (linha 870): fallback depois do upgrade path — OK
+    * ballistic MK2→MK3 (linha 1046): if/else fallback — OK
+    * ballistic MK3 (linha 1748): MK3 só tem repair — OK
+
+Fix aplicado (3 arquivos):
+Removi o bloco bugado "HP is already full" + return nos 3 MK1→MK2 (brute, buster, ballistic), substituindo por um comentário explicativo v2.0.68. Fluxo corrigido:
+    1. if HP < max → repair + return (PRIORITY 1, inalterado)
+    2. (HP cheio aqui) → cai no upgrade path (skill check + scrap + spawn MK2)
+    3. fallback "Repair for MK2+" (if/else, HP cheio → "HP is already full")
+- william_brute.lua: removidas linhas 710-716 (bloco if HP>=max + return).
+- william_buster.lua: removidas linhas 792-798 (mesmo bloco).
+- william_ballistic.lua: removidas linhas 792-798 (mesmo bloco).
+
+Verificação:
+- Balance check de parênteses/chaves/colchetes nos 3 arquivos: balanced.
+- O fluxo agora: HP danificado → repair primeiro (qualquer tier, sem skill); HP cheio → tenta upgrade (se MK1 + tem skill + tem scrap); HP cheio + MK2+ → "HP is already full" (fallback informativo).
+
+Stage Summary:
+- Bug "HP is already full bloqueava upgrade MK1→MK2" CORRIGIDO em todos os 3 bots de combate (brute, buster, ballistic).
+- Causa: bloco "HP is already full" com early return adicionado na v2.0.67 ANTES do upgrade path, impedindo que o upgrade fosse processado quando HP estava cheio.
+- Fix: removido o bloco bugado nos 3 arquivos. Agora quando HP está cheio, o fluxo cai direto no upgrade path (skill check → scrap consumption → spawn MK2).
+- Arquivos modificados (3): william_brute.lua, william_buster.lua, william_ballistic.lua.
