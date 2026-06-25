@@ -545,3 +545,33 @@ Stage Summary:
 - Butler celestial revive now plays: archive_lockbox_dispawn_fx (white dissolve) + moonstorm_spark (white sparks) + custom white-blue light flash. All lunar/celestial themed, no more elixir shield or generic sparkle.
 - Anti-stacking: if the same FX prefab is already present within 1.5 units of the butler, a new one won't spawn — prevents duplicate FX on haunt spam / repeated triggers.
 - Pending: user to test in-game and confirm the new FX fits. If archive_lockbox_dispawn_fx or moonstorm_spark don't exist in the user's DST build (both are vanilla RoT prefabs, should exist), the SpawnPrefab returns nil and the helper skips gracefully (no crash).
+
+---
+Task ID: fix-mk1-bot-repair
+Agent: Z.ai Code (main)
+Task: Corrigir bug reportado: "Não consigo reparar o brute MK1, pede Skill de Upgrade (Requires Brute Bot MK. II)".
+
+Work Log:
+- Lido william_brute.lua (linhas 655-725): o engieworkable OnFinish callback tinha a lógica:
+    if inst.prefab == "williambrute2" or inst:HasTag("brute_upgraded") then
+        ...repair...
+        return
+    end
+    -- (cai pra upgrade, que exige skill)
+- CONFIRMADO o bug: MK1 com dano ia direto pro caminho de upgrade, que exige a skill wagstaff_brute_evolve.
+- Comparado com william_butler.lua (linhas 746-789): o butler usa o padrão CORRETO:
+    PRIORITY 1: if HP < max -> repair (no skill required)
+    PRIORITY 2: if HP full -> upgrade (skill-gated)
+- Confirmado o MESMO bug em william_buster.lua (linhas 759-772) e william_ballistic.lua (linhas 764-777): ambos pulam repair no MK1.
+- Aplicado o fix nos 3 bots (brute, buster, ballistic): inserido bloco PRIORITY 1 (repair se HP < max, sem skill, qualquer tier) e PRIORITY 2 (msg "HP is already full!" se HP cheio) ANTES do caminho de upgrade.
+- Validado balanceamento de long strings [[ / ]] nos 3 arquivos + modinfo.lua: todos OK.
+- Bumpado modinfo.lua para v2.0.67.
+- Commit a30a34f "v2.0.67: fix MK1 bot repair (brute/buster/ballistic) — repair first, upgrade only at full HP".
+- Push via 'set -a; source .env; set +a' + token na URL: BEM-SUCEDIDO (76e8bc2..a30a34f HEAD -> main).
+- Confirmado via git ls-remote: origin/main = a30a34f.
+
+Stage Summary:
+- Bug corrigido nos 3 bots (brute, buster, ballistic). Butler já estava correto e não precisou de mudança.
+- Nova lógica: qualquer tier (MK1/MK2/MK3) com HP < 100% agora pode ser reparado com wrench + 1 scrap, SEM exigir skill. Upgrade continua exigindo skill (mas só é tentado quando HP está cheio).
+- Commit a30a34f está no branch main do repo HIKESS/WagstaffMod (produção).
+- Próxima vez que o usuário subir o servidor DST com git pull no mod, o brute/buster/ballistic MK1 danificado poderá ser reparado sem exigir a skill MK.II.
