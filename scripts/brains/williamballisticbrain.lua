@@ -127,6 +127,12 @@ function WilliamBallisticBrain:OnStart()
         -- Mobile mode: follow leader, chase and attack enemies
         root = PriorityNode(
         {
+            -- v2.0.65 FIX: When deactivated (inst.on == false), do NOT follow/chase.
+            -- The Follow behaviour's catch-up teleport was teleporting the
+            -- deactivated bot to the player. StandStill blocks all movement nodes.
+            WhileNode(function() return self.inst.on == false end, "Deactivated",
+                StandStill(self.inst)),
+
             WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
             WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
             ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
@@ -137,6 +143,10 @@ function WilliamBallisticBrain:OnStart()
         -- Stationary mode: stand and attack only
         root = PriorityNode(
         {
+            -- v2.0.65 FIX: When deactivated (inst.on == false), do NOT attack.
+            WhileNode(function() return self.inst.on == false end, "Deactivated",
+                StandStill(self.inst)),
+
             StandAndAttack(self.inst),
         }, .25)
     end

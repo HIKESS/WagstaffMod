@@ -703,6 +703,11 @@ end
 
     MakeHauntablePanic(inst)
 
+    -- v2.0.65: mark active buster as "on" so the brain's Deactivated gate
+    -- (WhileNode inst.on == false) does not block movement. The empty husk
+    -- prefab sets inst.on = false to stay inert.
+    inst.on = true
+
         inst:SetBrain(brain)
 
     MakeMediumBurnableCharacter(inst, "spring")
@@ -784,13 +789,12 @@ inst.components.burnable.ignorefuel = true
                 return
             end
 
-            -- HP is already full — tell the player instead of silently consuming scrap
-            if inst.components.health and inst.components.health.currenthealth >= inst.components.health.maxhealth then
-                if worker.components.talker then
-                    worker.components.talker:Say("HP is already full!")
-                end
-                return
-            end
+            -- v2.0.68 FIX: the previous "HP is already full" block here did an early
+            -- return when HP >= max, which BLOCKED the upgrade path below. So a buster
+            -- with full HP + a player who HAD the MK2 skill would just hear "HP is
+            -- already full!" and never upgrade. Removed — when HP is full we fall
+            -- through to the upgrade path (skill check + scrap). The MK2+ repair
+            -- fallback below already has its own "HP is already full" message.
 
             -- Check if trying to upgrade MK1 to MK2
             if not inst:HasTag("buster_upgraded") and inst.prefab ~= "williambuster2" then
@@ -1443,6 +1447,13 @@ end
     inst.components.workable:SetOnWorkCallback(onworked)
 
         inst:AddTag("Notarget")
+
+    -- v2.0.65: mark empty husk as "off" so the brain's Deactivated gate
+    -- (WhileNode inst.on == false) keeps it from following/teleporting to
+    -- the leader. The husk inherits brain + follower from fn(), so without
+    -- this the Follow node's catch-up teleport would drag the inert husk
+    -- toward the player.
+    inst.on = false
 
 --    inst.components.fueled.currentfuel = 0
 

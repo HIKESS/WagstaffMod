@@ -238,6 +238,21 @@ local function TurnOff(inst, doer, instant)
     local GLOBAL = _G
     inst.on = false
 
+    -- v2.0.69: Drop the follower leader when deactivated.
+    -- The DST `follower` component has a built-in catch-up teleport that fires
+    -- at the COMPONENT level (in OnUpdate), bypassing the brain entirely. Even
+    -- though the brain's `Active` WhileNode gates the Follow behaviour when
+    -- inst.on == false, the follower component still has a leader reference and
+    -- keeps teleporting the deactivated bot to the leader. Butler/buster avoid
+    -- this because their `empty` husk is a fresh entity with no leader; the
+    -- brute reuses the same entity, so we must explicitly drop the leader here.
+    -- TurnOn re-acquires the leader from the activating player (or nearest
+    -- player) on reactivation, and william_acts.lua allows WILLYRAISE when the
+    -- leader is nil so the bot can be reactivated after deactivation.
+    if inst.components.follower ~= nil then
+        inst.components.follower:StopFollowing()
+    end
+
                 if inst._task ~= nil then
                     inst._task:Cancel()
             inst._task = nil
@@ -707,13 +722,12 @@ inst.components.burnable.ignorefuel = true
             return
         end
 
-        -- HP is already full — tell the player instead of silently consuming scrap
-        if inst.components.health and inst.components.health.currenthealth >= inst.components.health.maxhealth then
-            if worker.components.talker then
-                worker.components.talker:Say("HP is already full!")
-            end
-            return
-        end
+        -- v2.0.68 FIX: the previous "HP is already full" block here did an early
+        -- return when HP >= max, which BLOCKED the upgrade path below. So a brute
+        -- with full HP + a player who HAD the MK2 skill would just hear "HP is
+        -- already full!" and never upgrade. Removed the block — when HP is full,
+        -- we fall through to the upgrade path (skill check + scrap consumption).
+        -- The upgrade path has its own messages for missing skill / missing scrap.
 
         _dbg("[DEBUG] Brute é MK1 - verificando upgrade para MK2")
         _dbg("[DEBUG] Chamando WagstaffHasSkill para wagstaff_brute_evolve")

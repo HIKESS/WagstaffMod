@@ -38,7 +38,15 @@ local AVOID_EXPLOSIVE_DIST = 5
 
 local DIG_TAGS = { "stump", "grave" }
 
+-- v2.0.68: a deactivated bot (inst.on == false) must never follow/chase/dodge.
+-- GetLeader returns nil when off, so the Follow node has no target and cannot
+-- trigger its catch-up teleport. Every movement node is also gated by IsActive.
+local function IsActive(inst)
+    return inst.on ~= false
+end
+
 local function GetLeader(inst)
+    if not IsActive(inst) then return nil end
     local leader = inst.components.follower.leader
     if leader and leader:IsValid() and leader.Transform then
         return leader
@@ -95,63 +103,72 @@ local function ShouldKite(target, inst)
 end
 
 local function ShouldWatchMinigame(inst)
-	if inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil then
-		if inst.components.combat.target == nil or inst.components.combat.target.components.minigame_participator ~= nil then
-			return true
-		end
-	end
-	return false
+        if inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil then
+                if inst.components.combat.target == nil or inst.components.combat.target.components.minigame_participator ~= nil then
+                        return true
+                end
+        end
+        return false
 end
 
 local function WatchingMinigame(inst)
-	return (inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil) and inst.components.follower.leader.components.minigame_participator:GetMinigame() or nil
+        return (inst.components.follower.leader ~= nil and inst.components.follower.leader.components.minigame_participator ~= nil) and inst.components.follower.leader.components.minigame_participator:GetMinigame() or nil
 end
 
 function WilliamBusterBrain:OnStart()
 
-	local watch_game = WhileNode( function() return ShouldWatchMinigame(self.inst) end, "Watching Game",
+        local watch_game = WhileNode( function() return ShouldWatchMinigame(self.inst) end, "Watching Game",
         PriorityNode({
             Follow(self.inst, WatchingMinigame, TUNING.MINIGAME_CROWD_DIST_MIN, TUNING.MINIGAME_CROWD_DIST_TARGET, TUNING.MINIGAME_CROWD_DIST_MAX),
             RunAway(self.inst, "minigame_participator", 5, 7),
             FaceEntity(self.inst, WatchingMinigame, WatchingMinigame),
-		}, 0.25))
+                }, 0.25))
 
     local root = PriorityNode(
     {
-		watch_game,
+        WhileNode(function() return self.inst.components.health ~= nil and self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
+        WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
 
-        --#1 priority is dancing beside your leader. Obviously.
-        WhileNode(function() return ShouldDanceParty(self.inst) end, "Dance Party",
+        -- v2.0.68: every movement node is gated by IsActive (inst.on ~= false).
+        -- When deactivated, none of these evaluate, so the bot stays put. The
+        -- old StandStill-at-top approach failed because StandStill returns
+        -- SUCCESS once the entity is stopped, letting the PriorityNode fall
+        -- through to Follow (which has a catch-up teleport).
+        WhileNode(function() return IsActive(self.inst) end, "Active",
             PriorityNode({
-                Leash(self.inst, GetLeaderPos, KEEP_DANCING_DIST, KEEP_DANCING_DIST),
-                ActionNode(function() DanceParty(self.inst) end),
-        }, .25)),
+                watch_game,
 
-        WhileNode(function() return IsNearLeader(self.inst, KEEP_WORKING_DIST) end, "Leader In Range",
-            PriorityNode({
-
-                RunAway(self.inst, { fn = ShouldAvoidExplosive, tags = { "explosive" }, notags = { "INLIMBO" } }, AVOID_EXPLOSIVE_DIST, AVOID_EXPLOSIVE_DIST),
-                --Duelists will try to fight before fleeing
-                IfNode(function() return self.inst:HasTag("buster") end, "Is Buster",
+                --#1 priority is dancing beside your leader. Obviously.
+                WhileNode(function() return ShouldDanceParty(self.inst) end, "Dance Party",
                     PriorityNode({
-        WhileNode(function()
-                        return self.inst.components.combat.target == nil
-                            or not self.inst.components.combat:InCooldown()
-			--or (self.inst.components.combat.target ~= nil and self.inst.components.combat.target.components.combat:InCooldown())
-                    end,
-                    "AttackMomentarily",
-                    ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST)),
-        WhileNode(function() return self.inst.components.combat.target ~= nil and (self.inst.components.combat:InCooldown() or self.inst.components.combat.target.components.combat:CanAttack()) end, "Dodge",
-            RunAway(self.inst, function() return self.inst.components.combat.target end, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST)),
+                        Leash(self.inst, GetLeaderPos, KEEP_DANCING_DIST, KEEP_DANCING_DIST),
+                        ActionNode(function() DanceParty(self.inst) end),
                 }, .25)),
 
-        }, .25)),
+                WhileNode(function() return IsNearLeader(self.inst, KEEP_WORKING_DIST) end, "Leader In Range",
+                    PriorityNode({
 
-        Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST),
-        WhileNode(function() return self.inst.components.health ~= nil and self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
-            WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
-        WhileNode(function() return GetLeader(self.inst) ~= nil end, "Has Leader",
-            FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn)),
+                        RunAway(self.inst, { fn = ShouldAvoidExplosive, tags = { "explosive" }, notags = { "INLIMBO" } }, AVOID_EXPLOSIVE_DIST, AVOID_EXPLOSIVE_DIST),
+                        --Duelists will try to fight before fleeing
+                        IfNode(function() return self.inst:HasTag("buster") end, "Is Buster",
+                            PriorityNode({
+            WhileNode(function()
+                            return self.inst.components.combat.target == nil
+                                or not self.inst.components.combat:InCooldown()
+                            --or (self.inst.components.combat.target ~= nil and self.inst.components.combat.target.components.combat:InCooldown())
+                        end,
+                        "AttackMomentarily",
+                        ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST)),
+            WhileNode(function() return self.inst.components.combat.target ~= nil and (self.inst.components.combat:InCooldown() or self.inst.components.combat.target.components.combat:CanAttack()) end, "Dodge",
+                RunAway(self.inst, function() return self.inst.components.combat.target end, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST)),
+                    }, .25)),
+
+                }, .25)),
+
+                Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST),
+                WhileNode(function() return GetLeader(self.inst) ~= nil end, "Has Leader",
+                    FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn)),
+            }, .25)),
     }, .25)
 
     self.bt = BT(self.inst, root)

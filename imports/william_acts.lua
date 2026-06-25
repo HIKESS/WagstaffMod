@@ -53,7 +53,9 @@ AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.
 --==================================================================================
 AddComponentAction("SCENE", "willyraise", function(inst, doer, actions, right)
     if right and CrafterCheck(doer)
-        and (inst.replica.follower == nil or inst.replica.follower:GetLeader() == doer)
+        and (inst.replica.follower == nil
+             or inst.replica.follower:GetLeader() == nil
+             or inst.replica.follower:GetLeader() == doer)
         and not (inst.replica.health ~= nil and inst.replica.health:IsDead())
         and not inst:HasTag("fueldepleted")
         and not (inst.sg ~= nil and inst.sg:HasStateTag("shutdown")) then
