@@ -761,6 +761,42 @@ end
                 wrench.components.finiteuses:Use(1)
             end
 
+            -- PRIORITY 1: Repair if HP < 100% (NO skill required, works for MK1/MK2/MK3)
+            -- v2.0.67 FIX: previously MK1 with damaged HP went straight to the upgrade
+            -- path, which requires the Ballistic MK. II skill — so early-game players could
+            -- NOT repair a damaged MK1 ballistic. Now repair always runs first when damaged.
+            if inst.components.health and inst.components.health.currenthealth < inst.components.health.maxhealth then
+                _dbg("[DEBUG] Ballistic - modo repair (HP < max, qualquer tier)")
+                local function IsScrap(item)
+                    return item.prefab == "scrap"
+                end
+                local scrapstack = worker.components.inventory:FindItem(IsScrap)
+                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+                if repair_cost > 0 and scrapstack == nil then
+                    if worker.components.talker then
+                        worker.components.talker:Say("Need Scrap Metal to repair!")
+                    end
+                    return
+                end
+                if repair_cost > 0 then
+                    worker.components.inventory:ConsumeByName("scrap", repair_cost)
+                end
+                inst.components.health:DoDelta(50)
+                inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+                if worker.components.talker then
+                    worker.components.talker:Say("Repaired 50 HP!")
+                end
+                return
+            end
+
+            -- HP is already full — tell the player instead of silently consuming scrap
+            if inst.components.health and inst.components.health.currenthealth >= inst.components.health.maxhealth then
+                if worker.components.talker then
+                    worker.components.talker:Say("HP is already full!")
+                end
+                return
+            end
+
             -- Check if trying to upgrade MK1 to MK2
             if not inst:HasTag("ballistic_upgraded") and inst.prefab ~= "williamballistic2" then
                 _dbg("[DEBUG] Ballistic é MK1 - verificando upgrade para MK2")

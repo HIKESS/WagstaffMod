@@ -679,15 +679,12 @@ inst.components.burnable.ignorefuel = true
             wrench.components.finiteuses:Use(1)
         end
 
-        -- Level 2 repair: wrench + scrap restores HP
-        if inst.prefab == "williambrute2" or inst:HasTag("brute_upgraded") then
-            _dbg("[DEBUG] Brute é MK2 ou superior - modo repair")
-            if inst.components.health and inst.components.health.currenthealth >= inst.components.health.maxhealth then
-                if worker.components.talker then
-                    worker.components.talker:Say("HP is already full!")
-                end
-                return
-            end
+        -- PRIORITY 1: Repair if HP < 100% (NO skill required, works for MK1/MK2/MK3)
+        -- v2.0.67 FIX: previously MK1 with damaged HP went straight to the upgrade
+        -- path, which requires the Brute MK. II skill — so early-game players could
+        -- NOT repair a damaged MK1 brute. Now repair always runs first when damaged.
+        if inst.components.health and inst.components.health.currenthealth < inst.components.health.maxhealth then
+            _dbg("[DEBUG] Brute - modo repair (HP < max, qualquer tier)")
             local function IsScrap(item)
                 return item.prefab == "scrap"
             end
@@ -706,6 +703,14 @@ inst.components.burnable.ignorefuel = true
             inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
             if worker.components.talker then
                 worker.components.talker:Say("Repaired 50 HP!")
+            end
+            return
+        end
+
+        -- HP is already full — tell the player instead of silently consuming scrap
+        if inst.components.health and inst.components.health.currenthealth >= inst.components.health.maxhealth then
+            if worker.components.talker then
+                worker.components.talker:Say("HP is already full!")
             end
             return
         end
