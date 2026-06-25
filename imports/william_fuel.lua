@@ -35,20 +35,26 @@
 --     cutgrass  = 7.5 * 5 = 37.5s (1.25 seg)
 --     pinecone  = 15 * 5 = 75s   (2.5 seg)
 --   Custom fuels (explicit, NO bonusmult):
---     gears     = 180s  (6 seg)  — rare, high value
---     transistor= 120s  (4 seg)  — crafted
---     trinket_6 = 100s  (~3.3 seg) — frazzled wires, graveyard find
---     scrap     = 60s   (2 seg)  — common industrial
---     nitre     = 150s  (5 seg)  — chemical
+--     transistor= 180s  (6 seg)  — crafted electronic (premium mechanical fuel)
+--     trinket_6 = 120s  (4 seg)  — frazzled wires, graveyard find
+--     scrap     = 75s   (2.5 seg) — cheap renewable industrial (2flint+2twigs=5)
+--     nitre     = 150s  (5 seg)  — chemical (ballistic primary)
 --     flint     = 60s   (2 seg)
 --     goldnugget= 200s  (~6.7 seg) — valuable conductor
 --     rotton    = 25s   (~0.8 seg) — butler compost
 --
+-- NOTE (v2.0.76): GEARS REMOVED from all fuel lists. Gears are a scarce,
+--   non-renewable resource needed to craft bots (williamgadget = 2 gears each)
+--   and structures (esentry=3, eteleporter=2, telipad=1, thumper=1). Burning
+--   them as fuel created a conflict with the crafting economy. Transistor
+--   (craftable from gold+cutstone) replaces gears as the premium mechanical
+--   fuel. Scrap (cheap, renewable via 2flint+2twigs) is the mid-tier baseline.
+--
 -- Max fuel tanks (seconds):
---   Brute:    2400s (80 seg, ~5 days)  — needs ~16 logs or ~14 gears to fill
---   Butler:   1920s (64 seg, ~4 days)  — needs ~13 logs or ~10 gears
---   Buster:   1440s (48 seg, ~3 days)  — needs ~10 logs or ~8 gears
---   Ballistic:3630s (121 seg, ~7.5d)   — needs ~25 nitre or ~19 goldnuggets
+--   Brute:    2400s (80 seg, ~5 days)  — ~16 logs or ~14 transistors to fill
+--   Butler:   1920s (64 seg, ~4 days)  — ~13 logs or ~11 transistors
+--   Buster:   1440s (48 seg, ~3 days)  — ~8 transistors or ~20 scraps
+--   Ballistic:3630s (121 seg, ~7.5d)   — ~25 nitre or ~19 goldnuggets
 -- ============================================================================
 
 local WILLIAM_FUEL = {}
@@ -58,10 +64,12 @@ local WILLIAM_FUEL = {}
 -- (the values are final, controlled per-material).
 WILLIAM_FUEL.CUSTOM_VALUES = {
     -- Mechanical / Industrial
-    gears      = 180,  -- 6 seg — rare, high-value mechanical
-    transistor = 120,  -- 4 seg — crafted electronic
-    trinket_6  = 100,  -- ~3.3 seg — frazzled wires (graveyard/trinket)
-    scrap      = 60,   -- 2 seg — common industrial metal
+    -- NOTE: gears intentionally EXCLUDED (v2.0.76). Gears are scarce and
+    -- needed for crafting (williamgadget, esentry, eteleporter, etc.).
+    -- Transistor is the premium mechanical fuel; scrap is the cheap baseline.
+    transistor = 180,  -- 6 seg — crafted electronic (premium mechanical fuel)
+    trinket_6  = 120,  -- 4 seg — frazzled wires (graveyard/trinket find)
+    scrap      = 75,   -- 2.5 seg — cheap renewable industrial (2flint+2twigs=5)
 
     -- Minerals / Chemical / Electrical
     nitre      = 150,  -- 5 seg — chemical fuel (ballistic primary)
@@ -79,13 +87,14 @@ WILLIAM_FUEL.CUSTOM_VALUES = {
 -- Keys are prefab names. If true, the bot accepts that material.
 -- Standard DST fuel items (log, cutgrass, etc.) are accepted if listed here
 -- AND the item has a `fuel` component (DST handles the value + bonusmult).
--- Custom materials (gears, transistor, etc.) are accepted if listed here
+-- Custom materials (transistor, scrap, trinket_6, etc.) are accepted if listed here
 -- AND exist in CUSTOM_VALUES (our hook gives the explicit value).
 
 -- BRUTE: omnivore industrial — accepts everything mechanical + basic fuels
+-- (gears excluded v2.0.76 — scarce crafting resource)
 WILLIAM_FUEL.BRUTE = {
-    -- Mechanical
-    gears = true, transistor = true, trinket_6 = true, scrap = true,
+    -- Mechanical (transistor=premium, scrap=cheap, trinket_6=find)
+    transistor = true, trinket_6 = true, scrap = true,
     -- Wood
     log = true, boards = true, livinglog = true,
     -- Plant
@@ -95,6 +104,7 @@ WILLIAM_FUEL.BRUTE = {
 }
 
 -- BUTLER: household — prefers organic/wood, some mechanical
+-- (gears excluded v2.0.76 — scarce crafting resource)
 WILLIAM_FUEL.BUTLER = {
     -- Wood (primary)
     log = true, boards = true, livinglog = true,
@@ -102,13 +112,15 @@ WILLIAM_FUEL.BUTLER = {
     cutgrass = true, twigs = true, pinecone = true, foliage = true,
     -- Organic compost
     rotton = true, spoiled_food = true,
-    -- Mechanical (less efficient but accepted)
-    gears = true, transistor = true,
+    -- Mechanical (premium electronic fuel)
+    transistor = true,
 }
 
 -- BUSTER: picky combat bot — mechanical ONLY (no wood/plant)
+-- (gears excluded v2.0.76 — scarce crafting resource; transistor is now
+-- the premium fuel, scrap the cheap renewable baseline)
 WILLIAM_FUEL.BUSTER = {
-    gears = true, transistor = true, trinket_6 = true, scrap = true,
+    transistor = true, trinket_6 = true, scrap = true,
 }
 
 -- BALLISTIC: electrical/chemical battery — minerals ONLY

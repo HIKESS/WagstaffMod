@@ -317,9 +317,13 @@ local function OnFuelEmpty(inst)
 end
 
 local VALID_BUSTER_FUELS = {
-    gears = true,
+    -- v2.0.76: gears removed (scarce crafting resource, conflicts with
+    -- williamgadget/structure recipes). Transistor is the premium fuel.
+    -- NOTE: this table is legacy/dead code (DST passes fuelitem=nil to
+    -- ontakefuelfn), but kept for documentation + future-proofing.
     trinket_6 = true, -- frazzled wires
     transistor = true,
+    scrap = true,
 }
 
 local function OnAddFuel(inst, fuelvalue, fuelitem)
