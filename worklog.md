@@ -651,3 +651,21 @@ Stage Summary:
 - Causa raiz: brain's Follow node não checava inst.on; DST's Follow behaviour tem catch-up teleport quando leader fica distante.
 - Fix: gate WhileNode(inst.on == false → StandStill) no topo de cada brain + inst.on explicitamente setado em butler/buster (fn=true, empty=false).
 - Arquivos modificados (6): williambrutebrain.lua, williambusterbrain.lua, williambutlerbrain.lua, williamballisticbrain.lua, william_buster.lua, william_butler.lua.
+
+---
+Task ID: RECIPE-TELEPORTER-EQUAL
+Agent: main (Z.ai Code)
+Task: Ajustar recipe do teleporter entrance/exit para terem os mesmos requerimentos, com 2 gears, e ajustar o restante.
+
+Work Log:
+- Encontrei as receitas em modmain.lua linhas 3625-3643:
+  * eteleporter (Entrance): 30 scrap, 5 gears, 5 transistor
+  * eteleporter_exit (Exit): 25 scrap, 3 gears, 3 transistor
+- Padronizei ambas usando os valores do exit (mais leves) com 2 gears:
+  * Ambas agora: 25 scrap, 2 gears, 3 transistor
+- Verifiquei se há outras referências aos custos antigos (ApplyMasterEngineer em modmain.lua:3861 lida com sanity cost ao USAR o teleporter, não com o recipe — não precisa mexer).
+- STRINGS.RECIPE_DESC para ambos continua válido (descrição genérica, não menciona quantidades).
+
+Stage Summary:
+- Recipes do eteleporter e eteleporter_exit agora são IDÊNTICOS: 25 scrap + 2 gears + 3 transistor, TECH.MAGIC_TWO, builder_tag "tinkerer".
+- Redução de custo: Entrance ficou mais barato (30→25 scrap, 5→2 gears, 5→3 transistor). Exit ficou levemente mais barato (3→2 gears).
