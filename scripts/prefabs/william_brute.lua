@@ -621,6 +621,15 @@ inst.components.burnable.ignorefuel = true
     inst.components.fueled:SetDepletedFn(OnFuelEmpty)
     inst.components.fueled:StartConsuming()
 
+    -- v2.0.75: per-material fuel balancing. Sets bonusmult=5 (matches original
+    -- mod design), restricts accepted fuels to WILLIAM_FUEL.BRUTE list, and
+    -- hooks TakeFuelItem so custom materials (gears, transistor, scrap, etc.)
+    -- give explicit fuel values even though they lack a DST `fuel` component.
+    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+    if WILLIAM_FUEL then
+        WILLIAM_FUEL.Setup(inst, WILLIAM_FUEL.BRUTE, 5)
+    end
+
     -- Rain damage (like WX-78) when active
     inst:DoPeriodicTask(1, function(inst)
         if TheWorld.state.israining and inst.components.health then

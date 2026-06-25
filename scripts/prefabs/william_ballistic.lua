@@ -547,6 +547,18 @@ end
     inst.components.fueled.fueltype = FUELTYPE.CHEMICAL
     inst.components.fueled.bonusmult = 1
 
+    -- v2.0.75: per-material fuel balancing. Sets bonusmult=3 (matches original
+    -- mod design for ballistic), restricts accepted fuels to WILLIAM_FUEL.BALLISTIC
+    -- list (chemical/electrical minerals ONLY: nitre, flint, goldnugget,
+    -- transistor, trinket_6), and hooks TakeFuelItem so these custom materials
+    -- give explicit fuel values even though they lack a DST `fuel` component.
+    -- Note: SetFuelAcceptingTest overrides the FUELTYPE.CHEMICAL check, but
+    -- our list is already restricted to chemical/electrical materials.
+    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+    if WILLIAM_FUEL then
+        WILLIAM_FUEL.Setup(inst, WILLIAM_FUEL.BALLISTIC, 3)
+    end
+
         inst.OnPreLoad = onload
         inst.OnSave = onsave
 

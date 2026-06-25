@@ -611,6 +611,16 @@ end
     inst.components.fueled:InitializeFuelLevel(TUNING.WILLIAM_BUTLER_MAXFUEL)
     inst.components.fueled.bonusmult = 1
 
+    -- v2.0.75: per-material fuel balancing. Sets bonusmult=5 (matches original
+    -- mod design), restricts accepted fuels to WILLIAM_FUEL.BUTLER list
+    -- (wood/plant/organic + some mechanical), and hooks TakeFuelItem so
+    -- custom materials (gears, transistor, rotton, etc.) give explicit fuel
+    -- values even though they lack a DST `fuel` component.
+    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+    if WILLIAM_FUEL then
+        WILLIAM_FUEL.Setup(inst, WILLIAM_FUEL.BUTLER, 5)
+    end
+
     -- Update name AFTER fueled component is added (was crashing on craft: fueled was nil)
     UpdateButlerName(inst)
 

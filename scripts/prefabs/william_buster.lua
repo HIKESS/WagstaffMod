@@ -643,6 +643,18 @@ end
     inst.components.fueled:InitializeFuelLevel(TUNING.WILLIAM_BUSTER_MAXFUEL)
     inst.components.fueled.bonusmult = 1
 
+    -- v2.0.75: per-material fuel balancing. Sets bonusmult=5 (matches original
+    -- mod design), restricts accepted fuels to WILLIAM_FUEL.BUSTER list
+    -- (mechanical ONLY: gears, transistor, trinket_6, scrap), and hooks
+    -- TakeFuelItem so these custom materials give explicit fuel values even
+    -- though they lack a DST `fuel` component. The old VALID_BUSTER_FUELS
+    -- table was dead code (never enforced); this replaces it with a working
+    -- implementation.
+    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+    if WILLIAM_FUEL then
+        WILLIAM_FUEL.Setup(inst, WILLIAM_FUEL.BUSTER, 5)
+    end
+
         inst.OnPreLoad = onload
         inst.OnSave = onsave
 

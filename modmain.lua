@@ -952,6 +952,10 @@ local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
 
 modimport("imports/william_tuning")
 
+-- v2.0.75: per-material fuel balancing system for all 4 bots.
+-- Exposes WILLIAM_FUEL table to GLOBAL so prefabs can require it.
+modimport("imports/william_fuel")
+
 modimport("imports/william_widgets")
 
 modimport("imports/william_acts")
