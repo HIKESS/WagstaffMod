@@ -3624,7 +3624,7 @@ AddSimPostInit(function()
 
     AddRecipe2("eteleporter",
 
-        {Ingredient("scrap", 30, eimg("scrap")), Ingredient("gears", 5), Ingredient("transistor", 5)},
+        {Ingredient("scrap", 25, eimg("scrap")), Ingredient("gears", 2), Ingredient("transistor", 3)},
 
         TECH.MAGIC_TWO,
 
@@ -3634,7 +3634,7 @@ AddSimPostInit(function()
 
     AddRecipe2("eteleporter_exit",
 
-        {Ingredient("scrap", 25, eimg("scrap")), Ingredient("gears", 3), Ingredient("transistor", 3)},
+        {Ingredient("scrap", 25, eimg("scrap")), Ingredient("gears", 2), Ingredient("transistor", 3)},
 
         TECH.MAGIC_TWO,
 
