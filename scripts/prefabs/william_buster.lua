@@ -322,20 +322,30 @@ local VALID_BUSTER_FUELS = {
     transistor = true,
 }
 
-local function OnAddFuel(inst, doer, fuelitem)
+local function OnAddFuel(inst, fuelvalue, fuelitem)
+    -- v2.0.70 FIX: DST's `fueled` component calls ontakefuelfn as
+    -- (inst, fuelvalue, ...) — NOT (inst, doer, fuelitem). Previous code
+    -- treated the fuelvalue number as `doer`, crashing with "attempt to
+    -- index local 'doer' (a number value)" when fuel was already full.
     -- v2.0.63: reject fuel when already full (vanilla-style feedback).
     if inst.components.fueled and inst.components.fueled:IsFull() then
-        if doer and doer.components.talker then
-            doer.components.talker:Say("It's already full!")
+        local player = FindClosestPlayerToInst(inst, 10, true)
+        if player and player.components.talker then
+            player.components.talker:Say("It's already full!")
         end
         return false
     end
-    -- Only accept generator fuel (gears, etc.), reject common fuel like wood
+    -- Only accept generator fuel (gears, etc.), reject common fuel like wood.
+    -- NOTE: in this DST version, fuelitem is nil from ontakefuelfn (DST passes
+    -- only fuelvalue as the 2nd arg), so this validation is currently a no-op.
+    -- Fuel-type filtering should be done via the fueled component's
+    -- SetFuelAcceptingTest or similar, not here. Left in place for safety.
     if fuelitem and fuelitem.prefab then
         if not VALID_BUSTER_FUELS[fuelitem.prefab] then
             -- Not a valid fuel for Buster Bot
-            if doer and doer.components.talker then
-                doer.components.talker:Say("This won't work as fuel.")
+            local player = FindClosestPlayerToInst(inst, 10, true)
+            if player and player.components.talker then
+                player.components.talker:Say("This won't work as fuel.")
             end
             return false  -- Reject the fuel
         end
