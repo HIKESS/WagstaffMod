@@ -575,3 +575,31 @@ Stage Summary:
 - Nova lógica: qualquer tier (MK1/MK2/MK3) com HP < 100% agora pode ser reparado com wrench + 1 scrap, SEM exigir skill. Upgrade continua exigindo skill (mas só é tentado quando HP está cheio).
 - Commit a30a34f está no branch main do repo HIKESS/WagstaffMod (produção).
 - Próxima vez que o usuário subir o servidor DST com git pull no mod, o brute/buster/ballistic MK1 danificado poderá ser reparado sem exigir a skill MK.II.
+
+---
+Task ID: fix-mk2-brute-repair
+Agent: Z.ai Code (main)
+Task: Verificar e corrigir o mesmo bug no MK2 (sem skill MK3): "no mk2 se eu tiver sem skill do mk3 tambem vai acontecer isso?"
+
+Work Log:
+- Investigado o engieworkable OnFinish do MK2 nos 3 bots (brute, buster, ballistic).
+- BRUTE MK2 (linhas 1184-1194): CONFIRMADO o bug. Lógica era:
+    if not has_mk3_skill then Say("Requires MK.III skill!") return end
+    if inst.upgradelevel_mk3 < 90 then ... upgrade ... return end
+    -- If not upgrading, try repair  ← NUNCA chegava aqui sem a skill MK3
+  Resultado: Brute MK2 danificado sem skill MK3 = não podia ser reparado.
+- BUSTER MK2 (linha 981): CORRETO. Já usava 'if has_mk3_skill and upgradelevel < 90 then ... return end' — sem skill, pula upgrade e cai no reparo.
+- BALLISTIC MK2 (linha 980): CORRETO. Mesmo padrão do buster.
+- Aplicado fix no BRUTE MK2: trocado 'if not has_mk3_skill then return end' + 'if upgradelevel < 90' por 'if has_mk3_skill and upgradelevel < 90'. Agora sem skill MK3, o upgrade é pulado (não bloqueado) e cai no reparo.
+- Validado balanceamento [[ / ]] no william_brute.lua: OK (2/2).
+- Commit 21c4942 "v2.0.67: fix MK2 brute repair — don't require MK3 skill to repair a damaged MK2".
+- Push: BEM-SUCEDIDO (a30a34f..21c4942 HEAD -> main).
+- Confirmado via git ls-remote: origin/main = 21c4942.
+
+Stage Summary:
+- Bug do MK2→MK3 confirmado e corrigido APENAS no brute (buster e ballistic já estavam corretos).
+- Agora: Brute MK2 danificado sem skill MK3 → repara normalmente com wrench + 1 scrap.
+- Resumo final do v2.0.67 (3 commits de fix):
+  * 76e8bc2: modinfo.lua unfinished long string (crash do mod)
+  * a30a34f: MK1 repair (brute/buster/ballistic) — repair antes de upgrade
+  * 21c4942: MK2 brute repair — sem exigir skill MK3 pra reparar
