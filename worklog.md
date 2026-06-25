@@ -603,3 +603,51 @@ Stage Summary:
   * 76e8bc2: modinfo.lua unfinished long string (crash do mod)
   * a30a34f: MK1 repair (brute/buster/ballistic) — repair antes de upgrade
   * 21c4942: MK2 brute repair — sem exigir skill MK3 pra reparar
+
+---
+Task ID: BUG-DEACTIVATED-FOLLOW
+Agent: main (Z.ai Code)
+Task: Fixar bug do bot desativado "teleportando" para seguir o player (reportado pelo usuário: "eu desativo o bot... e ele ta se teleportando me seguindo desativado... ta acontecendo com o brute")
+
+Work Log:
+- Investiguei a causa raiz lendo william_brute.lua (TurnOff/TurnOn, linhas 237-392) e williambrutebrain.lua.
+- Confirmei que TurnOff seta inst.on = false e limpa combat, mas NÃO para o brain nem remove o leader do follower.
+- Li williambrutebrain.lua (brain completo): o nó Follow(self.inst, GetLeader, ...) roda sem checar inst.on → quando o bot é desativado, o brain continua ativo e o behaviour Follow do DST tem uma mecânica de "catch-up teleport" (quando o leader fica muito distante, o follower é teleportado perto dele). Isso causa o "teleport" que o usuário viu.
+- Verifiquei os outros 3 brains (williambusterbrain, williambutlerbrain, williamballisticbrain): TODOS têm o mesmo bug — o nó Follow/ChaseAndAttack não é gated por inst.on.
+- Verifiquei o ciclo de desativação de cada bot:
+  * Brute: TurnOff seta inst.on = false (correto). TurnOn seta inst.on = true. Save/load persiste data.on. ✓
+  * Buster: OnFuelEmpty (OnLowerFn) só faz sg:GoToState("powerdown") → spawna williambuster_empty e remove o ativo. O fn() NUNCA seta inst.on (fica nil). O empty() herda fn() e também não seta. → inst.on sempre nil, gate não funcionaria.
+  * Butler: Mesmo padrão do buster. OnFuelEmpty → powerdown → spawna empty. fn() não seta inst.on.
+  * Ballistic: OnDismantle spawna williamballistic_empty (item de inventário, sem brain). Empty não tem brain → não tem o bug. Mas adicionei o gate como proteção defensiva.
+
+Fix aplicado (2 camadas):
+
+CAMADA 1 — Brain gate (todos os 4 brains):
+Adicionei um WhileNode de prioridade MÁXIMA no topo do PriorityNode de cada brain:
+  WhileNode(function() return self.inst.on == false end, "Deactivated", StandStill(self.inst))
+Quando inst.on == false, StandStill bloqueia todos os nós de movimento abaixo (Follow, ChaseAndAttack, Wander, RunAway, etc.), mantendo o bot parado.
+- williambrutebrain.lua (linha ~101): gate adicionado antes de OnFire/Panic/Chase/Follow/Wander.
+- williambusterbrain.lua (linha ~121): gate adicionado antes de watch_game/Dance/LeaderInRange/Follow.
+- williambutlerbrain.lua (linha ~238): gate adicionado antes de watch_game/Dance/CombatAvoidance/LeaderInRange/Follow.
+- williamballisticbrain.lua (linha ~128 mobile, ~145 turret): gate em ambos os modos.
+
+CAMADA 2 — inst.on consistência (butler + buster):
+Para o gate do brain funcionar, inst.on precisa ser explicitamente true/false:
+- william_buster.lua fn() (linha ~706): adicionado inst.on = true (ativo).
+- william_buster.lua empty() (linha ~1452): adicionado inst.on = false (husk inert).
+- william_butler.lua fn() (linha ~577): adicionado inst.on = true (ativo).
+- william_butler.lua empty() (linha ~1379): adicionado inst.on = false (husk inert).
+- Brute já estava correto (TurnOn/TurnOff setam inst.on).
+- Ballistic não precisa (empty é item sem brain), mas brain tem gate defensivo.
+
+Verificação:
+- Balance check de parênteses/chaves/colchetes em todos os 4 brains: balanced.
+- standstill já estava no require de todos os 4 brains (não precisei adicionar import).
+- Save/load do brute já persiste/restaura inst.on (data.on), então o estado desativado sobrevive a reload.
+- Butler/buster não precisam persistir inst.on: o prefab determina o estado (fn=active=true, empty=false).
+
+Stage Summary:
+- Bug "bot desativado teletransporta pra seguir player" CORRIGIDO em todos os 4 bots (brute/buster/butler/ballistic).
+- Causa raiz: brain's Follow node não checava inst.on; DST's Follow behaviour tem catch-up teleport quando leader fica distante.
+- Fix: gate WhileNode(inst.on == false → StandStill) no topo de cada brain + inst.on explicitamente setado em butler/buster (fn=true, empty=false).
+- Arquivos modificados (6): williambrutebrain.lua, williambusterbrain.lua, williambutlerbrain.lua, williamballisticbrain.lua, william_buster.lua, william_butler.lua.
