@@ -132,6 +132,21 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         tags = {"idle", "canrotate"},
         onenter = function(inst)
             inst.Physics:Stop()
+                -- v2.0.73 FIX: prevent "Could not find anim [idle_loop] in bank
+                -- [william_brute]" warning. The turn_off/idle_off states set
+                -- bank to "william_brute" (for sit animations). If the SG
+                -- transitions to "idle" while bank is still "william_brute"
+                -- (e.g. after save/load or world regen skips idle_off's
+                -- onexit), "idle_loop" won't be found in "william_brute" bank.
+                -- Safeguard 1: if deactivated (inst.on == false), redirect to
+                -- idle_off (the correct deactivated state).
+                -- Safeguard 2: force bank to "pigman" before playing idle_loop
+                -- (guarantees the animation exists).
+                if inst.on == false then
+                    inst.sg:GoToState("idle_off")
+                    return
+                end
+                inst.AnimState:SetBank("pigman")
                 inst.AnimState:PlayAnimation("idle_loop", true)
                 inst.sg:SetTimeout(math.random() * 1 + 2)
         end,
