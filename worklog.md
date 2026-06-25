@@ -714,3 +714,31 @@ Stage Summary:
 - Causa: bloco "HP is already full" com early return adicionado na v2.0.67 ANTES do upgrade path, impedindo que o upgrade fosse processado quando HP estava cheio.
 - Fix: removido o bloco bugado nos 3 arquivos. Agora quando HP está cheio, o fluxo cai direto no upgrade path (skill check → scrap consumption → spawn MK2).
 - Arquivos modificados (3): william_brute.lua, william_buster.lua, william_ballistic.lua.
+
+---
+Task ID: BRUTE-FOLLOW-FIX-V2
+Agent: main (brute deactivated-follow root-cause fix)
+Task: Fix brute bot still following/teleporting when deactivated. Butler works, brute doesn't. User pointed to original mod repo (https://github.com/HIKESS/Mods.git, mod IDs 2607507857 & 3665517849) for reference.
+
+Work Log:
+- Cloned https://github.com/HIKESS/Mods.git to /tmp/Mods-orig.
+- Compared original mod (2607507857 & 3665517849 — both identical) brute files vs our fork:
+  * ORIGINAL brute brain (97 lines): NO Follow node. Uses only Panic + ChaseAndAttack + ShouldGoHome + Wander. The brute never follows the player — it wanders around its "home" location.
+  * ORIGINAL brute prefab: NO follower component at all (grep returns zero matches).
+  * OUR FORK brute brain (136 lines): ADDED a Follow node (gated by IsActive/inst.on).
+  * OUR FORK brute prefab (1664 lines): ADDED follower component at line 624 (MK1) so brute follows player after craft — this is a fork-specific feature.
+  * Stategraph SGwilliambrute.lua: identical across original & fork (520 lines). The `idle_off` state has NO locomotion (just plays sit_idle animation). So the SG is NOT moving the bot.
+- Root cause identified: The DST `follower` component has a built-in CATCH-UP TELEPORT that fires at the COMPONENT level (in OnUpdate), completely bypassing the brain. Even though our brain's `Active` WhileNode gates the Follow behaviour when `inst.on == false`, the follower component STILL has a leader reference and keeps teleporting the deactivated bot to the leader.
+- WHY BUTLER/BUSTER WORK: Their `empty()` husk is a FRESH entity spawned via `fn()` — it has a follower component but NO leader is ever set on it. So the catch-up teleport never fires. The brute reuses the SAME entity on deactivation (TurnOff), leaving the follower leader attached → teleport fires.
+- FIX APPLIED (2 files):
+  1. scripts/prefabs/william_brute.lua TurnOff(): Added `inst.components.follower:StopFollowing()` right after `inst.on = false`. This clears the leader (matching butler/buster's no-leader state) so the follower component's catch-up teleport stops. TurnOn already re-acquires the leader from the activating player (doer) or nearest player within 20 units (lines 329-338), so reactivation re-bonds the brute correctly.
+  2. imports/william_acts.lua WILLYRAISE action condition: Updated to allow reactivation when the leader is nil. Original: `(replica.follower == nil or GetLeader() == doer)`. New: `(replica.follower == nil or GetLeader() == nil or GetLeader() == doer)`. Without this, after StopFollowing clears the leader, the WILLYRAISE action wouldn't appear (because `nil == doer` is false) and the player couldn't reactivate the brute.
+- Verified: No other action conditions in william_acts.lua break (cooking action at line 18-19 correctly skips deactivated brutes; butler-specific checks at 149/163 unaffected).
+- Reload behavior: On save/load with on=false, onload restores leader then calls TurnOff(instant=true) which now clears the leader. When reactivated, TurnOn re-bonds to reactivating player. Acceptable — matches butler/buster "unbound husk is claimable" semantics.
+
+Stage Summary:
+- ROOT CAUSE: follower component's component-level catch-up teleport, NOT the brain. The brain gate was correct but insufficient because the follower component operates independently of the brain.
+- FIX: StopFollowing() in TurnOff (clears leader) + WILLYRAISE condition allows nil leader (so bot is reactivatable).
+- This is a fork-specific bug: the original mod never had a follower component on the brute, so the teleport never existed. Our fork added follow-behavior but forgot to disconnect the follower on deactivation.
+- Files changed: scripts/prefabs/william_brute.lua (TurnOff), imports/william_acts.lua (WILLYRAISE condition).
+- Next: user should test in-game: craft brute, walk away, deactivate → brute should stay put (no teleport). Reactivate → brute re-bonds to reactivator and follows again.

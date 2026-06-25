@@ -1,0 +1,717 @@
+     1→---
+     2→Task ID: BAL-A
+     3→Agent: Explore (balance analysis)
+     4→Task: Research balance issues across bots/sentry/teleporter/skills in WagstaffMod
+     5→
+     6→Work Log:
+     7→- Read /home/z/ds-work/WagstaffMod/ imports/william_tuning.lua to extract base bot stats (HP/DMG/fuel/regen constants).
+     8→- Grepped william_butler.lua, william_buster.lua, william_brute.lua, william_ballistic.lua for SetMaxHealth / SetDefaultDamage / fueled / scrap / upgradelevel to build per-tier stat tables.
+     9→- Found MK2/MK3 upgrade scrap costs by reading the engieworkable OnFinishCallback in each bot prefab:
+    10→    Butler MK1->MK2 = 55 scraps (10+10+10+10+15); MK2->MK3 = 70 scraps (5/hit x14)
+    11→    Buster MK1->MK2 = 85 scraps (5/hit x17);        MK2->MK3 = 120 scraps (5/hit x24)
+    12→    Brute  MK1->MK2 = 75 scraps (5/hit x15);        MK2->MK3 = 90 scraps (5/hit x18)
+    13→    Ballistic MK1->MK2 = 100 scraps (5/hit x20);    MK2->MK3 = 150 scraps (5/hit x30)  <-- highest in mod
+    14→- Confirmed Brute MK3 (fn3 line 1290-1294) EXPLICITLY reverts HP/DMG back to MK2 values: HP 2500, DMG 27 — comment at line 1277 says "+2000 HP, +20 DMG" but code overrides.
+    15→- Confirmed Ballistic MK3 (active3 line 1015 comment "inherits MK2 stats") has HP 400, DMG 28 — IDENTICAL to MK2.
+    16→- Confirmed Butler MK3 (active3) inherits active2 stats — HP 200, no combat damage; MK3 only adds AffinityPulse + celestial light + haunt-resurrect + food bonus.
+    17→- Confirmed Buster MK3 (active3 line 1031-1033): HP 900, DMG 46; adds 30% chance explosive punch (+50% dmg + AOE) + shadow clone (50% dmg, invincible) at dusk.
+    18→- Found Buster LevelUp bug (line 204): SetDefaultDamage(BUSTER_DAMAGE + level*3) OVERWRITES MK2/MK3 damage boost — leveling an MK3 Buster to lvl3 reduces damage from 46 to 45.
+    19→- Read esentry.lua (lines 144-176, 230-270, 551-558, 599-653): SENTRY_HEALTH=300, SENTRY_DAMAGE=25, SENTRY_ROF=1.5s, SENTRY_RANGE=12. MK2 (lvl 30) doubles HP to 600; MK3 (lvl 70) triples HP to 900 + enables rockets (50 dmg). Damage stays 25 across all levels. x2_damage skill: 15% chance +base_dmg extra (esentry.lua line 617-620, 631-634, 645-647).
+    20→- Read eteleporter.lua + eteleporter_exit.lua + components/engieteleporter.lua: NO cooldown, NO range limit, ETELEPORT_PENALTY=0 (modmain.lua line 548), ENGIE_BUILDINGLOSS/1.5=10 sanity lost only when teleporter destroyed. The OnActivate function that would apply sanity cost (eteleporter.lua line 213-224) is COMMENTED OUT.
+    21→- Read skilltree_wagstaff.lua fully: ALL skills cost 1 insight. Three branches (mechanical/robotic/allegiance). No "gadgets" branch exists in skilltree_wagstaff.lua, BUT modmain.lua lines 3399-3533 and wagstaff_skilltree_impl.lua reference wagstaff_calibrated_wrench / wagstaff_stabilized_portals / wagstaff_efficient_refineries / wagstaff_gadgets_5 / wagstaff_gadgets_6 tags — these skill effects are coded but the skills themselves are NOT in the tree (orphaned/dead code).
+    22→- Read modmain.lua lines 2250-2263 (WagstaffMechanicalEfficiencyRoll), 4015-4041 (finiteuses interception), 4044-4070 (fueled interception): wagstaff_mechanical_efficiency tag grants THREE separate bonuses — 30% free scrap on all upgrades/repairs, 15% reduced wrench durability, 15% chance free fuel.
+    23→- Read modmain.lua lines 3259-3376: extracted all recipe costs and tech levels.
+    24→- Read standalone_prefabs.lua lines 785-811: TF2 Wrench has 50 finiteuses, 59.5 weapon damage, recipe = 5 scrap + 3 twigs.
+    25→- Read dispenser.lua lines 160-265: confirmed v2.0.14 buff — Dispenser MK3 celestial = SANITYAURA_MED (100/min), shadow = 2 HP/0.5s = 4 HP/sec heal (builder only, range 4).
+    26→- Verified bot_aura_v2/v3/v4/v5 + affinity_pulse.lua are PURELY VISUAL FX (light + particle color tints) — no gameplay stats applied by the aura FX prefabs themselves. The actual gameplay effects come from each bot's own DoPeriodicTask handlers (counter-attack on hit, food bonus, etc.).
+    27→
+    28→Stage Summary:
+    29→
+    30→=========================================================================
+    31→COMPARISON TABLES
+    32→=========================================================================
+    33→
+    34→TABLE 1 — Bot/Structure Stats Per Tier (HP / DMG / Fuel / Scrap Cost)
+    35→=========================================================================
+    36→Entity      | MK1                  | MK1->MK2 cost | MK2                  | MK2->MK3 cost | MK3                  | MK3 vs MK2 stat delta
+    37→------------|----------------------|---------------|----------------------|---------------|----------------------|----------------------
+    38→Butler      | HP 200, DMG 0, F 32m | 55 scrap      | HP 200, DMG 0, F 32m | 70 scrap      | HP 200, DMG 0, F 32m | +0 HP / +0 DMG (no stat gain at any tier)
+    39→Buster      | HP 300, DMG 36, F 24m| 85 scrap      | HP 600, DMG 41, F 24m| 120 scrap     | HP 900, DMG 46, F 24m| +300 HP / +5 DMG (scales linearly)
+    40→Brute       | HP 1500, DMG 17, F 40m| 75 scrap     | HP 2500, DMG 27, F 40m| 90 scrap     | HP 2500, DMG 27, F 40m| +0 HP / +0 DMG (CODE EXPLICITLY REVERTS — line 1290-1294)
+    41→Ballistic   | HP 150, DMG 16*, F ~18m**| 100 scrap | HP 400, DMG 28*, F ~18m| 150 scrap   | HP 400, DMG 28*, F ~18m| +0 HP / +0 DMG (comment line 1015 confirms "inherits MK2 stats")
+    42→Sentry      | HP 300, DMG 25, ROF 1.5s| 30 scrap   | HP 600, DMG 25, ROF 1.5s| 40 scrap    | HP 900, DMG 25, ROF 1.5s + rockets 50| +300 HP / +0 DMG base (rockets only)
+    43→Dispenser   | max fuel 4 (day)    | 30 scrap      | max fuel 6 (day+dusk)| 40 scrap      | max fuel 10 (full)   | +4 max fuel + affinity auras
+    44→
+    45→* Ballistic damage is electric (x1.5 vs most mobs) so effective DMG = 24 (MK1) / 42 (MK2/MK3).
+    46→** Ballistic fuel uses WINONA_BATTERY_LOW_MAX_FUEL_TIME * 5, NOT the WILLIAM_BALLISTIC_MAXFUEL constant (which is defined but unused — 3630s would be ~60 min).
+    47→
+    48→Fuel durations: seg_time=30s, 16 segs/day = 480s/day. WILLIAM_BUTLER_MAXFUEL=1920s, BUSTER=1440s, BRUTE=2400s. All bots keep same fuel across MK tiers (only Dispenser scales fuel).
+    49→
+    50→
+    51→TABLE 2 — MK3 Affinity Aura Effects (Celestial Day / Shadow Dusk)
+    52→=========================================================================
+    53→Bot/Struct  | Celestial (Day + celestial_possession tag)              | Shadow (Dusk + shadow_possession tag)
+    54→------------|---------------------------------------------------------|----------------------------------------------------------
+    55→Butler MK3  | Cooked food heals +40% of hunger as HP% when eaten;     | Cooked food restores +40% of hunger as sanity% when eaten;
+    56→            | +20% max HP bonus on ghost-revive (one-time, bot dies)  | +30% max sanity bonus on ghost-revive (one-time, bot dies)
+    57→Buster MK3  | 30% on-hit AOE light explosion (30% dmg to adjacent    | Spawns invincible shadow clone dealing 50% of parent damage,
+    58→            | enemies within 3 units); +light aura                    | follows parent, despawns at dusk end
+    59→Brute MK3   | Counter-attack 30 fire dmg to attacker when hit;        | Counter-attack 15 shadow dmg to attacker; AOE debuff enemies
+    60→            | +planar immunity tag; +light aura                       | -50% damage for 4s (8s cooldown, radius 6); +planar immunity; +shadowlure
+    61→Ballistic MK3| Brightshade projectile every 15s (0.6 x base = 9.6 dmg)| Fuelweaver Snare every 15s, snares up to 3 enemies in radius 15
+    62→Sentry MK3  | +10% damage to shadow_aligned enemies (onhit hook)     | +10% damage to lunar_aligned enemies (onhit hook)
+    63→            | (x2_damage skill: 15% chance +100% base dmg, ALL times) | (x2_damage skill: 15% chance +100% base dmg, ALL times)
+    64→Dispenser MK3| **Sanity aura MED = 100/min** (was SMALL 50/min)      | **HP heal 2 HP/0.5s = 4 HP/s = 240 HP/min** (builder only, range 4)
+    65→(recently    | Always-on passive aura while in range                  | Always-on passive aura while in range
+    66→ buffed)    |                                                         |
+    67→
+    68→Key observation: Dispenser MK3 auras are ALWAYS-ON PASSIVE. All bot MK3 auras are SITUATIONAL (combat, food eaten, hit taken, 15s cooldown). The Dispenser's 100 sanity/min or 240 HP/min massively overshadows the bots' effects.
+    69→
+    70→
+    71→TABLE 3 — Skill Tree (All skills cost 1 insight)
+    72→=========================================================================
+    73→Branch      | Skill                                | Effect
+    74→------------|--------------------------------------|-----------------------------------
+    75→mechanical  | wagstaff_mechanical_1 (ROOT)         | Mechanical Efficiency: 30% free scrap + 15% less wrench wear + 15% free fuel
+    76→            | wagstaff_sentry_mk2                  | Unlocks Sentry MK2 (lvl 30)
+    77→            | wagstaff_sentry_mk3                  | Unlocks Sentry MK3 (lvl 70)
+    78→            | wagstaff_x2_damage                   | Sentry 15% chance double damage
+    79→            | wagstaff_dispenser_mk2               | Unlocks Dispenser MK2 (lvl 30)
+    80→            | wagstaff_dispenser_mk3               | Unlocks Dispenser MK3 (lvl 70)
+    81→            | wagstaff_lucky_engineer              | Dispenser chance for rare resource
+    82→robotic     | wagstaff_robotic_1 (ROOT)            | Unlocks Brute MK2
+    83→            | wagstaff_robotic_1_parallel          | Unlocks Brute MK3
+    84→            | wagstaff_buster_evolve               | Unlocks Buster MK2
+    85→            | wagstaff_buster_parallel             | Unlocks Buster MK3
+    86→            | wagstaff_ballistic_evolve            | Unlocks Ballistic MK2
+    87→            | wagstaff_ballistic_parallel          | Unlocks Ballistic MK3
+    88→            | wagstaff_thermal_upgrade             | Unlocks Butler MK2
+    89→            | wagstaff_thermal_upgrade_parallel    | Unlocks Butler MK3
+    90→allegiance  | wagstaff_shadow_possession (LOCKED)  | Shadow affinity (requires Fuelweaver kill)
+    91→            | wagstaff_celestial_possession (LOCKED)| Celestial affinity (requires Celestial Champion kill)
+    92→
+    93→NOTE: 5 orphaned skill effects coded in modmain.lua (wagstaff_calibrated_wrench, wagstaff_stabilized_portals, wagstaff_efficient_refineries, wagstaff_gadgets_5, wagstaff_gadgets_6) have NO corresponding skill nodes in skilltree_wagstaff.lua — they are unreachable dead code.
+    94→
+    95→
+    96→TABLE 4 — Recipe Costs
+    97→=========================================================================
+    98→Item                       | Cost                                         | Tech
+    99→---------------------------|----------------------------------------------|-------------
+   100→scrap (crafts 5)           | 2 flint + 2 twigs                            | NONE
+   101→tf2wrench (50 uses, 59.5 dmg)| 5 scrap + 3 twigs                          | NONE
+   102→williamgadget              | 2 gears + 1 goldnugget                       | NONE
+   103→esentry                    | 20 scrap + 3 gears                           | MAGIC_ONE
+   104→dispenser                  | 15 scrap + 3 redgem                          | SCIENCE_TWO
+   105→eteleporter (entrance)     | 30 scrap + 5 gears + 5 transistor            | MAGIC_TWO
+   106→eteleporter_exit           | 25 scrap + 3 gears + 3 transistor            | MAGIC_TWO
+   107→williambutler_builder      | 1 williamgadget + 4 boards + 2 transistor    | SCIENCE_ONE
+   108→williambuster_builder      | 1 williamgadget + 3 marble + 2 transistor    | MAGIC_ONE
+   109→williambrute_builder       | 1 williamgadget + 4 cutstone + 2 transistor  | SCIENCE_TWO
+   110→williamballistic_empty     | 1 williamgadget + 4 nitre + 2 transistor     | MAGIC_TWO
+   111→
+   112→
+   113→TABLE 5 — Tuning Constants (modmain.lua + william_tuning.lua)
+   114→=========================================================================
+   115→Constant                     | Value      | Notes
+   116→-----------------------------|------------|--------
+   117→WILLIAM_BALLISTIC_HEALTH     | 150        |
+   118→WILLIAM_BALLISTIC_DAMAGE     | 24/1.5=16  | electric, x1.5 vs mobs = 24 effective
+   119→WILLIAM_BALLISTIC_MAXFUEL    | 3630s      | UNUSED — code uses WINONA_BATTERY_LOW_MAX_FUEL_TIME * 5
+   120→WILLIAM_BUSTER_HEALTH        | 300        |
+   121→WILLIAM_BUSTER_DAMAGE        | 36         |
+   122→WILLIAM_BUSTER_MAXFUEL       | 1440s      |
+   123→WILLIAM_BUTLER_HEALTH        | 200        |
+   124→WILLIAM_BUTLER_DAMAGE        | 30         | DEPRECATED — not used (butler has no combat)
+   125→WILLIAM_BUTLER_MAXFUEL       | 1920s      |
+   126→WILLIAM_BRUTE_HEALTH         | 1500       |
+   127→WILLIAM_BRUTE_DAMAGE         | 17         | very low for a "tank/juggernaut" role
+   128→WILLIAM_BRUTE_MAXFUEL        | 2400s      |
+   129→WILLIAM_ROBOT_REGEN          | 5 HP / 5s  | = 1 HP/s passive regen for all bots
+   130→SENTRY_HEALTH                | 300        | MK2=600, MK3=900 (only HP scales)
+   131→SENTRY_DAMAGE                | 25         | STAYS 25 across all tiers
+   132→SENTRY_RANGE                 | 12         |
+   133→SENTRY_ROF                   | 1.5s       | attack period
+   134→SENTRY_ROCKET_DAMAGE         | 50         | MK3 only
+   135→SENTRY_WRENCH_HEAL           | 10 HP/hit  | repair per wrench swing
+   136→ETELEPORT_PENALTY            | 0          | NO sanity cost on teleport (OnActivate code commented out)
+   137→ENGIE_BUILDINGLOSS           | 15 sanity  | sentry death; teleporter uses /1.5 = 10
+   138→DISP_HEALING                 | 0.5s       | dispenser heal tick interval
+   139→DISP_RANGE                   | 4          | dispenser aura radius
+   140→TOOLBOX_SPEED_MULT           | 0.15       | 85% speed penalty when carrying sentry (heavy)
+   141→TF2_WRENCH_MAXUSES           | 50         | 50 hits per wrench (standalone_prefabs.lua line 806)
+   142→
+   143→
+   144→=========================================================================
+   145→TOP 8 BALANCE ISSUES (ranked by severity)
+   146→=========================================================================
+   147→
+   148→#1 (HIGH) — Ballistic MK3 costs 150 scraps but adds ZERO stat gain
+   149→  What: Ballistic MK2 -> MK3 = 150 scraps (5/hit x 30 hits, HIGHEST in mod).
+   150→        MK3 HP 400 / DMG 28 — IDENTICAL to MK2 (william_ballistic.lua line 1015 confirms).
+   151→        The 150 scraps only buys: Overcharge (3x DMG + 500 HP + 3x attack rate, 60s, 1/day from
+   152→        invoked lightning only), chain lightning on hit, rain splash, and 15s-cooldown affinity.
+   153→  Why bad: MK1->MK2 = 100 scraps for +250 HP / +12 DMG (huge boost). MK2->MK3 = 50% MORE scraps
+   154→        (150) for ZERO stats. The Overcharge is strong but requires Tempest Call + rain + only
+   155→        60s/day. Affinity projectile is 9.6 dmg/15s = ~38 dmg/min (negligible). Players will feel
+   156→        cheated paying 150 scraps for an ability-only upgrade.
+   157→  Fix: Add modest stat boost to MK3 — +100 HP (->500) and +5 DMG (->33). OR reduce scrap cost
+   158→        from 150 to 100 to match MK1->MK2. Either makes the upgrade feel rewarding. No FX change,
+   159→        no tree reordering.
+   160→
+   161→#2 (HIGH) — Brute MK3 costs 90 scraps but adds ZERO stat gain (CODE EXPLICITLY REVERTS)
+   162→  What: Brute MK2 -> MK3 = 90 scraps. MK3 HP 2500 / DMG 27 — IDENTICAL to MK2. The fn3 function
+   163→        (william_brute.lua line 1290-1294) EXPLICITLY reverts HP/DMG back to MK2 values, even
+   164→        though the comment at line 1277 says "+2000 HP, +20 DMG". The 90 scraps only buys: storage
+   165→        chest, AffinityPulse visual, situational counter-attacks (30 fire / 15 shadow dmg when
+   166→        hit), planar immunity, AOE -50% dmg debuff (8s cooldown).
+   167→  Why bad: Same inverted value as Ballistic. Brute has 2500 HP so it rarely gets hit, making the
+   168→        counter-attack effects mostly irrelevant in normal play. The MK3 is functionally a MK2
+   169→        with a chest. The comment suggests the original intent was a much bigger boost — this is
+   170→        likely a regression.
+   171→  Fix: Restore even a fraction of the commented boost — +500 HP (->3000) and/or +5 DMG (->32).
+   172→        Brute is supposed to be the tank/juggernaut; 2500 HP at MK3 feels stagnant.
+   173→
+   174→#3 (HIGH) — Buster LevelUp function OVERWRITES MK2/MK3 damage boost (regression bug)
+   175→  What: william_buster.lua line 204 — LevelUp sets SetDefaultDamage(BUSTER_DAMAGE + level*3).
+   176→        This OVERWRITES the MK2 boost (+5, line 760) and MK3 boost (+10, line 1033).
+   177→        Consequence: a Buster MK3 leveled to lvl3 has DMG = 36+9 = 45, which is LESS than the
+   178→        un-leveled MK3's 46. Leveling up your fully-upgraded Buster actively makes it WORSE.
+   179→  Why bad: Players who feed items to their MK3 Buster to "level it up" get punished with -1 DMG.
+   180→        Counter-intuitive and undocumented.
+   181→  Fix: Change LevelUp to stack on top of MK boost, e.g.
+   182→        SetDefaultDamage(BUSTER_DAMAGE + (inst:HasTag("buster_upgraded_mk3") and 10 or
+   183→        (inst:HasTag("buster_upgraded") and 5 or 0)) + inst.level*3). No FX change.
+   184→
+   185→#4 (MEDIUM-HIGH) — E-Teleporter has NO sanity cost AND NO cooldown (free unlimited travel)
+   186→  What: TUNING.ETELEPORT_PENALTY = 0 (modmain.lua line 548). The OnActivate function that would
+   187→        apply sanity cost (eteleporter.lua line 213-224) is COMMENTED OUT. The ENGIETELEPORT
+   188→        action (modmain.lua line 1473) does DoDelta(-(TUNING.ETELEPORT_PENALTY or 0)) = 0.
+   189→        The engieteleporter component (engieteleporter.lua) has NO cooldown timer.
+   190→  Why bad: 55 scraps + 8 gears + 8 transistors to build the pair, then ZERO cost infinite fast-
+   191→        travel. Trivializes map exploration, boss kiting (teleport mid-fight), and resource
+   192→        gathering. Compare to wormholes (sanity cost) or Lazy Explorer (limited uses). Wagstaff's
+   193→        own vanilla Telipad/Telebrella has sanity cost.
+   194→  Fix: Set TUNING.ETELEPORT_PENALTY = 5 (5 sanity per teleport — small but non-zero). OR add a
+   195→        10s cooldown to the engieteleporter component. The sanity cost is the most conservative
+   196→        fix and aligns with DST's "no free lunch" design for fast travel.
+   197→
+   198→#5 (MEDIUM) — Mechanical Efficiency skill (1 insight, root) is too broad/strong
+   199→  What: wagstaff_mechanical_1 grants tag wagstaff_mechanical_efficiency, which triggers THREE
+   200→        separate broad interceptions in modmain.lua:
+   201→          - line 2253-2263: 30% chance ALL scrap costs (repair/upgrade for ALL bots/sentry/
+   202→            dispenser) become 0
+   203→          - line 4015-4041: 15% reduced finiteuses consumption on EVERY Use() call (wrench, etc.)
+   204→          - line 4044-4070: 15% chance to NOT consume fuel items when refueling
+   205→  Why bad: For 1 insight at the ROOT of the tree, this skill pays for itself almost immediately
+   206→        and scales infinitely. A Buster MK3 upgrade (120 scraps) averages to 84 scraps. Wrench
+   207→        effectively gains 65 uses. Fuel lasts 18% longer. Three bonuses for one skill point is
+   208→        too much — it's an always-on 15-30% discount on the entire engineer economy.
+   209→  Fix: Reduce the scrap-free chance from 30% -> 20% (still strong but less swingy). OR keep 30%
+   210→        scrap roll but remove the 15% fuel-free roll (fuel is already cheap and abundant). The
+   211→        wrench durability discount is negligible in practice (Use(1) floors to 1 anyway) — leave
+   212→        it. NO tree reorder, NO FX change.
+   213→
+   214→#6 (MEDIUM) — x2 Damage sentry skill (1 insight, capstone) may be underpriced
+   215→  What: wagstaff_x2_damage gives Sentry 15% chance on every hit to deal +100% base damage
+   216→        (esentry.lua lines 617-620, 631-634, 645-647). Stacks with +10% celestial/shadow bonus.
+   217→        Sentry fires every 1.5s = 6.7 hits/5s, so ~1 doubled-damage hit per 5s on average.
+   218→        Effective +15% DPS for 1 insight, positioned as capstone after sentry_mk2 + sentry_mk3.
+   219→  Why bad: +15% DPS on a turret that already does 25 * 6.7 = 167 DPS is a meaningful buff. The
+   220→        skill costs the same 1 insight as the prerequisite skills (sentry_mk2, sentry_mk3), but
+   221→        it's a stronger per-point value because it scales with hit rate. Borderline — not
+   222→        game-breaking but feels underpriced relative to other 1-insight skills.
+   223→  Fix: Conservative options (pick one): (a) reduce proc chance 15% -> 10%, OR (b) reduce bonus
+   224→        from +100% to +75% (so proc = 1.75x). Either brings the average DPS gain to ~10%, more
+   225→        in line with 1-insight skills. NO tree reorder.
+   226→
+   227→#7 (MEDIUM) — Dispenser MK3 auras (recently buffed) overshadow all 4 bots' MK3 affinity effects
+   228→  What: v2.0.14 buffed Dispenser MK3 auras to: Celestial day = SANITYAURA_MED (100/min, was 50);
+   229→        Shadow dusk = 4 HP/sec heal = 240 HP/min (builder only, range 4). These are ALWAYS-ON
+   230→        PASSIVE during the affinity phase. By contrast, the 4 bots' MK3 affinity effects are
+   231→        situational or weak:
+   232→          - Butler MK3: requires eating food (one-time per food)
+   233→          - Buster MK3: requires landing hits (combat-only)
+   234→          - Brute MK3: requires being hit (rare due to 2500 HP)
+   235→          - Ballistic MK3: 9.6 dmg projectile every 15s = 38 dmg/min (negligible)
+   236→  Why bad: The Dispenser is a UTILITY building (gives scrap/fuel/minerals) AND now has the
+   237→        strongest recovery auras in the mod. Players will stack Dispensers instead of using bot
+   238→        MK3 paths. The 4 bots cost 90-150 scraps to upgrade to MK3 but their affinity effects are
+   239→        weaker than a single Dispenser MK3 (40 scraps).
+   240→  Fix: Do NOT nerf Dispenser (buff was intentional). Instead, bring bots up to competitiveness:
+   241→          - Ballistic MK3 celestial: increase projectile from 0.6x to 1.0x base (16 dmg) OR
+   242→            reduce cooldown 15s -> 8s
+   243→          - Brute MK3 celestial: increase counter-attack 30 -> 50 dmg, OR add small persistent
+   244→            taunt
+   245→          - Butler MK3: add small always-on sanity aura (e.g., 25/min) in addition to food bonus
+   246→          - Buster MK3: increase AOE explosion 30% -> 50% of hit damage
+   247→        All conservative number tweaks, no FX or tree changes.
+   248→
+   249→#8 (LOW-MEDIUM) — Butler MK2 -> MK3 costs 70 scraps for no stat gain, only affinity + haunt-revive
+   250→  What: Butler MK2 -> MK3 = 70 scraps (5/hit x 14 hits). MK3 HP 200, no combat damage — SAME as
+   251→        MK1/MK2. The 70 scraps buys: AffinityPulse visual, celestial light, haunt-resurrect (one-
+   252→        time use — bot dies on revive, gives +20% HP / +30% sanity to revived player), and
+   253→        celestial/shadow food-cooking bonus.
+   254→  Why bad: Butler is the cheapest MK1->MK2 (55 scraps), but MK2->MK3 (70 scraps) is relatively
+   255→        expensive for a non-combat bot. The haunt-resurrect is a single-use extra life; the food
+   256→        bonus is situational (player must eat food cooked by butler during the affinity phase).
+   257→        Compare to Brute MK3 (90 scraps) which at least gets a chest + counter-attacks on a 2500
+   258→        HP tank body.
+   259→  Fix: Reduce Butler MK2->MK3 cost from 70 -> 50 scraps (matching MK1->MK2). OR add a small HP
+   260→        boost to MK3 (+100 HP -> 300) so it survives longer as a follower. The food bonus is
+   261→        good but situational — the cost should reflect that.
+   262→
+   263→
+   264→=========================================================================
+   265→ADDITIONAL OBSERVATIONS (not ranked — context for future balance passes)
+   266→=========================================================================
+   267→
+   268→A. Orphaned "gadgets" skill branch — modmain.lua references 5 gadget skill tags
+   269→   (wagstaff_calibrated_wrench, wagstaff_stabilized_portals, wagstaff_efficient_refineries,
+   270→   wagstaff_gadgets_5, wagstaff_gadgets_6) but skilltree_wagstaff.lua has NO corresponding skill
+   271→   nodes. These effects (half wrench durability, free refinery inputs, dispenser extra item,
+   272→   reduced teleporter sanity) are unreachable dead code. Either add the gadgets branch to the
+   273→   skill tree, or remove the orphaned code.
+   274→
+   275→B. Buster's LevelUp also overwrites absorption correctly (line 202) — that one is consistent
+   276→   across MK tiers. Only the damage override is a bug.
+   277→
+   278→C. Brute base damage (17) is very low for a "tank/juggernaut" — even MK3 (27) is weaker than
+   279→   Buster MK1 (36). Consider Brute's role: it has 1500-2500 HP and is meant to soak damage, but
+   280→   its low damage means enemies don't focus it. Not a balance emergency but a role clarification
+   281→   concern.
+   282→
+   283→D. SENTRY_DAMAGE stays 25 across all 3 tiers — only HP and ammo capacity scale. Rockets (50 dmg
+   284→   on MK3) are the only damage increase. Consider a small MK2/MK3 damage bump (+5 / +10) to make
+   285→   the upgrade path feel rewarding, OR keep as-is if the intent is "sentry is for tanking, not
+   286→   DPS."
+   287→
+   288→E. WINONA_BATTERY_LOW_MAX_FUEL_TIME * 5 (used by Ballistic) is a vanilla DST constant (~216s *
+   289→   5 = ~1080s = ~18 min). The defined-but-unused WILLIAM_BALLISTIC_MAXFUEL = 3630s (~60 min) in
+   290→   william_tuning.lua appears to be leftover from a previous design where Ballistic had a much
+   291→   larger battery. Either use the constant or remove it.
+   292→
+   293→F. Wrench skill "Calibrated Wrench" (orphaned, see observation A) at line 3413 sets
+   294→   num = math.max(0, math.floor(num * 0.5)) — this would make Use(1) = 0, effectively giving
+   295→   infinite wrench durability. If this skill is ever activated, it would break the wrench
+   296→   economy entirely. Flag for review.
+   297→
+   298→G. The "+15% chance free fuel" interception (modmain.lua line 4046-4070) sets bonus_ratio = 0
+   299→   to skip consumption — this is a hack that may interact badly with stackable fuel items.
+   300→   Worth testing before relying on it as a balance lever.
+   301→
+   302→H. Teleporter ENGIE_BUILDINGLOSS uses /1.5 divisor (10 sanity) vs sentry's full 15. This is the
+   303→   only asymmetric building-loss value. Minor inconsistency but not a balance problem.
+   304→
+   305→End of BAL-A report.
+   306→
+   307→---
+   308→Task ID: V2017-REVIVE
+   309→Agent: GLM (main)
+   310→Task: v2.0.17 — Fix Butler shadow affinity REVIVE bug + rework celestial revive (full discharge + soul FX)
+   311→
+   312→Work Log:
+   313→- Cloned https://github.com/HIKESS/DontStarve-logs.git and analyzed master_server_log.txt / client_log.txt.
+   314→- Found a Lua error in the logs: skilltree_wagstaff.lua:411 — `_WAGSTAFF_LOCK_LOGGED_FUELWEAVER` undeclared (strict.lua crash). This was ALREADY FIXED in current repo (line 23 declares `local _lock_logged_fuelweaver = false`). The logs were from an older build before that fix. This crash blocked the skill tree UI → player could not activate shadow/celestial possession → no affinity tags → revive affinity never fired.
+   315→- Confirmed wrench damage (59.5→30, below spear=34) and modicon (wagstaffgamelist icon + xml fix) were ALREADY done in commit 2f69a98. Only debug logs for COOK affinity were added there (wrong target — user clarified the bug is the REVIVE, not the cook).
+   316→- Root cause of shadow revive bug: in william_butler.lua the haunt fn checked affinity tags ONLY via `GetOwner(inst)` (follower:GetLeader()). When the owner is DEAD (ghost), the follower leader link can be nil → OwnerHasShadow/OwnerHasCelestial returned false → butler always died (default path).
+   317→- FIX: now check tags on BOTH owner AND haunter (the ghost player attempting revive). The haunter is always valid and its affinity tags persist through death. This was the root cause of "shadow affinity revive doesn't work".
+   318→- CELESTIAL revive rework (per user request):
+   319→  * Bot now FULLY DISCHARGES (fuel → 0) as the cost of revive. DowngradeButlerToMK1 gained a `discharge` param; celestial path calls it with discharge=true → new MK1 spawns with currentfuel=0 (inert, must be refueled).
+   320→  * Replaced generic `small_puff` FX with a celestial "soul leaving" combination: ghostlyelixir_shield_fx (white-blue shield, matches MK3 menu affinity FX) + sparklefx (ascending sparkles = soul rising) + a manually-created celestial light flash (white-blue, fades over 1.2s). Deliberately NOT shadow/dark FX.
+   321→- Added comprehensive [BUTLER REVIVE] debug print() logs at every branch (haunt entry, owner/shadow/celestial values, shadow effigy_found, celestial cooldown, which path taken). This mirrors the [BUTLER COOK] debug logs already added in 2f69a98, so the user's next test will reveal exactly where any remaining issue is.
+   322→- Verified Lua syntax with luaparse (node): SYNTAX OK.
+   323→
+   324→Stage Summary:
+   325→- Files changed: scripts/prefabs/william_butler.lua (revive block lines 1123-1333 rewritten).
+   326→- NOT touched: cook affinity code (lines 180-270) — confirmed working, left intact per user instruction.
+   327→- modinfo.lua already at version 2.0.17 (from commit 2f69a98); this commit completes the v2.0.17 revive fix.
+   328→- Remaining for user: (1) pull latest, (2) open skill tree & activate shadow/celestial possession, (3) die, haunt Butler MK3, (4) share logs — the [BUTLER REVIVE] prints will confirm which path executes.
+   329→- Pending Phase 2 (8 balance fixes) and Phase 3 (skill tree reorder + Butler revive rework details) still approved but not yet implemented.
+   330→
+   331→---
+   332→Task ID: V2017-REVIVE-PUSH
+   333→Agent: GLM (main)
+   334→Task: Push v2.0.17 butler revive fix to remote (re-applied after sandbox reset)
+   335→
+   336→Work Log:
+   337→- Sandbox was reset between sessions: /home/z/ds-work/WagstaffMod was wiped. Local commit 06abc22 (from previous session) was lost.
+   338→- Re-cloned WagstaffMod on GLM-5.1-Fixes branch — remote was at 2f69a98 (my fix was NOT there).
+   339→- Re-applied the exact same butler revive fix (tag check on owner+haunter, celestial full discharge + soul FX, debug logs) to scripts/prefabs/william_butler.lua.
+   340→- Re-applied the guide updates (v2.0.17 changelog + revive section rewrite) to BOTS_SENTRIES_DISPENSERS_GUIDE.md.
+   341→- Committed as 1444009.
+   342→- First push attempt via http.extraheader failed ("invalid credentials") due to creds embedded in clone URL conflicting with the extraheader.
+   343→- FIX: reset remote URL to clean (no creds), verified PAT validity via GitHub API (HTTP 200), pushed via URL-embedded x-access-token auth: SUCCESS (2f69a98..1444009).
+   344→- Post-push security: reset remote URL to clean https://github.com/HIKESS/WagstaffMod.git, unset WAGSTAFF_PAT env var, PAT NOT saved to git config.
+   345→- Verified via ls-remote: remote GLM-5.1-Fixes is now at 1444009.
+   346→
+   347→Stage Summary:
+   348→- v2.0.17 butler revive fix is now LIVE on remote GLM-5.1-Fixes (commit 1444009).
+   349→- User should: (1) pull latest, (2) REVOKE the PAT on GitHub (it was pasted in chat — regenerate it), (3) test the revive in-game, (4) share logs — [BUTLER REVIVE] prints will confirm which path runs.
+   350→- Pending: Phase 2 (8 balance fixes) and Phase 3 (skill tree reorder details) still approved but not yet implemented.
+   351→
+   352→---
+   353→Task ID: V2017-DEBUG-GATE
+   354→Agent: GLM (main)
+   355→Task: Gate all debug print() calls behind the mod's "Debug mode" config button
+   356→
+   357→Work Log:
+   358→- Found existing debug infrastructure in modmain.lua: G.WagstaffDebugEnabled (reads modinfo "debug" config), G.WagstaffDebug() (heavy helper with tableToString + prefix), G.c_wagstaff_debug() (runtime console toggle), and the "Debug mode" button in modinfo configuration_options (default OFF).
+   359→- Problem: my debug prints ([BUTLER COOK], [BUTLER REVIVE], [DEBUG UPGRADE], [DEBUG], [SKILL DEBUG], [Wagstaff LOCK]) used print() directly — ignoring the button, so they ran (and spammed logs) even when debug was OFF.
+   360→- Added two LIGHTWEIGHT helpers to modmain.lua (after the existing WagstaffDebug alias, ~line 258):
+   361→    G.WagstaffDbg(...)   — early-returns when debug OFF, else print(...) with same args
+   362→    G.WagstaffDbgF(fmt, ...) — early-returns when debug OFF, else print(string.format(fmt, ...))
+   363→  Both do a single boolean check first, so zero I/O / zero formatting cost when OFF.
+   364→- Added local aliases at the top of each prefab file (after assets block):
+   365→    local _dbg  = _G.WagstaffDbg  or function(...) end  -- fallback noop if modmain not loaded
+   366→    local _dbgF = _G.WagstaffDbgF or function(...) end
+   367→- Converted ALL debug prints (164 total) across 5 files:
+   368→    william_butler.lua:    45 prints ([BUTLER COOK] 5, [BUTLER REVIVE] 8, [DEBUG UPGRADE] 32)
+   369→    william_buster.lua:    23 prints ([DEBUG])
+   370→    william_brute.lua:     25 prints ([DEBUG])
+   371→    william_ballistic.lua: 24 prints ([DEBUG])
+   372→    skilltree_wagstaff.lua: 37 prints ([SKILL DEBUG] 35, [Wagstaff LOCK] 2)
+   373→  Format-style prints (print(string.format(...))) → _dbgF(fmt, ...) so string.format is also skipped when OFF.
+   374→  Direct prints (print("[TAG] ...", args)) → _dbg("[TAG] ...", args).
+   375→- Verified with luaparse: ALL 6 files (5 prefabs + modmain) SYNTAX OK.
+   376→- Verified alias defined BEFORE first use in every file (line number comparison).
+   377→- Verified no debug-tagged prints remain using print() directly.
+   378→- Legitimate non-debug prints (modmain error/info messages, [Wagstaff Debug] prefix prints) were NOT touched.
+   379→
+   380→Stage Summary:
+   381→- All debug logging is now gated by the "Debug mode" button in the mod config menu (default OFF = zero cost).
+   382→- Runtime toggle still works: c_wagstaff_debug() in console flips G.WagstaffDebugEnabled on/off.
+   383→- Debugs are PRESERVED (not removed) for future diagnosis — just silenced unless explicitly enabled.
+   384→- Behavior when ON is identical to before (same tags, same output, same log location).
+   385→- Files changed: modmain.lua (helpers), william_butler.lua, william_buster.lua, william_brute.lua, william_ballistic.lua, skilltree_wagstaff.lua (aliases + print→_dbg/_dbgF conversions).
+   386→
+   387→---
+   388→Task ID: V2017-DEBUG-GATE-PUSH
+   389→Agent: GLM (main)
+   390→Task: Push debug gating commit to remote
+   391→
+   392→Work Log:
+   393→- Committed as d475fd3 locally.
+   394→- Push rejected: remote GLM-5.1-Fixes had advanced (merges from main + commit 0223cf6 "fix: correct in-game mod icon + remaining hover display values").
+   395→- Fetched remote, inspected divergence: remote had 4 commits I didn't have; I had 1 commit remote didn't have.
+   396→- Checked 0223cf6 — it touched william_ballistic.lua and william_buster.lua hover values (different lines from my debug print conversions), so no conflict expected.
+   397→- Rebased d475fd3 onto FETCH_HEAD: clean, no conflicts. Commit rebased to 637f386.
+   398→- Verified syntax of all 6 files after rebase: ALL OK.
+   399→- Pushed 637f386 to origin/GLM-5.1-Fixes: SUCCESS (1b0119b..637f386).
+   400→- Post-push security: reset remote URL to clean (no creds), unset WAGSTAFF_PAT env var.
+   401→
+   402→Stage Summary:
+   403→- v2.0.17 debug gating is now LIVE on remote GLM-5.1-Fixes (commit 637f386).
+   404→- All 164 debug prints across the mod are now gated by the "Debug mode" config button (default OFF = zero cost).
+   405→- PAT still valid (was NOT revoked despite being pasted in chat previously) — user should still revoke it for safety.
+   406→
+   407→---
+   408→Task ID: V2017-STRING-UNKNOWN-FIX
+   409→Agent: GLM (main)
+   410→Task: Fix "STRING UNKNOWN" broken text when hammering dispenser/sentry/teleporter
+   411→
+   412→Work Log:
+   413→- User reported: when hammering the dispenser or teleporter entrance/exit, the character says broken text like "string unknown".
+   414→- Investigated onhammered/ondeath callbacks in:
+   415→    dispenser.lua:343        — calls GetString(v, "ANNOUNCE_DISPENSER_DOWN")
+   416→    esentry.lua:432 (ondeath) — calls GetString(v, "ANNOUNCE_SENTRY_DOWN")
+   417→    eteleporter.lua:140      — calls GetString(v, "ANNOUNCE_TELEPORTER_DOWN")
+   418→    eteleporter_exit.lua:128 — calls GetString(v, "ANNOUNCE_TELEPORTER_DOWN")
+   419→- Grepped the entire mod for these 3 ANNOUNCE_*_DOWN keys: NONE were defined anywhere.
+   420→  The existing ANNOUNCE_*BUILT strings (DISPENSERBUILT, SENTRYBUILT, TELEPORTERBUILT)
+   421→  WERE defined in modmain.lua ~line 3178-3182, but the matching "_DOWN" variants
+   422→  were missing → DST falls back to showing the raw key / "STRING UNKNOWN".
+   423→- FIX: added 3 missing announce strings to modmain.lua right after ANNOUNCE_TELEPORTERBUILT:
+   424→    ANNOUNCE_DISPENSER_DOWN  = "My dispensing unit! Reduced to scrap."
+   425→    ANNOUNCE_SENTRY_DOWN     = "My turret! Downed in the line of duty."
+   426→    ANNOUNCE_TELEPORTER_DOWN = "The teleportation link has been severed!"
+   427→  Tone matches the existing Wagstaff inventor voice (short, technical, mildly dramatic).
+   428→- Cross-checked ALL ANNOUNCE_ references in prefab/component code against definitions
+   429→  in modmain.lua + speech_wagstaff.lua. The 5 remaining "missing from modmain" keys
+   430→  (ANNOUNCE_BAD_STOMACH, ANNOUNCE_EAT, ANNOUNCE_MYSTERY_*, ANNOUNCE_PUTONGOGGLES_*)
+   431→  are all correctly defined in speech_wagstaff.lua (character speech file) — verified
+   432→  8 occurrences. No other missing strings remain.
+   433→- Verified modmain.lua syntax with luaparse: SYNTAX OK.
+   434→- Committed as 7b05d95. Pushed to origin/GLM-5.1-Fixes: SUCCESS (637f386..7b05d95).
+   435→- Post-push security: reset remote URL to clean (no creds), unset WAGSTAFF_PAT env var.
+   436→
+   437→Stage Summary:
+   438→- v2.0.17 string fix is now LIVE on remote GLM-5.1-Fixes (commit 7b05d95).
+   439→- Hammering a dispenser, sentry (ondeath), or teleporter entrance/exit now shows
+   440→  a proper character line instead of broken "STRING UNKNOWN" text.
+   441→- All other ANNOUNCE_ strings verified present — no other broken-text bugs remain.
+   442→
+   443→---
+   444→Task ID: EXAMINE-QUOTES
+   445→Agent: Main (Z.ai Code)
+   446→Task: Add custom examination (DESCRIBE) quotes for Wagstaff bots/structures that currently fall back to the generic "It's a thing." line. User provided specific quotes for 11 items.
+   447→
+   448→Work Log:
+   449→- Read /home/z/my-project/worklog.md to understand prior context (WagstaffMod DST mod at /home/z/ds-work/WagstaffMod/).
+   450→- Explored mod structure: located speech_wagstaff.lua (Wagstaff's speech file, 5834 lines) and modmain.lua (which registers GENERIC DESCRIBE entries for engineer buildings).
+   451→- Identified prefab names from prefab files:
+   452→    Butler Bot -> williambutler / williambutler2 / williambutler3
+   453→    Brute Bot  -> williambrute / williambrute2 / williambrute3
+   454→    Buster Bot -> williambuster / williambuster2 / williambuster3
+   455→    Ballistic  -> williamballistic / williamballistic2 / williamballistic3
+   456→    Sentry Gun -> esentry
+   457→    Dispenser  -> dispenser
+   458→    Telepad    -> telipad (vanilla Wagstaff receiver pad)
+   459→    Teleporter Entrance -> eteleporter
+   460→    Teleporter Exit     -> eteleporter_exit
+   461→    Telebrella -> telebrella
+   462→    Thumper     -> thumper
+   463→- Found existing GENERIC DESCRIBE entries in modmain.lua (lines 3148-3154) for ESENTRY/DISPENSER/ETELEPORTER/ETELEPORTER_EXIT (functional descriptions), but NO entries for the 4 bots -> bots showed "It's a thing." fallback.
+   464→- Found existing Wagstaff DESCRIBE entries for TELEBRELLA (line 4629), TELIPAD (line 4648), THUMPER (line 4679) with old quotes; user provided replacement quotes.
+   465→- Edited scripts/speech_wagstaff.lua (Wagstaff's DESCRIBE section) with MultiEdit:
+   466→    * Inserted DISPENSER = "My favorite kind of investment." (line 1841, alphabetical D section)
+   467→    * Inserted ESENTRY = "Always watching.", ETELEPORTER = "The journey starts here.", ETELEPORTER_EXIT = "You've arrived. Probably." (lines 1971-1973, E section)
+   468→    * Replaced TELEBRELLA quote -> "Weather is simply another engineering problem." (line 4633)
+   469→    * Replaced TELIPAD quote -> "Spatial relocation begins here." (line 4652)
+   470→    * Replaced THUMPER quote -> "Elegance hidden beneath brute force." (line 4683)
+   471→    * Inserted WILLIAM* block (12 entries: 4 bots x MK1/MK2/MK3) between WILDBOREHOUSE and WILLOW (lines 5190-5201), each bot's 3 variants sharing the user's quote.
+   472→- Edited modmain.lua: added GENERIC DESCRIBE entries for all 12 bot prefab variants (WILLIAMBUTLER/2/3, WILLIAMBRUTE/2/3, WILLIAMBUSTER/2/3, WILLIAMBALLISTIC/2/3) with character-neutral functional descriptions so non-Wagstaff characters also get a proper line instead of "It's a thing."
+   473→- Verified bracket balance on both files (braces balanced 512/512 and 143/143) and confirmed all 11 new/replaced Wagstaff entries are present at expected line numbers.
+   474→
+   475→Stage Summary:
+   476→- Wagstaff now speaks the user's custom quotes when examining all 11 items (Butler/Brute/Buster/Ballistic bots incl. MK2/MK3, Sentry Gun, Dispenser, Telipad, Teleporter Entrance/Exit, Telebrella, Thumper).
+   477→- Non-Wagstaff characters get functional GENERIC descriptions for the 4 bots (new) and keep their existing ESENTRY/DISPENSER/ETELEPORTER/ETELEPORTER_EXIT descriptions.
+   478→- No gameplay/logic changes; pure string additions/replacements. Safe to hotreload or restart.
+   479→- Files modified: scripts/speech_wagstaff.lua, modmain.lua.
+   480→
+   481→---
+   482→Task ID: V2018-CELESTIAL-DISCHARGE-FIX
+   483→Agent: GLM (main)
+   484→Task: Fix butler celestial revive leaving bot active at 0% fuel (infinite discharge bug)
+   485→
+   486→Work Log:
+   487→- User confirmed all 8 Phase-2 balance fixes from BAL-A report were ALREADY applied in v2.0.15+ (Buster LevelUp tier-bonus, Brute MK3 stats, Ballistic MK3 stats, E-Teleporter sanity cost, Butler MK2->MK3 cost, etc.). Verified in current code: william_buster.lua:208 (v2.0.15 FIX comment), william_brute.lua:1295 (v2.0.15 FIX).
+   488→- New bug reported: after celestial revive, butler fully discharges (fuel -> 0) but stays ACTIVE — keeps walking/following/cooking indefinitely with 0% fuel.
+   489→- Investigated fuel mechanics in william_butler.lua:
+   490→    * OnFuelEmpty (line 182) does GoToState("powerdown")
+   491→    * powerdown stategraph state (SGwilliambutler.lua:524) spawns williambutler_empty husk, transfers fuel/health, removes active bot
+   492→    * SetDepletedFn(OnFuelEmpty) registered at fn() line 559
+   493→    * StartConsuming() at fn() line 566
+   494→- Root cause: DowngradeButlerToMK1(discharge=true) [old code line 1244] set newbot.components.fueled.currentfuel = 0 via DIRECT FIELD ASSIGNMENT. The DST 'fueled' component only fires SetDepletedFn on the >0 -> <=0 TRANSITION via DoDelta — direct assignment does NOT trigger it. So OnFuelEmpty never ran, the MK1 never entered 'powerdown', never became a husk. Result: active MK1 with 0% fuel, infinite.
+   495→- Confirmed this matches the existing powerdown pattern: stategraph powerdown (line 556) spawns the husk with husk.components.fueled.currentfuel = inst.components.fueled.currentfuel (= 0) — also direct assignment, and it does NOT loop because the husk with 0 fuel never fires OnFuelEmpty either (no >0 -> <=0 transition). So spawning a husk with currentfuel=0 via assignment is the SAFE, established pattern.
+   496→- FIX: rewrote DowngradeButlerToMK1 to branch on discharge:
+   497→    * discharge=true (celestial): spawn williambutler_empty (inert husk) directly via SpawnPrefab. Husk starts with currentfuel=0, sleep_loop paused anim, Notarget tag. Player must refuel + ACTIVATE to bring a fresh MK1 online via MakeAlive.
+   498→    * discharge=false (non-celestial): unchanged — spawn active MK1 via petleash, carry over fuel.
+   499→- Additional safeguard in discharge branch: explicitly clear was_level2 / was_mk3 / saved_upgradelevel / saved_upgradelevel_mk3 on the husk so MakeAlive (on later refuel + ACTIVATE) spawns a fresh MK1, NOT the old MK2/MK3 tier. Enforces the 'downgrade to MK1' intent.
+   500→- Verified Lua syntax: parens/braces/brackets all balanced (768/768, 14/14, 49/49). Edited function structure manually checked (if/else/end + function/end all matched).
+   501→- Bumped modinfo.lua version 2.0.17 -> 2.0.18.
+   502→- Committed as 5056033. Pushed to origin/GLM-5.1-Fixes: SUCCESS (3f49136..5056033).
+   503→- Post-push: token NOT persisted to git config (used one-shot credential.helper via .env).
+   504→
+   505→Stage Summary:
+   506→- v2.0.18 celestial revive fix is LIVE on remote GLM-5.1-Fixes (commit 5056033).
+   507→- After celestial revive: butler now correctly becomes an INERT HUSK (williambutler_empty) at 0% fuel, sleeping on the ground. Player must refuel it (give fuel items) and then ACTIVATE it (click) to bring a fresh MK1 back online via MakeAlive. No more infinite active bot at 0% fuel.
+   508→- The husk retains current health (capped at husk max) but all tier-upgrade flags are cleared — reactivation always produces a fresh MK1, matching the 'downgrade' intent.
+   509→- Non-celestial path (shadow revive, normal downgrade) is UNCHANGED.
+   510→- All 8 Phase-2 balance fixes confirmed already applied (v2.0.15+).
+   511→- Pending: user to test in-game — die with celestial possession active, haunt Butler MK3, confirm bot becomes inert husk (not walking), refuel + ACTIVATE to confirm MK1 reactivation.
+   512→
+   513→---
+   514→Task ID: V2018-CELESTIAL-FX-REWORK
+   515→Agent: GLM (main)
+   516→Task: Rework butler celestial revive FX — remove elixir/sparkle, test celestial table, anti-stack
+   517→
+   518→Work Log:
+   519→- User requested: remove ghostlyelixir_shield_fx + sparklefx (called "spawn_fx") from the butler celestial revive. Test celestial/white FX from provided table. Don't repeat FX if already on someone.
+   520→- Located PlayCelestialDischargeFX (william_butler.lua:1175-1221). Old FX:
+   521→    * ghostlyelixir_shield_fx (shield, scale 1.3) — REMOVE (elixir FX)
+   522→    * sparklefx (ascending sparkles) — REMOVE (spawn_fx)
+   523→    * manual celestial light flash (white-blue, fades 1.2s) — KEEP (custom entity, not a prefab)
+   524→- Selected from celestial/white FX table:
+   525→    * archive_lockbox_dispawn_fx (white dissolve) — PRIMARY: thematically perfect (bot's energy dissolves as it discharges). Lunar-aligned (celestial).
+   526→    * moonstorm_spark (white sparks) — SECONDARY: energy escaping the chassis.
+   527→- Considered but rejected:
+   528→    * alterguardian_phase3_spawn — too big/dramatic (full Celestial Champion spawn)
+   529→    * alterguardian_laserempty/laserhit — beam/impact, not fitting a discharge
+   530→    * brilliance_projectile_blast_fx — explosion, too violent for a 'soul leaving'
+   531→    * lunarhaildebris — falling debris, wrong direction
+   532→    * winona_battery_high_fx — electric, not celestial enough
+   533→- Implemented SpawnUnique(prefab, offset_y, scale) helper:
+   534→    * Uses TheSim:FindEntities(x,y,z, 1.5) to find nearby entities
+   535→    * Iterates and checks ent.prefab == prefab_name
+   536→    * If found: returns nil (skip spawn) — prevents stacking
+   537→    * If not found: SpawnPrefab, set position/scale, return fx
+   538→    * Satisfies "não repetir fx se já estiver em alguém" (anti-stacking)
+   539→- Kept the custom celestial light flash (not a prefab, self-removes in 1.2s, no duplicate check needed).
+   540→- Verified bracket balance: () 777/777, {} 14/14, [] 49/49 — all balanced.
+   541→- Committed as 91e8f90. Pushed to origin/GLM-5.1-Fixes: SUCCESS (5056033..91e8f90).
+   542→
+   543→Stage Summary:
+   544→- v2.0.18 celestial FX rework is LIVE on remote GLM-5.1-Fixes (commit 91e8f90).
+   545→- Butler celestial revive now plays: archive_lockbox_dispawn_fx (white dissolve) + moonstorm_spark (white sparks) + custom white-blue light flash. All lunar/celestial themed, no more elixir shield or generic sparkle.
+   546→- Anti-stacking: if the same FX prefab is already present within 1.5 units of the butler, a new one won't spawn — prevents duplicate FX on haunt spam / repeated triggers.
+   547→- Pending: user to test in-game and confirm the new FX fits. If archive_lockbox_dispawn_fx or moonstorm_spark don't exist in the user's DST build (both are vanilla RoT prefabs, should exist), the SpawnPrefab returns nil and the helper skips gracefully (no crash).
+   548→
+   549→---
+   550→Task ID: fix-mk1-bot-repair
+   551→Agent: Z.ai Code (main)
+   552→Task: Corrigir bug reportado: "Não consigo reparar o brute MK1, pede Skill de Upgrade (Requires Brute Bot MK. II)".
+   553→
+   554→Work Log:
+   555→- Lido william_brute.lua (linhas 655-725): o engieworkable OnFinish callback tinha a lógica:
+   556→    if inst.prefab == "williambrute2" or inst:HasTag("brute_upgraded") then
+   557→        ...repair...
+   558→        return
+   559→    end
+   560→    -- (cai pra upgrade, que exige skill)
+   561→- CONFIRMADO o bug: MK1 com dano ia direto pro caminho de upgrade, que exige a skill wagstaff_brute_evolve.
+   562→- Comparado com william_butler.lua (linhas 746-789): o butler usa o padrão CORRETO:
+   563→    PRIORITY 1: if HP < max -> repair (no skill required)
+   564→    PRIORITY 2: if HP full -> upgrade (skill-gated)
+   565→- Confirmado o MESMO bug em william_buster.lua (linhas 759-772) e william_ballistic.lua (linhas 764-777): ambos pulam repair no MK1.
+   566→- Aplicado o fix nos 3 bots (brute, buster, ballistic): inserido bloco PRIORITY 1 (repair se HP < max, sem skill, qualquer tier) e PRIORITY 2 (msg "HP is already full!" se HP cheio) ANTES do caminho de upgrade.
+   567→- Validado balanceamento de long strings [[ / ]] nos 3 arquivos + modinfo.lua: todos OK.
+   568→- Bumpado modinfo.lua para v2.0.67.
+   569→- Commit a30a34f "v2.0.67: fix MK1 bot repair (brute/buster/ballistic) — repair first, upgrade only at full HP".
+   570→- Push via 'set -a; source .env; set +a' + token na URL: BEM-SUCEDIDO (76e8bc2..a30a34f HEAD -> main).
+   571→- Confirmado via git ls-remote: origin/main = a30a34f.
+   572→
+   573→Stage Summary:
+   574→- Bug corrigido nos 3 bots (brute, buster, ballistic). Butler já estava correto e não precisou de mudança.
+   575→- Nova lógica: qualquer tier (MK1/MK2/MK3) com HP < 100% agora pode ser reparado com wrench + 1 scrap, SEM exigir skill. Upgrade continua exigindo skill (mas só é tentado quando HP está cheio).
+   576→- Commit a30a34f está no branch main do repo HIKESS/WagstaffMod (produção).
+   577→- Próxima vez que o usuário subir o servidor DST com git pull no mod, o brute/buster/ballistic MK1 danificado poderá ser reparado sem exigir a skill MK.II.
+   578→
+   579→---
+   580→Task ID: fix-mk2-brute-repair
+   581→Agent: Z.ai Code (main)
+   582→Task: Verificar e corrigir o mesmo bug no MK2 (sem skill MK3): "no mk2 se eu tiver sem skill do mk3 tambem vai acontecer isso?"
+   583→
+   584→Work Log:
+   585→- Investigado o engieworkable OnFinish do MK2 nos 3 bots (brute, buster, ballistic).
+   586→- BRUTE MK2 (linhas 1184-1194): CONFIRMADO o bug. Lógica era:
+   587→    if not has_mk3_skill then Say("Requires MK.III skill!") return end
+   588→    if inst.upgradelevel_mk3 < 90 then ... upgrade ... return end
+   589→    -- If not upgrading, try repair  ← NUNCA chegava aqui sem a skill MK3
+   590→  Resultado: Brute MK2 danificado sem skill MK3 = não podia ser reparado.
+   591→- BUSTER MK2 (linha 981): CORRETO. Já usava 'if has_mk3_skill and upgradelevel < 90 then ... return end' — sem skill, pula upgrade e cai no reparo.
+   592→- BALLISTIC MK2 (linha 980): CORRETO. Mesmo padrão do buster.
+   593→- Aplicado fix no BRUTE MK2: trocado 'if not has_mk3_skill then return end' + 'if upgradelevel < 90' por 'if has_mk3_skill and upgradelevel < 90'. Agora sem skill MK3, o upgrade é pulado (não bloqueado) e cai no reparo.
+   594→- Validado balanceamento [[ / ]] no william_brute.lua: OK (2/2).
+   595→- Commit 21c4942 "v2.0.67: fix MK2 brute repair — don't require MK3 skill to repair a damaged MK2".
+   596→- Push: BEM-SUCEDIDO (a30a34f..21c4942 HEAD -> main).
+   597→- Confirmado via git ls-remote: origin/main = 21c4942.
+   598→
+   599→Stage Summary:
+   600→- Bug do MK2→MK3 confirmado e corrigido APENAS no brute (buster e ballistic já estavam corretos).
+   601→- Agora: Brute MK2 danificado sem skill MK3 → repara normalmente com wrench + 1 scrap.
+   602→- Resumo final do v2.0.67 (3 commits de fix):
+   603→  * 76e8bc2: modinfo.lua unfinished long string (crash do mod)
+   604→  * a30a34f: MK1 repair (brute/buster/ballistic) — repair antes de upgrade
+   605→  * 21c4942: MK2 brute repair — sem exigir skill MK3 pra reparar
+   606→
+   607→---
+   608→Task ID: BUG-DEACTIVATED-FOLLOW
+   609→Agent: main (Z.ai Code)
+   610→Task: Fixar bug do bot desativado "teleportando" para seguir o player (reportado pelo usuário: "eu desativo o bot... e ele ta se teleportando me seguindo desativado... ta acontecendo com o brute")
+   611→
+   612→Work Log:
+   613→- Investiguei a causa raiz lendo william_brute.lua (TurnOff/TurnOn, linhas 237-392) e williambrutebrain.lua.
+   614→- Confirmei que TurnOff seta inst.on = false e limpa combat, mas NÃO para o brain nem remove o leader do follower.
+   615→- Li williambrutebrain.lua (brain completo): o nó Follow(self.inst, GetLeader, ...) roda sem checar inst.on → quando o bot é desativado, o brain continua ativo e o behaviour Follow do DST tem uma mecânica de "catch-up teleport" (quando o leader fica muito distante, o follower é teleportado perto dele). Isso causa o "teleport" que o usuário viu.
+   616→- Verifiquei os outros 3 brains (williambusterbrain, williambutlerbrain, williamballisticbrain): TODOS têm o mesmo bug — o nó Follow/ChaseAndAttack não é gated por inst.on.
+   617→- Verifiquei o ciclo de desativação de cada bot:
+   618→  * Brute: TurnOff seta inst.on = false (correto). TurnOn seta inst.on = true. Save/load persiste data.on. ✓
+   619→  * Buster: OnFuelEmpty (OnLowerFn) só faz sg:GoToState("powerdown") → spawna williambuster_empty e remove o ativo. O fn() NUNCA seta inst.on (fica nil). O empty() herda fn() e também não seta. → inst.on sempre nil, gate não funcionaria.
+   620→  * Butler: Mesmo padrão do buster. OnFuelEmpty → powerdown → spawna empty. fn() não seta inst.on.
+   621→  * Ballistic: OnDismantle spawna williamballistic_empty (item de inventário, sem brain). Empty não tem brain → não tem o bug. Mas adicionei o gate como proteção defensiva.
+   622→
+   623→Fix aplicado (2 camadas):
+   624→
+   625→CAMADA 1 — Brain gate (todos os 4 brains):
+   626→Adicionei um WhileNode de prioridade MÁXIMA no topo do PriorityNode de cada brain:
+   627→  WhileNode(function() return self.inst.on == false end, "Deactivated", StandStill(self.inst))
+   628→Quando inst.on == false, StandStill bloqueia todos os nós de movimento abaixo (Follow, ChaseAndAttack, Wander, RunAway, etc.), mantendo o bot parado.
+   629→- williambrutebrain.lua (linha ~101): gate adicionado antes de OnFire/Panic/Chase/Follow/Wander.
+   630→- williambusterbrain.lua (linha ~121): gate adicionado antes de watch_game/Dance/LeaderInRange/Follow.
+   631→- williambutlerbrain.lua (linha ~238): gate adicionado antes de watch_game/Dance/CombatAvoidance/LeaderInRange/Follow.
+   632→- williamballisticbrain.lua (linha ~128 mobile, ~145 turret): gate em ambos os modos.
+   633→
+   634→CAMADA 2 — inst.on consistência (butler + buster):
+   635→Para o gate do brain funcionar, inst.on precisa ser explicitamente true/false:
+   636→- william_buster.lua fn() (linha ~706): adicionado inst.on = true (ativo).
+   637→- william_buster.lua empty() (linha ~1452): adicionado inst.on = false (husk inert).
+   638→- william_butler.lua fn() (linha ~577): adicionado inst.on = true (ativo).
+   639→- william_butler.lua empty() (linha ~1379): adicionado inst.on = false (husk inert).
+   640→- Brute já estava correto (TurnOn/TurnOff setam inst.on).
+   641→- Ballistic não precisa (empty é item sem brain), mas brain tem gate defensivo.
+   642→
+   643→Verificação:
+   644→- Balance check de parênteses/chaves/colchetes em todos os 4 brains: balanced.
+   645→- standstill já estava no require de todos os 4 brains (não precisei adicionar import).
+   646→- Save/load do brute já persiste/restaura inst.on (data.on), então o estado desativado sobrevive a reload.
+   647→- Butler/buster não precisam persistir inst.on: o prefab determina o estado (fn=active=true, empty=false).
+   648→
+   649→Stage Summary:
+   650→- Bug "bot desativado teletransporta pra seguir player" CORRIGIDO em todos os 4 bots (brute/buster/butler/ballistic).
+   651→- Causa raiz: brain's Follow node não checava inst.on; DST's Follow behaviour tem catch-up teleport quando leader fica distante.
+   652→- Fix: gate WhileNode(inst.on == false → StandStill) no topo de cada brain + inst.on explicitamente setado em butler/buster (fn=true, empty=false).
+   653→- Arquivos modificados (6): williambrutebrain.lua, williambusterbrain.lua, williambutlerbrain.lua, williamballisticbrain.lua, william_buster.lua, william_butler.lua.
+   654→
+   655→---
+   656→Task ID: RECIPE-TELEPORTER-EQUAL
+   657→Agent: main (Z.ai Code)
+   658→Task: Ajustar recipe do teleporter entrance/exit para terem os mesmos requerimentos, com 2 gears, e ajustar o restante.
+   659→
+   660→Work Log:
+   661→- Encontrei as receitas em modmain.lua linhas 3625-3643:
+   662→  * eteleporter (Entrance): 30 scrap, 5 gears, 5 transistor
+   663→  * eteleporter_exit (Exit): 25 scrap, 3 gears, 3 transistor
+   664→- Padronizei ambas usando os valores do exit (mais leves) com 2 gears:
+   665→  * Ambas agora: 25 scrap, 2 gears, 3 transistor
+   666→- Verifiquei se há outras referências aos custos antigos (ApplyMasterEngineer em modmain.lua:3861 lida com sanity cost ao USAR o teleporter, não com o recipe — não precisa mexer).
+   667→- STRINGS.RECIPE_DESC para ambos continua válido (descrição genérica, não menciona quantidades).
+   668→
+   669→Stage Summary:
+   670→- Recipes do eteleporter e eteleporter_exit agora são IDÊNTICOS: 25 scrap + 2 gears + 3 transistor, TECH.MAGIC_TWO, builder_tag "tinkerer".
+   671→- Redução de custo: Entrance ficou mais barato (30→25 scrap, 5→2 gears, 5→3 transistor). Exit ficou levemente mais barato (3→2 gears).
+   672→
+   673→---
+   674→Task ID: BUG-UPGRADE-HP-FULL-BLOCK
+   675→Agent: main (Z.ai Code)
+   676→Task: Fixar bug "HP is already full" que bloqueava o upgrade MK1→MK2 de todos os bots (reportado pelo usuário: "quando eu tento dar upgrade no brute agora aparece 'hp is already full', agora já tenho a skill").
+   677→
+   678→Work Log:
+   679→- Investiguei o fluxo de upgrade do brute MK1→MK2 em william_brute.lua (OnFinishCallback do engieworkable, linhas 682-794).
+   680→- Encontrei o bug: na v2.0.67 foi adicionado um bloco "HP is already full" (linhas 710-716) com `return` ANTES do upgrade path. Fluxo bugado:
+   681→    1. if HP < max → repair + return (PRIORITY 1)
+   682→    2. if HP >= max → "HP is already full!" + return  ← BUG: bloqueia upgrade
+   683→    3. upgrade path (skill check, scrap, spawn MK2) ← NUNCA alcançado com HP cheio
+   684→- Verifiquei TODOS os bots com grep por "HP is already full": encontrei o MESMO bug em:
+   685→    * william_brute.lua MK1→MK2 (linhas 710-716) — BUG
+   686→    * william_buster.lua MK1→MK2 (linhas 792-798) — BUG (mesmo padrão, mesmo comentário v2.0.67)
+   687→    * william_ballistic.lua MK1→MK2 (linhas 792-798) — BUG (mesmo padrão, mesmo comentário v2.0.67)
+   688→- Confirmei que os OUTROS casos de "HP is already full" NÃO são bugs:
+   689→    * brute MK2→MK3 (linha 1264): if/else fallback DEPOIS do upgrade path — OK
+   690→    * brute MK3 (linha 1458): if/else, MK3 só tem repair — OK
+   691→    * butler MK3 (linha 1332): MK3 só tem repair — OK
+   692→    * buster MK2+ (linha 875): fallback depois do upgrade path — OK
+   693→    * buster MK2→MK3 (linha 1055): if/else fallback — OK
+   694→    * buster MK3 (linha 1348): if/else, MK3 só repair — OK
+   695→    * ballistic MK2+ (linha 870): fallback depois do upgrade path — OK
+   696→    * ballistic MK2→MK3 (linha 1046): if/else fallback — OK
+   697→    * ballistic MK3 (linha 1748): MK3 só tem repair — OK
+   698→
+   699→Fix aplicado (3 arquivos):
+   700→Removi o bloco bugado "HP is already full" + return nos 3 MK1→MK2 (brute, buster, ballistic), substituindo por um comentário explicativo v2.0.68. Fluxo corrigido:
+   701→    1. if HP < max → repair + return (PRIORITY 1, inalterado)
+   702→    2. (HP cheio aqui) → cai no upgrade path (skill check + scrap + spawn MK2)
+   703→    3. fallback "Repair for MK2+" (if/else, HP cheio → "HP is already full")
+   704→- william_brute.lua: removidas linhas 710-716 (bloco if HP>=max + return).
+   705→- william_buster.lua: removidas linhas 792-798 (mesmo bloco).
+   706→- william_ballistic.lua: removidas linhas 792-798 (mesmo bloco).
+   707→
+   708→Verificação:
+   709→- Balance check de parênteses/chaves/colchetes nos 3 arquivos: balanced.
+   710→- O fluxo agora: HP danificado → repair primeiro (qualquer tier, sem skill); HP cheio → tenta upgrade (se MK1 + tem skill + tem scrap); HP cheio + MK2+ → "HP is already full" (fallback informativo).
+   711→
+   712→Stage Summary:
+   713→- Bug "HP is already full bloqueava upgrade MK1→MK2" CORRIGIDO em todos os 3 bots de combate (brute, buster, ballistic).
+   714→- Causa: bloco "HP is already full" com early return adicionado na v2.0.67 ANTES do upgrade path, impedindo que o upgrade fosse processado quando HP estava cheio.
+   715→- Fix: removido o bloco bugado nos 3 arquivos. Agora quando HP está cheio, o fluxo cai direto no upgrade path (skill check → scrap consumption → spawn MK2).
+   716→- Arquivos modificados (3): william_brute.lua, william_buster.lua, william_ballistic.lua.
+   717→
