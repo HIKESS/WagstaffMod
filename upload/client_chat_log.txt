@@ -1,0 +1,8 @@
+[00:36:47]: [Announcement] .FB is AFK
+[00:36:57]: [Announcement] .FB is no longer AFK
+[01:41:39]: [Death Announcement] .FB morreu por MacPresa. Ele virou um fantasma assustador!
+[01:42:11]: [Resurrect Announcement] .FB voltou à vida, com a ajuda de Trapaças.
+[03:26:14]: [Announcement] .FB is AFK
+[03:30:07]: [Announcement] .FB is no longer AFK
+[03:44:55]: [Death Announcement] .FB morreu por Cerviclope. Ele virou um fantasma assustador!
+[03:45:12]: [Vote Announcement] rollback passed
