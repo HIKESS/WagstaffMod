@@ -155,31 +155,28 @@ function WILLIAM_FUEL.Setup(inst, fuel_list, bonus_mult)
     -- 1. Set bonusmult for standard DST fuels
     fueled.bonusmult = bonus_mult
 
-    -- 2. Set the fuel accepting test: accept items in our fuel_list.
-    --    This OVERRIDES DST's default fueltype check, so we must accept
-    --    both custom materials (in CUSTOM_VALUES) AND standard fuel items
-    --    (items with components.fuel) that are in our list.
-    fueled:SetFuelAcceptingTest(function(inst, item)
-        if item == nil or item.prefab == nil then return false end
-        -- Must be in the bot's accepted list
-        if not fuel_list[item.prefab] then return false end
-        -- Accept if it's a custom material (we'll give it explicit value)
-        if WILLIAM_FUEL.CUSTOM_VALUES[item.prefab] then
-            return true
-        end
-        -- Accept if it's a standard DST fuel item (has fuel component)
-        if item.components and item.components.fuel then
-            return true
-        end
-        -- Reject anything else (e.g. a listed prefab that's neither custom
-        -- nor has a fuel component — shouldn't happen with our lists, but
-        -- be safe)
-        return false
-    end)
+    -- v2.0.77 FIX: SetFuelAcceptingTest does NOT exist in all DST versions
+    -- (crashes on game version 736959 with "attempt to call method
+    -- 'SetFuelAcceptingTest' (a nil value)"). Instead, we do ALL fuel
+    -- filtering inside the TakeFuelItem hook below, which is version-
+    -- independent (we replace the method directly). The hook checks
+    -- fuel_list for every item before accepting, replacing the need for
+    -- SetFuelAcceptingTest entirely.
+    -- (Kept as optional secondary defense if the method IS available.)
+    if fueled.SetFuelAcceptingTest ~= nil then
+        fueled:SetFuelAcceptingTest(function(inst, item)
+            if item == nil or item.prefab == nil then return false end
+            if not fuel_list[item.prefab] then return false end
+            if WILLIAM_FUEL.CUSTOM_VALUES[item.prefab] then return true end
+            if item.components and item.components.fuel then return true end
+            return false
+        end)
+    end
 
-    -- 3. Hook TakeFuelItem to intercept custom materials and give them
+    -- 2. Hook TakeFuelItem to filter by fuel_list AND give custom materials
     --    explicit fuel values (no bonusmult). Standard fuels fall through
     --    to the original method (with bonusmult applied via fueled.bonusmult).
+    --    This is the PRIMARY filter — works on all DST versions.
     if fueled._william_fuel_hooked ~= true then
         local _orig_TakeFuelItem = fueled.TakeFuelItem
 
@@ -188,13 +185,18 @@ function WILLIAM_FUEL.Setup(inst, fuel_list, bonus_mult)
             if item == nil or not item:IsValid() then
                 return false
             end
+            if item.prefab == nil then
+                return false
+            end
+
+            -- PRIMARY FILTER: must be in this bot's accepted fuel list.
+            -- (Replaces SetFuelAcceptingTest — works on all DST versions.)
+            if not fuel_list[item.prefab] then
+                return false
+            end
 
             -- Custom material: give explicit fuel value (no bonusmult)
-            if item.prefab and WILLIAM_FUEL.CUSTOM_VALUES[item.prefab] then
-                -- Verify it's in this bot's accepted list
-                if not fuel_list[item.prefab] then
-                    return false
-                end
+            if WILLIAM_FUEL.CUSTOM_VALUES[item.prefab] then
                 -- Don't add if already full
                 if self:IsFull() then
                     -- Let ontakefuelfn handle the "already full" feedback
@@ -220,8 +222,15 @@ function WILLIAM_FUEL.Setup(inst, fuel_list, bonus_mult)
                 return true
             end
 
-            -- Standard fuel: delegate to original DST method (bonusmult applies)
-            return _orig_TakeFuelItem(self, item, doer)
+            -- Standard fuel (has fuel component, in our list): delegate to
+            -- original DST method (bonusmult applies via fueled.bonusmult).
+            -- fuel_list already checked above, so we know it's accepted.
+            if item.components and item.components.fuel then
+                return _orig_TakeFuelItem(self, item, doer)
+            end
+
+            -- Listed prefab but neither custom nor has fuel component — reject
+            return false
         end
 
         fueled._william_fuel_hooked = true
