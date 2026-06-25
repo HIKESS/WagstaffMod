@@ -1467,22 +1467,50 @@ end
 
 --    inst.components.fueled.currentfuel = 0
 
-    -- BUG FIX 6: Add fuel listener to enable ACTIVATE when refueled
+    -- v2.0.71 FIX: husk reactivation (mirrors butler v2.0.18 fix).
+    -- The husk starts with HAMMER (dismantle) and should switch to ACTIVATE
+    -- (reactivate) when it has fuel. The old code used
+    -- RemoveComponent("workable") + AddComponent("workable") inside the
+    -- percentusedchange listener, which left the component in a broken state
+    -- and the right-click stayed "Dismantle" (HAMMER) even after refueling —
+    -- so the player could not reactivate the buster. Now we use a helper
+    -- (SetHuskAction) that swaps the action directly (SetWorkAction) without
+    -- removing/re-adding the component, and we ALSO check on init
+    -- (DoTaskInTime) so a husk that already has fuel on spawn (e.g. loaded
+    -- from save) starts with ACTIVATE immediately.
     inst.components.fueled.accepting = true
+
+    local function SetHuskAction(inst, activate)
+        if not inst.components.workable then return end
+        if activate then
+            inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
+            inst.components.workable:SetWorkLeft(1)
+            inst.components.workable:SetOnWorkCallback(nil)
+            inst.components.workable:SetOnFinishCallback(function(inst, doer)
+                if doer and doer.components.petleash then
+                    MakeAlive(inst, doer)
+                end
+            end)
+        else
+            inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+            inst.components.workable:SetWorkLeft(3)
+            inst.components.workable:SetOnFinishCallback(OnHammered)
+            inst.components.workable:SetOnWorkCallback(onworked)
+        end
+    end
+
+    -- Check current fuel on init (handles save-load where husk already has fuel)
+    inst:DoTaskInTime(0, function(inst)
+        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
+            SetHuskAction(inst, true)
+        end
+    end)
+
+    -- Swap to ACTIVATE when fuel is added
     inst:ListenForEvent("percentusedchange", function(inst)
-        local fuel_pct = inst.components.fueled:GetPercent()
-        if fuel_pct > 0 and fuel_pct <= 1 then
-            -- Has fuel now, enable ACTIVATE
+        if inst.components.fueled and not inst.components.fueled:IsEmpty() then
             if inst.components.workable and inst.components.workable.action ~= ACTIONS.ACTIVATE then
-                inst:RemoveComponent("workable")
-                inst:AddComponent("workable")
-                inst.components.workable:SetWorkAction(ACTIONS.ACTIVATE)
-                inst.components.workable:SetWorkLeft(1)
-                inst.components.workable:SetOnFinishCallback(function(inst, doer)
-                    if doer and doer.components.petleash then
-                        MakeAlive(inst, doer)
-                    end
-                end)
+                SetHuskAction(inst, true)
             end
         end
     end)
