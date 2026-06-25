@@ -3649,61 +3649,14 @@ AddSimPostInit(function()
 
     -- WILLIAM TOYMAKER
 
-    AddRecipe2("williamgadget",
-
-        {Ingredient("gears", 2), Ingredient("goldnugget", 1)},
-
-        TECH.NONE,
-
-        {builder_tag = "tinkerer", numtogive = 1, atlas = mimg("williamgadget"), image = "williamgadget.tex"},
-
-        {"CHARACTER", "REFINE"})
-
-
-    local williamgadget_ing = Ingredient("williamgadget", 1)
-
-    williamgadget_ing.atlas = mimg("williamgadget")
-
-
-    AddRecipe2("williambutler_builder",
-
-        {williamgadget_ing, Ingredient("boards", 4), Ingredient("transistor", 2)},
-
-        TECH.SCIENCE_ONE,
-
-        {builder_tag = "tinkerer", atlas = mimg("williambutler_builder"), image = "williambutler_builder.tex"},
-
-        {"CHARACTER", "STRUCTURES"})
-
-    AddRecipe2("williambuster_builder",
-
-        {williamgadget_ing, Ingredient("marble", 3), Ingredient("transistor", 2)},
-
-        TECH.MAGIC_ONE,
-
-        {builder_tag = "tinkerer", atlas = mimg("williambuster_builder"), image = "williambuster_builder.tex"},
-
-        {"CHARACTER", "STRUCTURES"})
-
-    AddRecipe2("williambrute_builder",
-
-        {williamgadget_ing, Ingredient("cutstone", 4), Ingredient("transistor", 2)},
-
-        TECH.SCIENCE_TWO,
-
-        {builder_tag = "tinkerer", atlas = mimg("williambrute_builder"), image = "williambrute_builder.tex"},
-
-        {"CHARACTER", "STRUCTURES"})
-
-    AddRecipe2("williamballistic_empty",
-
-        {williamgadget_ing, Ingredient("nitre", 4), Ingredient("transistor", 2)},
-
-        TECH.MAGIC_TWO,
-
-        {builder_tag = "tinkerer", atlas = mimg("williamballistic_empty"), image = "williamballistic_empty.tex"},
-
-        {"CHARACTER", "STRUCTURES"})
+    -- v2.0.78: Bot recipes (williamgadget, butler, buster, brute, ballistic)
+    -- MOVED to scripts/hamlet_character_recipes.lua and converted from
+    -- AddRecipe2 to AddCharacterRecipe. The old registration inside this
+    -- AddSimPostInit callback did not reliably enforce TECH/prototyper
+    -- requirements, making bots appear as free craft. AddCharacterRecipe
+    -- runs at mod load time and properly enforces the prototyper tier:
+    --   Butler: Science Machine | Buster: Prestihatitator
+    --   Brute: Alchemy Engine   | Ballistic: Shadow Manipulator
 
 
     -- MIAMI RICKY RECIPES (REMOVED PER USER REQUEST)
