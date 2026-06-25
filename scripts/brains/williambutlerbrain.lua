@@ -46,6 +46,7 @@ local KEEP_CHOPPING_DIST = 8
 local DIG_TAGS = { "stump", "grave" }
 
 local function GetLeader(inst)
+    if inst.on == false then return nil end
     local leader = inst.components.follower.leader
     if leader and leader:IsValid() and leader.Transform then
         return leader
@@ -235,46 +236,53 @@ function WilliamButlerBrain:OnStart()
 
     local root = PriorityNode(
     {
+        WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
+        WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
+
+        -- v2.0.68: every movement node is gated by IsActive (inst.on ~= false).
+        -- When deactivated, none of these evaluate, so the bot stays put. GetLeader
+        -- also returns nil when off, so Follow has no target (no catch-up teleport).
+        WhileNode(function() return self.inst.on ~= false end, "Active",
+            PriorityNode({
                 watch_game,
 
-        --#1 priority is dancing beside your leader. Obviously.
-        WhileNode(function() return ShouldDanceParty(self.inst) end, "Dance Party",
-            PriorityNode({
-                Leash(self.inst, GetLeaderPos, KEEP_DANCING_DIST, KEEP_DANCING_DIST),
-                ActionNode(function() DanceParty(self.inst) end),
-        }, .25)),
+                --#1 priority is dancing beside your leader. Obviously.
+                WhileNode(function() return ShouldDanceParty(self.inst) end, "Dance Party",
+                    PriorityNode({
+                        Leash(self.inst, GetLeaderPos, KEEP_DANCING_DIST, KEEP_DANCING_DIST),
+                        ActionNode(function() DanceParty(self.inst) end),
+                }, .25)),
 
-        -- Combat avoidance: stay away from fighting leader and hostiles
-        WhileNode(function() return GetLeader(self.inst) ~= nil and GetLeader(self.inst).components.combat ~= nil and GetLeader(self.inst).components.combat.target ~= nil end, "Combat Avoidance",
-            PriorityNode({
-                RunAway(self.inst, { fn = function(target, inst) return target == GetLeader(inst) end, tags = { "player" } }, 8, 14),
-                RunAway(self.inst, { fn = ShouldRunAway, oneoftags = { "monster", "hostile" }, notags = { "player", "INLIMBO" } }, 10, 16),
-                Wander(self.inst, function() return GetLeaderPos(self.inst) end, 14),
-        }, .25)),
+                -- Combat avoidance: stay away from fighting leader and hostiles
+                WhileNode(function() return GetLeader(self.inst) ~= nil and GetLeader(self.inst).components.combat ~= nil and GetLeader(self.inst).components.combat.target ~= nil end, "Combat Avoidance",
+                    PriorityNode({
+                        RunAway(self.inst, { fn = function(target, inst) return target == GetLeader(inst) end, tags = { "player" } }, 8, 14),
+                        RunAway(self.inst, { fn = ShouldRunAway, oneoftags = { "monster", "hostile" }, notags = { "player", "INLIMBO" } }, 10, 16),
+                        Wander(self.inst, function() return GetLeaderPos(self.inst) end, 14),
+                }, .25)),
 
-        WhileNode(function() return IsNearLeader(self.inst, KEEP_WORKING_DIST) end, "Leader In Range",
-            PriorityNode({
-                RunAway(self.inst, { fn = ShouldAvoidExplosive, tags = { "explosive" }, notags = { "INLIMBO" } }, AVOID_EXPLOSIVE_DIST, AVOID_EXPLOSIVE_DIST),
-                RunAway(self.inst, { fn = ShouldRunAway, oneoftags = { "monster", "hostile" }, notags = { "player", "INLIMBO" } }, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST),
-           IfNode(function() return StartChoppingCondition(self.inst) end, "chop", 
-                WhileNode(function() return KeepChoppingAction(self.inst) end, "keep chopping",
-                    LoopNode{ 
-                            DoAction(self.inst, FindTreeToChopAction )})),
-           IfNode(function() return StartMiningCondition(self.inst) end, "mine", 
-                WhileNode(function() return KeepMiningAction(self.inst) end, "keep mining",
-                    LoopNode{ 
-                            DoAction(self.inst, FindRockToMineAction )})),
-           IfNode(function() return StartPickingCondition(self.inst) end, "pick_grass_twigs",
-                WhileNode(function() return KeepPickingAction(self.inst) end, "keep picking",
-                    LoopNode{
-                            DoAction(self.inst, FindGrassTwigsToPickAction )})),
-        }, .25)),
+                WhileNode(function() return IsNearLeader(self.inst, KEEP_WORKING_DIST) end, "Leader In Range",
+                    PriorityNode({
+                        RunAway(self.inst, { fn = ShouldAvoidExplosive, tags = { "explosive" }, notags = { "INLIMBO" } }, AVOID_EXPLOSIVE_DIST, AVOID_EXPLOSIVE_DIST),
+                        RunAway(self.inst, { fn = ShouldRunAway, oneoftags = { "monster", "hostile" }, notags = { "player", "INLIMBO" } }, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST),
+                   IfNode(function() return StartChoppingCondition(self.inst) end, "chop", 
+                        WhileNode(function() return KeepChoppingAction(self.inst) end, "keep chopping",
+                            LoopNode{ 
+                                    DoAction(self.inst, FindTreeToChopAction )})),
+                   IfNode(function() return StartMiningCondition(self.inst) end, "mine", 
+                        WhileNode(function() return KeepMiningAction(self.inst) end, "keep mining",
+                            LoopNode{ 
+                                    DoAction(self.inst, FindRockToMineAction )})),
+                   IfNode(function() return StartPickingCondition(self.inst) end, "pick_grass_twigs",
+                        WhileNode(function() return KeepPickingAction(self.inst) end, "keep picking",
+                            LoopNode{
+                                    DoAction(self.inst, FindGrassTwigsToPickAction )})),
+                }, .25)),
 
-        Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST),
-        WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
-            WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
-        WhileNode(function() return GetLeader(self.inst) ~= nil end, "Has Leader",
-            FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn)),
+                Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST),
+                WhileNode(function() return GetLeader(self.inst) ~= nil end, "Has Leader",
+                    FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn)),
+            }, .25)),
     }, .25)
 
     self.bt = BT(self.inst, root)

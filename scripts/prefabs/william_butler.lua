@@ -574,6 +574,10 @@ end
             return inst
         end
 
+    -- v2.0.65: mark active butler as "on" so the brain's Deactivated gate
+    -- (WhileNode inst.on == false) does not block movement. The empty husk
+    -- prefab sets inst.on = false to stay inert.
+    inst.on = true
 
 
 
@@ -1371,6 +1375,13 @@ inst.components.burnable.ignorefuel = true
         inst:AddTag("mech")
         inst:AddTag("butler")
         inst:AddTag("tiddlevirusimmune")
+
+    -- v2.0.65: mark empty husk as "off" so the brain's Deactivated gate
+    -- (WhileNode inst.on == false) keeps it from following/teleporting to
+    -- the leader. The husk inherits brain + follower from fn(), so without
+    -- this the Follow node's catch-up teleport would drag the inert husk
+    -- toward the player.
+    inst.on = false
 
         if not TheWorld.ismastersim then
             return inst

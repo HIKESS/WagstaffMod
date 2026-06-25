@@ -40,7 +40,20 @@ local AVOID_EXPLOSIVE_DIST = 5
 
 local DIG_TAGS = { "stump", "grave" }
 
+-- v2.0.68: a deactivated bot (inst.on == false) must never follow/chase/wander.
+-- The previous fix used a single StandStill node at the top of the PriorityNode,
+-- but StandStill returns SUCCESS once the entity is already stopped, which lets
+-- the PriorityNode fall through to the Follow node below — and DST's Follow
+-- behaviour has a catch-up teleport that yanks the deactivated bot to the leader.
+-- Now every movement node is individually gated by IsActive, so when the bot is
+-- off NONE of them evaluate. GetLeader also returns nil when off, which makes
+-- the Follow node have no target (the real guarantee against the teleport).
+local function IsActive(inst)
+    return inst.on ~= false
+end
+
 local function GetLeader(inst)
+    if not IsActive(inst) then return nil end
     local leader = inst.components.follower.leader
     if leader and leader:IsValid() and leader.Transform then
         return leader
@@ -57,6 +70,7 @@ local function GetLeaderPos(inst)
 end
 
 local function GetFaceTargetFn(inst)
+    if not IsActive(inst) then return nil end
     local target = FindClosestPlayerToInst(inst, START_FACE_DIST, true)
     return target ~= nil and not target:HasTag("notarget") and target or nil
 end
@@ -81,6 +95,7 @@ local function GoHomeAction(inst)
 end
 
 local function ShouldGoHome(inst)
+    if not IsActive(inst) then return false end
     if inst.components.follower ~= nil and inst.components.follower.leader ~= nil then
         return false
     end
@@ -100,12 +115,18 @@ function WilliamBruteBrain:OnStart()
     {
         WhileNode(function() return self.inst.components.health.takingfiredamage end, "OnFire", Panic(self.inst)),
         WhileNode(function() return self.inst.components.hauntable and self.inst.components.hauntable.panic end, "PanicHaunted", Panic(self.inst)),
-        ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
-        WhileNode(function() return GetLeader(self.inst) ~= nil end, "HasLeader",
-            Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST)),
-        WhileNode(function() return ShouldGoHome(self.inst) end, "ShouldGoHome", DoAction(self.inst, GoHomeAction, "Go Home", true)),
-        FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn),
-        Wander(self.inst, function() return self.inst.components.knownlocations:GetLocation("home") end, MAX_WANDER_DIST)
+
+        -- v2.0.68: every movement node is gated by IsActive (inst.on ~= false).
+        -- When deactivated, none of these evaluate, so the bot stays put.
+        WhileNode(function() return IsActive(self.inst) end, "Active",
+            PriorityNode({
+                ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
+                WhileNode(function() return GetLeader(self.inst) ~= nil end, "HasLeader",
+                    Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST)),
+                WhileNode(function() return ShouldGoHome(self.inst) end, "ShouldGoHome", DoAction(self.inst, GoHomeAction, "Go Home", true)),
+                FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn),
+                Wander(self.inst, function() return self.inst.components.knownlocations:GetLocation("home") end, MAX_WANDER_DIST),
+            }, .25)),
     }, .25)
 
     self.bt = BT(self.inst, root)
