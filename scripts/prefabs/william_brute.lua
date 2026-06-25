@@ -1181,18 +1181,17 @@ inst.components.burnable.ignorefuel = true
                 wrench.components.finiteuses:Use(1)
             end
 
-            -- Check if can upgrade first
+            -- Check if can upgrade first (only if player has MK3 skill AND not capped)
+            -- v2.0.67 FIX: previously this was 'if not has_mk3_skill then return end'
+            -- which BLOCKED repair of a damaged MK2 brute when the player didn't have
+            -- the MK3 skill. Now we only attempt the upgrade when the skill is learned;
+            -- otherwise we fall through to the repair path below (same pattern as
+            -- buster/ballistic MK2).
             _dbg("[DEBUG] Verificando skill wagstaff_brute_mk3...")
             local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_brute_mk3")
             _dbg("[DEBUG] Tem skill MK3?", has_mk3_skill)
             _dbg("[DEBUG] upgradelevel_mk3 atual:", inst.upgradelevel_mk3)
-            if not has_mk3_skill then
-                if worker.components.talker then
-                    worker.components.talker:Say("Requires Brute Bot MK.III skill!\n(Activate it in the skill tree!)")
-                end
-                return
-            end
-            if inst.upgradelevel_mk3 < 90 then
+            if has_mk3_skill and inst.upgradelevel_mk3 < 90 then
                 _dbg("[DEBUG] Tentando upgrade para MK3...")
                 -- Try to upgrade
                 local function IsScrap(item)
