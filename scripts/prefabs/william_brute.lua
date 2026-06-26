@@ -204,9 +204,42 @@ local function retargetfn(inst)
         or nil
 end
 
+-- v2.0.71: distance from leader beyond which the brute disengages from combat.
+-- Mirrors KEEP_WORKING_DIST in the brute brain. When the player runs farther
+-- than this, the brute drops its target and retreats to the leader instead of
+-- fighting to the death.
+local BRUTE_DISENGAGE_DIST = 14
+-- v2.0.71: HP fraction at or below which the brute retreats (it used to fight
+-- to the death). Tuned for a tank: MK1 1500 HP -> retreat at 375, MK2 2100 ->
+-- 525, MK3 2600 -> 650.
+local BRUTE_FLEE_HP_PCT = 0.25
+
 local function keeptargetfn(inst, target)
     --give up on dead guys, or guys in the dark, or werepigs
-    return inst.components.combat:CanTarget(target)
+    if not inst.components.combat:CanTarget(target) then
+        return false
+    end
+    -- v2.0.71: disengage when the leader has run too far away. Without this the
+    -- brute keeps fighting (and re-acquiring herd members via OnAttacked) even
+    -- after the player flees — "tentei correr, não consegui". Dropping the
+    -- target at the component level means ChaseAndAttack in the brain has
+    -- nothing to chase, and retargetfn won't find new targets once the player
+    -- is no longer in combat.
+    if inst.components.follower ~= nil and inst.components.follower.leader ~= nil then
+        if not inst:IsNear(inst.components.follower.leader, BRUTE_DISENGAGE_DIST) then
+            return false
+        end
+    end
+    -- v2.0.71: retreat when critically low on HP so the brute doesn't fight to
+    -- the death. The brain's LowHP Retreat node then drives it to the leader
+    -- (or away from threats if it has no leader).
+    if inst.components.health ~= nil and inst.components.health.maxhealth > 0 then
+        local pct = inst.components.health.currenthealth / inst.components.health.maxhealth
+        if pct <= BRUTE_FLEE_HP_PCT then
+            return false
+        end
+    end
+    return true
 end
 
 local function getstatus(inst, viewer)
