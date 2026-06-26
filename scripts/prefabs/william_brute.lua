@@ -296,30 +296,21 @@ local function TurnOff(inst, doer, instant)
         inst:RemoveTag("ebuild_wrenchable")  -- Prevent wrench interaction when OFF
         inst:AddTag("notarget")
 
-    -- Remover COMPLETAMENTE o componente container quando desativado (para não aparecer como chest)
-    -- Só executa no servidor para evitar problemas com réplica
+    -- v2.0.81 FIX: Do NOT RemoveComponent("container") on deactivation.
+    -- That destroys the items stored inside (DST drops/destroys them when
+    -- the component is removed), so reactivating the bot gave back an empty
+    -- chest and "itens do chest somen quando ele é desativado/reativado".
+    -- Instead, just remove the `container` tag so the chest can't be opened
+    -- while the bot is off. The component (and its items) persist through
+    -- deactivate/reactivate and through save/load (DST's native container
+    -- OnSave/OnLoad handles the items now that the component always exists).
+    -- Server-only: the component Close() and tag are server-authoritative.
     if not GLOBAL.TheWorld.ismastersim then return end
-    
+
     if inst:HasTag("container") then
-        inst._had_container_tag = true
         inst:RemoveTag("container")
-        -- FECHAR O CONTAINER PRIMEIRO para evitar crash (protegido com pcall)
         if inst.components.container then
-            local ok, err = pcall(function()
-                inst.components.container:Close()
-            end)
-            if not ok then
-            else
-            end
-        end
-        -- REMOVER O COMPONENTE COMPLETAMENTE (isso evita que pareça um baú)
-        if inst.components.container then
-            local ok, err = pcall(function()
-                inst:RemoveComponent("container")
-            end)
-            if not ok then
-            else
-            end
+            pcall(function() inst.components.container:Close() end)
         end
     end
 
@@ -394,20 +385,21 @@ local function TurnOn(inst, doer, instant)
         inst:AddTag("alive")
         inst:RemoveTag("notarget")
 
-    -- Restaurar tag container quando ativado
-    if inst._had_container_tag then
-        -- Debug removed
+    -- v2.0.81: re-add the container tag so the chest can be opened again.
+    -- The component itself was never removed (just the tag), so items are
+    -- still inside. Migration fallback: if the component is missing (bot
+    -- was deactivated with pre-v2.0.81 code that RemoveComponent'd it),
+    -- re-create an empty one — the old items are already lost, but at
+    -- least the chest works going forward.
+    if inst.prefab == "williambrute3" and not inst:HasTag("container") then
         inst:AddTag("container")
-        inst._had_container_tag = nil
-        -- RE-ADICIONAR O COMPONENTE CONTAINER
-        if not inst.components.container then
+        if inst.components.container == nil then
             inst:AddComponent("container")
             inst.components.container:WidgetSetup("williambrute3")
             inst.components.container.onopenfn = OnOpen
             inst.components.container.onclosefn = OnClose
             inst.components.container.skipopensnd = true
             inst.components.container.skipclosesnd = true
-            -- Debug removed
         end
     end
     
@@ -1390,11 +1382,15 @@ inst.components.burnable.ignorefuel = true
                 if inst.level > 0 then inst:DoTaskInTime(0, LevelUp) end
             end
             
+            -- v2.0.81 FIX: same as TurnOff — do NOT RemoveComponent("container")
+            -- when loading a deactivated MK3. That destroys the items inside.
+            -- Just remove the tag so the chest can't be opened while off.
+            -- The component (with items) persists and DST's native container
+            -- OnSave/OnLoad will handle the items on future saves.
             if inst.on == false and inst:HasTag("container") then
-                inst._had_container_tag = true
                 inst:RemoveTag("container")
                 if inst.components.container then
-                    inst:RemoveComponent("container")
+                    pcall(function() inst.components.container:Close() end)
                 end
             end
             
