@@ -38,6 +38,16 @@ local STOP_RUN_AWAY_DIST = 8
 
 local AVOID_EXPLOSIVE_DIST = 5
 
+-- v2.0.71: retreat tuning. The brute used to fight to the death — it never
+-- disengaged when the player ran away, and never retreated at low HP. Two new
+-- thresholds fix this:
+--   * KEEP_WORKING_DIST (14): if the leader is farther than this, the brute
+--     drops combat and runs to the leader. Mirrors BRUTE_DISENGAGE_DIST in the
+--     prefab and the buster bot's "Leader In Range" gate.
+--   * FLEE_HP_PCT (0.25): at or below this HP fraction the brute retreats
+--     (follows the leader if it has one, else RunAway from threats).
+local FLEE_HP_PCT = 0.25
+
 local DIG_TAGS = { "stump", "grave" }
 
 -- v2.0.68: a deactivated bot (inst.on == false) must never follow/chase/wander.
@@ -84,6 +94,29 @@ local function KeepFaceTargetFn(inst, target)
     return not target:HasTag("notarget") and inst:IsNear(target, KEEP_FACE_DIST)
 end
 
+-- v2.0.71: HP fraction check. True when the brute is active and critically low
+-- on health — it should stop fighting and retreat.
+local function ShouldFleeLowHP(inst)
+    if not IsActive(inst) then return false end
+    if inst.components.health == nil or inst.components.health.maxhealth <= 0 then
+        return false
+    end
+    local hp = inst.components.health.currenthealth
+    return hp > 0 and (hp / inst.components.health.maxhealth) <= FLEE_HP_PCT
+end
+
+-- v2.0.71: the brute's current combat target (for RunAway). Returns nil when
+-- the target is dead/invalid so RunAway has nothing to flee from and idles.
+local function GetCombatTarget(inst)
+    if inst.components.combat == nil then return nil end
+    local target = inst.components.combat.target
+    if target == nil then return nil end
+    if target.components.health ~= nil and target.components.health:IsDead() then
+        return nil
+    end
+    return target
+end
+
 local function GoHomeAction(inst)
     if inst.components.combat.target ~= nil then
         return
@@ -120,8 +153,57 @@ function WilliamBruteBrain:OnStart()
         -- When deactivated, none of these evaluate, so the bot stays put.
         WhileNode(function() return IsActive(self.inst) end, "Active",
             PriorityNode({
-                ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
-                WhileNode(function() return GetLeader(self.inst) ~= nil end, "HasLeader",
+                -- v2.0.71: #1 LOW HP RETREAT. The brute used to fight to the
+                -- death. Now when HP <= 25% it drops combat and retreats. If it
+                -- has a leader it sprints to the leader (who can repair/protect
+                -- it); if it has no leader it RunAways from its current target.
+                -- The condition also clears the combat target each brain tick
+                -- so OnAttacked->SuggestTarget can't pull it back into the fight
+                -- while it is retreating to the leader.
+                WhileNode(function()
+                    if not ShouldFleeLowHP(self.inst) then return false end
+                    if GetLeader(self.inst) ~= nil then
+                        if self.inst.components.combat ~= nil and self.inst.components.combat.target ~= nil then
+                            self.inst.components.combat:SetTarget(nil)
+                        end
+                        return true
+                    end
+                    return false
+                end, "LowHP Flee To Leader",
+                    Follow(self.inst, GetLeader, 0, 2, 5)),
+
+                WhileNode(function() return ShouldFleeLowHP(self.inst) and GetLeader(self.inst) == nil end, "LowHP Run Away",
+                    RunAway(self.inst, function() return GetCombatTarget(self.inst) end, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST)),
+
+                -- v2.0.71: #2 COMBAT GATED BY LEADER DISTANCE. Mirrors the
+                -- buster bot: the brute only fights while it is within
+                -- KEEP_WORKING_DIST of its leader. If the player runs away
+                -- (beyond 14 units), this gate deactivates, the brute drops
+                -- ChaseAndAttack, and falls through to the Follow node below —
+                -- so it disengages and runs after the player. Fixes "tentei
+                -- correr, não conseguir" (the brute wouldn't stop fighting the
+                -- beefalo herd even after the player fled). The companion
+                -- keeptargetfn in the prefab also drops the target at the
+                -- component level so OnAttacked can't re-acquire herd members.
+                WhileNode(function() return IsNearLeader(self.inst, KEEP_WORKING_DIST) end, "Leader In Range",
+                    PriorityNode({
+                        ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST),
+                    }, .25)),
+
+                -- v2.0.71: Follow runs when combat is gated off (leader far) or
+                -- when there's simply nothing to fight. While retreating to the
+                -- leader, also keep clearing any combat target that OnAttacked
+                -- may have re-suggested, so the brute doesn't stop to fight
+                -- again on the way back.
+                WhileNode(function()
+                    if GetLeader(self.inst) == nil then return false end
+                    if not IsNearLeader(self.inst, KEEP_WORKING_DIST) then
+                        if self.inst.components.combat ~= nil and self.inst.components.combat.target ~= nil then
+                            self.inst.components.combat:SetTarget(nil)
+                        end
+                    end
+                    return true
+                end, "HasLeader",
                     Follow(self.inst, GetLeader, MIN_FOLLOW_DIST, TARGET_FOLLOW_DIST, MAX_FOLLOW_DIST)),
                 WhileNode(function() return ShouldGoHome(self.inst) end, "ShouldGoHome", DoAction(self.inst, GoHomeAction, "Go Home", true)),
                 FaceEntity(self.inst, GetFaceTargetFn, KeepFaceTargetFn),

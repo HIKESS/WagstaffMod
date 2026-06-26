@@ -119,7 +119,12 @@ params.williambrute3 =
         pos = Vector3(0, 200, 0),
         side_align_tip = 160,
     },
-    acceptsstacks = false,
+    -- v2.0.70 FIX: brute MK3 chest is a STORAGE container (type="chest"), so it
+    -- must accept stacks like a vanilla chest. Previously acceptsstacks=false
+    -- meant each slot held only 1 item and stacks never merged -> "so da para
+    -- colocar um item de cada". The butler bots keep acceptsstacks=false
+    -- because they are cookers (crockpot-style: 1 item per slot).
+    acceptsstacks = true,
     type = "chest",
 }
 
