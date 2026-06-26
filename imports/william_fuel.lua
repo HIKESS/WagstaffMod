@@ -92,11 +92,14 @@ WILLIAM_FUEL.CUSTOM_VALUES = {
 
 -- BRUTE: omnivore industrial — accepts everything mechanical + basic fuels
 -- (gears excluded v2.0.76 — scarce crafting resource)
+-- v2.0.80: charcoal added (burned wood = industrial fuel)
 WILLIAM_FUEL.BRUTE = {
     -- Mechanical (transistor=premium, scrap=cheap, trinket_6=find)
     transistor = true, trinket_6 = true, scrap = true,
     -- Wood
     log = true, boards = true, livinglog = true,
+    -- Burned wood (v2.0.80)
+    charcoal = true,
     -- Plant
     cutgrass = true, twigs = true, pinecone = true,
     -- Minerals
@@ -105,9 +108,12 @@ WILLIAM_FUEL.BRUTE = {
 
 -- BUTLER: household — prefers organic/wood, some mechanical
 -- (gears excluded v2.0.76 — scarce crafting resource)
+-- v2.0.80: charcoal added (household cooker fuel — it's burned wood)
 WILLIAM_FUEL.BUTLER = {
     -- Wood (primary)
     log = true, boards = true, livinglog = true,
+    -- Burned wood (v2.0.80)
+    charcoal = true,
     -- Plant
     cutgrass = true, twigs = true, pinecone = true, foliage = true,
     -- Organic compost
@@ -116,11 +122,14 @@ WILLIAM_FUEL.BUTLER = {
     transistor = true,
 }
 
--- BUSTER: picky combat bot — mechanical ONLY (no wood/plant)
+-- BUSTER: picky combat bot — mechanical + charcoal (no raw wood/plant)
 -- (gears excluded v2.0.76 — scarce crafting resource; transistor is now
 -- the premium fuel, scrap the cheap renewable baseline)
+-- v2.0.80: charcoal added (user request — refined fuel, not raw plant matter)
 WILLIAM_FUEL.BUSTER = {
     transistor = true, trinket_6 = true, scrap = true,
+    -- Burned wood (v2.0.80) — refined fuel acceptable to the combat bot
+    charcoal = true,
 }
 
 -- BALLISTIC: electrical/chemical battery — minerals ONLY
