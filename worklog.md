@@ -742,3 +742,51 @@ Stage Summary:
 - This is a fork-specific bug: the original mod never had a follower component on the brute, so the teleport never existed. Our fork added follow-behavior but forgot to disconnect the follower on deactivation.
 - Files changed: scripts/prefabs/william_brute.lua (TurnOff), imports/william_acts.lua (WILLYRAISE condition).
 - Next: user should test in-game: craft brute, walk away, deactivate → brute should stay put (no teleport). Reactivate → brute re-bonds to reactivator and follows again.
+
+
+---
+Task ID: GEAR-FIX-83
+Agent: Z.ai Code (main session)
+Task: Fix brute bot can't eat gears for upgrade — chest intercepts the gear
+  "o ballistic e o buster aceita gear como upgrade, o buster original aceita
+   mas, acho que devido ao bau, não ta dando de fazer ele comer a gear"
+
+Work Log:
+- Investigated the WILLUPGRADE action system in imports/william_acts.lua.
+- Found the upgrade flow: gears get `willupgrader` component (line 132-136),
+  AddComponentAction("USEITEM", "willupgrader", ...) adds WILLUPGRADE action
+  when player holds gears and clicks a bot with `willminion` tag (not butler,
+  not level3). The action calls DoUpgrade which pushes "levelup" event (+1 level,
+  +regen, +absorption, max level 3).
+- ROOT CAUSE: The brute bot has BOTH `container` (chest) AND `willminion` tags.
+  When the player holds gears and clicks the brute, DST sees two USEITEM actions:
+  STORE (put gear into chest, from container component) and WILLUPGRADE (consume
+  gear for levelup, from willupgrader component). DST's native STORE action has
+  higher system priority (1) than the default WILLUPGRADE priority (0), so STORE
+  always won — the gear went into the chest instead of being consumed for upgrade.
+  The buster and ballistic bots DON'T have a container component, so they never
+  had this conflict.
+- FIX (3 layers of protection, commit 66cdc90 = v2.0.83):
+  1. WILLUPGRADE action now has priority=2 (STORE has priority=1), so
+     WILLUPGRADE is selected when both actions are available.
+  2. AddComponentAction for willupgrader removes STORE from the action list
+     when the target is a brute bot (checks target:HasTag("brute")), so
+     STORE never appears as an option.
+  3. STORE.fn override blocks storing gears into brute bots (checks
+     target:HasTag("brute") + act.invobject.prefab == "gears" +
+     willupgrader component + CrafterCheck), redirecting to WILLUPGRADE
+     as a safety fallback.
+- Other items (scrap, food, etc.) still STORE normally into the brute's chest.
+  The fix only affects gears on brute bots.
+- Bumped version 2.0.82 -> 2.0.83 (modinfo.lua).
+
+Stage Summary:
+- BUG FIXED: Brute bot now correctly eats gears for levelup (WILLUPGRADE)
+  instead of storing them in the chest (STORE). The root cause was the
+  container component intercepting gears before the willupgrader could
+  process them.
+- Files changed (2): imports/william_acts.lua, modinfo.lua.
+- Local commit: 66cdc90 (v2.0.83). Push to origin/main FAILED — GitHub
+  authentication token expired/removed from remote URL. User needs to
+  push manually or restore credentials.
+- Branch state: local main = 66cdc90 (v2.0.83), origin/main = e0c7ff8 (v2.0.82).
