@@ -1,5 +1,5 @@
 -- ============================================================================
--- William Fuel System (v2.0.75)
+-- William Fuel System (v2.0.82)
 -- ============================================================================
 -- Per-material fuel balancing for all 4 Wagstaff bots.
 --
@@ -34,13 +34,20 @@
 --     log       = 30 * 5 = 150s  (5 seg)
 --     cutgrass  = 7.5 * 5 = 37.5s (1.25 seg)
 --     pinecone  = 15 * 5 = 75s   (2.5 seg)
+--     charcoal  = 15 * 5 = 75s   (2.5 seg)
 --   Custom fuels (explicit, NO bonusmult):
 --     transistor= 180s  (6 seg)  — crafted electronic (premium mechanical fuel)
 --     trinket_6 = 120s  (4 seg)  — frazzled wires, graveyard find
 --     scrap     = 75s   (2.5 seg) — cheap renewable industrial (2flint+2twigs=5)
---     nitre     = 150s  (5 seg)  — chemical (ballistic primary)
+--     nitre     = 150s  (5 seg)  — chemical (ballistic primary, buster booster)
 --     flint     = 60s   (2 seg)
---     goldnugget= 200s  (~6.7 seg) — valuable conductor
+--     goldnugget= 200s  (~6.7 seg) — valuable conductor (ballistic premium)
+--     lightbulb = 90s   (3 seg)  — electrical light cell, cave drop (ballistic)
+--     twigs     = 40s   (~1.3 seg) — kindling (brute/butler; had no fuel component)
+--     dug_grass = 90s   (3 seg)  — whole grass tuft (brute)
+--     dug_sapling = 110s (~3.7 seg) — whole sapling (brute)
+--     dug_berrybush = 130s (~4.3 seg) — whole berry bush (brute)
+--     berries   = 15s   (0.5 seg) — foraged fruit (brute)
 --     rotton    = 25s   (~0.8 seg) — butler compost
 --
 -- NOTE (v2.0.76): GEARS REMOVED from all fuel lists. Gears are a scarce,
@@ -53,8 +60,14 @@
 -- Max fuel tanks (seconds):
 --   Brute:    2400s (80 seg, ~5 days)  — ~16 logs or ~14 transistors to fill
 --   Butler:   1920s (64 seg, ~4 days)  — ~13 logs or ~11 transistors
---   Buster:   1440s (48 seg, ~3 days)  — ~8 transistors or ~20 scraps
---   Ballistic:3630s (121 seg, ~7.5d)   — ~25 nitre or ~19 goldnuggets
+--   Buster:   1920s (64 seg, ~4 days)  — ~13 logs or ~11 transistors  [v2.0.82: was 1440s/3d]
+--   Ballistic:3630s (121 seg, ~7.5d)   — ~25 nitre or ~19 goldnuggets (largest tank)
+--
+-- ROBOT HP / DURABILITY (v2.0.82 rebalance):
+--   Brute:    1500  (MK2 2100, MK3 2600) — tank, unchanged
+--   Buster:   500   (MK2 800,  MK3 1100) — [was 300] melee fighter, buffed
+--   Ballistic:300   (MK2 550,  MK3 650)  — [was 150] ranged turret, buffed
+--   Butler:   200   (MK2 300)            — utility, unchanged
 -- ============================================================================
 
 local WILLIAM_FUEL = {}
@@ -62,6 +75,10 @@ local WILLIAM_FUEL = {}
 -- Custom fuel values for materials WITHOUT a DST `fuel` component.
 -- Values are in SECONDS of burn time. These do NOT get bonusmult applied
 -- (the values are final, controlled per-material).
+-- NOTE: our TakeFuelItem hook checks CUSTOM_VALUES FIRST, so even items that
+-- DO have a DST fuel component can be listed here to override their value
+-- (e.g. lightbulb, whose DST fueltype is LIGHT and would be rejected by the
+-- ballistic's CHEMICAL fueled type — listing it here bypasses that check).
 WILLIAM_FUEL.CUSTOM_VALUES = {
     -- Mechanical / Industrial
     -- NOTE: gears intentionally EXCLUDED (v2.0.76). Gears are scarce and
@@ -72,15 +89,40 @@ WILLIAM_FUEL.CUSTOM_VALUES = {
     scrap      = 75,   -- 2.5 seg — cheap renewable industrial (2flint+2twigs=5)
 
     -- Minerals / Chemical / Electrical
-    nitre      = 150,  -- 5 seg — chemical fuel (ballistic primary)
+    nitre      = 150,  -- 5 seg — chemical fuel (ballistic primary, buster booster)
     flint      = 60,   -- 2 seg — spark-producing mineral
-    goldnugget = 200,  -- ~6.7 seg — valuable conductor
+    goldnugget = 200,  -- ~6.7 seg — valuable conductor (ballistic premium)
+
+    -- Electrical / Light (v2.0.82 — user request: "Ballistic pode usar bulbs")
+    -- lightbulb is a cave drop; thematically a battery/electrical fuel for the
+    -- ballistic bot. Listed in CUSTOM_VALUES so the LIGHT fueltype never blocks it.
+    lightbulb  = 90,   -- 3 seg — electrical light cell (ballistic)
 
     -- Organic / Compost (butler)
     rotton      = 25,  -- ~0.8 seg — decomposed organic
     spoiled_food= 20,  -- ~0.67 seg
     foliage     = 20,  -- ~0.67 seg — plant matter
     petalfin   = 15,  -- 0.5 seg
+
+    -- Raw plant with NO DST fuel component (v2.0.82 FIX)
+    -- twigs was listed in BRUTE/BUTLER diets but has no `fuel` component in DST,
+    -- so the old hook silently rejected it — brute "accepted" twigs but they
+    -- never actually fueled it. Listing it here makes twigs work for real.
+    twigs       = 40,  -- ~1.3 seg — kindling twigs (brute/butler)
+
+    -- Dug plants / "mudas" (v2.0.82 — user request: "Brute pode queimar mudas
+    -- de twigs grass, berries, etc"). These are whole deployable plants — high
+    -- biomass value, thematically a chunky fuel for the brute's industrial furnace.
+    -- They have no DST `fuel` component (they're deployables), so they MUST live
+    -- here to be accepted at all.
+    dug_grass           = 90,   -- 3 seg — whole grass tuft
+    dug_sapling         = 110,  -- ~3.7 seg — whole sapling (twigs source)
+    dug_berrybush       = 130,  -- ~4.3 seg — whole berry bush
+    dug_berrybush_juicy = 130,  -- ~4.3 seg — whole juicy berry bush
+
+    -- Berry fruits (v2.0.82 — brute biomass fuel). Food items, no fuel component.
+    berries     = 15,   -- 0.5 seg — small foraged fruit
+    juicyberries= 20,   -- ~0.67 seg — juicier foraged fruit
 }
 
 -- Per-bot accepted fuel lists.
@@ -93,6 +135,10 @@ WILLIAM_FUEL.CUSTOM_VALUES = {
 -- BRUTE: omnivore industrial — accepts everything mechanical + basic fuels
 -- (gears excluded v2.0.76 — scarce crafting resource)
 -- v2.0.80: charcoal added (burned wood = industrial fuel)
+-- v2.0.82: dug plants ("mudas") + berry fruits added (user request: "Brute pode
+--   queimar mudas de twigs grass, berries, etc"). Whole plants = chunky biomass.
+--   twigs now also actually works (added to CUSTOM_VALUES — it had no DST fuel
+--   component so was silently rejected before).
 WILLIAM_FUEL.BRUTE = {
     -- Mechanical (transistor=premium, scrap=cheap, trinket_6=find)
     transistor = true, trinket_6 = true, scrap = true,
@@ -104,6 +150,11 @@ WILLIAM_FUEL.BRUTE = {
     cutgrass = true, twigs = true, pinecone = true,
     -- Minerals
     nitre = true, flint = true,
+    -- Dug plants / "mudas" (v2.0.82) — whole deployable plants, biomass fuel
+    dug_grass = true, dug_sapling = true,
+    dug_berrybush = true, dug_berrybush_juicy = true,
+    -- Berry fruits (v2.0.82) — foraged biomass
+    berries = true, juicyberries = true,
 }
 
 -- BUTLER: household — prefers organic/wood, some mechanical
@@ -122,20 +173,35 @@ WILLIAM_FUEL.BUTLER = {
     transistor = true,
 }
 
--- BUSTER: picky combat bot — mechanical + charcoal (no raw wood/plant)
--- (gears excluded v2.0.76 — scarce crafting resource; transistor is now
--- the premium fuel, scrap the cheap renewable baseline)
+-- BUSTER: combat bot — industrial combustible diet.
 -- v2.0.80: charcoal added (user request — refined fuel, not raw plant matter)
+-- v2.0.82: diet broadened (user request: "Buster so usa carvao? poderia acrescentar
+--   algo mais"). Was mechanical+charcoal only, which in practice meant players
+--   mostly fed it charcoal (transistor/scrap/trinket_6 are crafting/graveyard
+--   finds, awkward to stockpile). Now also accepts WOOD (log, boards) and
+--   MINERALS (nitre, flint) so it can run on common field materials.
+--   Still excludes raw plant scraps (cutgrass/twigs/pinecone/dug plants) —
+--   those stay Brute/Butler territory to keep the bots' diets distinct.
 WILLIAM_FUEL.BUSTER = {
+    -- Mechanical (premium electronic + cheap industrial + graveyard find)
     transistor = true, trinket_6 = true, scrap = true,
-    -- Burned wood (v2.0.80) — refined fuel acceptable to the combat bot
+    -- Burned wood (v2.0.80) — refined fuel
     charcoal = true,
+    -- Wood (v2.0.82) — combustible lumber, easy to stockpile
+    log = true, boards = true,
+    -- Minerals (v2.0.82) — chemical booster + spark mineral
+    nitre = true, flint = true,
 }
 
--- BALLISTIC: electrical/chemical battery — minerals ONLY
+-- BALLISTIC: electrical/chemical battery — minerals + bulbs ONLY
+-- v2.0.82: lightbulb added (user request: "Ballistic pode usar bulbs").
+--   Cave light bulbs thematically fit the battery bot's power core. Listed in
+--   CUSTOM_VALUES so the DST LIGHT fueltype never blocks acceptance.
 WILLIAM_FUEL.BALLISTIC = {
     nitre = true, flint = true, goldnugget = true,
     transistor = true, trinket_6 = true,
+    -- Light bulbs (v2.0.82) — electrical light cell, cave drop
+    lightbulb = true,
 }
 
 -- ----------------------------------------------------------------------------

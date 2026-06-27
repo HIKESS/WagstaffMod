@@ -22,18 +22,26 @@ TUNING.WILLIAM_ROBOT_REGEN = 5
 TUNING.WILLIAM_ROBOT_REGENPERIOD = 5
 
 
-TUNING.WILLIAM_BALLISTIC_HEALTH = 150
+-- v2.0.82: Ballistic HP 150 -> 300. The ranged turret bot was a glass cannon
+-- (one hound pack could destroy it). Doubled so it survives a real fight while
+-- staying clearly squishier than the melee Buster.
+TUNING.WILLIAM_BALLISTIC_HEALTH = 300
 TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD = 3
 TUNING.WILLIAM_BALLISTIC_DAMAGE = 24/1.5 -- Due to the damage being electric, it will get multiplied by 1.5 against any mob
 -- Huge Battery: 5x normal fuel so he can share/recharge other bots meaningfully
 TUNING.WILLIAM_BALLISTIC_MAXFUEL = seg_time*121
 
-TUNING.WILLIAM_BUSTER_HEALTH = 300
+-- v2.0.82: Buster HP 300 -> 500. A melee combat bot at 300 HP died too fast in
+-- sustained fights; 500 lets it tank a hound wave without instant retirement.
+-- Fuel tank 48 seg (3 days) -> 64 seg (4 days): buster had the smallest tank of
+-- all four bots, which combined with its restrictive mechanical-only diet made
+-- it tedious to keep running. Now matches the Butler's endurance.
+TUNING.WILLIAM_BUSTER_HEALTH = 500
 TUNING.WILLIAM_BUSTER_ATTACK_PERIOD = 2
 TUNING.WILLIAM_BUSTER_ATTACK_RANGE = 3
 TUNING.WILLIAM_BUSTER_DAMAGE = 36
 TUNING.WILLIAM_BUSTER_WALK_SPEED = 12
-TUNING.WILLIAM_BUSTER_MAXFUEL = seg_time*48
+TUNING.WILLIAM_BUSTER_MAXFUEL = seg_time*64
 
 TUNING.WILLIAM_BUTLER_HEALTH = 200
 TUNING.WILLIAM_BUTLER_ATTACK_PERIOD = 2
