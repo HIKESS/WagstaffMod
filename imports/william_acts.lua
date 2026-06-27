@@ -98,14 +98,32 @@ end))
 
 --==================================================================================
 -- WILLUPGRADE (use gear to upgrade a bot)
+-- v2.0.83 FIX: When target is a brute (has both `container` + `willminion`),
+-- remove the STORE action from the list so the gear goes to WILLUPGRADE
+-- (levelup) instead of into the brute's chest. The brute is the only bot
+-- with a container, so the STORE vs WILLUPGRADE conflict only happens here.
 --==================================================================================
 AddComponentAction("USEITEM", "willupgrader", function(inst, doer, target, actions)
     if CrafterCheck(doer) and target:HasTag("willminion") and not target:HasTag("butler") and not target:HasTag("level3") then
+        -- v2.0.83: Remove STORE from the action list when upgrading a brute with gears.
+        -- Without this, STORE (put gear into chest) takes priority over WILLUPGRADE
+        -- (consume gear for levelup) because DST's container action is registered
+        -- before our custom action and gets selected first.
+        if target:HasTag("brute") then
+            for i = #actions, 1, -1 do
+                if actions[i] == GLOBAL.ACTIONS.STORE then
+                    table.remove(actions, i)
+                end
+            end
+        end
         table.insert(actions, GLOBAL.ACTIONS.WILLUPGRADE)
     end
 end)
 
-local WILLUPGRADE = GLOBAL.Action({ mount_valid=false })
+-- v2.0.83: priority=2 makes WILLUPGRADE beat STORE (priority=1) when both are
+-- available. This fixes the brute bot chest intercepting gears: without this,
+-- clicking a gear on a brute always stored it in the chest instead of upgrading.
+local WILLUPGRADE = GLOBAL.Action({ mount_valid=false, priority=2 })
 WILLUPGRADE.str = "Upgrade"
 WILLUPGRADE.id = "WILLUPGRADE"
 WILLUPGRADE.fn = function(act)
@@ -159,10 +177,28 @@ GLOBAL.ACTIONS.STORE.fn = function(act)
     local target = act.target
     if target ~= nil and target.components.container ~= nil
         and act.invobject ~= nil and act.invobject.components.inventoryitem ~= nil
-        and act.doer ~= nil and act.doer.components.inventory ~= nil
-        and target:HasTag("butler") and not (target.components.follower ~= nil and target.components.follower:GetLeader() == act.doer) then
-        return false, "NOTALLOWED"
-    else
-        return _STORE(act)
+        and act.doer ~= nil and act.doer.components.inventory ~= nil then
+
+        -- Butler: leader-locked (only the leader can store items)
+        if target:HasTag("butler") and not (target.components.follower ~= nil and target.components.follower:GetLeader() == act.doer) then
+            return false, "NOTALLOWED"
+        end
+
+        -- v2.0.83 FIX: Brute bot — gears must go to WILLUPGRADE (levelup), not STORE
+        -- (into chest). The brute is the only bot with both `container` (chest) AND
+        -- the `willminion` tag. When a player holds gears and clicks the brute, DST
+        -- sees two USEITEM actions: STORE (chest) and WILLUPGRADE (gear->levelup).
+        -- STORE has higher system priority, so the gear always went into the chest
+        -- instead of being consumed for upgrade. Now we block STORE for gears on
+        -- brute bots, forcing WILLUPGRADE to be the action that fires.
+        -- Other items (scrap, food, etc.) still STORE normally into the chest.
+        if target:HasTag("brute")
+            and act.invobject.prefab == "gears"
+            and act.invobject.components.willupgrader ~= nil
+            and CrafterCheck(act.doer)
+            and not target:HasTag("level3") then
+            return false, "UPGRADE"  -- Block STORE; WILLUPGRADE will handle it
+        end
     end
+    return _STORE(act)
 end
