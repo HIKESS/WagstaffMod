@@ -830,3 +830,40 @@ Stage Summary:
 - Local commit: 033c46d (v2.0.84). Push FAILED — GitHub auth token expired.
   User needs to push manually.
 - Branch state: local main = 033c46d (v2.0.84), origin/main = e0c7ff8 (v2.0.82).
+
+
+---
+Task ID: CONTAINER-DEATH-85
+Agent: Z.ai Code (main session)
+Task: Fix brute chest items destroyed when bot dies/hammered
+  "acho que quando o buster morre, ele não dropa os itens do bau dele,
+   acho que meu cane do chester sumiu que estava la"
+
+Work Log:
+- Investigated all 4 bot prefabs for container components. CONFIRMED: only the
+  brute MK3 has a container (chest). The buster, ballistic, and butler do NOT
+  have containers at any tier. The user likely meant "brute" (the chest bot)
+  not "buster" (the combat bot with no chest).
+- Found the root cause: OnHammered (line 139-155) calls inst:Remove() after
+  DropLoot() but NEVER calls container:DropEverything(). When the entity is
+  removed, the DST engine destroys all items inside the container silently.
+- Also found: there is NO "death" event listener on the brute. When the brute
+  dies in combat (HP reaches 0), the entity is removed by the engine, again
+  without dropping container contents.
+- Verified that MK1→MK2 and MK2→MK3 upgrades don't need this fix because MK1
+  and MK2 don't have containers (only MK3 gets one at line 1520).
+- FIX (2 locations, commit 15a2b75 = v2.0.85):
+  1. OnHammered: added container:Close() + DropEverything() before DropLoot()
+     and inst:Remove(). Items now drop on the ground next to the destroyed bot.
+  2. ListenForEvent("death"): added a death handler that drops all container
+     items when the brute dies from any cause (combat, starvation, etc.).
+- Bumped version 2.0.84 -> 2.0.85.
+
+Stage Summary:
+- BUG FIXED: Brute MK3 chest items are no longer destroyed when the bot dies
+  or is hammered. All stored items (Chester Cane, tools, resources, etc.) now
+  drop on the ground at the bot's location for the player to recover.
+- Files changed (2): scripts/prefabs/william_brute.lua (+21 lines), modinfo.lua.
+- Local commit: 15a2b75 (v2.0.85). Push FAILED — GitHub auth still unavailable.
+- Branch state: local main = 15a2b75 (v2.0.85), origin/main = e0c7ff8 (v2.0.82).
+- 3 local commits not yet pushed: v2.0.83, v2.0.84, v2.0.85.
