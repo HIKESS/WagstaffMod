@@ -105,6 +105,13 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
             inst.Physics:Stop()
                  inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/idle")
         if inst.components.fueled ~= nil then
+            -- v2.0.92 FIX: Force bank to "pigman" before playing idle animations.
+            -- The "idle_creepy", "idle_happy", "debuff", "hungry" animations
+            -- are in the pigman bank, NOT the william_brute bank. If the SG
+            -- enters funnyidle while the bank is still "william_brute" (e.g.
+            -- after save/load or transition from idle_off), these animations
+            -- won't be found and the brute will be stuck/warning-spamming.
+            inst.AnimState:SetBank("pigman")
             if inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .2 then
                 inst.AnimState:PlayAnimation("debuff")
             elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .4 then

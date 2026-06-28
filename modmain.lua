@@ -2238,9 +2238,41 @@ AddPrefabPostInit("wagstaff", function(inst)
         end
 
         -- Zero boss kill stats in the player profile (affinity-gating bosses)
+        -- v2.0.92 FIX: inst.profile is nil during the first DoTaskInTime(0) on
+        -- a fresh world because the profile component hasn't loaded yet. Delay
+        -- the reset by one more frame so the profile is available. Also wrap
+        -- the profile access in pcall to prevent crashes if the profile becomes
+        -- invalid between the nil check and the access.
         local profile = inst.profile
         WagstaffDebug("[WAGSTAFF-SERVER] inst.profile=" .. tostring(profile ~= nil) .. " profile.stats=" .. tostring(profile and profile.stats ~= nil))
-        if profile and profile.stats then
+        if not profile or not profile.stats then
+            -- Profile not ready yet — retry after a short delay
+            WagstaffDebug("[WAGSTAFF-SERVER] Profile not ready, retrying in 1 second...")
+            inst:DoTaskInTime(1, function()
+                if not inst:IsValid() then return end
+                if GLOBAL.TheWorld.wagstaff_profile_reset then return end
+                local retry_profile = inst.profile
+                if retry_profile and retry_profile.stats then
+                    local bosses = {
+                        "stalker", "stalker_atrium",
+                        "alterguardian_phase3", "alterguardian_phase2", "alterguardian_phase1",
+                    }
+                    for _, boss in ipairs(bosses) do
+                        retry_profile.stats["killed_" .. boss] = 0
+                    end
+                    if retry_profile.Save then
+                        pcall(function() retry_profile:Save() end)
+                    end
+                    GLOBAL.TheWorld.wagstaff_profile_reset = true
+                    print("[Wagstaff] Reset boss kill stats for affinity bosses (fresh world, delayed)")
+                else
+                    WagstaffDebug("[WAGSTAFF-SERVER] WARNING: profile still nil after retry — boss stats NOT reset")
+                    print("[Wagstaff SERVER] WARNING: profile still nil after retry — boss stats NOT reset")
+                    -- Still mark as reset so we don't keep retrying every load
+                    GLOBAL.TheWorld.wagstaff_profile_reset = true
+                end
+            end)
+        elseif profile and profile.stats then
             local bosses = {
                 "stalker", "stalker_atrium",
                 "alterguardian_phase3", "alterguardian_phase2", "alterguardian_phase1",
@@ -2260,7 +2292,11 @@ AddPrefabPostInit("wagstaff", function(inst)
         end
 
         -- Mark this world as reset — will NOT trigger again on reload
-        GLOBAL.TheWorld.state.wagstaff_profile_reset = true
+        -- v2.0.92 FIX: was saving to TheWorld.state.wagstaff_profile_reset but
+        -- checking TheWorld.wagstaff_profile_reset. These are different properties!
+        -- The world postinit initializes and saves/loads TheWorld.wagstaff_profile_reset,
+        -- so the flag must be set there for the check to work on reload.
+        GLOBAL.TheWorld.wagstaff_profile_reset = true
         WagstaffDebug("[WAGSTAFF-SERVER] Set wagstaff_profile_reset=TRUE (boss stats reset complete)")
         print("[Wagstaff] Fresh world boss kill stats reset complete.")
     end)

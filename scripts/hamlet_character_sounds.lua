@@ -2,7 +2,7 @@
 -- Extracted from Hamlet Characters - Rework (workshop 2399658326), Wagstaff-only (L1-52).
 
 --------------------------
-	---[[Wagstaff]]---
+        ---[[Wagstaff]]---
 --------------------------
 RemapSoundEvent("dontstarve/characters/wagstaff","hamletcharactersound/characters/wagstaff")
 RemapSoundEvent("dontstarve/characters/wagstaff/talk_LP","hamletcharactersound/characters/wagstaff/talk_LP")
@@ -53,3 +53,13 @@ RemapSoundEvent("dontstarve/characters/wagstaff/thumper/steam", "hamletcharacter
 RemapSoundEvent("dontstarve/characters/wagstaff/thumper/thump", "hamletcharactersound/characters/wagstaff/thumper/thump" )
 
 RemapSoundEvent("dontstarve/characters/wagstaff/telebrella/beep", "hamletcharactersound/characters/wagstaff/telebrella/teleumbrella_beep" )
+
+-- v2.0.92 FIX: Remap phantom goggles sound events that referenced a non-existent
+-- "dontstarve_wagstaff" FMOD bank. The goggles.lua prefab plays these sounds
+-- on equip/unequip but the bank was never included, causing "FMOD Error: Can't
+-- play event" in the client log. Now remapped to the working hamletcharactersound
+-- goggles sound (use_goggles) so equipping goggles still produces audio feedback.
+RemapSoundEvent("dontstarve_wagstaff/characters/wagstaff/goggles/heat_on",   "hamletcharactersound/characters/wagstaff/goggles/use_goggles")
+RemapSoundEvent("dontstarve_wagstaff/characters/wagstaff/goggles/heat_off",  "hamletcharactersound/characters/wagstaff/goggles/use_goggles")
+RemapSoundEvent("dontstarve_wagstaff/characters/wagstaff/goggles/armor_on",  "hamletcharactersound/characters/wagstaff/goggles/use_goggles")
+RemapSoundEvent("dontstarve_wagstaff/characters/wagstaff/goggles/armor_off", "hamletcharactersound/characters/wagstaff/goggles/use_goggles")
