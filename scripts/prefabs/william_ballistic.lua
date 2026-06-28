@@ -1920,13 +1920,19 @@ local function ondeploy(inst, pt, deployer)
         end
     end)
 
-    -- Save/load empty state (for tracking upgrade level)
+    -- Save/load empty state (for tracking upgrade level + fuel)
+    -- v2.0.89 FIX: OnSaveEmpty was NOT saving currentfuel, so after save/load
+    -- the empty bot always had 100% fuel (from InitializeFuelLevel). This caused
+    -- the fuel to differ between inventory and deployed states.
     local function OnSaveEmpty(inst, data)
         data.upgradelevel = inst.upgradelevel or 0
         data.was_mk2 = inst.was_mk2
         data.was_mk3 = inst.was_mk3
         if inst.upgradelevel_mk3 ~= nil then
             data.upgradelevel_mk3 = inst.upgradelevel_mk3
+        end
+        if inst.components.fueled ~= nil then
+            data.currentfuel = inst.components.fueled.currentfuel
         end
     end
 
@@ -1937,6 +1943,11 @@ local function ondeploy(inst, pt, deployer)
             inst.was_mk3 = data.was_mk3
             if data.upgradelevel_mk3 ~= nil then
                 inst.upgradelevel_mk3 = data.upgradelevel_mk3
+            end
+            -- v2.0.89 FIX: Restore currentfuel so it matches what the bot had
+            -- when picked up, not the default 100% from InitializeFuelLevel.
+            if data.currentfuel ~= nil and inst.components.fueled ~= nil then
+                inst.components.fueled.currentfuel = data.currentfuel
             end
         end
     end
