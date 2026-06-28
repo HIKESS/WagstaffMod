@@ -1143,7 +1143,8 @@ end
         inst._pulse_light.entity:SetParent(inst.entity)
         inst._pulse_light.Transform:SetPosition(0, 1, 0)
 
-        -- v2.0.15: MK3 now gets +100 HP (→500) and +5 DMG (→33) over MK2
+        -- v2.0.15: MK3 now gets +100 HP and +5 DMG over MK2
+        -- v2.0.82: Base HP raised 150→300, so MK3 HP is now 300+350=650
         -- (was: identical to MK2 stats — 150 scrap for zero stat gain)
         inst.components.health:SetMaxHealth(TUNING.WILLIAM_BALLISTIC_HEALTH + 350)
         inst.components.health:SetCurrentHealth(inst.components.health.maxhealth)
@@ -1237,8 +1238,12 @@ end
             inst:AddTag("overcharged")
 
             -- 3x boost: Attack Rate, DMG, HP, Regen
+            -- v2.0.86 FIX: Overcharge now uses the bot's CURRENT damage (which includes
+            -- MK3 tier bonus +17) instead of the base tuning constant. Before this fix,
+            -- a MK3 Ballistic (33 DMG) only got 16*3=48 during overcharge instead of 33*3=99.
+            local current_dmg = inst.components.combat.defaultdamage
             inst.components.combat:SetAttackPeriod(TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD / 3)
-            inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE * 3)
+            inst.components.combat:SetDefaultDamage(current_dmg * 3)
             local old_max = inst.components.health.maxhealth
             inst.components.health:SetMaxHealth(old_max + 500)
             inst.components.health:DoDelta(500)
@@ -1282,9 +1287,10 @@ end
             inst._overcharge = false
             inst:RemoveTag("overcharged")
 
-            -- Revert stats to MK3 base: +12 DMG
-            inst.components.combat:SetAttackPeriod(TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD)
-            inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 12)
+            -- v2.0.86 FIX: Revert to MK3 base stats (+17 DMG, not +12 which was MK2).
+            -- Also restore the level-based attack period that was set before overcharge.
+            inst.components.combat:SetAttackPeriod(TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD / (1 + inst.level * 0.3))
+            inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BALLISTIC_DAMAGE + 17)
             inst.components.health:SetMaxHealth(inst.components.health.maxhealth - 500)
             inst.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN, TUNING.WILLIAM_ROBOT_REGENPERIOD)
             inst.AnimState:ClearBloomEffectHandle()

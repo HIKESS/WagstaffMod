@@ -1648,6 +1648,44 @@ inst.components.burnable.ignorefuel = true
     end
 
 
+-- v2.0.86: EMPTY brute husk. The stategraph's "powerdown" state (SGwilliambrute.lua:311)
+-- calls SpawnPrefab("williambrute_empty") — without this registered prefab, the spawn
+-- returns nil and the brute would never be removed (broken entity stuck in the world).
+-- Currently TurnOff uses the "turn_off" state instead of "powerdown", so this code path
+-- is rarely hit, but registering it prevents a crash if it ever is.
+local function empty(inst)
+    local inst = fn()
+
+    inst.AnimState:SetBank("william_brute")
+    inst.AnimState:PlayAnimation("sit_idle", true)
+    inst.Transform:SetScale(1.7, 1.7, 1.7)
+
+    MakeCharacterPhysics(inst, 80, .25)
+    inst.Physics:SetFriction(1)
+
+    if not TheWorld.ismastersim then
+        return inst
+    end
+
+    inst:AddComponent("workable")
+    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+    inst.components.workable:SetWorkLeft(4)
+    inst.components.workable:SetOnFinishCallback(OnHammered)
+    inst.components.workable:SetOnWorkCallback(onworked)
+
+    inst:AddTag("Notarget")
+
+    -- Mark husk as "off" so the brain's Deactivated gate keeps it from
+    -- following/teleporting to the leader.
+    inst.on = false
+
+    inst.components.fueled.accepting = true
+
+    MakeHauntableWork(inst)
+
+    return inst
+end
+
 local function onbuilt(inst, builder)
         local type = math.random(1, 100) == 100 and "williambrute_gary" or "williambrute"
     local robot = SpawnPrefab(type)
@@ -1722,6 +1760,7 @@ end
     Prefab("williambrute2", fn2, assets, prefabs),
     Prefab("williambrute3", fn3, assets, prefabs),
     Prefab("williambrute_gary", gary, assets, prefabs),
+    Prefab("williambrute_empty", empty, assets, prefabs),
     MakePlacer("williambrute_placer", "william_brute", "william_brute", "sit_idle", false, nil, nil, 1.7),
         Prefab("williambrute_builder", builder, assets, prefabs)
 

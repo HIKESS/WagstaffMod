@@ -253,7 +253,13 @@ local function OnAddFuel(inst, fuelvalue, fuelitem)
 end
 
 local function OnHammered(inst, worker)
+    -- v2.0.86 FIX: Close() the container before DropEverything() to prevent
+    -- the client-side container widget remaining open after entity removal.
+    -- Same fix as brute v2.0.85. Without Close(), if the player has the
+    -- container UI open when the bot is hammered, the widget stays open on
+    -- a nil entity, causing a nil reference error or visual glitch.
     if inst.components.container then
+        inst.components.container:Close()
         inst.components.container:DropEverything()
     end
 
@@ -529,10 +535,11 @@ end
         inst:AddTag("companion")
         inst:AddTag("NOBLOCK")
         inst:AddTag("mech")
-    inst:AddTag("cooker")
-   inst:AddTag("container")
-    inst:AddTag("stewer")
-        inst:AddTag("tiddlevirusimmune")
+    -- v2.0.86 FIX: "cooker", "container", and "stewer" tags moved to active()
+    -- only. The empty husk (which calls fn()) had these tags without the
+    -- corresponding components, causing a crash when right-clicking the husk
+    -- (DST shows "Open" prompt but inst.components.container is nil).
+    inst:AddTag("tiddlevirusimmune")
     inst:SetPrefabNameOverride("williambutler")
 
     -- v2.0.18 FIX: hover display on CLIENT. The client doesn't have
@@ -646,6 +653,11 @@ end
         inst:AddTag("butler")
         inst:AddTag("dangerouscooker")
         inst:AddTag("expertchef")
+        -- v2.0.86: Tags moved from fn() to active() so the empty husk doesn't
+        -- have them without the corresponding components.
+        inst:AddTag("cooker")
+        inst:AddTag("container")
+        inst:AddTag("stewer")
         inst:AddTag("tiddlevirusimmune")
         inst:AddTag("ebuild_wrenchable")
         inst.AnimState:Hide("swap_body")
@@ -973,6 +985,11 @@ inst.components.burnable.ignorefuel = true
         inst:AddTag("butler")
         inst:AddTag("dangerouscooker")
         inst:AddTag("expertchef")
+        -- v2.0.86: Tags moved from fn() to here so the empty husk doesn't
+        -- have them without the corresponding components.
+        inst:AddTag("cooker")
+        inst:AddTag("container")
+        inst:AddTag("stewer")
         inst:AddTag("tiddlevirusimmune")
         inst:AddTag("butler_thermal_upgraded")
         inst:AddTag("ebuild_wrenchable")

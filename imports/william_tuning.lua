@@ -28,8 +28,9 @@ TUNING.WILLIAM_ROBOT_REGENPERIOD = 5
 TUNING.WILLIAM_BALLISTIC_HEALTH = 300
 TUNING.WILLIAM_BALLISTIC_ATTACK_PERIOD = 3
 TUNING.WILLIAM_BALLISTIC_DAMAGE = 24/1.5 -- Due to the damage being electric, it will get multiplied by 1.5 against any mob
--- Huge Battery: 5x normal fuel so he can share/recharge other bots meaningfully
-TUNING.WILLIAM_BALLISTIC_MAXFUEL = seg_time*121
+-- v2.0.86: Removed WILLIAM_BALLISTIC_MAXFUEL (seg_time*121 = 3630s). It was
+-- defined but never used — the code uses TUNING.WINONA_BATTERY_LOW_MAX_FUEL_TIME * 5
+-- instead (see william_ballistic.lua MK1/MK2). This was dead code / orphan constant.
 
 -- v2.0.82: Buster HP 300 -> 500. A melee combat bot at 300 HP died too fast in
 -- sustained fights; 500 lets it tank a hound wave without instant retirement.
