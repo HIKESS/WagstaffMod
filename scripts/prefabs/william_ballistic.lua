@@ -66,8 +66,23 @@ local brain = require "brains/williamballisticbrain"
 local AffinityPulse = _G.AffinityPulse
 
 -- Helper function to check if bot's owner has affinity skills
+-- v2.0.89: Replaced follower:GetLeader() with inst._owner_guid lookup.
+-- The old follower component caused DST's built-in catch-up teleport,
+-- making the stationary turret teleport to the player. Now we store the
+-- owner GUID directly and resolve it via Ents[] — no follower component,
+-- no teleport, no movement.
 local function GetOwner(inst)
-    return inst.components.follower and inst.components.follower:GetLeader()
+    -- Try follower component first (for bots that still use it, e.g. buster/brute)
+    if inst.components.follower then
+        local leader = inst.components.follower:GetLeader()
+        if leader then return leader end
+    end
+    -- Fallback: resolve owner by stored GUID (Ballistic MK3 turret mode)
+    if inst._owner_guid then
+        local owner = Ents[inst._owner_guid]
+        if owner and owner:IsValid() then return owner end
+    end
+    return nil
 end
 
 local function OwnerHasCelestial(inst)
@@ -925,8 +940,13 @@ end
         end
 
         -- Fuel battery for Mk.II
+        -- v2.0.89 FIX: Only set maxfuel; do NOT reset currentfuel to max here.
+        -- When upgrading from MK1, the upgrade code transfers currentfuel BEFORE
+        -- spawning the MK2 prefab. If we reset currentfuel=maxfuel here, the
+        -- transferred fuel value is overwritten and the bot gets a free full tank.
+        -- For fresh spawns (no prior fuel), currentfuel was already set to maxfuel
+        -- by InitializeFuelLevel in fn(), so this change is safe.
         inst.components.fueled.maxfuel = TUNING.WINONA_BATTERY_LOW_MAX_FUEL_TIME * 5
-        inst.components.fueled.currentfuel = inst.components.fueled.maxfuel
         inst.components.fueled.accepting = true
 
         -- STAT UPGRADE: +250 HP, +12 Damage
@@ -1042,9 +1062,9 @@ end
                         newbot.level = inst.level
                         newbot.upgradelevel_mk3 = inst.upgradelevel_mk3
 
-                        -- Set leader (MK3 is mobile, set worker as leader)
-                        if newbot.components.follower ~= nil and worker ~= nil then
-                            newbot.components.follower:SetLeader(worker)
+                        -- Set owner (v2.0.89: use _owner_guid instead of follower)
+                        if worker ~= nil then
+                            newbot._owner_guid = worker.GUID
                         end
 
                         -- Spawn fx
@@ -1152,15 +1172,18 @@ end
 
         inst:AddTag("ballistic_turret")
 
-        -- Add follower for owner tracking only (affinity, save/load)
-        inst:AddComponent("follower")
-        inst.components.follower:KeepLeaderOnAttacked()
-        inst.components.follower.keepdeadleader = true
-        inst.components.follower.keepleaderduringminigame = true
+        -- v2.0.89: REMOVED follower component. The DST follower component has a
+        -- built-in catch-up teleport that teleports followers to their leader when
+        -- they're too far away. This caused the stationary turret Ballistic to
+        -- teleport to the player — a critical bug. Now we store the owner's GUID
+        -- in inst._owner_guid and resolve it via Ents[] when needed (affinity
+        -- checks, save/load, death notification). No follower = no teleport.
+        -- GetOwner() (defined at top of file) handles the GUID→entity resolution.
+        inst._owner_guid = nil  -- set below or on load
 
-        -- Find nearest player as leader if none set (spawned fresh)
+        -- Find nearest player as owner if none set (spawned fresh)
         inst:DoTaskInTime(0, function()
-            if inst.components.follower:GetLeader() == nil then
+            if inst._owner_guid == nil then
                 local x, y, z = inst.Transform:GetWorldPosition()
                 local players = TheSim:FindEntities(x, y, z, 15, {"player"})
                 local closest = nil
@@ -1173,7 +1196,7 @@ end
                     end
                 end
                 if closest ~= nil then
-                    inst.components.follower:SetLeader(closest)
+                    inst._owner_guid = closest.GUID
                 end
             end
         end)
@@ -1795,18 +1818,20 @@ end
             end
         end)
 
-        -- MK3 save/load: includes follower leader, overcharge, fuel, + light orb resync
+        -- MK3 save/load: includes owner guid, overcharge, fuel, + light orb resync
+        -- v2.0.89: Replaced follower component save/load with _owner_guid.
         local old_OnSave3 = inst.OnSave
         local old_OnLoad3 = inst.OnLoad
 
-        -- Save: stop light orb before saving, save follower + overcharge
+        -- Save: stop light orb before saving, save owner + overcharge
         inst.OnSave = function(inst2, data)
             if inst2._lightorb_active then
                 StopLightOrb(inst2)
             end
             if old_OnSave3 then old_OnSave3(inst2, data) end
-            if inst2.components.follower ~= nil and inst2.components.follower:GetLeader() ~= nil then
-                data.leader = inst2.components.follower:GetLeader().GUID
+            -- v2.0.89: Save owner GUID directly (no follower component)
+            if inst2._owner_guid ~= nil then
+                data.owner_guid = inst2._owner_guid
             end
             data.overcharge = inst2._overcharge
             data.upgradelevel = inst2.upgradelevel or 0
@@ -1818,14 +1843,13 @@ end
         inst.OnLoad = function(inst2, data)
             if old_OnLoad3 then old_OnLoad3(inst2, data) end
             if not TheWorld.ismastersim then return end
-            -- Restore follower leader
-            if data ~= nil and data.leader ~= nil then
-                inst2:DoTaskInTime(0, function()
-                    local leader = Ents[data.leader]
-                    if leader ~= nil and inst2.components.follower ~= nil then
-                        inst2.components.follower:SetLeader(leader)
-                    end
-                end)
+            -- v2.0.89: Restore owner GUID (no follower component = no teleport)
+            if data ~= nil and data.owner_guid ~= nil then
+                inst2._owner_guid = data.owner_guid
+            end
+            -- Also support legacy saves that used "leader" key
+            if data ~= nil and data.leader ~= nil and inst2._owner_guid == nil then
+                inst2._owner_guid = data.leader
             end
             -- v2.0.61: Overcharge is no longer restored on load. It's a transient
             -- manual-toggle combat state — the player re-toggles it after reload.
@@ -1848,7 +1872,8 @@ end
                     StartLightOrb(inst2)
                 end
                 -- Resync celestial FX (spawn aura but do NOT override Light entity)
-                local owner = inst2.components.follower and inst2.components.follower:GetLeader()
+                -- v2.0.89: Use GetOwner() instead of direct follower access
+                local owner = GetOwner(inst2)
                 local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
                 local shadow = owner and owner:HasTag("wagstaff_shadow_possession")
                 if TheWorld.state.isday and celestial then

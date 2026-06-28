@@ -172,8 +172,13 @@ end),
         inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/death")
     inst.components.lootdropper:DropLoot()
             -- v2.0.87: Notify the owner when the ballistic dies
+            -- v2.0.89: Also check inst._owner_guid (Ballistic MK3 no longer has
+            -- follower component — it caused teleport bug)
             local owner = inst.components.follower and inst.components.follower:GetLeader()
-            if owner and owner.components.talker then
+            if owner == nil and inst._owner_guid then
+                owner = Ents[inst._owner_guid]
+            end
+            if owner and owner:IsValid() and owner.components.talker then
                 owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BALLISTIC_DOWN"))
             end
         end,
@@ -207,7 +212,12 @@ end),
     local x, y, z = inst.Transform:GetWorldPosition()
     local husk = SpawnPrefab("williamballistic_empty")
         if husk ~= nil then
-        husk.william = inst.components.follower:GetLeader()
+        -- v2.0.89: Safely get leader/owner (may not have follower component)
+        local owner = inst.components.follower and inst.components.follower:GetLeader()
+        if owner == nil and inst._owner_guid then
+            owner = Ents[inst._owner_guid]
+        end
+        husk.william = owner
         husk.Transform:SetPosition(x, y, z)
         husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
         inst:Remove()
