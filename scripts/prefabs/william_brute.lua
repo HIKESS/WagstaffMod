@@ -142,6 +142,15 @@ local function OnHammered(inst, worker)
         return
     end
 
+    -- v2.0.85 FIX: Drop ALL items from the container before removing the entity.
+    -- Without this, items stored in the brute's chest (including player items like
+    -- Chester Cane) were silently destroyed when the bot was hammered. The brute is
+    -- the only bot with a container component, so this only applies here.
+    if inst.components.container ~= nil then
+        inst.components.container:Close()
+        inst.components.container:DropEverything()
+    end
+
     -- v2.0.34: lootsetfn garante williamgadget (100%) + gears por level.
     -- Chance table "brute" da 50% cutstone + 50% transistor (bonus alinhado ao recipe).
     -- FIX: antes usava SetChanceLootTable({"armorwood", 1}) que e sintaxe INVALIDA
@@ -663,6 +672,18 @@ inst.components.burnable.ignorefuel = true
     end)
 
         inst:ListenForEvent("levelup", LevelUp)
+
+    -- v2.0.85 FIX: Drop container items on death (combat, starvation, etc.).
+    -- The brute is the only bot with a chest. When it dies (HP reaches 0), the
+    -- DST engine removes the entity and destroys everything inside the container.
+    -- This listener runs before removal and drops all stored items on the ground
+    -- so the player can recover them (Chester Cane, tools, resources, etc.).
+    inst:ListenForEvent("death", function(inst)
+        if inst.components.container ~= nil then
+            inst.components.container:Close()
+            inst.components.container:DropEverything()
+        end
+    end)
 
 
         inst:SetBrain(brain)
