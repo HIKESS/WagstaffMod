@@ -295,9 +295,9 @@ local function TurnOff(inst, doer, instant)
         inst.components.follower:StopFollowing()
     end
 
-                if inst._task ~= nil then
-                    inst._task:Cancel()
-            inst._task = nil
+                if inst._taunttask ~= nil then
+                    inst._taunttask:Cancel()
+            inst._taunttask = nil
         end
             MakeHauntableWork(inst)
         inst:RemoveTag("scarytoprey")
@@ -385,7 +385,7 @@ local function TurnOn(inst, doer, instant)
         end
     end
 
-    if inst._task == nil then
+    if inst._taunttask == nil then
     inst._taunttask = inst:DoPeriodicTask(2, TauntCreatures, 0)
         end
 
@@ -551,10 +551,7 @@ local function onload(inst, data)
     end)
 end
 
-local function onbuilt(inst, builder)
-    inst.components.knownlocations:RememberLocation("home", inst:GetPosition())
-    inst.components.willyraise:Rise()
-end
+-- v2.0.94: Removed dead first onbuilt definition (shadowed by the second at line ~1766)
 
 local PLACER_SCALE = 1.5
 
@@ -591,7 +588,7 @@ local PLACER_SCALE = 1.5
         inst:AddTag("brute")
         inst:AddTag("ebuild_wrenchable")
 
-    inst._task = nil
+    inst._taunttask = nil
     inst.on = nil
 
         -- v2.0.36 FIX: hover display on CLIENT (same fix as butler/buster).
@@ -677,7 +674,7 @@ inst.components.burnable.ignorefuel = true
 
     -- Rain damage (like WX-78) when active
     inst:DoPeriodicTask(1, function(inst)
-        if TheWorld.state.israining and inst.components.health then
+        if TheWorld.state.israining and inst.on ~= false and inst.components.health then
             inst.components.health:DoDelta(-1, false, "wetness")
         end
     end)
@@ -1069,10 +1066,9 @@ inst.components.burnable.ignorefuel = true
                     inst.Light:Enable(false)
                 end
                 inst._celestial_light = nil
-                if inst._lunar_fire ~= nil and inst._lunar_fire:IsValid() then
-                    inst._lunar_fire:Remove()
-                    inst._lunar_fire = nil
-                end
+                -- v2.0.94: Removed dead _lunar_fire cleanup — this variable is
+                -- never initialized anywhere. If lunar fire FX is needed in the
+                -- future, create it in the celestial path and store it here.
                 if inst._lunar_aura ~= nil and inst._lunar_aura:IsValid() then
                     inst._lunar_aura:Remove()
                     inst._lunar_aura = nil
@@ -1224,6 +1220,7 @@ inst.components.burnable.ignorefuel = true
                 end
             end
         end
+        inst:RemoveEventCallback("attacked", OnAttacked)
         inst:ListenForEvent("attacked", OnAttackedMK2)
 
         -- SHADOW POSSESSION: shadow creatures target priority during dusk
@@ -1502,10 +1499,7 @@ inst.components.burnable.ignorefuel = true
                 inst._lunar_aura:Remove()
                 inst._lunar_aura = nil
             end
-            if inst._ice_fx ~= nil and inst._ice_fx:IsValid() then
-                inst._ice_fx:Remove()
-                inst._ice_fx = nil
-            end
+            -- v2.0.94: Removed dead _ice_fx cleanup — never initialized
             if inst._shadow_fx ~= nil and inst._shadow_fx:IsValid() then
                 inst._shadow_fx:Remove()
                 inst._shadow_fx = nil
@@ -1717,7 +1711,7 @@ local function empty(inst)
     inst.components.workable:SetOnFinishCallback(OnHammered)
     inst.components.workable:SetOnWorkCallback(onworked)
 
-    inst:AddTag("Notarget")
+    inst:AddTag("notarget")
 
     -- Mark husk as "off" so the brain's Deactivated gate keeps it from
     -- following/teleporting to the leader.
@@ -1767,8 +1761,8 @@ local function empty(inst)
 end
 
 local function onbuilt(inst, builder)
-        local type = math.random(1, 100) == 100 and "williambrute_gary" or "williambrute"
-    local robot = SpawnPrefab(type)
+        local spawn_type = math.random(1, 100) == 100 and "williambrute_gary" or "williambrute"
+    local robot = SpawnPrefab(spawn_type)
         if robot ~= nil then
     robot.Transform:SetPosition(inst.Transform:GetWorldPosition())
     robot.components.knownlocations:RememberLocation("home", inst:GetPosition())

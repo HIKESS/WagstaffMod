@@ -172,7 +172,7 @@ WILLIAM_FUEL.BUTLER = {
     -- Plant
     cutgrass = true, twigs = true, pinecone = true, foliage = true,
     -- Organic compost (v2.0.90: "rotton" → "rot" — correct DST prefab name)
-    rot = true, spoiled_food = true,
+    rot = true, spoiled_food = true, petals = true,
     -- Mechanical (premium electronic fuel)
     transistor = true,
 }

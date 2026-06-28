@@ -7,7 +7,7 @@ local prefabs =
     {
         Asset("ANIM", "anim/william_buster.zip"),
         Asset("ANIM", "anim/william_buster_empty.zip"),
-        Asset("SOUND", "sound/maxwell.fsb"),
+        -- v2.0.94: Removed Asset("SOUND", "sound/maxwell.fsb") — no PlaySound references maxwell bank
     }
 
 -- v2.0.17: debug helpers gated by the "Debug mode" mod config button.
@@ -23,16 +23,13 @@ SetSharedLootTable("buster",
     {'marble',            0.50},
 })
 
-SetSharedLootTable("bustergadget",
-{
-    {'williamgadget',          1},
-})
+-- v2.0.94: Removed dead "bustergadget" loot table — never referenced (gadget dropped via lootsetfn)
 
 local function lootsetfn(lootdropper)
     -- v2.0.34: williamgadget (core) sempre dropa. gears adicionais por level
     -- (recompensa de level up, nao e bonus aleatorio).
     local loot = {"williamgadget"}
-    local amount = lootdropper.inst.level*0.75
+    local amount = math.ceil(lootdropper.inst.level*0.75)
         if amount < 1 then amount = 1 end
 
                 if lootdropper.inst.level > 0 then
@@ -278,8 +275,8 @@ local function SpawnShadowClone(parent_buster)
 end
 
 local function LevelUp(inst, amount)
-        if inst.level < 3 and amount ~= nil then
-        inst.level = inst.level + amount
+        if inst.level < 3 then
+        inst.level = inst.level + 1
         if inst.sg ~= nil then
         inst.sg:GoToState("upgraded")
         end
@@ -287,6 +284,7 @@ end
         if inst.level > 3 then inst.level = 3 end
 
         inst:DoTaskInTime(0, function()
+                for i = 1, 3 do inst:RemoveTag("level"..i) end
                 inst:AddTag("level"..inst.level)
 
         inst.components.health:SetAbsorptionAmount(0+inst.level*0.05)
@@ -412,7 +410,7 @@ local function NoHoles(pt)
 end
 
 local function nodebrisdmg(inst, amount, overtime, cause, ignore_invincible, afflicter, ignore_absorb)
-    return (afflicter ~= nil and afflicter:HasTag("quakedebris")) or (afflicter ~= nil and afflicter:HasTag("epic") and afflicter.components.combat.target ~= inst)
+    return (afflicter ~= nil and afflicter:HasTag("quakedebris")) or (afflicter ~= nil and afflicter:HasTag("epic") and afflicter.components.combat ~= nil and afflicter.components.combat.target ~= inst)
 end
 
 
@@ -1452,16 +1450,7 @@ local function onsave_empty(inst, data)
     end
 end
 
-
-
-local function revivetest(newsection, oldsection, inst, doer)
-        if newsection >= 0 then
-    local pt = inst:GetPosition()
-        if doer ~= nil and doer:HasTag("williamcrafter") then
-                MakeAlive(inst, doer)
-                end
-        end
-end
+-- v2.0.94: Removed dead revivetest function — never called (willyraise handles revival)
 
     local function empty(inst)
         local inst = fn(inst)
@@ -1533,6 +1522,9 @@ end
 
     MakeHauntableWork(inst)
 
+    inst.OnSave = onsave_empty
+    inst.OnLoad = onload_empty
+
         return inst
     end
 
@@ -1578,8 +1570,6 @@ end
         end
 
 
-    inst.OnSave = onsave_empty
-    inst.OnLoad = onload_empty
         inst.OnBuiltFn = onbuilt
 
         return inst

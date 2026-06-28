@@ -360,6 +360,7 @@ local function onsave(inst, data)
 end
 
 local function onload(inst, data)
+    if data == nil then return end
     inst.upgradelevel = data.upgradelevel
     inst.ammo = data.ammo
         inst.turretID = data.turretID
@@ -507,10 +508,7 @@ local function OnWrenchWork(inst, worker)
         if repair_cost > 0 then
             worker.components.inventory:ConsumeByName("scrap", repair_cost)
         end
-        inst.components.health.currenthealth = inst.components.health.currenthealth + _G.TUNING.SENTRY_WRENCH_HEAL
-        if inst.components.health.currenthealth > inst.components.health.maxhealth then
-            inst.components.health.currenthealth = inst.components.health.maxhealth
-        end
+        inst.components.health:DoDelta(_G.TUNING.SENTRY_WRENCH_HEAL)
         OnNameDelta(inst)
         return
     end
@@ -934,19 +932,12 @@ local function fn()
         end)
     end
 
-    -- Hook into upgrade to detect MK3
-    local old_upgrade = upgrade
-    local _upgrade_orig = upgrade
+    -- v2.0.91 FIX: Removed dead OnLoad wrapper code (Bug 1).
+    -- The onload function already calls upgrade() which calls _SetupMK3Affinity(),
+    -- so the wrapper that was created here was unnecessary — and was immediately
+    -- overwritten by `inst.OnLoad = onload` on the next line anyway.
+    -- Also removed unused variables old_upgrade and _upgrade_orig (Bug 9).
     inst._SetupMK3Affinity = SetupMK3Affinity
-    inst:ListenForEvent("ms_save", function() end) -- placeholder to keep inst ref
-    -- Patch: after upgrade() runs and lvl3 tag is added, setup affinity
-    local _old_onload = inst.OnLoad
-    inst.OnLoad = function(inst, data)
-        if _old_onload then _old_onload(inst, data) end
-        if inst:HasTag("lvl3") then
-            inst._SetupMK3Affinity(inst)
-        end
-    end
 
     inst.OnSave = onsave
     inst.OnLoad = onload

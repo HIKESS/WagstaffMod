@@ -217,15 +217,9 @@ local function MakeAlive(inst, doer)
     inst:Remove()
 end
 
-local function onfuelchange(newsection, oldsection, inst, doer)
-        if newsection >= 0 then
-    local pt = inst:GetPosition()
-        -- BUG FIX: Check petleash before reviving
-        if doer ~= nil and doer:HasTag("williamcrafter") and doer.components.petleash then
-                MakeAlive(inst, doer)
-                end
-        end
-end
+-- v2.0.94: Removed dead onfuelchange function — never called anywhere.
+-- The fueled component uses fuelupdate (SetUpdateFn), not onfuelchange.
+-- The willyraise component uses MakeAlive for reactivation.
 
 local function OnAddFuel(inst, fuelvalue, fuelitem)
         -- v2.0.70 FIX: DST's `fueled` component calls ontakefuelfn as
@@ -287,6 +281,10 @@ local function OnFuelEmpty(inst)
 end
 
 local function oncook(inst, doer)
+    -- Bug 1 FIX: Guard against processing multiple cookable items at once.
+    -- Without this, iterating ALL slots and calling GoToState("cook") for each
+    -- causes race conditions and broken animations.
+    if inst.sg:HasStateTag("busy") then return end
 
 for k, v in pairs (inst.components.container.slots) do
                         if v.components.cookable ~= nil then
@@ -294,6 +292,8 @@ for k, v in pairs (inst.components.container.slots) do
                 local cook_pos = inst:GetPosition()
                         inst.sg:GoToState("cook")
         inst:DoTaskInTime(0.9, function()
+            -- Bug 5 FIX: Guard against crash if butler is killed during delay.
+            if not inst:IsValid() then return end
 
 if inst.components.fueled ~= nil then
         inst.components.fueled:DoDelta(-.01 * inst.components.fueled.maxfuel)
@@ -394,6 +394,9 @@ if inst.components.fueled ~= nil then
         end
 
         end)
+                -- Bug 1 FIX: Break after processing the first cookable item
+                -- to prevent race conditions from processing multiple items.
+                break
                 end
         end
 end
@@ -427,17 +430,8 @@ local function getstatus(inst, viewer)
     end
 end
 
-local function GetButlerDescription(inst, viewer)
-    -- v2.0.33: upgrade progress removed (was always visible, should only show
-    -- with skill + wrench). Fuel/HP are in the name via displaynamefn.
-    local fuel_pct = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
-    if inst.prefab == "williambutler2" then
-        return "Butler Bot Mk. II\nFuel: " .. fuel_pct .. "%"
-    elseif inst.prefab == "williambutler3" then
-        return "Butler Bot Mk. III\nFuel: " .. fuel_pct .. "%"
-    end
-    return "Butler Bot\nFuel: " .. fuel_pct .. "%"
-end
+-- v2.0.94: Removed dead GetButlerDescription function — never called.
+-- The inspectable component uses getstatus, not this function.
 
 local function NoHoles(pt)
     return not TheWorld.Map:IsPointNearHole(pt)
@@ -1003,6 +997,16 @@ inst.components.burnable.ignorefuel = true
             return inst
         end
 
+    -- Bug 3 FIX: MK.II was missing the hammer workable component.
+    -- Only active() (MK.I) added it; active2() calls fn() not active(),
+    -- so the workable was absent and players couldn't dismantle upgraded butlers.
+    -- active3() calls active2(), so this fix covers both MK.II and MK.III.
+    inst:AddComponent("workable")
+    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+    inst.components.workable:SetWorkLeft(3)
+    inst.components.workable:SetOnFinishCallback(OnHammered)
+    inst.components.workable:SetOnWorkCallback(onworked)
+
         inst:AddComponent("locomotor")
         inst.components.locomotor.runspeed = TUNING.SHADOWWAXWELL_SPEED
         inst.components.locomotor:SetAllowPlatformHopping(true)
@@ -1040,6 +1044,22 @@ inst.components.burnable.ignorefuel = true
         MakeMediumFreezableCharacter(inst, "torso")
 
         inst.components.fueled:StartConsuming()
+
+    -- Bug 6 FIX: Rain damage and lightning recharge were only in active()
+    -- (MK.I). active2() calls fn() not active(), so MK.II and MK.III
+    -- (which calls active2()) were missing these. Added here so all
+    -- active butler tiers take rain damage and recharge from lightning.
+    inst:DoPeriodicTask(1, function(inst)
+        if TheWorld.state.israining and inst.components.health then
+            inst.components.health:DoDelta(-1, false, "wetness")
+        end
+    end)
+
+    inst:ListenForEvent("lightningstrike", function(inst)
+        if inst.components.fueled then
+            inst.components.fueled:DoDelta(inst.components.fueled.maxfuel * 0.25)
+        end
+    end)
 
         inst.components.burnable.ignorefuel = true
         inst:AddComponent("cooker")
@@ -1181,7 +1201,7 @@ inst.components.burnable.ignorefuel = true
                     if inst.components.follower and newbot.components.follower then
                         local leader = inst.components.follower:GetLeader()
                         if leader ~= nil then
-                            newbot.components.follower:SetLeader(leader)
+                            -- Bug 7 FIX: Removed duplicate SetLeader call (was called twice)
                             newbot.components.follower:SetLeader(leader)
                         end
                     end
@@ -1331,7 +1351,7 @@ inst.components.burnable.ignorefuel = true
                     if inst2._celestial_light == nil then inst2.entity:AddLight(); inst2._celestial_light = true end
                     if inst2.Light then inst2.Light:Enable(true); inst2.Light:SetRadius(2); inst2.Light:SetIntensity(0.45); inst2.Light:SetColour(0.7,0.85,1) end
                     if inst2.on ~= false and (inst2._aura_fx == nil or not inst2._aura_fx:IsValid()) then
-                        inst2._aura_fx = SpawnPrefab("bot_aura_buster")
+                        inst2._aura_fx = SpawnPrefab("bot_aura_butler")
                         if inst2._aura_fx then inst2._aura_fx._parent = inst2 end
                     end
                 end

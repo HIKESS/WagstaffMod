@@ -74,7 +74,7 @@ local function OnHit(inst, attacker, target)
 
     -- Landed on the ocean
     if inst:IsOnOcean() then
-        SpawnPrefab("crab_king_waterspout").Transform:SetPosition(inst.Transform:GetWorldPosition())
+        SpawnPrefab("water_splash_fx").Transform:SetPosition(inst.Transform:GetWorldPosition())
     -- Landed on ground
     else
         SpawnPrefab("explode_small").Transform:SetPosition(inst.Transform:GetWorldPosition())

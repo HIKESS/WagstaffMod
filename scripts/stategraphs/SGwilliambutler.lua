@@ -337,6 +337,23 @@ end),
             end
             inst.AnimState:PushAnimation("emoteXL_loop_dance0", true)
         end,
+
+        -- Bug 8 FIX: The dance animation is looping (true) so animover never
+        -- fires for the loop itself. However, DST dispatches "animover" for
+        -- each cycle of a looping anim. Check ShouldDanceParty each cycle
+        -- and exit to funnyidle when the leader stops dancing.
+        events =
+        {
+            EventHandler("animover", function(inst)
+                -- ShouldDanceParty is defined in the butler brain; we
+                -- re-check it the same way the brain's WhileNode does.
+                local leader = inst.components.follower and inst.components.follower:GetLeader()
+                local still_dancing = leader ~= nil and leader.sg ~= nil and leader.sg:HasStateTag("dancing")
+                if not still_dancing then
+                    inst.sg:GoToState("funnyidle")
+                end
+            end),
+        },
     },
 
     State{
@@ -535,6 +552,10 @@ end),
             inst.components.container:DropEverything()
             inst.components.container.canbeopened = false
             inst.Physics:Stop()
+            -- Bug 4 FIX: Powerdown was missing Physics:SetActive(false), unlike
+            -- the death state. Without this, the butler keeps colliding with
+            -- entities during the powerdown animation.
+            inst.Physics:SetActive(false)
             inst.AnimState:PlayAnimation("dozy")
 
         inst.Transform:SetRotation(0)

@@ -240,7 +240,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
             inst.components.combat:StartAttack()
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("atk")
-        if inst.sg.statemem.target ~= nil and inst.sg.statemem.target.components.health ~= nil and inst.sg.statemem.target.components.health ~= nil and not inst.sg.statemem.target.components.health:IsDead() then
+        if inst.sg.statemem.target ~= nil and inst.sg.statemem.target.components.health ~= nil and not inst.sg.statemem.target.components.health:IsDead() and inst.sg.statemem.target.components.combat ~= nil then
         inst.sg.statemem.target.components.combat:SetTarget(inst)
         end
             if inst.components.combat.target ~= nil and inst.components.combat.target:IsValid() then

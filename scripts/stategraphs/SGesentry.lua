@@ -8,7 +8,7 @@ local SENTRY_ROF = _G.SENTRY_ROF
 
 local events=
 {    
-    EventHandler("death", function(inst) inst.sg:GoToState("death") end),
+
     EventHandler("doattack", function(inst, target)
         if inst.ammo ~= 0 then
             if not inst.components.health:IsDead() and (inst.sg:HasStateTag("hit") or not inst.sg:HasStateTag("busy")) then 
@@ -56,12 +56,14 @@ local states=
             local fx = SpawnPrefab("collapse_small")
             fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
             fx:SetMaterial("metal")
-            inst:Remove()
         end,
 
         timeline = 
         {
-            TimeEvent(17*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/spark") end)
+            TimeEvent(17*FRAMES, function(inst)
+                inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/spark")
+                inst:Remove()
+            end)
         },
     },    
 

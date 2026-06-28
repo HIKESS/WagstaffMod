@@ -18,7 +18,7 @@ Features:
 
 id = "wagstaff_standalone"
 author = "Auror4Gam3"
-version = "2.0.93"
+version = "2.0.94"
 
 api_version = 10
 

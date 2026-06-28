@@ -264,6 +264,7 @@ local states=
 
         onenter = function(inst)
             inst.Physics:Stop()
+            inst.Physics:SetActive(false)
             inst.AnimState:PlayAnimation("sleep_pre")
         inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/death")
         inst.Transform:SetRotation(0)
@@ -297,6 +298,8 @@ local states=
         end
         husk:PushEvent("levelup")
         inst:Remove()
+        else
+            inst:Remove()
         end
             end),
         },

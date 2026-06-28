@@ -5,7 +5,7 @@ local prefabs =
 
     local assets =
     {
-	Asset("ANIM", "anim/william_gadget.zip"),
+        Asset("ANIM", "anim/william_gadget.zip"),
 
     }
 
@@ -45,7 +45,7 @@ end
     inst.AnimState:SetBuild("william_gadget")
     inst.AnimState:PlayAnimation("idle", true)
     --inst.AnimState:SetMultColour(1, 1, 1, 0.5)
-    	inst.Transform:SetScale(0.85, 0.85, 0.85)	
+        inst.Transform:SetScale(0.85, 0.85, 0.85)       
     MakeInventoryFloatable(inst, "small", 0.05, 0.8)
 
         inst.entity:SetPristine()
@@ -60,7 +60,6 @@ end
     inst.components.inventoryitem:SetOnDroppedFn(ondropped)
     inst.components.inventoryitem:SetOnPutInInventoryFn(onpickup)
     inst.components.inventoryitem.atlasname = "images/inventoryimages/williamgadget.xml"
-    inst:AddComponent("inspectable")
 
     MakeHauntableLaunch(inst)
 
