@@ -3455,6 +3455,12 @@ AddSimPostInit(function()
 
     STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_TELEPORTER_DOWN = "The teleportation link has been severed!"
 
+    -- v2.0.87: Bot death announcements — owner is notified when a bot dies
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BUTLER_DOWN = "My butler! Such poor service."
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BUSTER_DOWN = "My buster! It fought valiantly."
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BRUTE_DOWN = "My brute! The tank has fallen."
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BALLISTIC_DOWN = "My ballistic! Short-circuited."
+
     -- Skill tree column titles
 
     if not STRINGS.SKILLTREE then STRINGS.SKILLTREE = {} end

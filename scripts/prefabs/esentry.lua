@@ -213,7 +213,11 @@ local function EquipWeapon(inst)
         --[[Non-networked entity]]
         weapon.entity:AddTransform()
         weapon:AddComponent("weapon")
-                weapon.components.weapon:SetDamage(_G.SENTRY_DAMAGE)
+                -- v2.0.87: Use combat component's actual damage instead of the
+                -- raw SENTRY_DAMAGE constant. This way, when EquipWeapon is
+                -- called after upgrading to MK2/MK3, the bullet weapon inherits
+                -- the tier-scaled damage (30/35) instead of always being 25.
+                weapon.components.weapon:SetDamage(inst.components.combat.defaultdamage)
         weapon.components.weapon:SetRange(inst.components.combat.attackrange, inst.components.combat.attackrange+4)
             weapon.components.weapon:SetProjectile("esentry_bullet")
         weapon:AddComponent("inventoryitem")
@@ -306,6 +310,10 @@ local function upgrade(inst)
         inst:RemoveTag("lvl1")
         if inst.MiniMapEntity then inst.MiniMapEntity:SetIcon("esentry_2.tex") end
         inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH * 2)
+        -- v2.0.87: Sentry MK2 now gets +5 base DMG (30 total). Before this, the
+        -- only upgrades were HP and ammo capacity — the sentry dealt 25 DMG at all
+        -- tiers, making the 30-scrap upgrade feel underwhelming for a combat turret.
+        inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE + 5)
         inst.AnimState:PlayAnimation("upgrade2")
         inst.AnimState:PushAnimation("idle_loop_2", true)
         if item ~= nil then
@@ -320,6 +328,10 @@ local function upgrade(inst)
         inst:RemoveTag("lvl2")
         if inst.MiniMapEntity then inst.MiniMapEntity:SetIcon("esentry_3.tex") end
         inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH * 3)
+        -- v2.0.87: Sentry MK3 now gets +10 base DMG (35 total). Combined with
+        -- rockets (50 dmg) and the x2_damage skill, MK3 sentry is now a
+        -- meaningful upgrade over MK2 for combat investment.
+        inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE + 10)
         inst.AnimState:PlayAnimation("upgrade3")
         inst.AnimState:PushAnimation("idle_loop_3", true)
         if item ~= nil then
@@ -767,7 +779,10 @@ local function fn()
         return nil
     end
 
-    local base_dmg = _G.SENTRY_DAMAGE
+    -- v2.0.87: Use combat component's actual damage instead of raw SENTRY_DAMAGE
+    -- constant, so MK3 affinity bonus is calculated from the tier-scaled value (35)
+    -- instead of the base (25).
+    local base_dmg = inst.components.combat.defaultdamage
     local function SetupMK3Affinity(inst)
         if inst._affinity_setup_done then return end
         inst._affinity_setup_done = true

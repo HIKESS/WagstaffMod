@@ -6,7 +6,7 @@ local function ZapFX(inst)
             fx.entity:AddFollower()
             fx.Follower:FollowSymbol(inst.GUID, "body", 10, -80, 0)
 
-	end
+        end
 
 local function LightningFX(inst)
             local fx = SpawnPrefab("electrichitsparks")
@@ -14,7 +14,7 @@ local function LightningFX(inst)
             fx.entity:AddFollower()
             fx.Follower:FollowSymbol(inst.GUID, "body", 5, -120, 0)
 
-	end
+        end
 
 local actionhandlers = 
 {
@@ -48,19 +48,19 @@ local states=
         if inst.components.fueled ~= nil then
             if inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .2 then
                 inst.AnimState:PlayAnimation("cower_loop", true)
-	else
+        else
                 inst.AnimState:PlayAnimation("idle", true)
-		end
-		if math.random(0, 100) < (7*inst.components.fueled:GetPercent()) then    
+                end
+                if math.random(0, 100) < (7*inst.components.fueled:GetPercent()) then    
     ZapFX(inst)
-		end
+                end
 
-	end
+        end
         end,
         
         timeline = 
         {
-		--    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
+                --    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
         },
         
         events=
@@ -95,7 +95,7 @@ local states=
             inst.components.combat:StartAttack()
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("atk")
-	inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/charge")
+        inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/charge")
             if inst.components.combat.target ~= nil and inst.components.combat.target:IsValid() then
                 inst:FacePoint(inst.components.combat.target.Transform:GetWorldPosition())
             end
@@ -107,22 +107,22 @@ local states=
 
         end,
 
-	onexit = function(inst)
-	       if inst.sg.statemem.fx ~= nil then
+        onexit = function(inst)
+               if inst.sg.statemem.fx ~= nil then
                 inst.sg.statemem.fx:Remove()
-		inst.sg.statemem.fx = nil
-		end
-	end,
+                inst.sg.statemem.fx = nil
+                end
+        end,
 
         timeline =
         {
         TimeEvent(15*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/shoot") end),
         TimeEvent(17*FRAMES, function(inst) 
 inst.components.combat:DoAttack(inst.sg.statemem.target) 
-	       if inst.sg.statemem.fx ~= nil then
+               if inst.sg.statemem.fx ~= nil then
                 inst.sg.statemem.fx:Remove()
-		inst.sg.statemem.fx = nil
-		end
+                inst.sg.statemem.fx = nil
+                end
 end),
         },
 
@@ -167,16 +167,22 @@ end),
 
         onenter = function(inst)
             inst.Physics:Stop()
-	inst.Physics:SetActive(false)
+        inst.Physics:SetActive(false)
             inst.AnimState:PlayAnimation("death")
         inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/death")
     inst.components.lootdropper:DropLoot()
+            -- v2.0.87: Notify the owner when the ballistic dies
+            local owner = inst.components.follower and inst.components.follower:GetLeader()
+            if owner and owner.components.talker then
+                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BALLISTIC_DOWN"))
+            end
         end,
 
         events =
         {
             EventHandler("animover", function(inst)
                 if inst.AnimState:AnimDone() then
+                    inst:Remove()
                 end
             end),
         },
@@ -190,22 +196,22 @@ end),
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("hide")
         inst.SoundEmitter:PlaySound("dontstarve/creatures/bishop/death")
-	inst.Transform:SetRotation(0)
+        inst.Transform:SetRotation(0)
         end,
 
         events =
         {
             EventHandler("animover", function(inst)
-	--local health = inst.components.health.currenthealth
+        --local health = inst.components.health.currenthealth
                 if inst.AnimState:AnimDone() then
     local x, y, z = inst.Transform:GetWorldPosition()
     local husk = SpawnPrefab("williamballistic_empty")
-	if husk ~= nil then
-	husk.william = inst.components.follower:GetLeader()
-	husk.Transform:SetPosition(x, y, z)
-	husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
-	inst:Remove()
-	end
+        if husk ~= nil then
+        husk.william = inst.components.follower:GetLeader()
+        husk.Transform:SetPosition(x, y, z)
+        husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+        inst:Remove()
+        end
                 end
             end),
         },
@@ -246,16 +252,16 @@ end),
         onenter = function(inst, charge)
         inst.AnimState:SetMultColour(1, 1, 1, 1)
             inst.AnimState:PlayAnimation("unhide", false)
-		if charge ~= false then
-		LightningFX(inst)
-		else
-		ZapFX(inst)
-		end
+                if charge ~= false then
+                LightningFX(inst)
+                else
+                ZapFX(inst)
+                end
         end,
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/common/together/battery/up") end ),
+                TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/common/together/battery/up") end ),
         },
         
         events =
@@ -276,7 +282,7 @@ end),
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce") end ),
+                TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce") end ),
         },
         
         events =
@@ -292,35 +298,35 @@ CommonStates.AddWalkStates(states,
     {
             TimeEvent(0*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/movement/foley/wx78")end),
     },
-	walktimeline = {
+        walktimeline = {
 
             TimeEvent(0*FRAMES, function(inst)
                 inst.SoundEmitter:PlaySound("dontstarve/movement/foley/wx78")
-		if (math.random() < .25) and inst.components.fueled.currentfuel >= inst.components.fueled.maxfuel*0.4 then    
+                if (math.random() < .25) and inst.components.fueled.currentfuel >= inst.components.fueled.maxfuel*0.4 then    
     ZapFX(inst)
-		end
+                end
 end),
             TimeEvent(3*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/movement/foley/wx78") end),
             TimeEvent(7*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/movement/foley/wx78") end),
             TimeEvent(12*FRAMES, function(inst)
                 inst.SoundEmitter:PlaySound("dontstarve/movement/foley/wx78")
-		if (math.random() < .25) and inst.components.fueled.currentfuel >= inst.components.fueled.maxfuel*0.4 then    
+                if (math.random() < .25) and inst.components.fueled.currentfuel >= inst.components.fueled.maxfuel*0.4 then    
     ZapFX(inst)
-		end
+                end
 end),
-	},
+        },
 }, nil,true)
 
 CommonStates.AddSleepStates(states,
 {
     starttimeline = 
     {
-		TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/liedown") end ),
+                TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/liedown") end ),
     },
     
-	sleeptimeline = {
+        sleeptimeline = {
         TimeEvent(18*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/sleep") end),
-	},
+        },
 })
 
 CommonStates.AddFrozenStates(states)

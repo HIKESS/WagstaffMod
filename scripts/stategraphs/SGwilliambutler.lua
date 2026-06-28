@@ -501,8 +501,14 @@ end),
             inst.components.container:DropEverything()
             inst.components.container.canbeopened = false
             inst.Physics:Stop()
+            inst.Physics:SetActive(false)
             inst.AnimState:PlayAnimation("death")
             inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/death")
+            -- v2.0.87: Notify the owner when the butler dies
+            local owner = inst.components.follower and inst.components.follower:GetLeader()
+            if owner and owner.components.talker then
+                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BUTLER_DOWN"))
+            end
             -- v2.0.34: Uma unica chamada DropLoot. O lootsetfn garante williamgadget
             -- (100%) e a chance table "butler" da 50% boards + 50% transistor
             -- (bonus alinhado ao recipe). Antes havia um segundo DropLoot que
@@ -514,6 +520,7 @@ end),
         {
             EventHandler("animover", function(inst)
                 if inst.AnimState:AnimDone() then
+                    inst:Remove()
                 end
             end),
         },

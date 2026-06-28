@@ -60,15 +60,15 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         onenter = function(inst)
             inst.Physics:Stop()
             inst.Physics:SetMass(100)
-	inst.AnimState:SetBank("william_brute")
+        inst.AnimState:SetBank("william_brute")
             inst.AnimState:PlayAnimation("sit_pre")
-	inst.Transform:SetRotation(0)
+        inst.Transform:SetRotation(0)
         end,
 
         timeline =
         {
             TimeEvent(7*FRAMES, function(inst)
-	inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/sleep")
+        inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/sleep")
             end),
         },
 
@@ -85,14 +85,14 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         tags = { "busy", "nointerrupt" },
 
         onenter = function(inst)
-	inst.AnimState:SetBank("william_brute")
+        inst.AnimState:SetBank("william_brute")
             inst.AnimState:PlayAnimation("sit_idle", true)
-	--	inst.AnimState:Pause()
+        --      inst.AnimState:Pause()
         end,
 
         onexit = function(inst)
-	inst.AnimState:SetBank("pigman")
-	--	inst.AnimState:Resume()
+        inst.AnimState:SetBank("pigman")
+        --      inst.AnimState:Resume()
         end,
 
     },
@@ -103,7 +103,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
 
         onenter = function(inst)
             inst.Physics:Stop()
-		 inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/idle")
+                 inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/idle")
         if inst.components.fueled ~= nil then
             if inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .2 then
                 inst.AnimState:PlayAnimation("debuff")
@@ -111,10 +111,10 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
                 inst.AnimState:PlayAnimation("hungry")
             elseif inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .95 then
                 inst.AnimState:PlayAnimation("idle_creepy")
-	else
+        else
                 inst.AnimState:PlayAnimation("idle_happy")
-		end
-	end
+                end
+        end
 
         end,
 
@@ -153,7 +153,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         
         timeline = 
         {
-		--    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
+                --    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
         },
         
         ontimeout = function(inst)
@@ -173,8 +173,8 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         
         timeline = 
         {
-		    TimeEvent(0*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/voice") end ),
-		    --TimeEvent(28*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
+                    TimeEvent(0*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/voice") end ),
+                    --TimeEvent(28*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
         },
         
         events=
@@ -194,7 +194,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         
         timeline = 
         {
-		    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/voice") end ),
+                    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/voice") end ),
         },
         
         events=
@@ -214,7 +214,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         
         timeline = 
         {
-		    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/voice") end ),
+                    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/voice") end ),
         },
         
         events=
@@ -233,9 +233,9 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
             inst.components.combat:StartAttack()
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("atk")
-	if inst.sg.statemem.target ~= nil and inst.sg.statemem.target.components.health ~= nil and inst.sg.statemem.target.components.health ~= nil and not inst.sg.statemem.target.components.health:IsDead() then
-	inst.sg.statemem.target.components.combat:SetTarget(inst)
-	end
+        if inst.sg.statemem.target ~= nil and inst.sg.statemem.target.components.health ~= nil and inst.sg.statemem.target.components.health ~= nil and not inst.sg.statemem.target.components.health:IsDead() then
+        inst.sg.statemem.target.components.combat:SetTarget(inst)
+        end
             if inst.components.combat.target ~= nil and inst.components.combat.target:IsValid() then
                 inst:FacePoint(inst.components.combat.target.Transform:GetWorldPosition())
             end
@@ -243,7 +243,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
 
         timeline =
         {
-		    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/attack") end ),
+                    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/attack") end ),
         TimeEvent(15*FRAMES, function(inst) inst.components.combat:DoAttack() end),
         },
 
@@ -294,15 +294,22 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
 
         onenter = function(inst)
             inst.Physics:Stop()
+            inst.Physics:SetActive(false)
             inst.AnimState:PlayAnimation("death")
         inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/explo")
     inst.components.lootdropper:DropLoot()
+            -- v2.0.87: Notify the owner when the brute dies
+            local owner = inst.components.follower and inst.components.follower:GetLeader()
+            if owner and owner.components.talker then
+                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BRUTE_DOWN"))
+            end
         end,
 
         events =
         {
             EventHandler("animover", function(inst)
                 if inst.AnimState:AnimDone() then
+                    inst:Remove()
                 end
             end),
         },
@@ -315,7 +322,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown")
         onenter = function(inst)
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("sit")
-	inst.Transform:SetRotation(0)
+        inst.Transform:SetRotation(0)
         end,
 
         timeline =
@@ -331,16 +338,16 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/sleep")
             EventHandler("animover", function(inst)
     local x, y, z = inst.Transform:GetWorldPosition()
     local husk = SpawnPrefab("williambrute_empty")
-	if husk ~= nil then
+        if husk ~= nil then
     local homePos = inst.components.knownlocations:GetLocation("home")
     husk.components.knownlocations:RememberLocation("home", homePos)
-	husk.Transform:SetPosition(x, y, z)
-	if not inst.components.fueled:IsEmpty() then
-	husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
-	end
-	husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
-	inst:Remove()
-	end
+        husk.Transform:SetPosition(x, y, z)
+        if not inst.components.fueled:IsEmpty() then
+        husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
+        end
+        husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+        inst:Remove()
+        end
             end),
         },
     },
@@ -459,7 +466,7 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/sleep")
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown") end ),
+                TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/liedown") end ),
         },
         
         events =
@@ -486,12 +493,12 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/sleep")
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst)
-	 inst.Physics:SetActive(true)
-	 inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce") 
+                TimeEvent(0*FRAMES, function(inst)
+         inst.Physics:SetActive(true)
+         inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce") 
                     local x, y, z = inst.Transform:GetWorldPosition()
     SpawnPrefab("maxwell_smoke").Transform:SetPosition(x, y, z)
-	end ),
+        end ),
         },
         
         events =
@@ -503,29 +510,29 @@ inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/sleep")
 
 CommonStates.AddWalkStates(states,
 {
-	walktimeline = {
-        		TimeEvent(0*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/bounce") end ),
-        		TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/land") end ),
-	},
+        walktimeline = {
+                        TimeEvent(0*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/bounce") end ),
+                        TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/land") end ),
+        },
 })
 CommonStates.AddRunStates(states,
 {
-	runtimeline = {
-        		TimeEvent(0*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/bounce") end ),
-        		TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/bounce") end ),
-	},
+        runtimeline = {
+                        TimeEvent(0*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/bounce") end ),
+                        TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/rook/bounce") end ),
+        },
 })
 
 CommonStates.AddSleepStates(states,
 {
     starttimeline = 
     {
-		TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/liedown") end ),
+                TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/liedown") end ),
     },
     
-	sleeptimeline = {
+        sleeptimeline = {
         TimeEvent(18*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/sleep") end),
-	},
+        },
 })
 
 CommonStates.AddFrozenStates(states)

@@ -30,18 +30,18 @@ local states=
         onenter = function(inst)
             inst.Physics:Stop()
         if inst.components.fueled ~= nil then
-	inst.AnimState:SetDeltaTimeMultiplier(inst.components.fueled:GetPercent()*4)
-	end
+        inst.AnimState:SetDeltaTimeMultiplier(inst.components.fueled:GetPercent()*4)
+        end
                 inst.AnimState:PlayAnimation("idle_loop", true)
         end,
         
-	onexit = function(inst)
-	inst.AnimState:SetDeltaTimeMultiplier(1)
-	end,
+        onexit = function(inst)
+        inst.AnimState:SetDeltaTimeMultiplier(1)
+        end,
 
         timeline = 
         {
-		--    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
+                --    TimeEvent(21*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/idle") end ),
         },
         
         events=
@@ -62,8 +62,8 @@ local states=
         
         timeline = 
         {
-		    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
-		    TimeEvent(28*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
+                    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
+                    TimeEvent(28*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
         },
         
         events=
@@ -84,8 +84,8 @@ local states=
         
         timeline = 
         {
-		    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
-		    TimeEvent(28*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
+                    TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
+                    TimeEvent(28*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/pawground") end ),
         },
         
         events=
@@ -109,8 +109,8 @@ local states=
             end
         end,
 
-	onexit = function(inst)
-	end,
+        onexit = function(inst)
+        end,
 
         timeline =
         {
@@ -158,14 +158,14 @@ local states=
 
         timeline =
         {
-		    TimeEvent(0*FRAMES, function(inst) inst.Physics:Stop() end ),
+                    TimeEvent(0*FRAMES, function(inst) inst.Physics:Stop() end ),
             TimeEvent(7*FRAMES, function(inst) 
-		inst.SoundEmitter:KillSound("step")
+                inst.SoundEmitter:KillSound("step")
                 inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce", "step", 0.5)
                 inst.components.locomotor:WalkForward()
             end ),
             TimeEvent(20*FRAMES, function(inst)
-		inst.SoundEmitter:KillSound("step")
+                inst.SoundEmitter:KillSound("step")
                 inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/land", "step", 0.5)
                 inst.Physics:Stop()
             end ),
@@ -237,15 +237,22 @@ local states=
 
         onenter = function(inst)
             inst.Physics:Stop()
+            inst.Physics:SetActive(false)
             inst.AnimState:PlayAnimation("death")
         inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/death")
     inst.components.lootdropper:DropLoot()
+            -- v2.0.87: Notify the owner when the buster dies
+            local owner = inst.components.follower and inst.components.follower:GetLeader()
+            if owner and owner.components.talker then
+                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BUSTER_DOWN"))
+            end
         end,
 
         events =
         {
             EventHandler("animover", function(inst)
                 if inst.AnimState:AnimDone() then
+                    inst:Remove()
                 end
             end),
         },
@@ -259,23 +266,23 @@ local states=
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("sleep_pre")
         inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/death")
-	inst.Transform:SetRotation(0)
+        inst.Transform:SetRotation(0)
         end,
 
         events =
         {
             EventHandler("animover", function(inst)
-	--local health = inst.components.health.currenthealth
+        --local health = inst.components.health.currenthealth
     local x, y, z = inst.Transform:GetWorldPosition()
     local husk = SpawnPrefab("williambuster_empty")
-	if husk ~= nil then
-	husk.Transform:SetPosition(x, y, z)
---	if not inst.components.fueled:IsEmpty() then
-	husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
---	end
-	husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
-	husk.level = inst.level
-	husk.upgradelevel = inst.upgradelevel or 0
+        if husk ~= nil then
+        husk.Transform:SetPosition(x, y, z)
+--      if not inst.components.fueled:IsEmpty() then
+        husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
+--      end
+        husk.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+        husk.level = inst.level
+        husk.upgradelevel = inst.upgradelevel or 0
         if inst.prefab == "williambuster3" then
             husk.was_mk3 = true
             husk.was_mk2 = true
@@ -288,9 +295,9 @@ local states=
                 husk.saved_upgradelevel_mk3 = inst.upgradelevel_mk3
             end
         end
-	husk:PushEvent("levelup")
-	inst:Remove()
-	end
+        husk:PushEvent("levelup")
+        inst:Remove()
+        end
             end),
         },
     },
@@ -337,7 +344,7 @@ local states=
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce") end ),
+                TimeEvent(0*FRAMES, function(inst) inst.Physics:SetActive(true) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce") end ),
         },
         
         events =
@@ -362,12 +369,12 @@ local states=
 
         timeline =
         {
-    		TimeEvent(0*FRAMES, function(inst)
-	 inst.Physics:SetActive(true)
-	 inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce")
+                TimeEvent(0*FRAMES, function(inst)
+         inst.Physics:SetActive(true)
+         inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/bounce")
                     local x, y, z = inst.Transform:GetWorldPosition()
     SpawnPrefab("small_puff").Transform:SetPosition(x, y, z)
-	 end ),
+         end ),
         },
         
         events =
@@ -381,12 +388,12 @@ CommonStates.AddSleepStates(states,
 {
     starttimeline = 
     {
-		TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/liedown") end ),
+                TimeEvent(11*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/liedown") end ),
     },
     
-	sleeptimeline = {
+        sleeptimeline = {
         TimeEvent(18*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/sleep") end),
-	},
+        },
 })
 
 CommonStates.AddFrozenStates(states)

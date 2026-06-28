@@ -76,9 +76,8 @@ WILLYRAISE.fn = function(act)
         and CrafterCheck(act.doer)
         and not (act.target.sg ~= nil and act.target.sg:HasStateTag("shutdown"))
         and not (act.target.components.health ~= nil and act.target.components.health:IsDead()) then
-        if act.target:HasTag("willfollower") and not (act.target:HasTag("alive") or CrafterCheck(act.doer)) then
-            return false
-        end
+        -- v2.0.87: Removed dead guard that could never fire (line 76 already
+        -- guarantees CrafterCheck is true, so `not (alive or true)` = always false).
         if act.target:HasTag("alive") then
             act.target.components.willyraise:Lower(act.doer)
         else
