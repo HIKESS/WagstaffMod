@@ -2708,6 +2708,16 @@ end)
 
 --==================================================================================
 
+-- v2.0.84: Read per-structure limits from mod configuration so server admins
+-- can tune them without editing Lua. Defaults match the old hardcoded values.
+-- Bot limits (butler/buster/brute/ballistic) stay at max 1 — they're already
+-- gated by the skill tree and the crafting recipe, so a config slider would
+-- add complexity for no practical benefit.
+local _limit_sentry  = GetModConfigData("limit_sentry")  or 2
+local _limit_dispenser = GetModConfigData("limit_dispenser") or 1
+local _limit_tp_entrance = GetModConfigData("limit_teleporter_entrance") or 2
+local _limit_tp_exit = GetModConfigData("limit_teleporter_exit") or 2
+
 AddComponentPostInit("builder", function(self)
 
     local old_DoBuild = self.DoBuild
@@ -2716,13 +2726,13 @@ AddComponentPostInit("builder", function(self)
 
         local limits = {
 
-            esentry = { max = 2, prefabs = {"esentry"} },
+            esentry = { max = _limit_sentry, prefabs = {"esentry"} },
 
-            dispenser = { max = 1, prefabs = {"dispenser"} },
+            dispenser = { max = _limit_dispenser, prefabs = {"dispenser"} },
 
-            eteleporter = { max = 2, prefabs = {"eteleporter"} },
+            eteleporter = { max = _limit_tp_entrance, prefabs = {"eteleporter"} },
 
-            eteleporter_exit = { max = 2, prefabs = {"eteleporter_exit"} },
+            eteleporter_exit = { max = _limit_tp_exit, prefabs = {"eteleporter_exit"} },
 
             williambutler_builder = { max = 1, prefabs = {"williambutler", "williambutler_empty", "williambutler2", "williambutler3"} },
 

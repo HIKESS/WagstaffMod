@@ -18,7 +18,7 @@ Features:
 
 id = "wagstaff_standalone"
 author = "Auror4Gam3"
-version = "2.0.83"
+version = "2.0.84"
 
 api_version = 10
 
@@ -204,6 +204,68 @@ configuration_options = {
             {description = "30s (very strict)", data = 30},
         },
         default = 10,
+    },
+    -- v2.0.84: Per-player crafting limits for engineer structures.
+    -- These replace the hardcoded values in the builder DoBuild hook so server
+    -- admins can tune them per-world without editing Lua files.
+    {
+        name = "limit_sentry",
+        label = "Sentry Gun Limit",
+        hover = "Max sentry guns (esentry) one player can have at once.",
+        options = {
+            {description = "1",  data = 1},
+            {description = "2 (default)", data = 2},
+            {description = "3",  data = 3},
+            {description = "4",  data = 4},
+            {description = "5",  data = 5},
+            {description = "6",  data = 6},
+            {description = "8",  data = 8},
+            {description = "10", data = 10},
+            {description = "Unlimited", data = 99},
+        },
+        default = 2,
+    },
+    {
+        name = "limit_dispenser",
+        label = "Dispenser Limit",
+        hover = "Max dispensers one player can have at once.",
+        options = {
+            {description = "1 (default)", data = 1},
+            {description = "2",  data = 2},
+            {description = "3",  data = 3},
+            {description = "4",  data = 4},
+            {description = "5",  data = 5},
+            {description = "Unlimited", data = 99},
+        },
+        default = 1,
+    },
+    {
+        name = "limit_teleporter_entrance",
+        label = "Teleporter Entrance Limit",
+        hover = "Max teleporter entrances one player can have at once.",
+        options = {
+            {description = "1",  data = 1},
+            {description = "2 (default)", data = 2},
+            {description = "3",  data = 3},
+            {description = "4",  data = 4},
+            {description = "5",  data = 5},
+            {description = "Unlimited", data = 99},
+        },
+        default = 2,
+    },
+    {
+        name = "limit_teleporter_exit",
+        label = "Teleporter Exit Limit",
+        hover = "Max teleporter exits one player can have at once.",
+        options = {
+            {description = "1",  data = 1},
+            {description = "2 (default)", data = 2},
+            {description = "3",  data = 3},
+            {description = "4",  data = 4},
+            {description = "5",  data = 5},
+            {description = "Unlimited", data = 99},
+        },
+        default = 2,
     },
     {
         name = "flickerthreshold",
