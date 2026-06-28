@@ -483,10 +483,6 @@ local function onsave(inst, data)
     data.was_mk3 = inst.was_mk3
     -- BUG FIX 3: Save exact prefab name
     data.saved_prefab_name = inst.prefab
-    -- Save leader GUID for persistence
-    if inst.components.follower and inst.components.follower:GetLeader() then
-        data.leader_guid = inst.components.follower:GetLeader().GUID
-    end
     -- v2.0.91 FIX: Save currentfuel so it persists across save/load.
     -- Without this, the fueled component resets to maxfuel after reload,
     -- giving the bot a free full tank every session.
@@ -516,19 +512,6 @@ local function onload(inst, data)
     -- v2.0.91 FIX: Restore currentfuel from save data.
     if data ~= nil and data.currentfuel ~= nil and inst.components.fueled ~= nil then
         inst.components.fueled.currentfuel = data.currentfuel
-    end
-    -- Restore follower after save/load
-    if data ~= nil and data.leader_guid ~= nil then
-        inst:DoTaskInTime(0, function()
-            -- v2.0.90 FIX: TheWorld.GUIDToPos returns a POSITION (Vector3),
-            -- not an entity. Use Ents[] instead — the standard DST entity lookup.
-            local leader = Ents[data.leader_guid]
-            if leader and leader:IsValid() and inst:IsValid() then
-                if inst.components.follower then
-                    inst.components.follower:SetLeader(leader)
-                end
-            end
-        end)
     end
     -- Wait for inst to have named component before updating name
     inst:DoTaskInTime(0, function()
@@ -691,7 +674,9 @@ end
     inst.components.fueled:SetDepletedFn(OnFuelEmpty)
 
     -- Rain damage (like WX-78) when active
+    -- Bug 4 FIX: shadow clones inherit this task but shouldn't take rain damage
     inst:DoPeriodicTask(1, function(inst)
+        if inst:HasTag("shadow_buster_clone") then return end
         if TheWorld.state.israining and inst.components.health then
             inst.components.health:DoDelta(-1, false, "wetness")
         end
@@ -964,7 +949,7 @@ inst.components.burnable.ignorefuel = true
                 end
             end
         end
-        inst._periodic_name_tasks = inst._periodic_name_tasks or {}
+        inst._periodic_name_tasks = {}
         local function UpdateBuster2Name(inst)
             local base = "Buster Bot Mk.II"
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
@@ -1200,6 +1185,7 @@ inst.components.burnable.ignorefuel = true
         -- guarantees the Buster never has a clone spawned without the shadow pulse
         -- (or a shadow pulse without the clone) — they are always in sync.
         inst:DoPeriodicTask(0.5, function()
+            if inst:HasTag("shadow_buster_clone") then return end
             if inst.prefab ~= "williambuster3" then return end
             if not TheWorld.ismastersim then return end
 
@@ -1335,7 +1321,7 @@ inst.components.burnable.ignorefuel = true
                 end
             end
         end
-        inst._periodic_name_tasks = inst._periodic_name_tasks or {}
+        inst._periodic_name_tasks = {}
         local function UpdateBuster3Name(inst)
             local base = "Buster Bot Mk.III"
             local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)

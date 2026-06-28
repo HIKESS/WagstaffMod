@@ -125,9 +125,17 @@ end
 
 
 local function KeepMiningAction(inst)
+    -- Mining ONLY on MK.II (when leader has skill) — same as chopping
+    local leader = inst.components.follower.leader
+    if not leader or not leader:HasTag("wagstaff_thermal_upgrade") then
+        return false
+    end
+    -- Check if this is MK.II butler (not base MK.I)
+    if inst.prefab ~= "williambutler2" and not inst:HasTag("butler_thermal_upgraded") then
+        return false
+    end
     return inst.tree_target ~= nil
-        or (inst.components.follower.leader ~= nil and
-            inst:IsNear(inst.components.follower.leader, KEEP_CHOPPING_DIST))
+        or (inst:IsNear(leader, KEEP_CHOPPING_DIST))
 end
 
 local function StartPickingCondition(inst)
@@ -196,10 +204,8 @@ local function ShouldDanceParty(inst)
     return leader ~= nil and leader.sg ~= nil and leader.sg:HasStateTag("dancing")
 end
 
-local function ShouldAvoidExplosive(target)
-    return target.components.explosive == nil
-        or target.components.burnable == nil
-        or target.components.burnable:IsBurning()
+local function ShouldAvoidExplosive(inst, target)
+    return target.components.burnable ~= nil and target.components.burnable:IsBurning()
 end
 
 local function ShouldRunAway(target)

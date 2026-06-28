@@ -173,7 +173,10 @@ function WilliamBruteBrain:OnStart()
                     Follow(self.inst, GetLeader, 0, 2, 5)),
 
                 WhileNode(function() return ShouldFleeLowHP(self.inst) and GetLeader(self.inst) == nil end, "LowHP Run Away",
-                    RunAway(self.inst, function() return GetCombatTarget(self.inst) end, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST)),
+                    PriorityNode({
+                        RunAway(self.inst, function() return GetCombatTarget(self.inst) end, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST),
+                        RunAway(self.inst, "hostile", RUN_AWAY_DIST, STOP_RUN_AWAY_DIST),
+                    }, .25)),
 
                 -- v2.0.71: #2 COMBAT GATED BY LEADER DISTANCE. Mirrors the
                 -- buster bot: the brute only fights while it is within

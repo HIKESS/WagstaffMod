@@ -12,7 +12,7 @@ local prefabs =
         Asset("ANIM", "anim/william_butler.zip"),
     Asset("ANIM", "anim/ui_chest_3x2.zip"),
     Asset("ANIM", "anim/ui_chest_3x1.zip"),
-        Asset("SOUND", "sound/maxwell.fsb"),
+        -- v2.0.94: Removed Asset("SOUND", "sound/maxwell.fsb") — no PlaySound references maxwell bank
     }
 
 -- v2.0.35: Design correto = williamgadget (100% via lootsetfn) + 50% de UM item
@@ -414,8 +414,10 @@ local function fuelupdate(inst)
     UpdateButlerName(inst)
 end
 
-local function nokeeptargetfn(inst)
-    return false
+local function nokeeptargetfn(inst, target)
+    if target == nil or not target:IsValid() then return false end
+    if target.components.health ~= nil and target.components.health:IsDead() then return false end
+    return true
 end
 
 local function getstatus(inst, viewer)

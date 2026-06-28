@@ -556,7 +556,13 @@ end),
             -- the death state. Without this, the butler keeps colliding with
             -- entities during the powerdown animation.
             inst.Physics:SetActive(false)
-            inst.AnimState:PlayAnimation("dozy")
+            -- Bug 2 FIX: "dozy" doesn't exist in the wilson bank (it's a chess
+            -- creature animation). Use "sleep_pre" + "sleep_loop" instead, which
+            -- are available in the wilson bank and convey the same "shutting down"
+            -- visual. Both are non-looping so animqueueover fires after the full
+            -- sequence completes.
+            inst.AnimState:PlayAnimation("sleep_pre")
+            inst.AnimState:PushAnimation("sleep_loop", false)
 
         inst.Transform:SetRotation(0)
         end,
@@ -573,8 +579,10 @@ end),
 
         events =
         {
-            EventHandler("animover", function(inst)
-        --inst.Physics:SetCollides(false)
+            -- Bug 2 FIX (cont.): changed from animover to animqueueover so the
+            -- husk spawn only happens after the full sleep_pre + sleep_loop
+            -- sequence, not after sleep_pre alone.
+            EventHandler("animqueueover", function(inst)
     local x, y, z = inst.Transform:GetWorldPosition()
     local husk = SpawnPrefab("williambutler_empty")
         --if husk ~= nil then

@@ -1,23 +1,15 @@
 local STRINGS = GLOBAL.STRINGS
 local require = GLOBAL.require
---local State = GLOBAL.State
-State = GLOBAL.State
-GetPlayer = GLOBAL.GetPlayer
-GetWorld = GLOBAL.GetWorld
-STRINGS = GLOBAL.STRINGS
-Action = GLOBAL.Action
-Vector3 = GLOBAL.Vector3
+local State = GLOBAL.State
+local GetPlayer = GLOBAL.GetPlayer
+local GetWorld = GLOBAL.GetWorld
+local Action = GLOBAL.Action
 local Vector3 = GLOBAL.Vector3
 local FRAMES = GLOBAL.FRAMES
-FRAMES = GLOBAL.FRAMES
 local TimeEvent = GLOBAL.TimeEvent
-TimeEvent = GLOBAL.TimeEvent
 local EventHandler = GLOBAL.EventHandler
-EventHandler = GLOBAL.EventHandler
 local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
-EQUIPSLOTS = GLOBAL.EQUIPSLOTS
 local SpawnPrefab = GLOBAL.SpawnPrefab
-local Action = GLOBAL.Action
 local ActionHandler = GLOBAL.ActionHandler
 require("stategraphs/commonstates")
 
