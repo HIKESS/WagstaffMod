@@ -936,3 +936,43 @@ Stage Summary:
   - Brute base damage (17) is very low for a "tank/juggernaut" — role clarification
   - Rocket damage hardcoded at 25 in esentry_rocket.lua (should scale with MK3 tier)
   - x2_damage sentry skill may be underpriced at 1 insight (borderline)
+
+---
+Task ID: CRON-REVIEW-20260628-V3
+Agent: Z.ai Code (main session, cron review round 3)
+Task: Continue development — rocket fix, brute taunt, fuel warnings
+
+Work Log:
+- Reviewed worklog and project status (v2.0.87, 3 bugs fixed + 2 features last round)
+- Identified remaining issues from previous scan:
+  1. Rocket damage hardcoded at 25 (should use TUNING.SENTRY_ROCKET_DAMAGE=50)
+  2. Brute base damage too low (17) for tank role — needs taunt mechanic
+  3. No fuel-low warnings for bots — bots silently die from fuel exhaustion
+  4. Orphaned gadgets skill branch undocumented
+- Fixed rocket damage: esentry_rocket.lua now uses TUNING.SENTRY_ROCKET_DAMAGE
+  (50) instead of hardcoded 100/4 (25). MK3 rockets now deal double bullet damage.
+- Added brute passive taunt mechanic for MK2+: every 2s, enemies within radius 6
+  (MK2) or 8 (MK3) targeting a player are forced to retarget the brute. This
+  makes the brute function as an actual tank/juggernaut.
+- Added fuel-low warnings for ALL 12 bot prefab variants (4 bots x 3 tiers):
+  - 20% fuel: "My bot is running low on fuel!"
+  - 10% fuel: "My bot is about to shut down!"
+  - Warnings fire once per threshold, reset when refueled above 25%
+- Documented orphaned gadgets skill branch code with a note in modmain.lua
+- Verified bracket balance: OK (pre-existing modmain bracket mismatch from Lua long strings)
+- Committed as d44efb7 (v2.0.88)
+- Pushed to origin/main successfully
+- Cleaned up GitHub token from remote URL
+
+Stage Summary:
+- v2.0.88 LIVE on remote (commit d44efb7)
+- 4 files changed, 81 insertions, 3 deletions
+- Key changes:
+  - Brute MK2+ has passive taunt (radius 6/8) — actually tanks now
+  - MK3 rockets now deal 50 damage (was 25, same as a bullet)
+  - All bots warn owner when fuel drops below 20%/10%
+  - Documented orphaned gadget skills for future reference
+- Remaining known issues (low priority):
+  - Orphaned "gadgets" skill branch still needs skilltree nodes added
+  - x2_damage sentry skill may be underpriced at 1 insight (borderline)
+  - Brute base damage (17) is still low, but taunt compensates
