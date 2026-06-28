@@ -1,0 +1,922 @@
+     1→require "prefabutil"
+     2→
+     3→local _G = _G or GLOBAL
+     4→local AffinityPulse = _G.AffinityPulse
+     5→
+     6→local assets =
+     7→{
+     8→    Asset("ANIM", "anim/dispenser.zip"),
+     9→    Asset("ANIM", "anim/dispenser_meter.zip"),
+    10→    Asset("ANIM", "anim/swap_engie_building.zip"),
+    11→    Asset("ANIM", "anim/esentry_item.zip"),
+    12→}
+    13→
+    14→local prefabs =
+    15→{
+    16→    "collapse_small",
+    17→    "scrap",
+    18→    "ehealfx",
+    19→    "moonglass",
+    20→    "moon_moth",
+    21→    "nightmarefuel",
+    22→    "pure_horror",
+    23→    "dark_tatters",
+    24→}
+    25→
+    26→local fuel =
+    27→{
+    28→    twigs = 1,
+    29→    cutgrass = 1,
+    30→    log = 1,
+    31→    charcoal = .5,
+    32→}
+    33→local mineral =
+    34→{
+    35→    flint = 1,
+    36→    rocks = 1,
+    37→    nitre = .3,
+    38→    marble = .1,
+    39→}
+    40→local night =
+    41→{
+    42→    lightbulb = .2,
+    43→    wormlight = .1,
+    44→    nightmarefuel = .1,
+    45→}
+    46→local rare =
+    47→{
+    48→    goldnugget = 1,
+    49→    gunpowder = .5,
+    50→    gears = .3,
+    51→    livinglog = .1,
+    52→}
+    53→
+    54→local lucky_rare =
+    55→{
+    56→    { item = "gears", weight = 25 },
+    57→    { item = "purplegem", weight = 18 },
+    58→    { item = "bluegem", weight = 15 },
+    59→    { item = "redgem", weight = 15 },
+    60→    { item = "thulecite", weight = 10 },
+    61→    { item = "yellowgem", weight = 7 },
+    62→    { item = "orangegem", weight = 5 },
+    63→    { item = "greengem", weight = 2.5 },
+    64→    { item = "ancient_blueprint", weight = 1.5 },
+    65→    { item = "opalpreciousgem", weight = 1 },
+    66→}
+    67→
+    68→-- v2.0.14: Level 2 affinity active drop tables (MK3 only, no dual affinity bonus)
+    69→local celestial_drops =
+    70→{
+    71→    { item = "moonglass",  weight = 60 },
+    72→    { item = "moon_moth",  weight = 40 },
+    73→}
+    74→
+    75→local shadow_drops =
+    76→{
+    77→    { item = "nightmarefuel", weight = 50 },
+    78→    { item = "pure_horror",   weight = 30 },
+    79→    { item = "dark_tatters",  weight = 20 },
+    80→}
+    81→
+    82→-- v2.0.89 FIX: weighted_random_choice now handles BOTH table formats:
+    83→--   Array format:  { { item = "gears", weight = 25 }, ... }  (lucky_rare, celestial_drops, shadow_drops)
+    84→--   Dict format:   { goldnugget = 1, gunpowder = .5, ... }   (fuel, mineral, rare, night)
+    85→-- Previously, the array-format local function was used for lucky_rare/celestial/shadow,
+    86→-- but fuel/mineral/rare/night called _G.weighted_random_choice which DOES NOT EXIST
+    87→-- in DST or this mod — causing a nil call crash every time the dispenser tried to drop.
+    88→-- Now there's a single unified function that detects the format automatically.
+    89→local function weighted_random_choice(items)
+    90→    if items == nil or next(items) == nil then return nil end
+    91→
+    92→    -- Detect format: if first element is a table with .item/.weight, it's array format
+    93→    local first = next(items)
+    94→    if type(first) == "number" and type(items[first]) == "table" and items[first].item then
+    95→        -- Array format: { { item = "x", weight = N }, ... }
+    96→        local total = 0
+    97→        for _, v in ipairs(items) do
+    98→            total = total + v.weight
+    99→        end
+   100→        local rand = math.random() * total
+   101→        for _, v in ipairs(items) do
+   102→            rand = rand - v.weight
+   103→            if rand <= 0 then
+   104→                return v.item
+   105→            end
+   106→        end
+   107→        return items[1].item
+   108→    else
+   109→        -- Dict format: { prefab_name = weight, ... }
+   110→        local total = 0
+   111→        for _, weight in pairs(items) do
+   112→            total = total + weight
+   113→        end
+   114→        local rand = math.random() * total
+   115→        for prefab, weight in pairs(items) do
+   116→            rand = rand - weight
+   117→            if rand <= 0 then
+   118→                return prefab
+   119→            end
+   120→        end
+   121→        -- Fallback: return first key
+   122→        for prefab, _ in pairs(items) do
+   123→            return prefab
+   124→        end
+   125→    end
+   126→    return nil
+   127→end
+   128→
+   129→local function TryLuckyDrop(inst)
+   130→    local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
+   131→    if builder and builder:HasTag("wagstaff_lucky_engineer") then
+   132→        -- v2.0.14: Lucky Engineer 15% -> 20% + golden FX feedback
+   133→        -- v2.0.44: 20% -> 30% to reach parity with sentry x2-Damage skill
+   134→        -- v2.0.50: 30% -> 25% — user tune-down. Combined with the v2.0.50 sentry
+   135→        --          ramp reduction (6 -> 4 stacks), 25% keeps Lucky Engineer
+   136→        --          balanced against the now-weaker x2-Damage + ramp combo.
+   137→        if math.random() < 0.25 then
+   138→            local item = weighted_random_choice(lucky_rare)
+   139→            -- v2.0.61: Jackpot — 5% chance the lucky drop is upgraded to an
+   140→            -- end-game rift resource (pure_horror / moon_shard). Keeps Lucky
+   141→            -- Engineer relevant in the late game when basic rares (thulecite,
+   142→            -- gems) are already farmed out, without inflating the common drops.
+   143→            if math.random() < 0.05 then
+   144→                local jackpot = math.random() < 0.5 and "pure_horror" or "moon_shard"
+   145→                item = jackpot
+   146→            end
+   147→            inst.components.lootdropper:SpawnLootPrefab(item)
+   148→            -- Golden FX so the player sees the lucky proc (reuses ehealfx with gold tint)
+   149→            local fx = _G.SpawnPrefab("ehealfx")
+   150→            if fx then
+   151→                local x, y, z = inst.Transform:GetWorldPosition()
+   152→                fx.Transform:SetPosition(x, 1.2, z)
+   153→                fx.AnimState:SetMultColour(1.0, 0.84, 0.0, 1) -- gold
+   154→                fx:DoTaskInTime(1.0, function()
+   155→                    if fx and fx:IsValid() then fx:Remove() end
+   156→                end)
+   157→            end
+   158→            inst.SoundEmitter:PlaySound("dontstarve/common/gemsparkle")
+   159→            return true
+   160→        end
+   161→    end
+   162→    return false
+   163→end
+   164→
+   165→local UpdateDispenserName
+   166→local setmeterlevl
+   167→local upgrade
+   168→
+   169→-- v2.0.42: Minimal interior light for MK2/MK3 dispenser. The MK3 affinity
+   170→-- aura light (radius 1.5-2.5) is a real, usable light source — but when the
+   171→-- affinity is inactive (wrong time of day / no affinity player nearby), MK3
+   172→-- had NO light at all while MK2 appeared to glow. This minimal light gives
+   173→-- MK2 and MK3 a subtle "powered on" interior glow for visual consistency,
+   174→-- but is intentionally too weak to exploit as a free light source:
+   175→--   radius 0.5  — Charlie requires ~1.5+ radius to be warded off, so this
+   176→--                  only illuminates the dispenser model itself, not the area.
+   177→--   intensity 0.4 — dim, just enough to read as "lit" on the sprite.
+   178→--   warm orange   — matches the dispenser's existing meter/UI color palette.
+   179→-- The MK3 affinity light overrides this when active (stronger radius/color).
+   180→local DISP_MINIMAL_LIGHT_RADIUS    = 0.5
+   181→local DISP_MINIMAL_LIGHT_INTENSITY = 0.4
+   182→local DISP_MINIMAL_LIGHT_FALLOFF   = 0.9
+   183→local DISP_MINIMAL_LIGHT_R         = 235/255
+   184→local DISP_MINIMAL_LIGHT_G         = 121/255
+   185→local DISP_MINIMAL_LIGHT_B         = 12/255
+   186→
+   187→local function SetMinimalInteriorLight(inst)
+   188→    if not inst.Light then return end
+   189→    inst.Light:SetRadius(DISP_MINIMAL_LIGHT_RADIUS)
+   190→    inst.Light:SetIntensity(DISP_MINIMAL_LIGHT_INTENSITY)
+   191→    inst.Light:SetFalloff(DISP_MINIMAL_LIGHT_FALLOFF)
+   192→    inst.Light:SetColour(DISP_MINIMAL_LIGHT_R, DISP_MINIMAL_LIGHT_G, DISP_MINIMAL_LIGHT_B)
+   193→    inst.Light:Enable(true)
+   194→end
+   195→
+   196→local function onbuilt(inst, builder)
+   197→    if builder and builder.engieID then
+   198→        inst.dispenserID = builder.engieID
+   199→        builder:PushEvent("engiebuilding")
+   200→        if builder.components.talker ~= nil then
+   201→            builder.components.talker:Say(_G.GetString(builder, "ANNOUNCE_DISPENSERBUILT"))
+   202→        end
+   203→        inst.components.entitytracker:TrackEntity("builder", builder)
+   204→    end
+   205→    inst.maker = builder and builder.name or "unknown"
+   206→    inst.AnimState:PlayAnimation("place")
+   207→    inst.AnimState:PushAnimation("idle", true)
+   208→    inst.SoundEmitter:PlaySound("dontstarve/common/lightning_rod_craft")
+   209→    inst:DoTaskInTime(inst.AnimState:GetCurrentAnimationLength() / 3, function()
+   210→        inst.SoundEmitter:PlaySound("dontstarve/common/lightningrod")
+   211→    end)
+   212→    UpdateDispenserName(inst)
+   213→end
+   214→
+   215→function upgrade(inst)
+   216→    if inst.upgradelevel == 30 or inst.upgradelevel == 70 then
+   217→        inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup", "sound")
+   218→        inst:DoTaskInTime(.75, function()
+   219→            inst.SoundEmitter:KillSound("sound")
+   220→        end)
+   221→    end
+   222→    if inst.upgradelevel >= 30 and inst.upgradelevel < 70 then
+   223→        inst:AddTag("lvl2")
+   224→        inst:RemoveTag("lvl1")
+   225→        inst.AnimState:PlayAnimation("upgrade2")
+   226→        inst.AnimState:PushAnimation("idle_2", true)
+   227→        -- Mk.II: max fuel 6 (was 4) — v2.0.14 balance
+   228→        inst.components.fueled.maxfuel = 6
+   229→        UpdateDispenserName(inst)
+   230→        -- v2.0.42: MK2 minimal interior light (visual glow, not exploitable).
+   231→        SetMinimalInteriorLight(inst)
+   232→    end
+   233→    if inst.upgradelevel >= 70 then
+   234→        inst:AddTag("lvl3")
+   235→        inst:RemoveTag("lvl1")
+   236→        inst:RemoveTag("lvl2")
+   237→        inst.AnimState:PlayAnimation("upgrade3")
+   238→        inst.AnimState:PushAnimation("idle_3", true)
+   239→        -- Mk.III: max fuel 10 (was 8) — v2.0.14 balance
+   240→        inst.components.fueled.maxfuel = 10
+   241→        UpdateDispenserName(inst)
+   242→        -- MK3 affinity auras (setup once)
+   243→        if not inst._mk3_aura_setup then
+   244→            inst._mk3_aura_setup = true
+   245→            inst._healfx = nil
+   246→
+   247→            local function GetBuilder(inst)
+   248→                -- Primeiro tenta entitytracker
+   249→                local builder = inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")
+   250→                if builder and builder:IsValid() then return builder end
+   251→                -- Fallback: busca jogador com afinidade mais próximo (como os bots MK2 fazem)
+   252→                local x, y, z = inst.Transform:GetWorldPosition()
+   253→                local players = _G.TheSim:FindEntities(x, y, z, 40, {"player"})
+   254→                local closest = nil
+   255→                local closest_dist = math.huge
+   256→                for _, p in ipairs(players) do
+   257→                    if p:HasTag("wagstaff_celestial_possession") or p:HasTag("wagstaff_shadow_possession") then
+   258→                        local dist = inst:GetDistanceSqToInst(p)
+   259→                        if dist < closest_dist then
+   260→                            closest = p
+   261→                            closest_dist = dist
+   262→                        end
+   263→                    end
+   264→                end
+   265→                return closest
+   266→            end
+   267→
+   268→            -- Affinity pulse visual (shared module)
+   269→            -- v2.0.54: Dispenser is a RESOURCE item, not a combat item — its
+   270→            -- AffinityPulse is now PROXIMITY-ONLY (no battle gate) and confined
+   271→            -- to the aura radius (DISP_RANGE = 4 units). The pulse only lights
+   272→            -- up during the affinity-active phase (DAY+celestial OR DUSK+shadow)
+   273→            -- via the phase_check; the weak DAY/NIGHT passive tier has NO pulse.
+   274→            AffinityPulse.Setup(inst, GetBuilder, {
+   275→                proximity_only  = true,
+   276→                proximity_range = _G.TUNING.DISP_RANGE,  -- 4 units = aura radius
+   277→                phase_check = function(inst, owner)
+   278→                    if not (owner and owner:IsValid()) then return false end
+   279→                    local celestial = owner:HasTag("wagstaff_celestial_possession")
+   280→                    local shadow    = owner:HasTag("wagstaff_shadow_possession")
+   281→                    return (TheWorld.state.isday and celestial)
+   282→                        or (TheWorld.state.isdusk and shadow)
+   283→                end,
+   284→            })
+   285→
+   286→            -- Spawn/remove healfx based on affinity, color per affinity
+   287→            -- v2.0.54: healfx only shows during the STRONG tier (affinity-active
+   288→            -- phase + builder in aura radius). The WEAK passive tier (DAY/NIGHT)
+   289→            -- has no healfx — the player still gets the reduced effect, but no
+   290→            -- visual pulse. This matches the user's "Não ativa pulse" rule for
+   291→            -- the day/night tier.
+   292→            local function UpdateAuraFX(inst)
+   293→                local builder = GetBuilder(inst)
+   294→                local celestial = builder and builder:HasTag("wagstaff_celestial_possession")
+   295→                local shadow    = builder and builder:HasTag("wagstaff_shadow_possession")
+   296→                local active = (TheWorld.state.isday and celestial) or (TheWorld.state.isdusk and shadow)
+   297→
+   298→                -- v2.0.54: healfx only renders when the builder is actually
+   299→                -- standing in the aura radius (DISP_RANGE). This ties the visual
+   300→                -- pulse to "player in aura radius" per the user's spec.
+   301→                local in_aura = false
+   302→                if active and builder then
+   303→                    pcall(function()
+   304→                        in_aura = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
+   305→                    end)
+   306→                end
+   307→
+   308→                if active and in_aura then
+   309→                    if inst._healfx == nil then
+   310→                        local x, y, z = inst.Transform:GetWorldPosition()
+   311→                        inst._healfx = _G.SpawnPrefab("ehealfx")
+   312→                        inst._healfx.Transform:SetPosition(x, 1, z)
+   313→                        local follower = inst._healfx.entity:AddFollower()
+   314→                        follower:FollowSymbol(inst.GUID, "placer", 205, 140, 1)
+   315→                    end
+   316→                    -- v2.0.44: Equalized light to radius 2.0 for BOTH affinities
+   317→                    -- (celestial was 2.5, shadow was 1.5). Intensity/falloff also
+   318→                    -- matched so neither affinity is a better free base light.
+   319→                    if TheWorld.state.isday and celestial then
+   320→                        inst._healfx.AnimState:SetMultColour(0.4, 0.7, 1.0, 1)
+   321→                        inst.Light:SetRadius(2.0)
+   322→                        inst.Light:SetIntensity(0.75)
+   323→                        inst.Light:SetFalloff(0.6)
+   324→                        inst.Light:SetColour(0.6, 0.8, 1.0)
+   325→                    elseif TheWorld.state.isdusk and shadow then
+   326→                        inst._healfx.AnimState:SetMultColour(0.6, 0.1, 0.8, 1)
+   327→                        inst.Light:SetRadius(2.0)
+   328→                        inst.Light:SetIntensity(0.75)
+   329→                        inst.Light:SetFalloff(0.6)
+   330→                        inst.Light:SetColour(0.5, 0.0, 0.7)
+   331→                    end
+   332→                    inst._healfx:Show()
+   333→                    inst.Light:Enable(true)
+   334→                else
+   335→                    if inst._healfx ~= nil then
+   336→                        inst._healfx:Hide()
+   337→                    end
+   338→                    -- v2.0.42: When affinity is inactive, fall back to the minimal
+   339→                    -- interior light (visual glow) instead of disabling the light
+   340→                    -- entirely. This keeps MK3 visually "lit" like MK2 without
+   341→                    -- providing a usable light source. The minimal light is too
+   342→                    -- weak (radius 0.5) to ward off Charlie or serve as a base
+   343→                    -- light — it only glows on the dispenser model itself.
+   344→                    -- v2.0.54: This also applies to the WEAK passive tier
+   345→                    -- (DAY/NIGHT) — no healfx, just the minimal glow.
+   346→                    SetMinimalInteriorLight(inst)
+   347→                end
+   348→            end
+   349→
+   350→            -- Sanity aura component for celestial (day)
+   351→            inst:AddComponent("sanityaura")
+   352→            inst.components.sanityaura.aura = 0
+   353→
+   354→            -- v2.0.14 Level 2 auras: TUNING.DISP_HEALING is 0.5s, so 2 HP/tick = 4 HP/sec shadow heal
+   355→            inst:DoPeriodicTask(_G.TUNING.DISP_HEALING, function()
+   356→                local builder = GetBuilder(inst)
+   357→                local celestial = builder and builder:HasTag("wagstaff_celestial_possession")
+   358→                local shadow    = builder and builder:HasTag("wagstaff_shadow_possession")
+   359→
+   360→                -- Update FX
+   361→                UpdateAuraFX(inst)
+   362→
+   363→                -- SHADOW sanity aura — AOE to all nearby players.
+   364→                -- v2.0.46: SWAPPED powers. Shadow now gets the sanity aura (was
+   365→                -- celestial's). Rationale: shadow already has the more valuable
+   366→                -- drops (pure_horror/dark_tatters vs moonglass/moon_moth), so
+   367→                -- giving the stronger combat-sustain power (HP heal) to celestial
+   368→                -- and the lighter sanity aura to shadow balances the two paths.
+   369→                -- Shadow's shorter dusk window is offset by its better drops.
+   370→                -- v2.0.53: BALANCE. SANITYAURA_LARGE (~50/min) was too strong —
+   371→                -- a free Glommer-tier aura that passively topped off sanity for
+   372→                -- anyone near the dispenser all dusk. Reduced to 25/min (between
+   373→                -- SMALL=10 and MED=30). Still useful for offsetting night sanity
+   374→                -- drain but no longer free full sanity.
+   375→                -- v2.0.54: TWO-TIER per user spec. Instead of a flat 25/min only
+   376→                -- during dusk, the dispenser now has a STRONG tier (35/min during
+   377→                -- DUSK + shadow — the affinity-active phase, with pulse) and a
+   378→                -- WEAK passive tier (20/min during DAY/NIGHT — no pulse). The
+   379→                -- weak tier keeps the dispenser useful outside the affinity
+   380→                -- window without making it a free full-sanity top-off. The
+   381→                -- strong tier (35/min) is slightly above the v2.0.53 value
+   382→                -- (25/min) to reward being in the affinity-active phase.
+   383→                if TheWorld.state.isdusk and shadow then
+   384→                    inst.components.sanityaura.aura = 35   -- STRONG tier (affinity-active)
+   385→                elseif shadow then
+   386→                    inst.components.sanityaura.aura = 20   -- WEAK passive (DAY/NIGHT)
+   387→                else
+   388→                    inst.components.sanityaura.aura = 0
+   389→                end
+   390→
+   391→                -- CELESTIAL HP heal — builder only.
+   392→                -- v2.0.46: SWAPPED powers. Celestial now gets the HP heal (was
+   393→                -- shadow's). This compensates for celestial's weaker drops
+   394→                -- (moonglass/moon_moth) by giving it the stronger combat-sustain
+   395→                -- power. Range bug fix from v2.0.45 is retained — heal only fires
+   396→                -- when builder is within DISP_RANGE (4 units) of the dispenser
+   397→                -- (NOT the 40-unit GetBuilder fallback).
+   398→                -- v2.0.53: BALANCE. 2 HP/tick (4 HP/sec) was too strong — free
+   399→                -- full HP in ~30s of standing near the dispenser. Halved to
+   400→                -- 1 HP/tick (2 HP/sec). Still strong sustain, but no longer a
+   401→                -- trivial full-heal.
+   402→                -- v2.0.54: TWO-TIER per user spec. Instead of a flat 1 HP/tick
+   403→                -- only during day, the dispenser now has a STRONG tier (2 HP/tick
+   404→                -- = 4 HP/sec during DAY + celestial — the affinity-active phase,
+   405→                -- with pulse) and a WEAK passive tier (1 HP/tick = 2 HP/sec
+   406→                -- during DUSK/NIGHT — no pulse). The weak tier keeps the
+   407→                -- dispenser useful outside the affinity window. The strong tier
+   408→                -- reverts the v2.0.53 halving — the two-tier structure means the
+   409→                -- 4 HP/sec is now confined to the affinity-active phase only,
+   410→                -- not 24/7, so the original "free full HP in 30s" concern is
+   411→                -- addressed by the phase gating rather than a flat nerf.
+   412→                if builder ~= nil and celestial
+   413→                    and builder.components.health
+   414→                    and not builder.components.health:IsDead()
+   415→                    and builder.components.health.currenthealth < builder.components.health.maxhealth then
+   416→                    local in_range = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
+   417→                    if in_range then
+   418→                        if TheWorld.state.isday then
+   419→                            -- STRONG tier (affinity-active): 2 HP/tick = 4 HP/sec
+   420→                            builder.components.health:DoDelta(2, true, nil, true)
+   421→                        else
+   422→                            -- WEAK passive (DUSK/NIGHT): 1 HP/tick = 2 HP/sec
+   423→                            builder.components.health:DoDelta(1, true, nil, true)
+   424→                        end
+   425→                    end
+   426→                end
+   427→            end)
+   428→
+   429→            -- Cleanup on remove
+   430→            inst:ListenForEvent("onremove", function()
+   431→                if inst._healfx ~= nil and inst._healfx:IsValid() then
+   432→                    inst._healfx:Remove()
+   433→                end
+   434→            end)
+   435→        end
+   436→        -- v2.0.42: Set the minimal interior light immediately on MK3 upgrade.
+   437→        -- The aura task (DoPeriodicTask) first runs at +0.5s; until then this
+   438→        -- gives MK3 the same subtle glow MK2 has. UpdateAuraFX will override
+   439→        -- with the stronger affinity light when a celestial/shadow player is
+   440→        -- nearby, and fall back to this minimal light otherwise.
+   441→        SetMinimalInteriorLight(inst)
+   442→    end
+   443→end
+   444→
+   445→function setmeterlevl(inst)
+   446→    local fuel = math.floor(inst.components.fueled.currentfuel + 0.5)
+   447→    local maxfuel = inst.components.fueled.maxfuel
+   448→    if fuel <= 0 then
+   449→        inst.AnimState:OverrideSymbol("placer", "dispenser_meter", "0")
+   450→    elseif fuel <= maxfuel * 0.25 then
+   451→        inst.AnimState:OverrideSymbol("placer", "dispenser_meter", "25")
+   452→    elseif fuel <= maxfuel * 0.5 then
+   453→        inst.AnimState:OverrideSymbol("placer", "dispenser_meter", "50")
+   454→    elseif fuel <= maxfuel * 0.75 then
+   455→        inst.AnimState:OverrideSymbol("placer", "dispenser_meter", "75")
+   456→    else
+   457→        inst.AnimState:OverrideSymbol("placer", "dispenser_meter", "100")
+   458→    end
+   459→end
+   460→
+   461→function UpdateDispenserName(inst)
+   462→    local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
+   463→    local fuel = math.floor(inst.components.fueled.currentfuel + 0.5)
+   464→    if builder or inst.maker then
+   465→        if inst:HasTag("lvl3") then
+   466→            inst.components.named:SetName(_G.subfmt("Dispenser built by {builder}\n(Level 3) Fuel: "..fuel.."/"..inst.components.fueled.maxfuel, { builder = inst.maker }))
+   467→        else
+   468→            inst.components.named:SetName(_G.subfmt("Dispenser built by {builder}\nUpgrade "..inst.upgradelevel.." / 70 | Fuel: "..fuel.."/"..inst.components.fueled.maxfuel, { builder = inst.maker }))
+   469→        end
+   470→    else
+   471→        if inst:HasTag("lvl3") then
+   472→            inst.components.named:SetName("Dispenser\n(Level 3) Fuel: "..fuel.."/"..inst.components.fueled.maxfuel)
+   473→        else
+   474→            inst.components.named:SetName("Dispenser\nUpgrade "..inst.upgradelevel.." / 70 | Fuel: "..fuel.."/"..inst.components.fueled.maxfuel)
+   475→        end
+   476→    end
+   477→end
+   478→
+   479→local function IsScrap(item)
+   480→    return item.prefab == "scrap"
+   481→end
+   482→
+   483→local function workup(inst, worker)
+   484→    local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   485→    if scrapstack ~= nil then
+   486→        local next_level = inst.upgradelevel + 1
+   487→        if next_level == 30 and not _G.WagstaffHasSkill(worker, "wagstaff_dispenser_mk2") then
+   488→            if worker.components.talker then
+   489→                worker.components.talker:Say("Requires Dispenser MK.II skill!")
+   490→            end
+   491→            return
+   492→        end
+   493→        if next_level == 70 and not _G.WagstaffHasSkill(worker, "wagstaff_dispenser_mk3") then
+   494→            if worker.components.talker then
+   495→                worker.components.talker:Say("Requires Dispenser MK.III skill!")
+   496→            end
+   497→            return
+   498→        end
+   499→        local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   500→        if upgrade_cost > 0 then
+   501→            worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
+   502→        end
+   503→        inst.upgradelevel = inst.upgradelevel + 1
+   504→        if inst.upgradelevel == 30 or inst.upgradelevel == 70 then
+   505→            upgrade(inst)
+   506→        end
+   507→        UpdateDispenserName(inst)
+   508→    end
+   509→end
+   510→
+   511→local function onhammered(inst)
+   512→    inst.components.lootdropper:DropLoot()
+   513→    local fx = _G.SpawnPrefab("collapse_small")
+   514→    fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+   515→    fx:SetMaterial("metal")
+   516→    inst:Remove()
+   517→    for k,v in pairs(_G.Ents) do
+   518→        if v and v.engieID == inst.dispenserID then
+   519→            v:PushEvent("engiebuilding")
+   520→            if v.components.sanity ~= nil then
+   521→                v.components.sanity:DoDelta(-_G.TUNING.ENGIE_BUILDINGLOSS)
+   522→            end
+   523→            if v.components.talker ~= nil then
+   524→                v.components.talker:Say(_G.GetString(v, "ANNOUNCE_DISPENSER_DOWN"))
+   525→            end
+   526→        end
+   527→    end
+   528→end
+   529→
+   530→local function onhit(inst, worker)
+   531→    if not (worker:HasTag("engie") or worker:HasTag("spy") or worker:HasTag("engie_pardner")) then
+   532→        inst.components.workable:SetWorkLeft(6)
+   533→    end
+   534→    setmeterlevl(inst)
+   535→    if inst:HasTag("lvl1") then
+   536→        inst.AnimState:PlayAnimation("hit")
+   537→    end
+   538→    if inst:HasTag("lvl2") then
+   539→        inst.AnimState:PlayAnimation("hit_2")
+   540→    end
+   541→    if inst:HasTag("lvl3") then
+   542→        inst.AnimState:PlayAnimation("hit_3")
+   543→    end
+   544→end
+   545→
+   546→local function OnWrenchWork(inst, worker)
+   547→    if inst:HasTag("lvl1") then
+   548→        inst.AnimState:PlayAnimation("hit")
+   549→    elseif inst:HasTag("lvl2") then
+   550→        inst.AnimState:PlayAnimation("hit_2")
+   551→    elseif inst:HasTag("lvl3") then
+   552→        inst.AnimState:PlayAnimation("hit_3")
+   553→    end
+   554→
+   555→    if worker.replica.inventory ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).prefab == "tf2wrench" then
+   556→        worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).components.finiteuses:Use(1)
+   557→    end
+   558→
+   559→    local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   560→
+   561→    if scrapstack ~= nil and inst.components.fueled.currentfuel < inst.components.fueled.maxfuel then
+   562→        local refuel_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   563→        if refuel_cost > 0 then
+   564→            worker.components.inventory:ConsumeByName("scrap", refuel_cost)
+   565→        end
+   566→        inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   567→        inst.components.fueled.currentfuel = inst.components.fueled.currentfuel + 1
+   568→        setmeterlevl(inst)
+   569→        UpdateDispenserName(inst)
+   570→        return
+   571→    end
+   572→
+   573→    if not inst:HasTag("NOLEVEL") and not inst:HasTag("lvl3") and scrapstack ~= nil then
+   574→        inst.tick = 0
+   575→        while inst.tick ~= 5 and not inst:HasTag("lvl3") do
+   576→            workup(inst, worker)
+   577→            inst.tick = inst.tick + 1
+   578→        end
+   579→    end
+   580→end
+   581→
+   582→local function dispenseitem(inst, phase, cavephase)
+   583→    local item = nil
+   584→    if inst.components.fueled.currentfuel ~= 0 then
+   585→        inst:DoTaskInTime(5, function()
+   586→            -- Mk.I (day only) — v2.0.14 Option B: flat 3 scrap / 2 fuel / 2 mineral (was 2+33% / 1 / 1)
+   587→            if inst:HasTag("lvl1") then
+   588→                if _G.TheWorld.state.isday then
+   589→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   590→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   591→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   592→                    item = weighted_random_choice(fuel)
+   593→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   594→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   595→                    item = weighted_random_choice(mineral)
+   596→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   597→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   598→                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   599→                    inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
+   600→                    inst.AnimState:PlayAnimation("hit")
+   601→                    TryLuckyDrop(inst)
+   602→                    setmeterlevl(inst)
+   603→                end
+   604→            end
+   605→            -- Mk.II (day + dusk) — v2.0.14 Option B: flat 4 scrap / 3 fuel / 3 mineral (was 3+33% / 3 / 2)
+   606→            if inst:HasTag("lvl2") then
+   607→                if _G.TheWorld.state.isday or _G.TheWorld.state.isdusk then
+   608→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   609→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   610→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   611→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   612→                    item = weighted_random_choice(fuel)
+   613→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   614→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   615→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   616→                    item = weighted_random_choice(mineral)
+   617→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   618→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   619→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   620→                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   621→                    inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
+   622→                    inst.AnimState:PlayAnimation("hit_2")
+   623→                    TryLuckyDrop(inst)
+   624→                    setmeterlevl(inst)
+   625→                end
+   626→            end
+   627→            -- Mk.III (day + dusk + night) — v2.0.14 Option B:
+   628→            -- 4 scrap / 3 fuel / 3 mineral / 2 rare flat (was 2 / 2 / 2 / 33% chance 1)
+   629→            -- + 33% night-bonus (2 night items) on night cycle
+   630→            -- + Level 2 affinity active drops (33% per affinity phase, no dual affinity bonus)
+   631→            if inst:HasTag("lvl3") then
+   632→                if _G.TheWorld.state.isday or _G.TheWorld.state.isdusk or _G.TheWorld.state.isnight then
+   633→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   634→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   635→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   636→                    inst.components.lootdropper:SpawnLootPrefab("scrap")
+   637→                    item = weighted_random_choice(fuel)
+   638→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   639→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   640→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   641→                    item = weighted_random_choice(mineral)
+   642→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   643→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   644→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   645→                    -- 2 rare drops flat (was 33% chance for 1)
+   646→                    item = weighted_random_choice(rare)
+   647→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   648→                    item = weighted_random_choice(rare)
+   649→                    inst.components.lootdropper:SpawnLootPrefab(item)
+   650→
+   651→                    -- Night cycle bonus: 33% chance for 2 night-themed items
+   652→                    if _G.TheWorld.state.isnight then
+   653→                        if math.random() < .33 then
+   654→                            item = weighted_random_choice(night)
+   655→                            inst.components.lootdropper:SpawnLootPrefab(item)
+   656→                            inst.components.lootdropper:SpawnLootPrefab(item)
+   657→                        end
+   658→                    end
+   659→
+   660→                    -- Level 2 affinity active drops: 33% per cycle during the affinity's active phase
+   661→                    -- No dual affinity bonus — each phase only triggers its own affinity
+   662→                    local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
+   663→                    if builder then
+   664→                        if _G.TheWorld.state.isday and builder:HasTag("wagstaff_celestial_possession") then
+   665→                            if math.random() < 0.33 then
+   666→                                local drop = weighted_random_choice(celestial_drops)
+   667→                                inst.components.lootdropper:SpawnLootPrefab(drop)
+   668→                            end
+   669→                        elseif _G.TheWorld.state.isdusk and builder:HasTag("wagstaff_shadow_possession") then
+   670→                            if math.random() < 0.33 then
+   671→                                local drop = weighted_random_choice(shadow_drops)
+   672→                                inst.components.lootdropper:SpawnLootPrefab(drop)
+   673→                            end
+   674→                        end
+   675→                    end
+   676→
+   677→                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   678→                    inst.components.fueled.currentfuel = inst.components.fueled.currentfuel - 1
+   679→                    inst.AnimState:PlayAnimation("hit_3")
+   680→                    TryLuckyDrop(inst)
+   681→                    setmeterlevl(inst)
+   682→                end
+   683→            end
+   684→        end)
+   685→    end
+   686→end
+   687→
+   688→local function onsave(inst, data)
+   689→    data.upgradelevel = inst.upgradelevel
+   690→    data.dispenserID = inst.dispenserID
+   691→    data.maker = inst.maker
+   692→    if inst.components.named then
+   693→        data.name = inst.components.named.name
+   694→    end
+   695→end
+   696→
+   697→local function onload(inst, data)
+   698→    inst.upgradelevel = data.upgradelevel or 0
+   699→    inst.dispenserID = data.dispenserID
+   700→    inst.maker = data.maker or inst.maker
+   701→    upgrade(inst)
+   702→    setmeterlevl(inst)
+   703→    UpdateDispenserName(inst)
+   704→end
+   705→
+   706→local function onunequip(inst, owner)
+   707→    owner.AnimState:ClearOverrideSymbol("swap_body")
+   708→
+   709→    if _G.TheWorld:HasTag("cave") then
+   710→        inst:WatchWorldState("cavephase", dispenseitem)
+   711→    end
+   712→    if not _G.TheWorld:HasTag("cave") then
+   713→        inst:WatchWorldState("phase", dispenseitem)
+   714→    end
+   715→
+   716→    if owner.components.talker ~= nil then
+   717→        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_REPLANTING"))
+   718→    end
+   719→    inst.SoundEmitter:PlaySound("dontstarve/common/lightning_rod_craft")
+   720→
+   721→    if inst:HasTag("lvl1") then
+   722→        inst.AnimState:PlayAnimation("place")
+   723→    end
+   724→    if inst:HasTag("lvl2") then
+   725→        inst.AnimState:PlayAnimation("upgrade2")
+   726→    end
+   727→    if inst:HasTag("lvl3") then
+   728→        inst.AnimState:PlayAnimation("upgrade2")
+   729→        inst.AnimState:PlayAnimation("upgrade3", false)
+   730→    end
+   731→    -- v2.0.42: Re-enable the minimal interior light when placed back in the
+   732→    -- world (onequip disabled it while carried). MK3's aura task will override
+   733→    -- with the affinity light within 0.5s if a celestial/shadow player is near.
+   734→    if inst:HasTag("lvl2") or inst:HasTag("lvl3") then
+   735→        SetMinimalInteriorLight(inst)
+   736→    end
+   737→end
+   738→
+   739→local function onequip(inst, owner)
+   740→    owner.AnimState:OverrideSymbol("swap_body", "swap_engie_building", "swap_body")
+   741→
+   742→    if _G.TheWorld:HasTag("cave") then
+   743→        inst:StopWatchingWorldState("cavephase", dispenseitem)
+   744→    end
+   745→    if not _G.TheWorld:HasTag("cave") then
+   746→        inst:StopWatchingWorldState("phase", dispenseitem)
+   747→    end
+   748→
+   749→    inst.Light:Enable(false)
+   750→
+   751→    if owner.components.health ~= nil and not owner.components.health:IsDead() then
+   752→        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_PACKINGUP"))
+   753→    end
+   754→end
+   755→
+   756→local function onremoved(inst)
+   757→    for k,v in pairs(_G.Ents) do
+   758→        if v and v.engieID == inst.dispenserID then
+   759→            v:PushEvent("engiebuilding")
+   760→        end
+   761→    end
+   762→end
+   763→
+   764→local function fn()
+   765→    local inst = _G.CreateEntity()
+   766→
+   767→    inst.entity:AddTransform()
+   768→    inst.entity:AddAnimState()
+   769→    inst.entity:AddSoundEmitter()
+   770→    inst.entity:AddMiniMapEntity()
+   771→    inst.entity:AddLight()
+   772→    inst.entity:AddNetwork()
+   773→    inst.MiniMapEntity:SetIcon("dispenser.tex")
+   774→
+   775→    _G.MakeObstaclePhysics(inst, .4)
+   776→
+   777→    inst.no_wet_prefix = true
+   778→
+   779→    inst:AddTag("structure")
+   780→    inst:AddTag("eyeturret")
+   781→    inst:AddTag("dispenser")
+   782→    inst:AddTag("ebuild_wrenchable")
+   783→    inst:AddTag("lvl1")
+   784→    inst:AddTag("ebuild")
+   785→    inst:AddTag("nonpotatable")
+   786→    inst:AddTag("heavy")
+   787→
+   788→    inst.AnimState:SetBank("dispenser")
+   789→    inst.AnimState:SetBuild("dispenser")
+   790→    inst.AnimState:PlayAnimation("idle")
+   791→    inst.AnimState:OverrideSymbol("placer", "dispenser_meter", "100")
+   792→
+   793→    inst.entity:SetPristine()
+   794→
+   795→    if not _G.TheWorld.ismastersim then
+   796→        return inst
+   797→    end
+   798→
+   799→    inst:AddComponent("inspectable")
+   800→    inst:AddComponent("lootdropper")
+   801→    inst:AddComponent("named")
+   802→    inst.components.named:SetName("Dispenser")
+   803→    inst:AddComponent("entitytracker")
+   804→
+   805→    inst:AddComponent("engieworkable")
+   806→    inst.components.engieworkable:SetWorkAction(_G.ACTIONS.ENGIEWORKABLE)
+   807→    inst.components.engieworkable:SetMaxWork(1)
+   808→    inst.components.engieworkable:SetWorkLeft(1)
+   809→    inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+   810→        if inst:HasTag("lvl1") then
+   811→            inst.AnimState:PlayAnimation("hit")
+   812→        elseif inst:HasTag("lvl2") then
+   813→            inst.AnimState:PlayAnimation("hit_2")
+   814→        elseif inst:HasTag("lvl3") then
+   815→            inst.AnimState:PlayAnimation("hit_3")
+   816→        end
+   817→    end)
+   818→    inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+   819→        inst.components.engieworkable:SetWorkLeft(1)
+   820→        OnWrenchWork(inst, worker)
+   821→    end)
+   822→
+   823→    inst.Light:Enable(false)
+   824→    inst.Light:SetRadius(.6)
+   825→    inst.Light:SetFalloff(1)
+   826→    inst.Light:SetIntensity(.5)
+   827→    inst.Light:SetColour(235/255, 62/255, 12/255)
+   828→
+   829→    inst:AddComponent("fueled")
+   830→    inst.components.fueled.fueltype = FUELTYPE.PIGTORCH
+   831→    inst.components.fueled:InitializeFuelLevel(4)
+   832→    inst.components.fueled.accepting = false
+   833→
+   834→    inst:AddComponent("workable")
+   835→    inst.components.workable:SetWorkAction(_G.ACTIONS.HAMMER)
+   836→    inst.components.workable:SetWorkLeft(4)
+   837→    inst.components.workable:SetOnFinishCallback(onhammered)
+   838→    inst.components.workable:SetOnWorkCallback(onhit)
+   839→
+   840→    inst:ListenForEvent("onremove", onremoved)
+   841→
+   842→    inst:AddComponent("symbolswapdata")
+   843→    inst.components.symbolswapdata:SetData("swap_engie_building", "swap_body")
+   844→
+   845→    inst.upgradelevel = 0
+   846→
+   847→    inst.OnSave = onsave
+   848→    inst.OnLoad = onload
+   849→    inst.OnBuiltFn = onbuilt
+   850→
+   851→    inst:DoTaskInTime(0, function(inst)
+   852→        setmeterlevl(inst)
+   853→        UpdateDispenserName(inst)
+   854→    end)
+   855→
+   856→    if not inst.components.inventoryitem then
+   857→        inst:AddComponent("inventoryitem")
+   858→    end
+   859→    inst.components.inventoryitem.atlasname = _G.ENGINEERITEMIMAGES
+   860→    inst.components.inventoryitem.cangoincontainer = false
+   861→    inst.components.inventoryitem:SetSinks(true)
+   862→    inst.components.inventoryitem.imagename = "esentry_item"
+   863→    inst.components.inventoryitem.nobounce = true
+   864→    if inst.replica.inventoryitem then
+   865→        if inst.replica.inventoryitem.SetAtlas then
+   866→            inst.replica.inventoryitem:SetAtlas(_G.ENGINEERITEMIMAGES)
+   867→        end
+   868→        inst.replica.inventoryitem:SetImage("esentry_item")
+   869→    end
+   870→
+   871→    inst:AddComponent("heavyobstaclephysics")
+   872→    inst.components.heavyobstaclephysics:SetRadius(1)
+   873→    inst.components.heavyobstaclephysics:MakeSmallObstacle()
+   874→
+   875→    inst:AddComponent("equippable")
+   876→    inst.components.equippable.equipslot = _G.EQUIPSLOTS.BODY
+   877→    inst.components.equippable:SetOnEquip(onequip)
+   878→    inst.components.equippable:SetOnUnequip(onunequip)
+   879→    inst.components.equippable.walkspeedmult = _G.TUNING.TOOLBOX_SPEED_MULT
+   880→    inst.components.equippable.restrictedtag = "engie"
+   881→
+   882→    if _G.TheWorld:HasTag("cave") then
+   883→        inst:WatchWorldState("cavephase", dispenseitem)
+   884→    end
+   885→    if not _G.TheWorld:HasTag("cave") then
+   886→        inst:WatchWorldState("phase", dispenseitem)
+   887→    end
+   888→
+   889→
+   890→    _G.MakeHauntableFreeze(inst)
+   891→
+   892→    return inst
+   893→end
+   894→
+   895→local function healfxfn()
+   896→    local inst = _G.CreateEntity()
+   897→
+   898→    inst.entity:AddTransform()
+   899→    inst.entity:AddAnimState()
+   900→    inst.entity:AddPhysics()
+   901→    inst.entity:AddNetwork()
+   902→
+   903→    inst:AddTag("NOBLOCK")
+   904→    inst:AddTag("NOCLICK")
+   905→    inst:AddTag("FX")
+   906→
+   907→    inst.AnimState:SetBank("fireflies")
+   908→    inst.AnimState:SetBuild("fireflies")
+   909→    inst.AnimState:PlayAnimation("swarm_pre")
+   910→    inst.AnimState:PushAnimation("swarm_loop", true)
+   911→    inst.AnimState:SetBloomEffectHandle("shaders/anim.ksh")
+   912→    inst.AnimState:SetLightOverride(1)
+   913→
+   914→    inst.persists = false
+   915→    inst.AnimState:SetMultColour(200/255, 50/255, 50/255, 1)
+   916→
+   917→    return inst
+   918→end
+   919→
+   920→return _G.Prefab("common/dispenser", fn, assets, prefabs),
+   921→    _G.Prefab("ehealfx", healfxfn, assets)
+   922→

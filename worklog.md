@@ -976,3 +976,37 @@ Stage Summary:
   - Orphaned "gadgets" skill branch still needs skilltree nodes added
   - x2_damage sentry skill may be underpriced at 1 insight (borderline)
   - Brute base damage (17) is still low, but taunt compensates
+
+---
+Task ID: v2.0.92
+Agent: Main
+Task: Comprehensive bug audit across all skills, bots, and sentries — covering all possibilities, understanding the real format, fixing what's incorrect
+
+Work Log:
+- Read all 4 bot prefabs (ballistic, brute, buster, butler), all 4 stategraphs, all 4 brains, dispenser, esentry, esentry_bullet, esentry_rocket, thumper, william_acts.lua, skilltree_wagstaff.lua, wagstaff_skilltree_impl.lua
+- Identified 7 bugs across the codebase
+- Fixed BUG: Butler brain ShouldDanceParty missing leader.sg nil check (could crash when leader removed)
+- Fixed BUG: Brute/Buster/Butler active bots' onsave don't save currentfuel (free refuel on every session reload - same bug ballistic had in v2.0.89)
+- Fixed BUG: Brute empty husk has NO OnSave/OnLoad at all (level, upgradelevel, currentfuel all lost on save/load)
+- Fixed BUG: Buster empty husk onsave_empty/onload_empty don't save currentfuel
+- Fixed BUG: Butler empty husk OnSaveHusk/OnLoadHusk don't save currentfuel
+- Fixed BUG: Buster/Butler empty husks still consume fuel (fn() calls StartConsuming, never stopped - same fix as brute empty v2.0.90)
+- Fixed BUG: SGwilliambutler 'pick' state accesses inst.components.follower:GetLeader() without nil check on follower component
+- Bumped version to 2.0.92
+- Pushed to GitHub (HIKESS/WagstaffMod)
+
+Stage Summary:
+- 7 bugs fixed across 6 files
+- All fuel persistence bugs now fixed across all 4 bots (active + empty/husk)
+- All empty husks now stop fuel consumption while inactive
+- All nil guard crashes patched in brain and stategraph
+- v2.0.92 pushed to origin/main
+
+Key Bugs Found and Fixed:
+1. Butler brain ShouldDanceParty: leader.sg nil crash → added nil check
+2. Brute/Buster/Butler active onsave: missing currentfuel → added save/restore
+3. Brute empty husk: missing OnSave/OnLoad entirely → added full save/load
+4. Buster empty husk: missing currentfuel save → added to onsave_empty/onload_empty
+5. Butler empty husk: missing currentfuel save → added to OnSaveHusk/OnLoadHusk
+6. Buster/Butler empty husks: fuel still draining → added StopConsuming()
+7. SGwilliambutler pick state: follower nil crash → added nil guard
