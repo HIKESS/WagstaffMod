@@ -902,3 +902,37 @@ Stage Summary:
   - Inconsistent Physics:SetActive(false) on death (only ballistic does it)
   - Dead code in WILLYRAISE.fn guard (line 79 of william_acts.lua)
   - Observation A from BAL-A: Orphaned "gadgets" skill branch in skilltree
+
+---
+Task ID: CRON-REVIEW-20260628-V2
+Agent: Z.ai Code (main session, cron review round 2)
+Task: Continue development — fix remaining bugs, add features
+
+Work Log:
+- Reviewed worklog and project status (v2.0.86, 5 bugs fixed last round)
+- Identified remaining issues from previous scan:
+  1. All 4 bot SG death states don't call inst:Remove() (entities persist)
+  2. Inconsistent Physics:SetActive(false) on death
+  3. Dead code in WILLYRAISE.fn guard
+- Fixed all 3 remaining bugs
+- Added 2 new features:
+  1. Sentry damage scaling across tiers (MK1=25, MK2=30, MK3=35)
+  2. Bot death announcements (owner speaks when a bot dies)
+- Verified bracket balance: OK for all modified files
+- Committed as 526fe36 (v2.0.87)
+- Pushed to origin/main successfully
+- Cleaned up GitHub token from remote URL
+
+Stage Summary:
+- v2.0.87 LIVE on remote (commit 526fe36)
+- 8 files changed, 176 insertions, 129 deletions
+- Key changes:
+  - Death state cleanup: inst:Remove() + Physics:SetActive(false) for all 4 bots
+  - Sentry MK2/MK3 now have meaningful damage upgrades (+5/+10)
+  - Bot death announcements notify the owner when a bot dies
+  - Removed dead WILLYRAISE.fn guard code
+- Remaining known issues (lower priority):
+  - Observation A from BAL-A: Orphaned "gadgets" skill branch in skilltree (5 unreachable skill tags)
+  - Brute base damage (17) is very low for a "tank/juggernaut" — role clarification
+  - Rocket damage hardcoded at 25 in esentry_rocket.lua (should scale with MK3 tier)
+  - x2_damage sentry skill may be underpriced at 1 insight (borderline)
