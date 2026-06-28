@@ -1,0 +1,1007 @@
+     1→require "prefabutil"
+     2→
+     3→local _G = _G or GLOBAL
+     4→
+     5→local assets =
+     6→{
+     7→    Asset("ANIM", "anim/esentry.zip"),
+     8→    Asset("ANIM", "anim/swap_engie_building.zip"),
+     9→    Asset("ANIM", "anim/esentry_item.zip"),
+    10→}
+    11→
+    12→local prefabs =
+    13→{
+    14→    "esentry_bullet",
+    15→    "esentry_rocket",
+    16→    "scrap",
+    17→    "gunpowder",
+    18→}
+    19→
+    20→local brain = require "brains/eyeturretbrain" --borrow
+    21→local easing = require("easing")
+    22→local AffinityPulse = _G.AffinityPulse
+    23→
+    24→----------------------------------------------------------------
+    25→-- v2.0.43: Affinity Ramp System + Hit/Blast FX for Sentry MK3
+    26→----------------------------------------------------------------
+    27→-- Ramp: each hit on an aligned mob (shadow_aligned for celestial,
+    28→-- lunar_aligned for shadow) adds +10% base damage as bonus, stacking
+    29→-- up to 6 times (+60%). The ramp resets if the sentry doesn't attack
+    30→-- for 3 seconds OR gets hit (mirror of shadow_battleaxe ramp design).
+    31→-- The x2-Damage proc (10% chance) doubles the CURRENT total damage
+    32→-- (base + ramp bonus), not just the base — so a fully-ramped x2 proc
+    33→-- is a big burst.
+    34→--
+    35→-- FX: bullet hits spawn a brightsmithy-style sparkle (celestial) or
+    36→-- shadowcraft-style dark spike (shadow). Rocket impacts spawn a
+    37→-- bomb_lunarplant explosion FX (altered — tinted black for shadow).
+    38→-- All spawns are pcall-guarded with fallbacks so a missing DST prefab
+    39→-- never crashes the server.
+    40→
+    41→local AFF_RAMP_MAX        = 4      -- v2.0.50: was 6. Max 4 stacks (+40% total)
+    42→                                    -- — 6 stacks (+60%) was OP combined with
+    43→                                    -- the x2-Damage proc doubling the total.
+    44→local AFF_RAMP_PCT        = 0.10   -- +10% base damage per stack
+    45→local AFF_RAMP_RESET_TIME = 3      -- seconds without a hit before reset
+    46→-- v2.0.61: x2-Damage reworked. Base proc is now 4% (down from 10%),
+    47→-- scaling +2.5% per MK3 sentry the owner has clustered nearby (cached count
+    48→-- refreshed every few seconds in the periodic task). A 4-second per-target
+    49→-- cooldown prevents melting a single enemy with back-to-back procs.
+    50→-- v2.0.65: per-sentry bonus 2.5% -> 3%. One MK3 sentry = 7%, two = 10%.
+    51→local AFF_X2_BASE_CHANCE    = 0.04   -- 4% base
+    52→local AFF_X2_PER_MK3_BONUS  = 0.03   -- +3% per MK3 sentry (incl. self)
+    53→local AFF_X2_TARGET_CD      = 4.0    -- seconds per-target cooldown
+    54→
+    55→local function _safeSpawn(name)
+    56→    local ok, inst = pcall(function() return _G.SpawnPrefab(name) end)
+    57→    if ok and inst then return inst end
+    58→    return nil
+    59→end
+    60→
+    61→-- Ramp state helpers (operate on the sentry inst).
+    62→local function ResetAffRamp(inst)
+    63→    if not inst or not inst:IsValid() then return end
+    64→    inst._aff_ramp_stacks = 0
+    65→    if inst._aff_ramp_reset_task then
+    66→        inst._aff_ramp_reset_task:Cancel()
+    67→        inst._aff_ramp_reset_task = nil
+    68→    end
+    69→end
+    70→
+    71→local function BumpAffRamp(inst)
+    72→    if not inst or not inst:IsValid() then return end
+    73→    if inst._aff_ramp_stacks == nil then inst._aff_ramp_stacks = 0 end
+    74→    if inst._aff_ramp_stacks < AFF_RAMP_MAX then
+    75→        inst._aff_ramp_stacks = inst._aff_ramp_stacks + 1
+    76→    end
+    77→    -- (Re)schedule the 3s no-hit decay timer.
+    78→    if inst._aff_ramp_reset_task then
+    79→        inst._aff_ramp_reset_task:Cancel()
+    80→    end
+    81→    inst._aff_ramp_reset_task = inst:DoTaskInTime(AFF_RAMP_RESET_TIME, function()
+    82→        ResetAffRamp(inst)
+    83→    end)
+    84→end
+    85→
+    86→local function GetAffRampBonus(inst, base_dmg)
+    87→    if not inst or not inst._aff_type then return 0 end
+    88→    local stacks = inst._aff_ramp_stacks or 0
+    89→    if stacks <= 0 then return 0 end
+    90→    return base_dmg * AFF_RAMP_PCT * stacks
+    91→end
+    92→
+    93→-- Determine the aligned-tag for a given affinity type.
+    94→local function GetAlignedTag(aff_type)
+    95→    if aff_type == "celestial" then return "shadow_aligned" end
+    96→    if aff_type == "shadow"    then return "lunar_aligned"  end
+    97→    return nil
+    98→end
+    99→
+   100→-- FX module: exposed globally so esentry_rocket can use it too.
+   101→-- v2.0.47 FIX: use rawget instead of _G.WagstaffAffFX to bypass strict.lua's
+   102→-- __index metamethod, which throws "variable not declared" on first load
+   103→-- (before line 165 below has a chance to write/declare the global).
+   104→local WagstaffAffFX = rawget(_G, "WagstaffAffFX") or {}
+   105→
+   106→-- Bullet hit FX: brightsmithy sparkle (celestial) / shadowcraft spike (shadow).
+   107→WagstaffAffFX.HitFX = function(target, aff_type)
+   108→    if not target or not target:IsValid() then return end
+   109→    local x, y, z = target.Transform:GetWorldPosition()
+   110→    local fx = nil
+   111→    if aff_type == "celestial" then
+   112→        -- Try the brightsmithy (lunarplant) weapon hit sparkle variants.
+   113→        fx = _safeSpawn("lunarplant_sparkle_fx")
+   114→          or _safeSpawn("lunarplant_knife_fx")
+   115→          or _safeSpawn("sparklefx")
+   116→    elseif aff_type == "shadow" then
+   117→        -- Try the shadowcraft weapon hit spike variants.
+   118→        fx = _safeSpawn("shadow_spikes_fx")
+   119→          or _safeSpawn("shadowtar_fx")
+   120→          or _safeSpawn("shadowstrike_fx")
+   121→    end
+   122→    -- Fallback: recolored standard impact (guaranteed to exist in DST).
+   123→    if not fx then
+   124→        fx = _safeSpawn("impact")
+   125→        if fx and fx.AnimState then
+   126→            if aff_type == "celestial" then
+   127→                fx.AnimState:SetAddColour(0.25, 0.35, 0.55, 0)
+   128→            elseif aff_type == "shadow" then
+   129→                fx.AnimState:SetMultColour(0.30, 0.10, 0.40, 1)
+   130→                fx.AnimState:SetAddColour(0.10, 0.00, 0.20, 0)
+   131→            end
+   132→        end
+   133→    end
+   134→    if fx then
+   135→        fx.Transform:SetPosition(x, y + 1, z)
+   136→        fx.persists = false
+   137→        fx:DoTaskInTime(2, function() if fx and fx:IsValid() then fx:Remove() end end)
+   138→    end
+   139→end
+   140→
+   141→-- Rocket impact FX: bomb_lunarplant explosion (celestial) / same tinted
+   142→-- black (shadow). The bomb item is spawned but its damage components are
+   143→-- stripped so it is purely visual ("the FX, not the bomb" — slightly altered).
+   144→WagstaffAffFX.BlastFX = function(host, aff_type)
+   145→    if not host or not host:IsValid() then return end
+   146→    local x, y, z = host.Transform:GetWorldPosition()
+   147→    local fx = nil
+   148→    -- Try the pure-FX prefabs first, then the bomb item itself.
+   149→    fx = _safeSpawn("bomb_lunarplant_fx")
+   150→      or _safeSpawn("lunarplant_bomb_fx")
+   151→      or _safeSpawn("bomb_lunarplant")
+   152→      or _safeSpawn("explode_small")   -- guaranteed fallback
+   153→    if not fx then return end
+   154→    fx.Transform:SetPosition(x, y, z)
+   155→    -- Strip damage so it's purely visual (safe-guarded with pcall).
+   156→    pcall(function()
+   157→        if fx.components.explosive then fx:RemoveComponent("explosive") end
+   158→    end)
+   159→    pcall(function()
+   160→        if fx.components.combat then fx:RemoveComponent("combat") end
+   161→    end)
+   162→    pcall(function()
+   163→        if fx.components.burnable then fx:RemoveComponent("burnable") end
+   164→    end)
+   165→    -- Tint: celestial keeps the default lunarplant blue/silver; shadow = black.
+   166→    if aff_type == "shadow" and fx.AnimState then
+   167→        fx.AnimState:SetMultColour(0.08, 0.05, 0.12, 1)
+   168→        fx.AnimState:SetAddColour(0.05, 0.00, 0.10, 0)
+   169→    elseif aff_type == "celestial" and fx.AnimState then
+   170→        -- Slight enhancement: brighter blue/silver for the celestial blast.
+   171→        fx.AnimState:SetAddColour(0.10, 0.15, 0.25, 0)
+   172→    end
+   173→    fx.persists = false
+   174→    fx:DoTaskInTime(4, function() if fx and fx:IsValid() then fx:Remove() end end)
+   175→end
+   176→
+   177→-- v2.0.47 FIX: use rawset to bypass strict.lua's __newindex (avoids potential
+   178→-- "assign to undeclared variable" error when writing the global from a module
+   179→-- context). rawset writes directly to the table without metatable interception.
+   180→rawset(_G, "WagstaffAffFX", WagstaffAffFX)
+   181→
+   182→local function OnNameDelta(inst)
+   183→        local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
+   184→        if builder or inst.maker then
+   185→                if inst:HasTag("NOLEVEL") then
+   186→                        inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = inst.maker }))
+   187→                else
+   188→                if inst:HasTag("lvl1") or inst:HasTag("lvl2") then
+   189→                        inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ".."\n Upgrade Progress "..inst.upgradelevel.." / 70", { builder = inst.maker }))
+   190→                elseif inst:HasTag("lvl3") then
+   191→                        inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = inst.maker }))
+   192→                end
+   193→                end
+   194→        else
+   195→                inst.components.named:SetName("Sentry Gun".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health " )
+   196→        end
+   197→end
+   198→
+   199→--Called from stategraph
+   200→local function LaunchProjectile(inst, targetpos)
+   201→    local x, y, z = inst.Transform:GetWorldPosition()
+   202→        local angle = -inst.Transform:GetRotation() * _G.DEGREES
+   203→        local range = _G.SENTRY_RANGE
+   204→        local targetpos = _G.Vector3(x + math.cos(angle) * range, y, z + math.sin(angle) * range)
+   205→    local projectile = _G.SpawnPrefab("esentry_rocket")
+   206→    projectile.Transform:SetPosition(x, y, z)
+   207→    projectile.components.complexprojectile:Launch(targetpos, inst, inst)
+   208→end
+   209→
+   210→local function EquipWeapon(inst)
+   211→    if inst.components.inventory and not inst.components.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) then
+   212→        local weapon = _G.CreateEntity()
+   213→        --[[Non-networked entity]]
+   214→        weapon.entity:AddTransform()
+   215→        weapon:AddComponent("weapon")
+   216→                -- v2.0.87: Use combat component's actual damage instead of the
+   217→                -- raw SENTRY_DAMAGE constant. This way, when EquipWeapon is
+   218→                -- called after upgrading to MK2/MK3, the bullet weapon inherits
+   219→                -- the tier-scaled damage (30/35) instead of always being 25.
+   220→                weapon.components.weapon:SetDamage(inst.components.combat.defaultdamage)
+   221→        weapon.components.weapon:SetRange(inst.components.combat.attackrange, inst.components.combat.attackrange+4)
+   222→            weapon.components.weapon:SetProjectile("esentry_bullet")
+   223→        weapon:AddComponent("inventoryitem")
+   224→        weapon.persists = false
+   225→        weapon.components.inventoryitem:SetOnDroppedFn(weapon.Remove)
+   226→        weapon:AddComponent("equippable")
+   227→        inst.components.inventory:Equip(weapon)
+   228→    end
+   229→end
+   230→
+   231→local function retargetfn(inst)
+   232→    EquipWeapon(inst)
+   233→    local playertargets = {}
+   234→    for i, v in ipairs(_G.AllPlayers) do
+   235→        if v.components.combat.target ~= nil then
+   236→            playertargets[v.components.combat.target] = true
+   237→        end
+   238→    end
+   239→
+   240→    if _G.SENTRY_FF == "noff" then
+   241→----------friendly fire OFF--------------
+   242→    return _G.FindEntity(inst, _G.SENTRY_RANGE,
+   243→        function(guy)
+   244→            return not guy:HasTag("player") and inst.components.combat:CanTarget(guy)
+   245→                and (playertargets[guy] or guy:HasTag("hostile") or
+   246→                    (guy.components.combat.target ~= nil and guy.components.combat.target:HasTag("player") or 
+   247→                     guy.components.combat.target ~= nil and guy.components.combat.target:HasTag("esentry")))
+   248→        end,
+   249→        { "_combat" },
+   250→        { "INLIMBO", "engie", "esentry", "wall", "companion", "playermonster" }
+   251→    )
+   252→----------friendly fire ON--------------
+   253→    elseif _G.SENTRY_FF == "yesff" then
+   254→    return _G.FindEntity(inst, _G.SENTRY_RANGE,
+   255→        function(guy)
+   256→                local attackerID = guy.engieID or nil
+   257→                if guy ~= nil and (attackerID == nil or attackerID ~= inst.turretID) then
+   258→            return inst.components.combat:CanTarget(guy)
+   259→                and (playertargets[guy] or guy:HasTag("hostile") or
+   260→                    (guy.components.combat.target ~= nil and guy.components.combat.target:HasTag("player") or 
+   261→                     guy.components.combat.target ~= nil and guy.components.combat.target:HasTag("esentry")))
+   262→        end
+   263→                end,
+   264→        { "_combat" },
+   265→        { "INLIMBO", "esentry", "wall", }
+   266→    )
+   267→        end
+   268→end
+   269→
+   270→local function shouldKeepTarget(inst, target)
+   271→    return target ~= nil
+   272→        and target:IsValid()
+   273→        and target.components.health ~= nil
+   274→        and not target.components.health:IsDead()
+   275→        and inst:IsNear(target, _G.SENTRY_RANGE)
+   276→end
+   277→
+   278→local function OnAttacked(inst, data)
+   279→    local attacker = data ~= nil and data.attacker or nil
+   280→    local attackerID = attacker.engieID or nil
+   281→
+   282→    if _G.SENTRY_FF == "noff" then
+   283→    if attacker ~= nil and not attacker:HasTag("player") and (attackerID == nil or attackerID ~= inst.turretID) then
+   284→        EquipWeapon(inst)
+   285→        inst.components.combat:SetTarget(attacker)
+   286→    end
+   287→    elseif _G.SENTRY_FF == "yesff" then
+   288→    if attacker ~= nil and (attackerID == nil or attackerID ~= inst.turretID) then
+   289→        EquipWeapon(inst)
+   290→        inst.components.combat:SetTarget(attacker)
+   291→    end
+   292→    end
+   293→
+   294→end
+   295→
+   296→local function lighttweencb(inst, light)
+   297→    if light ~= nil then
+   298→        light:Enable(false)
+   299→    end
+   300→end
+   301→
+   302→local function dotweenin(inst, l)
+   303→    inst.components.lighttweener:StartTween(nil, 0, .65, .7, nil, 0.15, lighttweencb)
+   304→end
+   305→
+   306→local function upgrade(inst)
+   307→    local item = inst.components.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) or nil
+   308→    if inst.upgradelevel >= 30 and inst.upgradelevel < 70 then
+   309→        inst:AddTag("lvl2")
+   310→        inst:RemoveTag("lvl1")
+   311→        if inst.MiniMapEntity then inst.MiniMapEntity:SetIcon("esentry_2.tex") end
+   312→        inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH * 2)
+   313→        -- v2.0.87: Sentry MK2 now gets +5 base DMG (30 total). Before this, the
+   314→        -- only upgrades were HP and ammo capacity — the sentry dealt 25 DMG at all
+   315→        -- tiers, making the 30-scrap upgrade feel underwhelming for a combat turret.
+   316→        inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE + 5)
+   317→        inst.AnimState:PlayAnimation("upgrade2")
+   318→        inst.AnimState:PushAnimation("idle_loop_2", true)
+   319→        if item ~= nil then
+   320→            inst.components.inventory:DropItem(item)
+   321→            EquipWeapon(inst)
+   322→        end
+   323→    end
+   324→    if inst.upgradelevel >= 70 then
+   325→        inst:AddTag("lvl3")
+   326→        inst:AddTag("rocketsready")
+   327→        inst:RemoveTag("lvl1")
+   328→        inst:RemoveTag("lvl2")
+   329→        if inst.MiniMapEntity then inst.MiniMapEntity:SetIcon("esentry_3.tex") end
+   330→        inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH * 3)
+   331→        -- v2.0.87: Sentry MK3 now gets +10 base DMG (35 total). Combined with
+   332→        -- rockets (50 dmg) and the x2_damage skill, MK3 sentry is now a
+   333→        -- meaningful upgrade over MK2 for combat investment.
+   334→        inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE + 10)
+   335→        inst.AnimState:PlayAnimation("upgrade3")
+   336→        inst.AnimState:PushAnimation("idle_loop_3", true)
+   337→        if item ~= nil then
+   338→            inst.components.inventory:DropItem(item)
+   339→            EquipWeapon(inst)
+   340→        end
+   341→        -- Activate MK3 affinity system
+   342→        if inst._SetupMK3Affinity then
+   343→            inst._SetupMK3Affinity(inst)
+   344→        end
+   345→    end
+   346→end
+   347→
+   348→local function onpreload(inst, data)
+   349→    inst.maker = data.maker
+   350→end
+   351→
+   352→local function onsave(inst, data)
+   353→    data.upgradelevel = inst.upgradelevel
+   354→    data.ammo = inst.ammo
+   355→        data.turretID = inst.turretID
+   356→    data.maker = inst.maker
+   357→    if inst.components.named then
+   358→        data.name = inst.components.named.name
+   359→    end
+   360→end
+   361→
+   362→local function onload(inst, data)
+   363→    inst.upgradelevel = data.upgradelevel
+   364→    inst.ammo = data.ammo
+   365→        inst.turretID = data.turretID
+   366→    inst.maker = data.maker or inst.maker
+   367→    if data.name and inst.components.named then
+   368→        inst.components.named:SetName(data.name)
+   369→    end
+   370→    upgrade(inst)
+   371→    -- v2.0.61: restore the MK3 tag for pre-existing MK3 sentries (the tag is
+   372→    -- normally added when upgradelevel hits 70 via wrench, but a sentry that
+   373→    -- was already MK3 before this version needs it on load for the x2-Damage
+   374→    -- count scaling to work).
+   375→    if inst.upgradelevel and inst.upgradelevel >= 70 then
+   376→        inst:AddTag("william_sentry_mk3")
+   377→    end
+   378→end
+   379→
+   380→local function onbuilt(inst, builder)
+   381→        if builder and builder.engieID then
+   382→                -- builder.engieID logged
+   383→                inst.turretID = builder.engieID
+   384→                builder:PushEvent("engiebuilding")
+   385→                if builder.components.talker ~= nil then
+   386→                        builder.components.talker:Say(_G.GetString(builder, "ANNOUNCE_SENTRYBUILT"))
+   387→                end
+   388→                local new_name = _G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = builder.name })
+   389→                inst.components.named:SetName(new_name)
+   390→                inst.components.entitytracker:TrackEntity("builder", builder)
+   391→        end
+   392→        inst.maker = builder.name
+   393→    inst.AnimState:PlayAnimation("place")
+   394→    inst.AnimState:PushAnimation("idle_loop", true)
+   395→--    inst.components.named:SetName("Sentry Gun Lvl.1".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health " )
+   396→    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   397→end
+   398→
+   399→local function IsScrap(item)
+   400→    return item.prefab == "scrap"
+   401→end
+   402→
+   403→local function IsGunpowder(item)
+   404→    return item.prefab == "gunpowder"
+   405→end
+   406→
+   407→local function workup(inst, worker)
+   408→    local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   409→    if scrapstack ~= nil then
+   410→        local next_level = inst.upgradelevel + 1
+   411→        if next_level == 30 and not _G.WagstaffHasSkill(worker, "wagstaff_sentry_mk2") then
+   412→            if worker.components.talker then
+   413→                worker.components.talker:Say("Requires Sentry Mk.2 skill!")
+   414→            end
+   415→            return
+   416→        end
+   417→        if next_level == 70 and not _G.WagstaffHasSkill(worker, "wagstaff_sentry_mk3") then
+   418→            if worker.components.talker then
+   419→                worker.components.talker:Say("Requires Sentry Mk.3 skill!")
+   420→            end
+   421→            return
+   422→        end
+   423→        local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   424→        if upgrade_cost > 0 then
+   425→            worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
+   426→        end
+   427→        inst.upgradelevel = inst.upgradelevel + 1
+   428→        if inst.upgradelevel == 30 then
+   429→            inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   430→            upgrade(inst)
+   431→        elseif inst.upgradelevel == 70 then
+   432→            inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   433→            upgrade(inst)
+   434→            -- v2.0.61: tag MK3 sentries so nearby sentries can count them for
+   435→            -- the x2-Damage proc scaling.
+   436→            inst:AddTag("william_sentry_mk3")
+   437→        end
+   438→    end
+   439→        local builder = (inst.components.entitytracker and inst.components.entitytracker:GetEntity("builder")) or nil
+   440→        if builder or inst.maker then
+   441→                if inst:HasTag("lvl1") or inst:HasTag("lvl2") then
+   442→                inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ".."\n Upgrade Progress "..inst.upgradelevel.." / 70", { builder = inst.maker }))
+   443→                elseif inst:HasTag("lvl3") then
+   444→                inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = inst.maker }))
+   445→                end
+   446→        else
+   447→                if inst:HasTag("lvl1") or inst:HasTag("lvl2") then
+   448→                        inst.components.named:SetName("Sentry Gun".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ".."\n Upgrade Progress "..inst.upgradelevel.." / 70" )
+   449→                elseif inst:HasTag("lvl3") then
+   450→                        inst.components.named:SetName("Sentry Gun".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health " )
+   451→                end
+   452→        end
+   453→end
+   454→
+   455→local function onhammered(inst)
+   456→    inst.components.lootdropper:DropLoot()
+   457→    local fx = _G.SpawnPrefab("collapse_small")
+   458→    fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+   459→    fx:SetMaterial("metal")
+   460→    inst:Remove()
+   461→    for k,v in pairs(_G.Ents) do
+   462→        if v and v.engieID == inst.turretID then
+   463→                v:PushEvent("engiebuilding")
+   464→        end
+   465→    end
+   466→end
+   467→
+   468→local function onhit(inst, worker)
+   469→    if not (worker:HasTag("engie") or worker:HasTag("spy") or worker:HasTag("engie_pardner")) then
+   470→        inst.components.workable:SetWorkLeft(8)
+   471→        return
+   472→    end
+   473→
+   474→    if inst:HasTag("lvl1") then
+   475→        inst.AnimState:PlayAnimation("hit")
+   476→    end
+   477→    if inst:HasTag("lvl2") then
+   478→        inst.AnimState:PlayAnimation("hit2")
+   479→    end
+   480→    if inst:HasTag("lvl3") then
+   481→        inst.AnimState:PlayAnimation("hit3")
+   482→    end
+   483→end
+   484→
+   485→-- Wrench interaction: repair, reload, and upgrade via engieworkable
+   486→local function OnWrenchWork(inst, worker)
+   487→    -- Hit animation
+   488→    if inst:HasTag("lvl1") then
+   489→        inst.AnimState:PlayAnimation("hit")
+   490→    elseif inst:HasTag("lvl2") then
+   491→        inst.AnimState:PlayAnimation("hit2")
+   492→    elseif inst:HasTag("lvl3") then
+   493→        inst.AnimState:PlayAnimation("hit3")
+   494→    end
+   495→
+   496→    -- Use wrench durability
+   497→    if worker.replica.inventory ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).prefab == "tf2wrench" then
+   498→        worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).components.finiteuses:Use(1)
+   499→    end
+   500→
+   501→    local gpstack = worker.components.inventory:FindItem(IsGunpowder)
+   502→    local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   503→
+   504→    -- Repair health first
+   505→    if inst.components.health.currenthealth < inst.components.health.maxhealth and scrapstack ~= nil then
+   506→        local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   507→        if repair_cost > 0 then
+   508→            worker.components.inventory:ConsumeByName("scrap", repair_cost)
+   509→        end
+   510→        inst.components.health.currenthealth = inst.components.health.currenthealth + _G.TUNING.SENTRY_WRENCH_HEAL
+   511→        if inst.components.health.currenthealth > inst.components.health.maxhealth then
+   512→            inst.components.health.currenthealth = inst.components.health.maxhealth
+   513→        end
+   514→        OnNameDelta(inst)
+   515→        return
+   516→    end
+   517→
+   518→    -- Reload with gunpowder
+   519→    if gpstack ~= nil then
+   520→        if inst:HasTag("lvl1") and inst.ammo < 100 then
+   521→            worker.components.inventory:ConsumeByName("gunpowder", 1)
+   522→            inst.ammo = inst.ammo + 10
+   523→            inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   524→            if inst.ammo >= 100 then
+   525→                inst.ammo = 100
+   526→            end
+   527→            OnNameDelta(inst)
+   528→            return
+   529→        end
+   530→        if inst:HasTag("lvl2") and inst.ammo < 200 then
+   531→            worker.components.inventory:ConsumeByName("gunpowder", 1)
+   532→            inst.ammo = inst.ammo + 20
+   533→            inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   534→            if inst.ammo >= 200 then
+   535→                inst.ammo = 200
+   536→            end
+   537→            OnNameDelta(inst)
+   538→            return
+   539→        end
+   540→        if inst:HasTag("lvl3") and inst.ammo < 300 then
+   541→            worker.components.inventory:ConsumeByName("gunpowder", 1)
+   542→            inst.ammo = inst.ammo + 30
+   543→            inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   544→            if inst.ammo >= 300 then
+   545→                inst.ammo = 300
+   546→            end
+   547→            OnNameDelta(inst)
+   548→            return
+   549→        end
+   550→    end
+   551→
+   552→    -- Reload with scrap
+   553→    if scrapstack ~= nil then
+   554→        if inst:HasTag("lvl1") and inst.ammo < 100 then
+   555→            local reload_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   556→            if reload_cost > 0 then
+   557→                worker.components.inventory:ConsumeByName("scrap", reload_cost)
+   558→            end
+   559→            inst.ammo = inst.ammo + 5
+   560→            inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   561→            if inst.ammo >= 100 then
+   562→                inst.ammo = 100
+   563→            end
+   564→            OnNameDelta(inst)
+   565→            return
+   566→        end
+   567→        if inst:HasTag("lvl2") and inst.ammo < 200 then
+   568→            local reload_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   569→            if reload_cost > 0 then
+   570→                worker.components.inventory:ConsumeByName("scrap", reload_cost)
+   571→            end
+   572→            inst.ammo = inst.ammo + 10
+   573→            inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   574→            if inst.ammo >= 200 then
+   575→                inst.ammo = 200
+   576→            end
+   577→            OnNameDelta(inst)
+   578→            return
+   579→        end
+   580→        if inst:HasTag("lvl3") and inst.ammo < 300 then
+   581→            local reload_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   582→            if reload_cost > 0 then
+   583→                worker.components.inventory:ConsumeByName("scrap", reload_cost)
+   584→            end
+   585→            inst.ammo = inst.ammo + 15
+   586→            inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   587→            if inst.ammo >= 300 then
+   588→                inst.ammo = 300
+   589→            end
+   590→            OnNameDelta(inst)
+   591→            return
+   592→        end
+   593→    end
+   594→
+   595→    -- Upgrade if health full and ammo full
+   596→    if not inst:HasTag("NOLEVEL") and not inst:HasTag("lvl3") and scrapstack ~= nil then
+   597→        inst.tick = 0
+   598→        while inst.tick ~= 5 and not inst:HasTag("lvl3") do
+   599→            workup(inst, worker)
+   600→            inst.tick = inst.tick + 1
+   601→        end
+   602→    end
+   603→end
+   604→
+   605→local function resetrockets(inst)
+   606→    if inst.rockettask == nil then
+   607→        inst.rockettask = inst:DoTaskInTime(5, function(inst)
+   608→            inst:AddTag("rocketsready")
+   609→            inst.rockettask:Cancel()
+   610→            inst.rockettask = nil
+   611→        end)
+   612→    end
+   613→end
+   614→
+   615→local function ondeath(inst)
+   616→        for k,v in pairs(_G.Ents) do
+   617→                if v and v.engieID == inst.turretID then
+   618→                        v:PushEvent("engiebuilding")
+   619→                        if v.components.sanity ~= nil then
+   620→                                v.components.sanity:DoDelta(-_G.TUNING.ENGIE_BUILDINGLOSS)
+   621→                        end
+   622→                        if v.components.talker ~= nil then
+   623→                                v.components.talker:Say(_G.GetString(v, "ANNOUNCE_SENTRY_DOWN"))
+   624→                        end
+   625→                end
+   626→        end
+   627→end
+   628→
+   629→local function onremoved(inst)
+   630→        for k,v in pairs(_G.Ents) do
+   631→                if v and v.engieID == inst.turretID then
+   632→                        v:PushEvent("engiebuilding")
+   633→                end
+   634→        end
+   635→end
+   636→
+   637→local function onunequip(inst, owner)
+   638→    owner.AnimState:ClearOverrideSymbol("swap_body")
+   639→    if owner.components.health ~= nil and
+   640→    not owner.components.health:IsDead() then
+   641→        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_REPLANTING"))
+   642→        end
+   643→
+   644→    inst.SoundEmitter:PlaySound("dontstarve/common/birdcage_craft")
+   645→
+   646→        if inst:HasTag("lvl1") then
+   647→        inst.AnimState:PlayAnimation("place")
+   648→        inst.SoundEmitter:PlaySound("dontstarve/common/researchmachine_lvl1_place")
+   649→    end
+   650→    if inst:HasTag("lvl2") then
+   651→        inst.AnimState:PlayAnimation("upgrade2")
+   652→        inst.SoundEmitter:PlaySound("dontstarve/common/researchmachine_lvl2_place")
+   653→    end
+   654→    if inst:HasTag("lvl3") then
+   655→        inst.AnimState:PlayAnimation("upgrade2")
+   656→        inst.AnimState:PlayAnimation("upgrade3", false)
+   657→--      inst.AnimState:PushAnimation("upgrade2")
+   658→--      inst.AnimState:PushAnimation("upgrade3", false)
+   659→        inst.SoundEmitter:PlaySound("dontstarve/common/researchmachine_lvl3_place")
+   660→    end
+   661→end
+   662→
+   663→local function onequip(inst, owner)
+   664→        owner.AnimState:OverrideSymbol("swap_body", "swap_engie_building", "swap_body")
+   665→        if owner.components.talker ~= nil then
+   666→        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_PACKINGUP"))
+   667→        end
+   668→end
+   669→
+   670→local function fn()
+   671→    local inst = _G.CreateEntity()
+   672→
+   673→    inst.entity:AddTransform()
+   674→    inst.entity:AddAnimState()
+   675→    inst.entity:AddSoundEmitter()
+   676→    inst.entity:AddMiniMapEntity()
+   677→    inst.entity:AddLight()
+   678→    inst.entity:AddNetwork()
+   679→    inst.MiniMapEntity:SetIcon("esentry.tex")
+   680→    _G.MakeObstaclePhysics(inst, 1)
+   681→
+   682→    inst.no_wet_prefix = true
+   683→
+   684→
+   685→    inst.AnimState:SetBank("esentry")
+   686→    inst.AnimState:SetBuild("esentry")
+   687→    inst.AnimState:PlayAnimation("idle_loop", true)
+   688→
+   689→    inst:AddTag("structure")
+   690→    inst:AddTag("eyeturret")
+   691→    inst:AddTag("companion")
+   692→    inst:AddTag("esentry")
+   693→    inst:AddTag("lvl1")
+   694→    inst:AddTag("ebuild")
+   695→        inst:AddTag("ebuild_wrenchable")
+   696→        inst:AddTag("nonpotatable")
+   697→    inst:AddTag("heavy")
+   698→
+   699→    inst.entity:SetPristine()
+   700→
+   701→    if not TheWorld.ismastersim then
+   702→        return inst
+   703→    end
+   704→
+   705→    inst:AddComponent("inventory")
+   706→    inst:AddComponent("inspectable")
+   707→    inst:AddComponent("lootdropper")
+   708→    inst:AddComponent("named")
+   709→    inst.components.named:SetName("Sentry Gun")
+   710→        inst:AddComponent("entitytracker")-- This is for unique names, not IDs
+   711→
+   712→    inst:AddComponent("engieworkable")
+   713→    inst.components.engieworkable:SetWorkAction(_G.ACTIONS.ENGIEWORKABLE)
+   714→    inst.components.engieworkable:SetMaxWork(1)
+   715→    inst.components.engieworkable:SetWorkLeft(1)
+   716→    inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+   717→        -- Hit animation
+   718→        if inst:HasTag("lvl1") then
+   719→            inst.AnimState:PlayAnimation("hit")
+   720→        elseif inst:HasTag("lvl2") then
+   721→            inst.AnimState:PlayAnimation("hit2")
+   722→        elseif inst:HasTag("lvl3") then
+   723→            inst.AnimState:PlayAnimation("hit3")
+   724→        end
+   725→    end)
+   726→    inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+   727→        inst.components.engieworkable:SetWorkLeft(1)
+   728→        OnWrenchWork(inst, worker)
+   729→    end)
+   730→
+   731→    inst:AddComponent("lighttweener")
+   732→    inst.components.lighttweener:StartTween(inst.Light, 0, .65, .7, {251/255, 234/255, 234/255}, 0, lighttweencb)
+   733→
+   734→    inst:AddComponent("health")
+   735→    inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH)
+   736→    inst.components.health.canheal = false
+   737→
+   738→    inst:AddComponent("combat")
+   739→    inst.components.combat:SetRange(_G.SENTRY_RANGE)
+   740→    inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE)
+   741→    inst.components.combat:SetAttackPeriod(_G.SENTRY_ROF)
+   742→    inst.components.combat:SetRetargetFunction(0, retargetfn)
+   743→    inst.components.combat:SetKeepTargetFunction(shouldKeepTarget)
+   744→
+   745→    inst:AddComponent("workable")
+   746→    inst.components.workable:SetWorkAction(_G.ACTIONS.HAMMER)
+   747→--    inst.components.workable:SetMaxWork(4)
+   748→    inst.components.workable:SetWorkLeft(8)
+   749→    inst.components.workable:SetOnFinishCallback(onhammered)
+   750→    inst.components.workable:SetOnWorkCallback(onhit)
+   751→    inst.components.workable.destroyed = "NODESTROY" --Hack to prevent workable:Destroy() only
+   752→
+   753→        inst:AddComponent("symbolswapdata")
+   754→        inst.components.symbolswapdata:SetData("swap_engie_building", "swap_body")
+   755→
+   756→    _G.MakeHauntableFreeze(inst)
+   757→
+   758→
+   759→    inst:SetStateGraph("SGesentry")
+   760→    inst:SetBrain(brain)
+   761→
+   762→    inst.LaunchProjectile = LaunchProjectile
+   763→
+   764→    -- Affinity system (MK3 only - activated when upgrade reaches lvl3)
+   765→    inst._affinity_setup_done = false
+   766→    local function GetSentryOwner(inst)
+   767→        local x, y, z = inst.Transform:GetWorldPosition()
+   768→        local players = TheSim:FindEntities(x, y, z, 40, {"player"})
+   769→        for _, p in ipairs(players) do
+   770→            if p.turretID == inst.turretID or (inst.turretID and p.engieID == inst.turretID) then
+   771→                return p
+   772→            end
+   773→        end
+   774→        for _, p in ipairs(players) do
+   775→            if p:HasTag("wagstaff_celestial_possession") or p:HasTag("wagstaff_shadow_possession") or p:HasTag("wagstaff_x2_damage") then
+   776→                return p
+   777→            end
+   778→        end
+   779→        return nil
+   780→    end
+   781→
+   782→    -- v2.0.87: Use combat component's actual damage instead of raw SENTRY_DAMAGE
+   783→    -- constant, so MK3 affinity bonus is calculated from the tier-scaled value (35)
+   784→    -- instead of the base (25).
+   785→    local base_dmg = inst.components.combat.defaultdamage
+   786→    local function SetupMK3Affinity(inst)
+   787→        if inst._affinity_setup_done then return end
+   788→        inst._affinity_setup_done = true
+   789→
+   790→        AffinityPulse.Setup(inst, GetSentryOwner)
+   791→
+   792→        -- v2.0.43: Ramp state. The periodic task below only SETS the affinity
+   793→        -- type flag + x2 flag — the actual damage logic lives in a SINGLE
+   794→        -- onhitotherfn set once here (no more swapping onhitotherfn every
+   795→        -- tick, which was fragile and reset closures constantly).
+   796→        inst._aff_ramp_stacks = 0
+   797→        inst._aff_ramp_reset_task = nil
+   798→        inst._aff_type = nil         -- "celestial" | "shadow" | nil
+   799→        inst._aff_x2_damage = false  -- owner has wagstaff_x2_damage skill
+   800→
+   801→        -- Expose ramp helpers on the inst so esentry_rocket can call them
+   802→        -- (the rocket reads sentry._aff_type / calls sentry.BumpAffRamp etc.
+   803→        -- to apply the ramp bonus + x2 on rocket direct hits).
+   804→        inst.ResetAffRamp   = ResetAffRamp
+   805→        inst.BumpAffRamp    = BumpAffRamp
+   806→        inst.GetAffRampBonus = GetAffRampBonus
+   807→
+   808→        -- Unified onhitotherfn: handles ramp + x2 + FX for bullets.
+   809→        -- Fires on every bullet hit (the sentry's weapon projectile).
+   810→        inst.components.combat.onhitotherfn = function(i, other, dmg)
+   811→            if not other or not other:IsValid() then return end
+   812→            -- v2.0.51: adaptive affinity per-target. For single-affinity owners
+   813→            -- this resolves to _aff_type as before. For dual-affinity owners
+   814→            -- (rare) it picks the affinity matching THIS target's faction, so
+   815→            -- the ramp applies to whichever aligned mob is being hit.
+   816→            local aff = i._aff_type
+   817→            if i._owner_celestial and other:HasTag("shadow_aligned") then
+   818→                aff = "celestial"
+   819→            elseif i._owner_shadow and other:HasTag("lunar_aligned") then
+   820→                aff = "shadow"
+   821→            end
+   822→            local aligned_tag = GetAlignedTag(aff)
+   823→            local is_aligned = aligned_tag and other:HasTag(aligned_tag) or false
+   824→
+   825→            -- Ramp: bump + apply bonus damage ONLY on aligned hits.
+   826→            local ramp_bonus = 0
+   827→            if is_aligned then
+   828→                BumpAffRamp(i)
+   829→                ramp_bonus = GetAffRampBonus(i, dmg)
+   830→                if ramp_bonus > 0 and other.components.health then
+   831→                    other.components.health:DoDelta(-ramp_bonus, false, "affinity_ramp")
+   832→                end
+   833→                -- Bullet hit FX (brightsmithy sparkle / shadowcraft spike).
+   834→                if WagstaffAffFX and WagstaffAffFX.HitFX then
+   835→                    WagstaffAffFX.HitFX(other, aff)
+   836→                end
+   837→            end
+   838→
+   839→            -- x2-Damage (v2.0.61 rework): 4% base + 2.5% per nearby MK3 sentry,
+   840→            -- with a 4s per-target cooldown so a single enemy can't be melted
+   841→            -- by back-to-back procs. Doubles the CURRENT total (base dmg + ramp).
+   842→            if i._aff_x2_damage then
+   843→                local cd_until = other._william_x2_cd or 0
+   844→                if GetTime() >= cd_until then
+   845→                    local chance = i._x2_proc_chance or AFF_X2_BASE_CHANCE
+   846→                    if math.random() < chance then
+   847→                        local total = dmg + ramp_bonus
+   848→                        if other.components.health then
+   849→                            other.components.health:DoDelta(-total, false, "x2_damage")
+   850→                        end
+   851→                        other._william_x2_cd = GetTime() + AFF_X2_TARGET_CD
+   852→                    end
+   853→                end
+   854→            end
+   855→        end
+   856→
+   857→        -- Reset the ramp when the sentry gets hit (mirror shadow_battleaxe design:
+   858→        -- ramp rewards sustained offense, getting hit punishes it).
+   859→        inst:ListenForEvent("attacked", function(i)
+   860→            ResetAffRamp(i)
+   861→        end)
+   862→
+   863→        -- Periodic task: refresh the affinity type + x2 flag from the owner
+   864→        -- and the world phase. No more onhitotherfn swapping.
+   865→        -- v2.0.51: Removed the day/dusk phase lock. The sentry is a STATIC
+   866→        -- defensive turret — locking its affinity to one phase of day made it
+   867→        -- useless half the time (e.g. the shadow sentry only fought
+   868→        -- lunar-aligned at dusk, but you explore the lunar island by day; the
+   869→        -- celestial sentry only fought shadow-aligned by day, but shadow rifts
+   870→        -- invade at night). Affinity is now active 24/7 based on the owner's
+   871→        -- possession tag. The affinity defines WHO the sentry fights (enemy
+   872→        -- faction), not WHEN — consistent with the Brute taunt (v2.0.48).
+   873→        inst:DoPeriodicTask(1, function()
+   874→            local owner = GetSentryOwner(inst)
+   875→            local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
+   876→            local shadow    = owner and owner:HasTag("wagstaff_shadow_possession")
+   877→            inst._aff_x2_damage = owner and owner:HasTag("wagstaff_x2_damage") or false
+   878→            -- Cache owner affinity flags for the adaptive onhitotherfn.
+   879→            inst._owner_celestial = celestial or false
+   880→            inst._owner_shadow = shadow or false
+   881→
+   882→            -- v2.0.61: Refresh the nearby MK3 sentry count (used by the x2-Damage
+   883→            -- proc scaling). Scanned every 3 ticks (3s) instead of every tick to
+   884→            -- keep the FindEntities cost low when multiple sentries are deployed.
+   885→            -- Counts self + other MK3 sentries within 25 units (base cluster range).
+   886→            inst._count_tick = (inst._count_tick or 0) + 1
+   887→            if inst._count_tick >= 3 then
+   888→                inst._count_tick = 0
+   889→                if inst._aff_x2_damage then
+   890→                    local x, y, z = inst.Transform:GetWorldPosition()
+   891→                    local sentries = TheSim:FindEntities(x, y, z, 25, {"william_sentry_mk3"}, {"INLIMBO"})
+   892→                    inst._mk3_sentry_count = #sentries
+   893→                    -- v2.0.61: cache the computed proc chance so the bullet
+   894→                    -- onhitotherfn AND esentry_rocket read the same value.
+   895→                    inst._x2_proc_chance = AFF_X2_BASE_CHANCE + AFF_X2_PER_MK3_BONUS * (inst._mk3_sentry_count or 1)
+   896→                else
+   897→                    inst._mk3_sentry_count = nil
+   898→                    inst._x2_proc_chance = nil
+   899→                end
+   900→            end
+   901→
+   902→            -- Sight tags let the sentry DETECT aligned mobs (which have stealth
+   903→            -- against normal observers). Set whichever matches the owner's
+   904→            -- path(s). Dual-affinity owners get both sight tags so they can
+   905→            -- see both factions.
+   906→            if celestial then
+   907→                inst:AddTag("shadowaligned_sight")
+   908→            else
+   909→                inst:RemoveTag("shadowaligned_sight")
+   910→            end
+   911→            if shadow then
+   912→                inst:AddTag("lunarcurse_sight")
+   913→            else
+   914→                inst:RemoveTag("lunarcurse_sight")
+   915→            end
+   916→
+   917→            -- Default affinity for FX/fallback. For dual-affinity owners the
+   918→            -- onhitotherfn picks the matching affinity per-target, so this
+   919→            -- default only affects non-aligned hits (no ramp anyway).
+   920→            -- Priority: celestial > shadow (arbitrary but deterministic).
+   921→            local new_aff
+   922→            if celestial then
+   923→                new_aff = "celestial"
+   924→            elseif shadow then
+   925→                new_aff = "shadow"
+   926→            end
+   927→
+   928→            -- If affinity changed (owner switched path / first setup), reset
+   929→            -- the ramp so stale stacks don't carry over.
+   930→            if new_aff ~= inst._aff_type then
+   931→                inst._aff_type = new_aff
+   932→                ResetAffRamp(inst)
+   933→            end
+   934→        end)
+   935→    end
+   936→
+   937→    -- Hook into upgrade to detect MK3
+   938→    local old_upgrade = upgrade
+   939→    local _upgrade_orig = upgrade
+   940→    inst._SetupMK3Affinity = SetupMK3Affinity
+   941→    inst:ListenForEvent("ms_save", function() end) -- placeholder to keep inst ref
+   942→    -- Patch: after upgrade() runs and lvl3 tag is added, setup affinity
+   943→    local _old_onload = inst.OnLoad
+   944→    inst.OnLoad = function(inst, data)
+   945→        if _old_onload then _old_onload(inst, data) end
+   946→        if inst:HasTag("lvl3") then
+   947→            inst._SetupMK3Affinity(inst)
+   948→        end
+   949→    end
+   950→
+   951→    inst.OnSave = onsave
+   952→    inst.OnLoad = onload
+   953→        inst.OnPreLoad = onpreload
+   954→    inst.OnBuiltFn = onbuilt
+   955→
+   956→    inst:ListenForEvent("attacked", OnAttacked)
+   957→    inst:ListenForEvent("rocketsshot", resetrockets)
+   958→    inst:ListenForEvent("checkwep", EquipWeapon)
+   959→    inst:ListenForEvent("healthdelta", OnNameDelta)
+   960→        inst:ListenForEvent("death", ondeath)
+   961→        inst:ListenForEvent("onsink", ondeath) --Cheat
+   962→        inst:ListenForEvent("onremove", onremoved)
+   963→--      inst:ListenForEvent("ondeconstructstructure", onremoved)
+   964→
+   965→        inst.maker = 0
+   966→    inst.dotweenin = dotweenin
+   967→    inst.upgradelevel = 0
+   968→    inst.ammo = 100
+   969→    inst.checkammo = inst:DoPeriodicTask(.1, function(inst)
+   970→        if inst.ammo == 0 then
+   971→            if math.random() > .90 then
+   972→                local x,y,z = inst.Transform:GetWorldPosition()
+   973→                _G.SpawnPrefab("sparks").Transform:SetPosition(x + math.random(), 1.75, z + math.random())
+   974→            end
+   975→        end
+   976→    end)
+   977→        ---------------------------------------
+   978→    inst:AddComponent("inventoryitem")
+   979→    inst.components.inventoryitem.atlasname = _G.ENGINEERITEMIMAGES
+   980→    inst.components.inventoryitem.cangoincontainer = false
+   981→    inst.components.inventoryitem:SetSinks(true)
+   982→        inst.components.inventoryitem.nobounce = true
+   983→        inst.components.inventoryitem.imagename = "esentry_item"        
+   984→    if inst.replica.inventoryitem then
+   985→        if inst.replica.inventoryitem.SetAtlas then
+   986→            inst.replica.inventoryitem:SetAtlas(_G.ENGINEERITEMIMAGES)
+   987→        end
+   988→        inst.replica.inventoryitem:SetImage("esentry_item")
+   989→    end
+   990→
+   991→        inst:AddComponent("heavyobstaclephysics")
+   992→    inst.components.heavyobstaclephysics:SetRadius(1)
+   993→    inst.components.heavyobstaclephysics:MakeSmallObstacle()
+   994→
+   995→        inst:AddComponent("equippable")
+   996→    inst.components.equippable.equipslot = _G.EQUIPSLOTS.BODY
+   997→    inst.components.equippable:SetOnEquip(onequip)
+   998→    inst.components.equippable:SetOnUnequip(onunequip)
+   999→    inst.components.equippable.walkspeedmult = _G.TUNING.TOOLBOX_SPEED_MULT--HEAVY_SPEED_MULT
+  1000→        inst.components.equippable.restrictedtag = "engie"
+  1001→    ---------------------------------------
+  1002→    return inst
+  1003→end
+  1004→
+  1005→return _G.Prefab("esentry", fn, assets, prefabs)--,
+  1006→--      MakePlacer("common/esentry_placer", "esentry_item", "esentry_item", "idle")
+  1007→

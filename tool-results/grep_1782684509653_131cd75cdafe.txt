@@ -1,0 +1,243 @@
+/home/z/my-project/WagstaffMod-fork/wagstaff_skill_helpers.lua:61:-- Publish these functions to GLOBAL so they can be accessed with _G.WagstaffHasSkill()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:39:local AffinityPulse = _G.AffinityPulse
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:43:local _dbg  = _G.WagstaffDbg  or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:44:local _dbgF = _G.WagstaffDbgF or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:626:    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:785:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:812:            local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:842:            local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, base_cost)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:1098:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:1117:            if not _G.WagstaffHasSkill(worker, "wagstaff_thermal_upgrade_mk3") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:1135:            local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_butler.lua:1374:            local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:4:local AffinityPulse = _G.AffinityPulse
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:86:-- but fuel/mineral/rare/night called _G.weighted_random_choice which DOES NOT EXIST
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:149:            local fx = _G.SpawnPrefab("ehealfx")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:201:            builder.components.talker:Say(_G.GetString(builder, "ANNOUNCE_DISPENSERBUILT"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:253:                local players = _G.TheSim:FindEntities(x, y, z, 40, {"player"})
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:276:                proximity_range = _G.TUNING.DISP_RANGE,  -- 4 units = aura radius
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:304:                        in_aura = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:311:                        inst._healfx = _G.SpawnPrefab("ehealfx")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:355:            inst:DoPeriodicTask(_G.TUNING.DISP_HEALING, function()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:416:                    local in_range = inst:GetDistanceSqToInst(builder) <= (_G.TUNING.DISP_RANGE * _G.TUNING.DISP_RANGE)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:466:            inst.components.named:SetName(_G.subfmt("Dispenser built by {builder}\n(Level 3) Fuel: "..fuel.."/"..inst.components.fueled.maxfuel, { builder = inst.maker }))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:468:            inst.components.named:SetName(_G.subfmt("Dispenser built by {builder}\nUpgrade "..inst.upgradelevel.." / 70 | Fuel: "..fuel.."/"..inst.components.fueled.maxfuel, { builder = inst.maker }))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:487:        if next_level == 30 and not _G.WagstaffHasSkill(worker, "wagstaff_dispenser_mk2") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:493:        if next_level == 70 and not _G.WagstaffHasSkill(worker, "wagstaff_dispenser_mk3") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:499:        local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:513:    local fx = _G.SpawnPrefab("collapse_small")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:517:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:521:                v.components.sanity:DoDelta(-_G.TUNING.ENGIE_BUILDINGLOSS)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:524:                v.components.talker:Say(_G.GetString(v, "ANNOUNCE_DISPENSER_DOWN"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:555:    if worker.replica.inventory ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).prefab == "tf2wrench" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:556:        worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).components.finiteuses:Use(1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:562:        local refuel_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:588:                if _G.TheWorld.state.isday then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:607:                if _G.TheWorld.state.isday or _G.TheWorld.state.isdusk then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:632:                if _G.TheWorld.state.isday or _G.TheWorld.state.isdusk or _G.TheWorld.state.isnight then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:652:                    if _G.TheWorld.state.isnight then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:664:                        if _G.TheWorld.state.isday and builder:HasTag("wagstaff_celestial_possession") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:669:                        elseif _G.TheWorld.state.isdusk and builder:HasTag("wagstaff_shadow_possession") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:709:    if _G.TheWorld:HasTag("cave") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:712:    if not _G.TheWorld:HasTag("cave") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:717:        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_REPLANTING"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:742:    if _G.TheWorld:HasTag("cave") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:745:    if not _G.TheWorld:HasTag("cave") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:752:        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_PACKINGUP"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:757:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:765:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:775:    _G.MakeObstaclePhysics(inst, .4)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:795:    if not _G.TheWorld.ismastersim then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:806:    inst.components.engieworkable:SetWorkAction(_G.ACTIONS.ENGIEWORKABLE)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:835:    inst.components.workable:SetWorkAction(_G.ACTIONS.HAMMER)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:859:    inst.components.inventoryitem.atlasname = _G.ENGINEERITEMIMAGES
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:866:            inst.replica.inventoryitem:SetAtlas(_G.ENGINEERITEMIMAGES)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:876:    inst.components.equippable.equipslot = _G.EQUIPSLOTS.BODY
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:879:    inst.components.equippable.walkspeedmult = _G.TUNING.TOOLBOX_SPEED_MULT
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:882:    if _G.TheWorld:HasTag("cave") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:885:    if not _G.TheWorld:HasTag("cave") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:890:    _G.MakeHauntableFreeze(inst)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:896:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:920:return _G.Prefab("common/dispenser", fn, assets, prefabs),
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/dispenser.lua:921:    _G.Prefab("ehealfx", healfxfn, assets)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:13:local _dbg  = _G.WagstaffDbg  or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:14:local _dbgF = _G.WagstaffDbgF or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:66:local AffinityPulse = _G.AffinityPulse
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:572:    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:806:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:836:                local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_ballistic_evolve")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:857:                local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:911:            local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:1013:            local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_ballistic_mk3")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:1029:                local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:1091:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_ballistic.lua:1804:            local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:32:	local finishfx = _G.SpawnPrefab("deer_fire_burst")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:39:    inst.ringfx = _G.SpawnPrefab("eteleringenter")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:43:	inst.ring2fx = _G.SpawnPrefab("eteleringenter")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:49:	inst.tefx = _G.SpawnPrefab("ehealfx")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:57:            inst.ringfx = _G.SpawnPrefab("eteleringenter")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:61:			inst.ring2fx = _G.SpawnPrefab("eteleringenter")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:100:			builder.components.talker:Say(_G.GetString(builder, "ANNOUNCE_TELEPORTERBUILT"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:102:		local new_name = _G.subfmt("Teleporter Entrance built by {builder}", { builder = builder.name })
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:112:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:133:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:153:    local fx = _G.SpawnPrefab("collapse_small")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:160:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:164:		v.components.sanity:DoDelta(-_G.TUNING.ENGIE_BUILDINGLOSS/1.5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:167:        v.components.talker:Say(_G.GetString(v, "ANNOUNCE_TELEPORTER_DOWN"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:181:    inst.fx = _G.SpawnPrefab("eshockfx")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:202:	owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_REPLANTING"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:222:        doer.components.sanity:DoDelta(-_G.TUNING.ETELEPORT_PENALTY)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:229:	for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:237:        local fx = _G.SpawnPrefab("collapse_small")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:248:	if guy.replica.inventory ~= nil and guy.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.BODY) ~= nil and guy.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.BODY).prefab == "eteleporter" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:263:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:301:    inst.components.inventoryitem.atlasname = _G.ENGINEERITEMIMAGES
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:307:            inst.replica.inventoryitem:SetAtlas(_G.ENGINEERITEMIMAGES)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:312:    inst.components.equippable.equipslot = _G.EQUIPSLOTS.BODY
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:315:    inst.components.equippable.walkspeedmult = _G.TUNING.TOOLBOX_SPEED_MULT
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:330:    inst.components.workable:SetWorkAction(_G.ACTIONS.HAMMER)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:338:    _G.MakeHauntableFreeze(inst) 
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:353:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:398:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:429:return _G.Prefab("eteleporter", fn, assets, prefabs),
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:430:	_G.Prefab("eshockfx", eshockfxfn, assets),
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:431:	_G.Prefab("eteleringenter", enterfn, assets),
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter.lua:432:	_G.MakePlacer("common/eteleporter_placer", "esentry_item", "esentry_item", "idle")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:20:local _dbg  = _G.WagstaffDbg  or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:21:local _dbgF = _G.WagstaffDbgF or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:63:local AffinityPulse = _G.AffinityPulse
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:662:    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:769:            local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:797:        local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_brute_evolve")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:813:        local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:1294:            local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_brute_mk3")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:1304:                local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:1375:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_brute.lua:1576:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:14:local _dbg  = _G.WagstaffDbg  or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:15:local _dbgF = _G.WagstaffDbgF or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:49:local AffinityPulse = _G.AffinityPulse
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:657:    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:800:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:830:                local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_buster_evolve")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:852:                local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:910:            local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:1008:            local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_buster_mk3")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:1024:                local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:1089:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/william_buster.lua:1382:                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:6:local SENTRYROCKET_RADIUS = _G.TUNING.CANNONBALL_RADIUS
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:9:local SENTRYROCKET_DAMAGE = _G.TUNING.SENTRY_ROCKET_DAMAGE
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:11:local SENTRYROCKET_SPLASH_DAMAGE_PERCENT = _G.TUNING.CANNONBALL_SPLASH_DAMAGE_PERCENT -- 60% of SENTRYROCKET_DAMAGE
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:25:        local PVP_enabled = _G.TheNet:GetPVPEnabled()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:43:    if target:HasTag("player") and not _G.TheNet:GetPVPEnabled() then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:51:    if target:HasTag("monster") and not _G.TheNet:GetPVPEnabled() and 
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:94:    local targets = _G.TheSim:FindEntities(x, 0, z, SENTRYROCKET_RADIUS, nil, nil, MUST_ONE_OF_TAGS) -- Set y to zero to look for objects on the ground
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:157:                                        if not _G.SENTRY_FF_WALL == "noff" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:198:                inst.Physics:SetCollisionGroup(_G.COLLISION.CHARACTERS)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:200:        inst.Physics:CollidesWith(_G.COLLISION.GROUND)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:201:        inst.Physics:CollidesWith(_G.COLLISION.OBSTACLES)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry_rocket.lua:202:                inst.Physics:CollidesWith(_G.COLLISION.GIANTS)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/skilltree_wagstaff.lua:16:local _dbg  = _G.WagstaffDbg  or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/skilltree_wagstaff.lua:17:local _dbgF = _G.WagstaffDbgF or function(...) end
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:22:local AffinityPulse = _G.AffinityPulse
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:56:    local ok, inst = pcall(function() return _G.SpawnPrefab(name) end)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:101:-- v2.0.47 FIX: use rawget instead of _G.WagstaffAffFX to bypass strict.lua's
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:186:                        inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = inst.maker }))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:189:                        inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ".."\n Upgrade Progress "..inst.upgradelevel.." / 70", { builder = inst.maker }))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:191:                        inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = inst.maker }))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:202:        local angle = -inst.Transform:GetRotation() * _G.DEGREES
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:203:        local range = _G.SENTRY_RANGE
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:204:        local targetpos = _G.Vector3(x + math.cos(angle) * range, y, z + math.sin(angle) * range)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:205:    local projectile = _G.SpawnPrefab("esentry_rocket")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:211:    if inst.components.inventory and not inst.components.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:212:        local weapon = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:234:    for i, v in ipairs(_G.AllPlayers) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:240:    if _G.SENTRY_FF == "noff" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:242:    return _G.FindEntity(inst, _G.SENTRY_RANGE,
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:253:    elseif _G.SENTRY_FF == "yesff" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:254:    return _G.FindEntity(inst, _G.SENTRY_RANGE,
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:275:        and inst:IsNear(target, _G.SENTRY_RANGE)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:282:    if _G.SENTRY_FF == "noff" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:287:    elseif _G.SENTRY_FF == "yesff" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:307:    local item = inst.components.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) or nil
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:312:        inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH * 2)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:316:        inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE + 5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:330:        inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH * 3)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:334:        inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE + 10)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:386:                        builder.components.talker:Say(_G.GetString(builder, "ANNOUNCE_SENTRYBUILT"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:388:                local new_name = _G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = builder.name })
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:411:        if next_level == 30 and not _G.WagstaffHasSkill(worker, "wagstaff_sentry_mk2") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:417:        if next_level == 70 and not _G.WagstaffHasSkill(worker, "wagstaff_sentry_mk3") then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:423:        local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:442:                inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ".."\n Upgrade Progress "..inst.upgradelevel.." / 70", { builder = inst.maker }))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:444:                inst.components.named:SetName(_G.subfmt("Sentry Gun built by {builder}".."\n"..inst.ammo.." Rounds Remaining".."\n"..inst.components.health.currenthealth.." Health ", { builder = inst.maker }))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:457:    local fx = _G.SpawnPrefab("collapse_small")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:461:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:497:    if worker.replica.inventory ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS) ~= nil and worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).prefab == "tf2wrench" then
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:498:        worker.replica.inventory:GetEquippedItem(_G.EQUIPSLOTS.HANDS).components.finiteuses:Use(1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:506:        local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:510:        inst.components.health.currenthealth = inst.components.health.currenthealth + _G.TUNING.SENTRY_WRENCH_HEAL
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:555:            local reload_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:568:            local reload_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:581:            local reload_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:616:        for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:620:                                v.components.sanity:DoDelta(-_G.TUNING.ENGIE_BUILDINGLOSS)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:623:                                v.components.talker:Say(_G.GetString(v, "ANNOUNCE_SENTRY_DOWN"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:630:        for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:641:        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_REPLANTING"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:666:        owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_PACKINGUP"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:671:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:680:    _G.MakeObstaclePhysics(inst, 1)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:713:    inst.components.engieworkable:SetWorkAction(_G.ACTIONS.ENGIEWORKABLE)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:735:    inst.components.health:SetMaxHealth(_G.SENTRY_HEALTH)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:739:    inst.components.combat:SetRange(_G.SENTRY_RANGE)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:740:    inst.components.combat:SetDefaultDamage(_G.SENTRY_DAMAGE)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:741:    inst.components.combat:SetAttackPeriod(_G.SENTRY_ROF)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:746:    inst.components.workable:SetWorkAction(_G.ACTIONS.HAMMER)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:756:    _G.MakeHauntableFreeze(inst)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:973:                _G.SpawnPrefab("sparks").Transform:SetPosition(x + math.random(), 1.75, z + math.random())
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:979:    inst.components.inventoryitem.atlasname = _G.ENGINEERITEMIMAGES
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:986:            inst.replica.inventoryitem:SetAtlas(_G.ENGINEERITEMIMAGES)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:996:    inst.components.equippable.equipslot = _G.EQUIPSLOTS.BODY
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:999:    inst.components.equippable.walkspeedmult = _G.TUNING.TOOLBOX_SPEED_MULT--HEAVY_SPEED_MULT
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/esentry.lua:1005:return _G.Prefab("esentry", fn, assets, prefabs)--,
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:35:    inst.ringfx = _G.SpawnPrefab("eteleringexit")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:39:	inst.ring2fx = _G.SpawnPrefab("eteleringexit")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:46:	inst.tefx = _G.SpawnPrefab("ehealfx")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:88:			builder.components.talker:Say(_G.GetString(builder, "ANNOUNCE_TELEPORTERBUILT"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:90:		local new_name = _G.subfmt("Teleporter Exit built by {builder}", { builder = builder.name })
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:100:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:121:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:142:    local fx = _G.SpawnPrefab("collapse_small")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:149:    for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:153:		v.components.sanity:DoDelta(-_G.TUNING.ENGIE_BUILDINGLOSS/1.5)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:156:        v.components.talker:Say(_G.GetString(v, "ANNOUNCE_TELEPORTER_DOWN"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:169:    inst.fx = _G.SpawnPrefab("eshockfx")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:190:	owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_REPLANTING"))
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:206:	local readyfx = _G.SpawnPrefab("deer_fire_burst")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:212:	local angle = (135 + math.random() * 45) * _G.DEGREES * 1.1
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:215:	local bread = _G.SpawnPrefab("winter_food4")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:223:	for k,v in pairs(_G.Ents) do
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:231:        local fx = _G.SpawnPrefab("collapse_small")
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:239:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:282:    inst.components.workable:SetWorkAction(_G.ACTIONS.HAMMER)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:290:    _G.MakeHauntableFreeze(inst) 
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:302:    inst.components.inventoryitem.atlasname = _G.ENGINEERITEMIMAGES
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:308:            inst.replica.inventoryitem:SetAtlas(_G.ENGINEERITEMIMAGES)
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:313:    inst.components.equippable.equipslot = _G.EQUIPSLOTS.BODY
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:316:    inst.components.equippable.walkspeedmult = _G.TUNING.TOOLBOX_SPEED_MULT
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:345:    local inst = _G.CreateEntity()
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:376:return _G.Prefab("eteleporter_exit", fn, assets, prefabs),
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:377:	_G.Prefab("eteleringexit", exitfn, assets),
+/home/z/my-project/WagstaffMod-fork/scripts/prefabs/eteleporter_exit.lua:378:	_G.MakePlacer("common/eteleporter_exit_placer", "esentry_item", "esentry_item", "idle")
+/home/z/my-project/WagstaffMod-fork/imports/william_fuel.lua:315:-- Export to GLOBAL so prefab files can access it via _G.WILLIAM_FUEL
+/home/z/my-project/WagstaffMod-fork/scripts/components/engieworkable.lua:29:local EngieWorkable = _G.Class(function(self, inst)
+/home/z/my-project/WagstaffMod-fork/scripts/components/engieworkable.lua:35:    self.action = _G.ACTIONS.CHOP
+/home/z/my-project/WagstaffMod-fork/scripts/components/engieworkable.lua:117:    self.lastworktime = _G.GetTime()
+/home/z/my-project/WagstaffMod-fork/scripts/stategraphs/SGwilliamballistic.lua:182:                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BALLISTIC_DOWN"))
+/home/z/my-project/WagstaffMod-fork/scripts/stategraphs/SGwilliambutler.lua:510:                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BUTLER_DOWN"))
+/home/z/my-project/WagstaffMod-fork/scripts/stategraphs/SGwilliambrute.lua:304:                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BRUTE_DOWN"))
+/home/z/my-project/WagstaffMod-fork/scripts/stategraphs/SGwilliambuster.lua:247:                owner.components.talker:Say(_G.GetString(owner, "ANNOUNCE_BUSTER_DOWN"))

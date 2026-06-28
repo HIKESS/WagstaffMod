@@ -1,0 +1,2002 @@
+     1→     1→-- ============================================================================
+     2→     2→-- Wagstaff Standalone (Integrated) — modmain.lua
+     3→     3→-- Merges the clean Hamlet Characters Wagstaff (character + assets + scripts)
+     4→     4→-- WITH the Wagstaff Integration Patch features (skill tree, XP progression,
+     5→     5→-- William Toymaker bots, Engineer sentry/dispenser/eteleporter, augment +
+     6→     6→-- flicker actions, boss kill tracking).
+     7→     7→-- Skill XP uses DST's standard skill tree persistence (per-character profile).
+     8→     8→-- ============================================================================
+     9→     9→
+    10→    10→
+    11→    11→local G = GLOBAL
+    12→    12→
+    13→    13→-- Get rawset and rawget from the real global table
+    14→    14→local rawset = G.rawset
+    15→    15→local rawget = G.rawget
+    16→    16→
+    17→    17→-- Safe aliases for Lua base functions.
+    18→    18→--
+    19→    19→-- In DST mods, `modmain.lua` runs inside a sandbox environment (a copy of _G).
+    20→    20→-- Closures passed to DoTaskInTime / ListenForEvent / scheduler callbacks may,
+    21→    21→-- in certain runtime contexts, execute with an _ENV that does NOT expose the
+    22→    22→-- standard Lua builtins, causing `attempt to call global '<fn>' (a nil value)`
+    23→    23→-- crashes. Binding these functions as upvalues (captured at mod-load time, when
+    24→    24→-- the environment is still intact) makes every closure in this file immune to
+    25→    25→-- that problem. `G.<fn>` resolves against the real game `_G`, which always has
+    26→    26→-- these builtins; the `or <fn>` fallback preserves the previous behavior in the
+    27→    27→-- (theoretical) case where even `G.<fn>` is unavailable.
+    28→    28→--
+    29→    29→-- This fixes the crash at modmain.lua:2014:
+    30→    30→--   "attempt to call global 'pcall' (a nil value)"
+    31→    31→-- reported in a client-side DoTaskInTime callback.
+    32→    32→local pairs        = G.pairs        or pairs
+    33→    33→local ipairs       = G.ipairs       or ipairs
+    34→    34→local next         = G.next         or next
+    35→    35→local pcall        = G.pcall        or pcall
+    36→    36→local xpcall      = G.xpcall      or xpcall
+    37→    37→local tostring     = G.tostring     or tostring
+    38→    38→local tonumber     = G.tonumber     or tonumber
+    39→    39→local type         = G.type         or type
+    40→    40→local select       = G.select       or select
+    41→    41→local print        = G.print        or print
+    42→    42→local error        = G.error        or error
+    43→    43→local assert       = G.assert       or assert
+    44→    44→local setmetatable = G.setmetatable or setmetatable
+    45→    45→local getmetatable = G.getmetatable or getmetatable
+    46→    46→local unpack       = G.unpack       or unpack
+    47→    47→
+    48→    48→-- Safe table printer (circular-ref aware, depth-limited)
+    49→    49→local function tableToString(t, indent, depth, visited)
+    50→    50→    indent = indent or ""
+    51→    51→    depth = depth or 0
+    52→    52→    visited = visited or {}
+    53→    53→    if depth > 2 then return "<table depth limit>" end
+    54→    54→    if type(t) ~= "table" then return tostring(t) end
+    55→    55→    if visited[t] then return "<circular ref>" end
+    56→    56→    visited[t] = true
+    57→    57→    local result = "{"
+    58→    58→    local first = true
+    59→    59→    local count = 0
+    60→    60→    for k, v in pairs(t) do
+    61→    61→        count = count + 1
+    62→    62→        if count > 10 then
+    63→    63→            result = result .. ", ... (+more)"
+    64→    64→            break
+    65→    65→        end
+    66→    66→        if not first then
+    67→    67→            result = result .. ", "
+    68→    68→        end
+    69→    69→        first = false
+    70→    70→        local keyStr = type(k) == "string" and ('"' .. k .. '"') or tostring(k)
+    71→    71→        local valStr
+    72→    72→        if type(v) == "table" then
+    73→    73→            -- Evitar recursão em tabelas conhecidas por causar loop (como TheWorld.state)
+    74→    74→            if v._iscomponent or v._isclock or v._isentity then
+    75→    75→                valStr = "<" .. (v.prefab or v._name or type(v)) .. ">"
+    76→    76→            else
+    77→    77→                valStr = tableToString(v, indent .. "  ", depth + 1, visited)
+    78→    78→            end
+    79→    79→        elseif type(v) == "string" then
+    80→    80→            valStr = '"' .. v .. '"'
+    81→    81→        elseif type(v) == "function" or type(v) == "userdata" then
+    82→    82→            valStr = "<" .. type(v) .. ">"
+    83→    83→        else
+    84→    84→            valStr = tostring(v)
+    85→    85→        end
+    86→    86→        result = result .. "\n" .. indent .. "  " .. keyStr .. " = " .. valStr
+    87→    87→    end
+    88→    88→    result = result .. "\n" .. indent .. "}"
+    89→    89→    visited[t] = nil -- Libera para permitir re-visita em outros contextos
+    90→    90→    return result
+    91→    91→end
+    92→    92→
+    93→    93→-- ============================================================================
+    94→    94→-- WAGSTAFF DEBUG SYSTEM (BUFFERED)
+    95→    95→-- Buffers debug lines in memory and flushes to file every 5 seconds to avoid
+    96→    96→-- freezing the game with file I/O on every call (especially in hot paths like
+    97→    97→-- IsActivated which the skill tree UI calls many times per second).
+    98→    98→--
+    99→    99→-- REVERTED (v2.0.5): The v2.0.3/v2.0.4 rewrite of this system used
+   100→   100→-- TheSim:SetPersistentString() to write the debug file. This caused a crash
+   101→   101→-- (OLDFILEACCESSMETHOD) when loading skilltree_wagstaff.lua via require().
+   102→   102→-- The exact mechanism is unclear (even with deferred I/O the crash persisted),
+   103→   103→-- but reverting to the original G.io.open()-based flush (which silently no-ops
+   104→   104→-- because io is nil in the DST sandbox) eliminates the crash. Traces still
+   105→   105→-- reach the game logs via print() — use: grep "\[Wagstaff" *_log.txt
+   106→   106→-- ============================================================================
+   107→   107→G.WagstaffDebugEnabled = GetModConfigData("debug") == true
+   108→   108→
+   109→   109→-- Get the mod directory properly using TheModManager or MODROOT
+   110→   110→local function get_mod_directory()
+   111→   111→    local moddir = "."
+   112→   112→    -- First try MODROOT which is set by the game for each mod
+   113→   113→    if MODROOT and MODROOT ~= "" then
+   114→   114→        return MODROOT
+   115→   115→    end
+   116→   116→    -- Fallback: Try to get our mod's directory from TheModManager
+   117→   117→    if G.TheModManager then
+   118→   118→        for _, mod in pairs(G.TheModManager.mods) do
+   119→   119→            if mod and mod.modinfo and mod.modinfo.id then
+   120→   120→                if mod.modinfo.id == "wagstaff_standalone" or
+   121→   121→                   string.find(mod.modinfo.id, "wagstaff") or
+   122→   122→                   string.find(mod.modinfo.name, "Wagstaff") then
+   123→   123→                    moddir = mod.path or mod.modpath or moddir
+   124→   124→                    break
+   125→   125→                end
+   126→   126→            end
+   127→   127→        end
+   128→   128→    end
+   129→   129→    return moddir
+   130→   130→end
+   131→   131→
+   132→   132→local _moddir = get_mod_directory()
+   133→   133→local _debug_log_path = _moddir .. "/wagstaff_debug.txt"
+   134→   134→local _debug_buffer = {}  -- lines collected in memory, flushed periodically
+   135→   135→local _debug_max_buffer = 500  -- flush early if buffer gets this big
+   136→   136→
+   137→   137→-- Flush the buffer to the debug log file (batch write — one open/close per flush)
+   138→   138→local function wagstaff_debug_flush()
+   139→   139→    if #_debug_buffer == 0 then return end
+   140→   140→    local iolib = G.io
+   141→   141→    if iolib == nil then _debug_buffer = {} return end
+   142→   142→    local ok, file = G.pcall(iolib.open, _debug_log_path, "a")
+   143→   143→    if ok and file then
+   144→   144→        for i = 1, #_debug_buffer do
+   145→   145→            file:write(_debug_buffer[i] .. "\n")
+   146→   146→        end
+   147→   147→        file:close()
+   148→   148→    end
+   149→   149→    _debug_buffer = {}
+   150→   150→end
+   151→   151→
+   152→   152→-- Clear the debug log on mod load (fresh session)
+   153→   153→if G.WagstaffDebugEnabled then
+   154→   154→    local iolib = G.io
+   155→   155→    if iolib then
+   156→   156→        local ok, file = G.pcall(iolib.open, _debug_log_path, "w")
+   157→   157→        if ok and file then
+   158→   158→            file:write("=== Wagstaff Standalone Debug Log ===\n")
+   159→   159→            file:write("=== Session start ===\n\n")
+   160→   160→            file:close()
+   161→   161→        end
+   162→   162→    end
+   163→   163→    print("[Wagstaff Debug] Debug mode ON. Log file: " .. _debug_log_path)
+   164→   164→    -- Schedule periodic flush every 5 seconds (only runs when world exists)
+   165→   165→    -- AddSimPostInit is a modutil function available directly in modmain scope
+   166→   166→    AddSimPostInit(function()
+   167→   167→        if GLOBAL.TheWorld then
+   168→   168→            GLOBAL.TheWorld:DoPeriodicTask(5, wagstaff_debug_flush)
+   169→   169→        end
+   170→   170→    end)
+   171→   171→end
+   172→   172→
+   173→   173→local _wagstaff_debug_last_say = 0
+   174→   174→local function wagstaff_debug_emit(str)
+   175→   175→    -- 1. Buffer the line (flushed every 5s — NOT on every call)
+   176→   176→    local ts = (G.GetTime and G.GetTime()) or 0
+   177→   177→    _debug_buffer[#_debug_buffer + 1] = G.string.format("[%.2f] %s", ts, str)
+   178→   178→    if #_debug_buffer >= _debug_max_buffer then
+   179→   179→        wagstaff_debug_flush()
+   180→   180→    end
+   181→   181→    -- 2. print() so it appears in server_log too (print is cheap, file I/O is not)
+   182→   182→    print(str)
+   183→   183→    -- 3. Mirror to in-game chat bubble (throttled, client-only)
+   184→   184→    if G.ThePlayer and G.ThePlayer.components and G.ThePlayer.components.talker then
+   185→   185→        if ts - _wagstaff_debug_last_say > 2 then
+   186→   186→            _wagstaff_debug_last_say = ts
+   187→   187→            G.ThePlayer.components.talker:Say(string.sub(str, 1, 120))
+   188→   188→        end
+   189→   189→    end
+   190→   190→end
+   191→   191→G.WagstaffDebug = function(...)
+   192→   192→    if not G.WagstaffDebugEnabled then
+   193→   193→        return
+   194→   194→    end
+   195→   195→    local args = {...}
+   196→   196→    local str = "[Wagstaff Debug] "
+   197→   197→    for i, arg in ipairs(args) do
+   198→   198→        if i > 1 then
+   199→   199→            str = str .. " "
+   200→   200→        end
+   201→   201→        if type(arg) == "table" then
+   202→   202→            str = str .. tableToString(arg)
+   203→   203→        else
+   204→   204→            str = str .. tostring(arg)
+   205→   205→        end
+   206→   206→    end
+   207→   207→    wagstaff_debug_emit(str)
+   208→   208→end
+   209→   209→
+   210→   210→-- Helper functions for debug
+   211→   211→local function count_table(t)
+   212→   212→    if not t or type(t) ~= "table" then return 0 end
+   213→   213→    local count = 0
+   214→   214→    for _ in pairs(t) do count = count + 1 end
+   215→   215→    return count
+   216→   216→end
+   217→   217→
+   218→   218→local function dump_table_keys(t)
+   219→   219→    if not t or type(t) ~= "table" then return "NIL or not a table" end
+   220→   220→    local keys = {}
+   221→   221→    for k, _ in pairs(t) do
+   222→   222→        table.insert(keys, tostring(k))
+   223→   223→    end
+   224→   224→    if #keys == 0 then return "(empty table)" end
+   225→   225→    return table.concat(keys, ", ")
+   226→   226→end
+   227→   227→
+   228→   228→-- Runtime toggle: type c_wagstaff_debug() in the console to flip debug on/off
+   229→   229→-- without restarting. Announces the new state in-game.
+   230→   230→G.c_wagstaff_debug = function()
+   231→   231→    G.WagstaffDebugEnabled = not G.WagstaffDebugEnabled
+   232→   232→    local msg = "[Wagstaff Debug] " .. (G.WagstaffDebugEnabled and "ENABLED" or "DISABLED")
+   233→   233→    print(msg)
+   234→   234→    if G.ThePlayer and G.ThePlayer.components and G.ThePlayer.components.talker then
+   235→   235→        G.ThePlayer.components.talker:Say("Wagstaff Debug: " .. (G.WagstaffDebugEnabled and "ON" or "OFF"))
+   236→   236→    end
+   237→   237→    return msg
+   238→   238→end
+   239→   239→-- Runtime toggle for verbose debug: c_wagstaff_verbose()
+   240→   240→
+   241→   241→-- Alias local para debug, seguro mesmo que G.WagstaffDebug ainda nao exista
+   242→   242→local WagstaffDebug = (G.WagstaffDebug ~= nil) and G.WagstaffDebug or function(...) end
+   243→   243→
+   244→   244→-- ============================================================================
+   245→   245→-- v2.0.17: LIGHTWEIGHT DEBUG HELPERS (gated by the "Debug mode" mod config button)
+   246→   246→-- ============================================================================
+   247→   247→-- These are the preferred helpers for all debug print() calls across the mod.
+   248→   248→-- They early-return BEFORE any string work when debug is OFF, so the mod does
+   249→   249→-- not "pesar à toa" (no I/O, no formatting, no console mirroring).
+   250→   250→--
+   251→   251→-- Usage:
+   252→   252→--   _dbg("[BUTLER REVIVE] haunt by ghost=", ghost.prefab, "shadow=", shadow)
+   253→   253→--   _dbgF("[BUTLER COOK] prefab=%s isday=%s owner=%s", prefab, isday, owner)
+   254→   254→--
+   255→   255→-- When debug is OFF (default): both are zero-cost (single boolean check, return).
+   256→   256→-- When debug is ON: behave exactly like print() / print(string.format()).
+   257→   257→-- ============================================================================
+   258→   258→G.WagstaffDbg = function(...)
+   259→   259→    if not G.WagstaffDebugEnabled then return end
+   260→   260→    print(...)
+   261→   261→end
+   262→   262→
+   263→   263→G.WagstaffDbgF = function(fmt, ...)
+   264→   264→    if not G.WagstaffDebugEnabled then return end
+   265→   265→    print(string.format(fmt, ...))
+   266→   266→end
+   267→   267→
+   268→   268→-- [REMOVED] RPC lookup/publish functions — no longer needed.
+   269→   269→-- The engine's built-in skill tree RPC handles everything (matches reference mod pattern).
+   270→   270→
+   271→   271→G.c_wagstaff_verbose = function()
+   272→   272→    if not G.WagstaffDebugEnabled then
+   273→   273→        print("[Wagstaff Debug] Enable debug mode first with c_wagstaff_debug()")
+   274→   274→        return "Debug mode is OFF. Enable it first."
+   275→   275→    end
+   276→   276→    -- Toggle verbose by reusing the main debug flag logic or a separate internal flag
+   277→   277→    -- For simplicity, we'll just use the main debug flag for now as verbose was removed from config
+   278→   278→    local msg = "[Wagstaff Debug] Verbose logs are now part of the main Debug mode."
+   279→   279→    print(msg)
+   280→   280→    if G.ThePlayer and G.ThePlayer.components and G.ThePlayer.components.talker then
+   281→   281→        G.ThePlayer.components.talker:Say("Wagstaff Debug: Verbose always ON when Debug is ON")
+   282→   282→    end
+   283→   283→    return msg
+   284→   284→end
+   285→   285→if G.WagstaffDebugEnabled then
+   286→   286→    print("[Wagstaff Debug] Debug mode is ON at mod load. Use c_wagstaff_debug() to toggle at runtime.")
+   287→   287→    print("[Wagstaff Debug] Verbose logs are enabled by default when Debug is ON.")
+   288→   288→end
+   289→   289→-- Also make a local alias for convenience
+   290→   290→local WagstaffDebug = G.WagstaffDebug
+   291→   291→local WagstaffVerboseDebug = function(...)
+   292→   292→    -- Verbose is now always enabled when Debug is ON
+   293→   293→    if G.WagstaffDebugEnabled then
+   294→   294→        G.WagstaffDebug("[VERBOSE]", ...)
+   295→   295→    end
+   296→   296→end
+   297→   297→
+   298→   298→-- Debug command to inspect TheSkillTree profile state
+   299→   299→G.c_wagstaff_profile = function()
+   300→   300→    print("=== Wagstaff TheSkillTree Profile Debug ===")
+   301→   301→    if not GLOBAL.TheSkillTree then
+   302→   302→        print("TheSkillTree is NIL!")
+   303→   303→        return
+   304→   304→    end
+   305→   305→    -- Get XP
+   306→   306→    local xp = nil
+   307→   307→    G.pcall(function() xp = GLOBAL.TheSkillTree:GetSkillXP("wagstaff") end)
+   308→   308→    print("XP:", tostring(xp))
+   309→   309→    -- Get activated skills
+   310→   310→    local skills = nil
+   311→   311→    G.pcall(function() skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff") end)
+   312→   312→    if not skills then
+   313→   313→        print("GetActivatedSkills returned NIL")
+   314→   314→    else
+   315→   315→        print("Activated skills (raw):")
+   316→   316→        if type(skills) == "table" then
+   317→   317→            for i, v in GLOBAL.ipairs(skills) do
+   318→   318→                print("  ["..tostring(i).."] type="..type(v).." value="..tostring(v))
+   319→   319→            end
+   320→   320→            -- Also check non-integer keys
+   321→   321→            for k, v in pairs(skills) do
+   322→   322→                if type(k) ~= "number" then
+   323→   323→                    print("  [key="..tostring(k).."] type="..type(v).." value="..tostring(v))
+   324→   324→                end
+   325→   325→            end
+   326→   326→        else
+   327→   327→            print("  type="..type(skills).." value="..tostring(skills))
+   328→   328→        end
+   329→   329→    end
+   330→   330→    -- Check player activatedskills
+   331→   331→    local player = G.ThePlayer
+   332→   332→    if player and player.components and player.components.skilltreeupdater then
+   333→   333→        local activated = player.components.skilltreeupdater.activatedskills
+   334→   334→        print("\nPlayer activatedskills table:")
+   335→   335→        if activated then
+   336→   336→            for k, v in pairs(activated) do
+   337→   337→                print("  ["..tostring(k).."] = "..tostring(v))
+   338→   338→            end
+   339→   339→        else
+   340→   340→            print("  NIL")
+   341→   341→        end
+   342→   342→        print("\nPlayer tags containing 'wagstaff_':")
+   343→   343→        if player.GetTags then
+   344→   344→            for i, tag in ipairs(player:GetTags()) do
+   345→   345→                if type(tag) == "string" and tag:find("wagstaff_") then
+   346→   346→                    print("  "..tag)
+   347→   347→                end
+   348→   348→            end
+   349→   349→        else
+   350→   350→            print("  (GetTags not available on server)")
+   351→   351→        end
+   352→   352→    end
+   353→   353→    print("=== End Profile Debug ===")
+   354→   354→end
+   355→   355→
+   356→   356→-- Bypass strict mode for our variables
+   357→   357→rawset(G, "strict", false)
+   358→   358→G.WagstaffDebug("Standalone Wagstaff Integration mod is loading!")
+   359→   359→
+   360→   360→-- [REMOVED] Custom MOD RPC for skill activation — no longer needed.
+   361→   361→-- The engine's built-in skill tree RPC handles activation correctly.
+   362→   362→-- This was causing connects chains to break by bypassing TheSkillTree updates.
+   363→   363→
+   364→   364→
+   365→   365→local TUNING = GLOBAL.TUNING
+   366→   366→
+   367→   367→-- Tropical Experience / Above The Clouds interop (gates the SPY action in postinits)
+   368→   368→TUNING.HCRtropicalsupport = false
+   369→   369→if GLOBAL.KnownModIndex:IsModEnabled("workshop-1505270912") then
+   370→   370→    TUNING.HCRtropicalsupport = true
+   371→   371→end
+   372→   372→print("    [Wagstaff Standalone]: Tropical support is set to: " .. tostring(TUNING.HCRtropicalsupport))
+   373→   373→
+   374→   374→
+   375→   375→--==================================================================================
+   376→   376→
+   377→   377→-- SAFETY PATCH: WX78 shadow drone recipe crash for non-WX78 characters
+   378→   378→
+   379→   379→-- wx78_shadowdrone_harvester's getlimitedrecipecount calls
+   380→   380→
+   381→   381→-- builder:GetNumFreeShadowDrone_Harvesters() on every player that opens the
+   382→   382→
+   383→   383→-- crafting menu. Non-WX78 characters don't have this method -> crash.
+   384→   384→
+   385→   385→-- We wrap GetAllRecipeCraftingLimits on builder_replica to add the stub
+   386→   386→
+   387→   387→-- just before the recipe iteration, which is timing-independent.
+   388→   388→
+   389→   389→--==================================================================================
+   390→   390→
+   391→   391→AddComponentPostInit("builder_replica", function(self)
+   392→   392→
+   393→   393→    local old_GARL = self.GetAllRecipeCraftingLimits
+   394→   394→
+   395→   395→    if old_GARL then
+   396→   396→
+   397→   397→        self.GetAllRecipeCraftingLimits = function(self2, ...)
+   398→   398→
+   399→   399→            if self2.inst and self2.inst.wx78_classified == nil then
+   400→   400→
+   401→   401→                self2.inst.wx78_classified = {}
+   402→   402→
+   403→   403→            end
+   404→   404→
+   405→   405→            if self2.inst and self2.inst.wx78_classified then
+   406→   406→
+   407→   407→                -- Add ALL WX78 drone methods
+   408→   408→
+   409→   409→                local wx_methods = {
+   410→   410→
+   411→   411→                    "GetNumFreeShadowDrone_Harvesters",
+   412→   412→
+   413→   413→                    "GetNumFreeDeliveryDrones",
+   414→   414→
+   415→   415→                    "GetMaxShadowDrone_Harvesters",
+   416→   416→
+   417→   417→                    "GetNumFreeShadowDrone_Debuffers",
+   418→   418→
+   419→   419→                    "GetMaxShadowDrone_Debuffers",
+   420→   420→
+   421→   421→                    "GetNumFreeShadowDrone_Defenders",
+   422→   422→
+   423→   423→                    "GetMaxShadowDrone_Defenders",
+   424→   424→
+   425→   425→                }
+   426→   426→
+   427→   427→                for _, method in ipairs(wx_methods) do
+   428→   428→
+   429→   429→                    if self2.inst.wx78_classified[method] == nil then
+   430→   430→
+   431→   431→                        self2.inst.wx78_classified[method] = function() return 0 end
+   432→   432→
+   433→   433→                    end
+   434→   434→
+   435→   435→                    if self2.inst[method] == nil then
+   436→   436→
+   437→   437→                        self2.inst[method] = function() return 0 end
+   438→   438→
+   439→   439→                    end
+   440→   440→
+   441→   441→                    if self2.classified and self2.classified[method] == nil then
+   442→   442→
+   443→   443→                        self2.classified[method] = function() return 0 end
+   444→   444→
+   445→   445→                    end
+   446→   446→
+   447→   447→                end
+   448→   448→
+   449→   449→            end
+   450→   450→
+   451→   451→            return old_GARL(self2, ...)
+   452→   452→
+   453→   453→        end
+   454→   454→
+   455→   455→    end
+   456→   456→
+   457→   457→end)
+   458→   458→
+   459→   459→
+   460→   460→--==================================================================================
+   461→   461→
+   462→   462→-- RECIPE CRAFTING LIMIT SAFETY PATCH (WX78 drone recipes)
+   463→   463→
+   464→   464→--==================================================================================
+   465→   465→
+   466→   466→AddSimPostInit(function()
+   467→   467→
+   468→   468→    local AllRecipes = G.AllRecipes
+   469→   469→
+   470→   470→    if not AllRecipes then return end
+   471→   471→
+   472→   472→    local patched = 0
+   473→   473→
+   474→   474→    for _, recipe in pairs(AllRecipes) do
+   475→   475→
+   476→   476→        if recipe.getlimitedrecipecount then
+   477→   477→
+   478→   478→            local old_fn = recipe.getlimitedrecipecount
+   479→   479→
+   480→   480→            recipe.getlimitedrecipecount = function(self_, builder)
+   481→   481→
+   482→   482→                -- Ensure ALL wx78_classified functions exist
+   483→   483→
+   484→   484→                if builder and builder.wx78_classified then
+   485→   485→
+   486→   486→                    local wx_methods = {
+   487→   487→
+   488→   488→                        "GetNumFreeShadowDrone_Harvesters",
+   489→   489→
+   490→   490→                        "GetNumFreeDeliveryDrones",
+   491→   491→
+   492→   492→                        "GetMaxShadowDrone_Harvesters",
+   493→   493→
+   494→   494→                        "GetNumFreeShadowDrone_Debuffers",
+   495→   495→
+   496→   496→                        "GetMaxShadowDrone_Debuffers",
+   497→   497→
+   498→   498→                        "GetNumFreeShadowDrone_Defenders",
+   499→   499→
+   500→   500→                        "GetMaxShadowDrone_Defenders",
+   501→   501→
+   502→   502→                    }
+   503→   503→
+   504→   504→                    for _, method in ipairs(wx_methods) do
+   505→   505→
+   506→   506→                        if builder.wx78_classified[method] == nil then
+   507→   507→
+   508→   508→                            builder.wx78_classified[method] = function() return 0 end
+   509→   509→
+   510→   510→                        end
+   511→   511→
+   512→   512→                    end
+   513→   513→
+   514→   514→                end
+   515→   515→
+   516→   516→                return old_fn(self_, builder) or 0
+   517→   517→
+   518→   518→            end
+   519→   519→
+   520→   520→            patched = patched + 1
+   521→   521→
+   522→   522→        end
+   523→   523→
+   524→   524→    end
+   525→   525→
+   526→   526→    -- Patched recipe limit functions: " .. patched
+   527→   527→
+   528→   528→end)
+   529→   529→
+   530→   530→
+   531→   531→--==================================================================================
+   532→   532→
+   533→   533→-- WINONA CATAPULT RESTRICTED TO WINONA ONLY (Wagstaff uses Ballistic Bot instead)
+   534→   534→
+   535→   535→--==================================================================================
+   536→   536→
+   537→   537→AddSimPostInit(function()
+   538→   538→
+   539→   539→    local AllRecipes = G.AllRecipes
+   540→   540→
+   541→   541→    if not AllRecipes then return end
+   542→   542→
+   543→   543→    -- Restrict catapult recipe so only Winona can craft it
+   544→   544→    -- Wagstaff has William's Ballistic Bot instead
+   545→   545→    -- REMOVED: Winona catapult restrictions (not needed)
+   546→   546→
+   547→   547→end)
+   548→   548→
+   549→   549→
+   550→   550→-- Define global variables using G. (GLOBAL) so they are accessible in PrefabFiles
+   551→   551→
+   552→   552→rawset(G, "ENGINEERITEMIMAGES", "images/engineeritemimages.xml")
+   553→   553→
+   554→   554→
+   555→   555→rawset(G, "SENTRY_RANGE", 12)
+   556→   556→
+   557→   557→rawset(G, "SENTRY_DAMAGE", 25)
+   558→   558→
+   559→   559→rawset(G, "SENTRY_ROF", 1.5)
+   560→   560→
+   561→   561→rawset(G, "SENTRY_HEALTH", 300)
+   562→   562→
+   563→   563→rawset(G, "SENTRY_FF", "noff")
+   564→   564→
+   565→   565→rawset(G, "SENTRY_FF_WALL", "yesff")
+   566→   566→
+   567→   567→
+   568→   568→TUNING.SENTRY_ROCKET_DAMAGE = 50
+   569→   569→
+   570→   570→TUNING.SENTRY_WRENCH_HEAL = 10
+   571→   571→
+   572→   572→TUNING.ETELEPORT_PENALTY = 5  -- v2.0.15: sanity cost per teleport (was 0 = free unlimited travel)
+   573→   573→
+   574→   574→TUNING.ENGIE_BUILDINGLOSS = 15
+   575→   575→
+   576→   576→
+   577→   577→-- Dispenser tuning values
+   578→   578→
+   579→   579→TUNING.DISP_HEALING = 0.5  -- Healing interval in seconds
+   580→   580→
+   581→   581→TUNING.DISP_RANGE = 4      -- Range for dispenser effects
+   582→   582→
+   583→   583→
+   584→   584→-- Engineer toolbox speed penalty (must be defined before prefabs load)
+   585→   585→
+   586→   586→TUNING.TOOLBOX_SPEED_MULT = 0.15  -- 15% speed = 85% penalty
+   587→   587→
+   588→   588→
+   589→   589→PrefabFiles = {
+   590→   590→    -----[[Wagstaff (Hamlet Characters)]]---
+   591→   591→    "wagstaff",
+   592→   592→    "wagstaff_none",
+   593→   593→
+   594→   594→    "goggles",
+   595→   595→    "fryfocals_charge",
+   596→   596→
+   597→   597→    "thumper",
+   598→   598→    "telipad",
+   599→   599→    "telebrella",
+   600→   600→    "hiddendanger_fx",
+   601→   601→
+   602→   602→    -----[[William Toymaker / Engineer (Integration Patch)]]---
+   603→   603→    "williamgadget",
+   604→   604→
+   605→   605→    "william_butler",
+   606→   606→    "william_buster",
+   607→   607→    "william_brute",
+   608→   608→    "william_ballistic",
+   609→   609→
+   610→   610→    "william_charge",
+   611→   611→    "william_charged_fx",
+   612→   612→
+   613→   613→    "william_mistake",
+   614→   614→
+   615→   615→    "bot_aura_v5",  -- Aura FX v5 - APENAS FX reais verificados do jogo!
+   616→   616→
+   617→   617→    "dispenser",
+   618→   618→
+   619→   619→    "esentry",
+   620→   620→    "esentry_bullet",
+   621→   621→    "esentry_rocket",
+   622→   622→
+   623→   623→    "eteleporter",
+   624→   624→    "eteleporter_exit",
+   625→   625→}
+   626→   626→
+   627→   627→
+   628→   628→local forge_prefabs = {
+   629→   629→    ---[[Wagstaff]]---
+   630→   630→    "gogglesforgehat",
+   631→   631→    "wagstaff_laser",
+   632→   632→    "lavaarena_charge",
+   633→   633→}
+   634→   634→
+   635→   635→local gorge_prefabs = {
+   636→   636→    ---[[Wagstaff]]---
+   637→   637→    "quagmire_telebrella",
+   638→   638→}
+   639→   639→
+   640→   640→
+   641→   641→Assets = {
+   642→   642→    ----------------------------------
+   643→   643→    -----------[[Wagstaff]]-----------
+   644→   644→    ----------------------------------
+   645→   645→
+   646→   646→    Asset("IMAGE", "images/tinkeringtab.tex"),
+   647→   647→    Asset("ATLAS", "images/tinkeringtab.xml"),
+   648→   648→
+   649→   649→    Asset("IMAGE", "images/fx5.tex"),
+   650→   650→    Asset("ATLAS", "images/fx5.xml"),
+   651→   651→
+   652→   652→    Asset("IMAGE", "images/fx6.tex"),
+   653→   653→    Asset("ATLAS", "images/fx6.xml"),
+   654→   654→
+   655→   655→    Asset("IMAGE", "images/colour_cubes/heat_vision_cc.tex"),
+   656→   656→    Asset("IMAGE", "images/colour_cubes/shooting_goggles_cc.tex"),
+   657→   657→
+   658→   658→    Asset( "IMAGE", "images/saveslot_portraits/wagstaff.tex" ),
+   659→   659→    Asset( "ATLAS", "images/saveslot_portraits/wagstaff.xml" ),
+   660→   660→
+   661→   661→    Asset( "IMAGE", "bigportraits/wagstaff.tex" ),
+   662→   662→    Asset( "ATLAS", "bigportraits/wagstaff.xml" ),
+   663→   663→
+   664→   664→    Asset( "IMAGE", "images/map_icons/wagstaff.tex" ),
+   665→   665→    Asset( "ATLAS", "images/map_icons/wagstaff.xml" ),
+   666→   666→
+   667→   667→    Asset( "IMAGE", "images/avatars/avatar_wagstaff.tex" ),
+   668→   668→    Asset( "ATLAS", "images/avatars/avatar_wagstaff.xml" ),
+   669→   669→
+   670→   670→    Asset( "IMAGE", "images/avatars/avatar_ghost_wagstaff.tex" ),
+   671→   671→    Asset( "ATLAS", "images/avatars/avatar_ghost_wagstaff.xml" ),
+   672→   672→
+   673→   673→    Asset( "IMAGE", "images/avatars/self_inspect_wagstaff.tex" ),
+   674→   674→    Asset( "ATLAS", "images/avatars/self_inspect_wagstaff.xml" ),
+   675→   675→
+   676→   676→    Asset( "IMAGE", "images/names_wagstaff.tex" ),
+   677→   677→    Asset( "ATLAS", "images/names_wagstaff.xml" ),
+   678→   678→    Asset( "ATLAS", "images/names_gold_cn_wagstaff.xml" ),
+   679→   679→
+   680→   680→    Asset( "IMAGE", "bigportraits/wagstaff_none.tex" ),
+   681→   681→    Asset( "ATLAS", "bigportraits/wagstaff_none.xml" ),
+   682→   682→
+   683→   683→    Asset("ATLAS", "images/inventoryimages/wagstaffnormalgoggles.xml"),
+   684→   684→    Asset("IMAGE", "images/inventoryimages/wagstaffnormalgoggles.tex"),
+   685→   685→
+   686→   686→    Asset("ATLAS", "images/inventoryimages/wagstaffheatgoggles.xml"),
+   687→   687→    Asset("IMAGE", "images/inventoryimages/wagstaffheatgoggles.tex"),
+   688→   688→
+   689→   689→    Asset("ATLAS", "images/inventoryimages/wagstaffarmorgoggles.xml"),
+   690→   690→    Asset("IMAGE", "images/inventoryimages/wagstaffarmorgoggles.tex"),
+   691→   691→
+   692→   692→    Asset("ATLAS", "images/inventoryimages/wagstaffshootgoggles.xml"),
+   693→   693→    Asset("IMAGE", "images/inventoryimages/wagstaffshootgoggles.tex"),
+   694→   694→
+   695→   695→    Asset("ATLAS", "images/inventoryimages/telebrella.xml"),
+   696→   696→    Asset("IMAGE", "images/inventoryimages/telebrella.tex"),
+   697→   697→
+   698→   698→    Asset("ATLAS", "images/inventoryimages/telipad.xml"),
+   699→   699→    Asset("IMAGE", "images/inventoryimages/telipad.tex"),
+   700→   700→
+   701→   701→    Asset("ATLAS", "images/inventoryimages/thumper.xml"),
+   702→   702→    Asset("IMAGE", "images/inventoryimages/thumper.tex"),
+   703→   703→
+   704→   704→    Asset( "ANIM", "anim/player_wagstaff.zip" ),
+   705→   705→    Asset( "ANIM", "anim/player_mount_wagstaff.zip"),
+   706→   706→
+   707→   707→    ------------------------
+   708→   708→    -------[[Sounds]]-------
+   709→   709→    ------------------------
+   710→   710→    Asset( "SOUNDPACKAGE","sound/hamletcharactersound.fev" ),
+   711→   711→    Asset( "SOUND", "sound/hamletcharactersound.fsb" ),
+   712→   712→
+   713→   713→    Asset( "SHADER", "shaders/postprocess_blur.ksh"),
+   714→   714→
+   715→   715→    ----------------------------------
+   716→   716→    ----[[Integration Patch assets]]---
+   717→   717→    ----------------------------------
+   718→   718→
+   719→   719→    -- Engineer shared atlas (icons for all TF2 items)
+   720→   720→
+   721→   721→    Asset("ATLAS", "images/engineeritemimages.xml"),
+   722→   722→
+   723→   723→    Asset("IMAGE", "images/engineeritemimages.tex"),
+   724→   724→
+   725→   725→    -- William Toymaker bots
+   726→   726→
+   727→   727→    Asset("ATLAS", "images/inventoryimages/williambutler_builder.xml"),
+   728→   728→
+   729→   729→    Asset("IMAGE", "images/inventoryimages/williambutler_builder.tex"),
+   730→   730→
+   731→   731→    Asset("ATLAS", "images/inventoryimages/williambrute_builder.xml"),
+   732→   732→
+   733→   733→    Asset("IMAGE", "images/inventoryimages/williambrute_builder.tex"),
+   734→   734→
+   735→   735→    Asset("ATLAS", "images/inventoryimages/williambuster_builder.xml"),
+   736→   736→
+   737→   737→    Asset("IMAGE", "images/inventoryimages/williambuster_builder.tex"),
+   738→   738→
+   739→   739→    Asset("ATLAS", "images/inventoryimages/williamballistic_empty.xml"),
+   740→   740→
+   741→   741→    Asset("IMAGE", "images/inventoryimages/williamballistic_empty.tex"),
+   742→   742→
+   743→   743→    Asset("ATLAS", "images/inventoryimages/williamgadget.xml"),
+   744→   744→
+   745→   745→    Asset("IMAGE", "images/inventoryimages/williamgadget.tex"),
+   746→   746→
+   747→   747→    -- William Toymaker animation ZIPs
+   748→   748→
+   749→   749→    Asset("ANIM", "anim/william_gadget.zip"),
+   750→   750→
+   751→   751→    Asset("ANIM", "anim/william_butler.zip"),
+   752→   752→
+   753→   753→    Asset("ANIM", "anim/william_buster.zip"),
+   754→   754→
+   755→   755→    Asset("ANIM", "anim/william_brute.zip"),
+   756→   756→
+   757→   757→    Asset("ANIM", "anim/william_ballistic.zip"),
+   758→   758→
+   759→   759→    -- Butler Bot Level 2 uses vanilla ui_chest_3x2 + separate chef pouch storage
+   760→   760→
+   761→   761→    -- Sentry skill tree icons
+   762→   762→
+   763→   763→    Asset("ATLAS", "images/skilltree/MK2.xml"),
+   764→   764→
+   765→   765→    Asset("IMAGE", "images/skilltree/MK2.tex"),
+   766→   766→
+   767→   767→    Asset("ATLAS", "images/skilltree/mk3.xml"),
+   768→   768→
+   769→   769→    Asset("IMAGE", "images/skilltree/mk3.tex"),
+   770→   770→
+   771→   771→    Asset("ATLAS", "images/skilltree/disp2.xml"),
+   772→   772→
+   773→   773→    Asset("IMAGE", "images/skilltree/disp2.tex"),
+   774→   774→
+   775→   775→    Asset("ATLAS", "images/skilltree/disp3.xml"),
+   776→   776→
+   777→   777→    Asset("IMAGE", "images/skilltree/disp3.tex"),
+   778→   778→
+   779→   779→    Asset("ATLAS", "images/skilltree/Wrench.xml"),
+   780→   780→
+   781→   781→    Asset("IMAGE", "images/skilltree/Wrench.tex"),
+   782→   782→
+   783→   783→    Asset("ATLAS", "images/skilltree/luckyenginer.xml"),
+   784→   784→
+   785→   785→    Asset("IMAGE", "images/skilltree/luckyenginer.tex"),
+   786→   786→
+   787→   787→    Asset("ATLAS", "images/skilltree/doublestrike.xml"),
+   788→   788→
+   789→   789→    Asset("IMAGE", "images/skilltree/doublestrike.tex"),
+   790→   790→
+   791→   791→    Asset("ATLAS", "images/skilltree/brutemk2.xml"),
+   792→   792→
+   793→   793→    Asset("IMAGE", "images/skilltree/brutemk2.tex"),
+   794→   794→
+   795→   795→    Asset("ATLAS", "images/skilltree/brutemk3.xml"),
+   796→   796→
+   797→   797→    Asset("IMAGE", "images/skilltree/brutemk3.tex"),
+   798→   798→
+   799→   799→    Asset("ATLAS", "images/skilltree/bustermk2.xml"),
+   800→   800→
+   801→   801→    Asset("IMAGE", "images/skilltree/bustermk2.tex"),
+   802→   802→
+   803→   803→    Asset("ATLAS", "images/skilltree/bustermk3.xml"),
+   804→   804→
+   805→   805→    Asset("IMAGE", "images/skilltree/bustermk3.tex"),
+   806→   806→
+   807→   807→    Asset("ATLAS", "images/skilltree/balisticmk2.xml"),
+   808→   808→
+   809→   809→    Asset("IMAGE", "images/skilltree/balisticmk2.tex"),
+   810→   810→
+   811→   811→    Asset("ATLAS", "images/skilltree/balisticmk3.xml"),
+   812→   812→
+   813→   813→    Asset("IMAGE", "images/skilltree/balisticmk3.tex"),
+   814→   814→
+   815→   815→    Asset("ATLAS", "images/skilltree/buttlermk2.xml"),
+   816→   816→
+   817→   817→    Asset("IMAGE", "images/skilltree/buttlermk2.tex"),
+   818→   818→
+   819→   819→    Asset("ATLAS", "images/skilltree/buttlermk3.xml"),
+   820→   820→
+   821→   821→    Asset("IMAGE", "images/skilltree/buttlermk3.tex"),
+   822→   822→
+   823→   823→    Asset("ATLAS", "images/skilltree/roboefige.xml"),
+   824→   824→
+   825→   825→    Asset("IMAGE", "images/skilltree/roboefige.tex"),
+   826→   826→
+   827→   827→    Asset("ATLAS", "images/skilltree/sentrymk2.xml"),
+   828→   828→
+   829→   829→    Asset("IMAGE", "images/skilltree/sentrymk2.tex"),
+   830→   830→
+   831→   831→    Asset("ATLAS", "images/skilltree/sentrymk3.xml"),
+   832→   832→
+   833→   833→    Asset("IMAGE", "images/skilltree/sentrymk3.tex"),
+   834→   834→
+   835→   835→    Asset("ATLAS", "images/skilltree/doubledamage.xml"),
+   836→   836→
+   837→   837→    Asset("IMAGE", "images/skilltree/doubledamage.tex"),
+   838→   838→
+   839→   839→    Asset("ATLAS", "images/skilltree/wagstaff_background.xml"),
+   840→   840→
+   841→   841→    Asset("IMAGE", "images/skilltree/wagstaff_background.tex"),
+   842→   842→
+   843→   843→    -- (Generator & Bud Lamp assets come from active mod 2270993633)
+   844→   844→
+   845→   845→    -- Engineer animation ZIPs
+   846→   846→
+   847→   847→    Asset("ANIM", "anim/tf2scrap.zip"),
+   848→   848→
+   849→   849→    Asset("ANIM", "anim/tf2wrench.zip"),
+   850→   850→
+   851→   851→    Asset("ANIM", "anim/swap_tf2wrench.zip"),
+   852→   852→
+   853→   853→    Asset("ANIM", "anim/ehardhat.zip"),
+   854→   854→
+   855→   855→    Asset("ANIM", "anim/ehardhat_swap.zip"),
+   856→   856→
+   857→   857→    Asset("ANIM", "anim/gibus.zip"),
+   858→   858→
+   859→   859→    Asset("ANIM", "anim/gibus_swap.zip"),
+   860→   860→
+   861→   861→    Asset("ANIM", "anim/destructionpda.zip"),
+   862→   862→
+   863→   863→    Asset("ANIM", "anim/esentry.zip"),
+   864→   864→
+   865→   865→    Asset("ANIM", "anim/esentry_item.zip"),
+   866→   866→
+   867→   867→    Asset("ANIM", "anim/dispenser.zip"),
+   868→   868→
+   869→   869→    Asset("ANIM", "anim/eteleporter.zip"),
+   870→   870→
+   871→   871→    -- Minimap / map icons (bots, sentry, dispenser, teleporter)
+   872→   872→    -- NOTE: Both IMAGE and ATLAS assets are required for minimap icons to display correctly.
+   873→   873→    -- Missing ATLAS causes the icon to show as a generic square on the map.
+   874→   874→    Asset("IMAGE", "images/minimap/esentry.tex"),
+   875→   875→    Asset("ATLAS", "images/minimap/esentry.xml"),
+   876→   876→    Asset("IMAGE", "images/minimap/esentry_2.tex"),
+   877→   877→    Asset("ATLAS", "images/minimap/esentry_2.xml"),
+   878→   878→    Asset("IMAGE", "images/minimap/esentry_3.tex"),
+   879→   879→    Asset("ATLAS", "images/minimap/esentry_3.xml"),
+   880→   880→    Asset("IMAGE", "images/minimap/dispenser.tex"),
+   881→   881→    Asset("ATLAS", "images/minimap/dispenser.xml"),
+   882→   882→    Asset("IMAGE", "images/minimap/eteleporter.tex"),
+   883→   883→    Asset("ATLAS", "images/minimap/eteleporter.xml"),
+   884→   884→    Asset("IMAGE", "images/minimap/eteleporterentrance.tex"),
+   885→   885→    Asset("ATLAS", "images/minimap/eteleporterentrance.xml"),
+   886→   886→    Asset("IMAGE", "images/minimap/eteleporterexit.tex"),
+   887→   887→    Asset("ATLAS", "images/minimap/eteleporterexit.xml"),
+   888→   888→    Asset("IMAGE", "images/map_icons/williambutler.tex"),
+   889→   889→    Asset("ATLAS", "images/map_icons/williambutler.xml"),
+   890→   890→    Asset("IMAGE", "images/map_icons/williambuster.tex"),
+   891→   891→    Asset("ATLAS", "images/map_icons/williambuster.xml"),
+   892→   892→    Asset("IMAGE", "images/map_icons/williambrute.tex"),
+   893→   893→    Asset("ATLAS", "images/map_icons/williambrute.xml"),
+   894→   894→    Asset("IMAGE", "images/map_icons/williamballistic.tex"),
+   895→   895→    Asset("ATLAS", "images/map_icons/williamballistic.xml"),
+   896→   896→}
+   897→   897→
+   898→   898→
+   899→   899→-- Register minimap atlases early so prefab MiniMapEntity icons resolve on load
+   900→   900→AddMinimapAtlas("images/map_icons/wagstaff.xml")
+   901→   901→AddMinimapAtlas("images/inventoryimages/telipad.xml")
+   902→   902→AddMinimapAtlas("images/inventoryimages/thumper.xml")
+   903→   903→
+   904→   904→AddMinimapAtlas("images/minimap/esentry.xml")
+   905→   905→AddMinimapAtlas("images/minimap/esentry_2.xml")
+   906→   906→AddMinimapAtlas("images/minimap/esentry_3.xml")
+   907→   907→AddMinimapAtlas("images/minimap/dispenser.xml")
+   908→   908→AddMinimapAtlas("images/minimap/eteleporter.xml")
+   909→   909→AddMinimapAtlas("images/minimap/eteleporterentrance.xml")
+   910→   910→AddMinimapAtlas("images/minimap/eteleporterexit.xml")
+   911→   911→AddMinimapAtlas("images/map_icons/williambutler.xml")
+   912→   912→AddMinimapAtlas("images/map_icons/williambuster.xml")
+   913→   913→AddMinimapAtlas("images/map_icons/williambrute.xml")
+   914→   914→AddMinimapAtlas("images/map_icons/williamballistic.xml")
+   915→   915→
+   916→   916→
+   917→   917→-- Language detection (auto-detects EN/Chinese based on profile, or uses explicit config)
+   918→   918→local userlang = GLOBAL.Profile:GetLanguageID()
+   919→   919→local modlanguage = GetModConfigData("language")
+   920→   920→local lang = "en"
+   921→   921→if modlanguage == "auto" then
+   922→   922→    if userlang == GLOBAL.LANGUAGE.CHINESE_T or userlang == GLOBAL.LANGUAGE.CHINESE_S then
+   923→   923→        lang = "ch"
+   924→   924→    else
+   925→   925→        lang = "en"
+   926→   926→    end
+   927→   927→else
+   928→   928→    lang = modlanguage
+   929→   929→end
+   930→   930→GLOBAL.HCM_LANG = lang
+   931→   931→
+   932→   932→
+   933→   933→-- Load Forge / Gorge prefabs only in those modes
+   934→   934→if GLOBAL.TheNet:GetServerGameMode() == "lavaarena" then
+   935→   935→    for _, pref in pairs(forge_prefabs) do
+   936→   936→        table.insert(PrefabFiles, pref)
+   937→   937→    end
+   938→   938→elseif GLOBAL.TheNet:GetServerGameMode() == "quagmire" then
+   939→   939→    for _, pref in pairs(gorge_prefabs) do
+   940→   940→        table.insert(PrefabFiles, pref)
+   941→   941→    end
+   942→   942→end
+   943→   943→
+   944→   944→
+   945→   945→local G = GLOBAL
+   946→   946→local TUNING = G.TUNING
+   947→   947→local STRINGS = GLOBAL.STRINGS
+   948→   948→local TECH = GLOBAL.TECH
+   949→   949→local require = GLOBAL.require
+   950→   950→local EQUIPSLOTS = GLOBAL.EQUIPSLOTS
+   951→   951→
+   952→   952→
+   953→   953→modimport("imports/william_tuning")
+   954→   954→
+   955→   955→-- v2.0.75: per-material fuel balancing system for all 4 bots.
+   956→   956→-- Exposes WILLIAM_FUEL table to GLOBAL so prefabs can require it.
+   957→   957→modimport("imports/william_fuel")
+   958→   958→
+   959→   959→modimport("imports/william_widgets")
+   960→   960→
+   961→   961→modimport("imports/william_acts")
+   962→   962→
+   963→   963→modimport("imports/william_states")
+   964→   964→
+   965→   965→-- DISABLED: william_portal_affinity.lua was deleted
+   966→   966→-- local PortalAffinity = modimport("imports/william_portal_affinity")
+   967→   967→local PortalAffinity = nil
+   968→   968→
+   969→   969→-- Dispenser tint helper (shadow/celestial) - keep separate file
+   970→   970→
+   971→   971→modimport("imports/william_dispenser_tint")
+   972→   972→
+   973→   973→-- Skill helper functions are defined inline in this file (G.WagstaffHasSkill, G.WagstaffMechanicalEfficiencyRoll)
+   974→   974→-- The old wagstaff_skill_helpers.lua used a broken GetSkillTree() method that doesn't exist.
+   975→   975→-- Do NOT modimport it here.
+   976→   976→
+   977→   977→-- Affinity pulse module: exposed as global so prefabs can use it
+   978→   978→
+   979→   979→local AffinityPulse = {}
+   980→   980→
+   981→   981→do
+   982→   982→
+   983→   983→    local PULSE_PERIOD = 0.18
+   984→   984→
+   985→   985→    local CELESTIAL_STEPS = {
+   986→   986→
+   987→   987→        { add = { 0.04, 0.07, 0.18, 0 }, mul = { 0.85, 0.90, 1.0,  1 } },
+   988→   988→
+   989→   989→        { add = { 0.07, 0.12, 0.28, 0 }, mul = { 0.90, 0.95, 1.0,  1 } },
+   990→   990→
+   991→   991→        { add = { 0.10, 0.18, 0.38, 0 }, mul = { 0.95, 0.98, 1.0,  1 } },
+   992→   992→
+   993→   993→        { add = { 0.13, 0.22, 0.44, 0 }, mul = { 1.0,  1.0,  1.0,  1 } },
+   994→   994→
+   995→   995→        { add = { 0.16, 0.26, 0.50, 0 }, mul = { 1.0,  1.0,  1.0,  1 } },
+   996→   996→
+   997→   997→    }
+   998→   998→
+   999→   999→    local SHADOW_STEPS = {
+  1000→  1000→
+  1001→  1001→        { add = { 0.08, 0.0,  0.12, 0 }, mul = { 0.55, 0.45, 0.60, 1.0  } },
+  1002→  1002→
+  1003→  1003→        { add = { 0.12, 0.0,  0.18, 0 }, mul = { 0.45, 0.35, 0.52, 0.92 } },
+  1004→  1004→
+  1005→  1005→        { add = { 0.16, 0.0,  0.24, 0 }, mul = { 0.35, 0.25, 0.44, 0.82 } },
+  1006→  1006→
+  1007→  1007→        { add = { 0.12, 0.0,  0.18, 0 }, mul = { 0.45, 0.35, 0.52, 0.88 } },
+  1008→  1008→
+  1009→  1009→        { add = { 0.08, 0.0,  0.12, 0 }, mul = { 0.55, 0.45, 0.60, 0.95 } },
+  1010→  1010→
+  1011→  1011→    }
+  1012→  1012→
+  1013→  1013→    -- v2.0.52: Battle + proximity gating. The affinity "breathing glow" used to
+  1014→  1014→    -- run all day (celestial) / all dusk (shadow), so the pulse FX was
+  1015→  1015→    -- permanently on and visually noisy. Now it only lights up when the owner
+  1016→  1016→    -- is CLOSE to the entity (in range / vision) AND in active combat — owner
+  1017→  1017→    -- fighting, the entity itself fighting, or a nearby hostile targeting the
+  1018→  1018→    -- owner ("algo me atacando"). Idle => neutral colours, no pulse. This also
+  1019→  1019→    -- drops the day/dusk phase lock, consistent with the v2.0.51 sentry ramp
+  1020→  1020→    -- change (affinity active 24/7, but combat-driven).
+  1021→  1021→    -- Call sites still gate AffinityPulse.Setup to MK3-only entities (bots in
+  1022→  1022→    -- fn3(), sentry in SetupMK3Affinity w/ lvl3 tag, dispenser at lvl >= 70).
+  1023→  1023→    --
+  1024→  1024→    -- v2.0.54: Added opts table for call-site-specific gating:
+  1025→  1025→    --   opts.proximity_only  (bool)     — skip the battle check (resource items
+  1026→  1026→    --                                     like the dispenser shouldn't be
+  1027→  1027→    --                                     battle-gated; they're not combat items).
+  1028→  1028→    --   opts.proximity_range (number)   — override the proximity radius (default
+  1029→  1029→    --                                     20). Dispenser uses its AURA radius
+  1030→  1030→    --                                     (DISP_RANGE = 4) so the pulse only
+  1031→  1031→    --                                     lights up when the player is actually
+  1032→  1032→    --                                     standing in the aura.
+  1033→  1033→    --   opts.phase_check     (fn(inst, owner) -> bool) — optional extra gate.
+  1034→  1034→    --                                     Dispenser uses this to confine the
+  1035→  1035→    --                                     pulse to the DUSK affinity-active
+  1036→  1036→    --                                     phase only (no pulse during the weak
+  1037→  1037→    --                                     DAY/NIGHT passive tier).
+  1038→  1038→    AffinityPulse.Setup = function(inst, GetOwnerFn, opts)
+  1039→  1039→        opts = opts or {}
+  1040→  1040→        inst._aff_step   = 1
+  1041→  1041→        inst._aff_dir    = 1
+  1042→  1042→        inst._aff_active = false
+  1043→  1043→
+  1044→  1044→        local proximity_only  = opts.proximity_only == true
+  1045→  1045→        local proximity_range = opts.proximity_range or 20
+  1046→  1046→        local phase_check     = opts.phase_check
+  1047→  1047→        local PROXIMITY_RANGE_SQ = proximity_range * proximity_range
+  1048→  1048→        local COMBAT_SCAN_RADIUS = 12        -- hostiles targeting owner, near owner
+  1049→  1049→
+  1050→  1050→        -- Gate refresh on a slower cadence (0.5s) so the FindEntities scan stays
+  1051→  1051→        -- cheap even with several MK3 entities on the server. Sets the
+  1052→  1052→        -- inst._aff_active flag consumed by the 0.18s colour-cycling task below.
+  1053→  1053→        local function RefreshGate()
+  1054→  1054→            if not inst:IsValid() then return end
+  1055→  1055→            if inst:HasTag("shadow_buster_clone") then inst._aff_active = false; return end
+  1056→  1056→
+  1057→  1057→            local owner = GetOwnerFn and GetOwnerFn(inst)
+  1058→  1058→            if not (owner and owner:IsValid()) then inst._aff_active = false; return end
+  1059→  1059→
+  1060→  1060→            -- v2.0.54: Optional phase check (dispenser confines the pulse to
+  1061→  1061→            -- the DUSK affinity-active phase only; no pulse during the weak
+  1062→  1062→            -- DAY/NIGHT passive tier).
+  1063→  1063→            if phase_check and not phase_check(inst, owner) then
+  1064→  1064→                inst._aff_active = false
+  1065→  1065→                return
+  1066→  1066→            end
+  1067→  1067→
+  1068→  1068→            -- Proximity: owner within range / vision of the entity.
+  1069→  1069→            local near = false
+  1070→  1070→            pcall(function()
+  1071→  1071→                near = inst:GetDistanceSqToInst(owner) <= PROXIMITY_RANGE_SQ
+  1072→  1072→            end)
+  1073→  1073→
+  1074→  1074→            -- v2.0.54: proximity-only mode (resource items like the dispenser
+  1075→  1075→            -- are NOT battle-gated — they're not combat items, so the pulse
+  1076→  1076→            -- should light up whenever the player stands in the aura, not only
+  1077→  1077→            -- mid-fight).
+  1078→  1078→            if proximity_only then
+  1079→  1079→                inst._aff_active = near
+  1080→  1080→                return
+  1081→  1081→            end
+  1082→  1082→
+  1083→  1083→            -- Battle: owner has a combat target, OR the entity itself has a
+  1084→  1084→            -- combat target, OR a nearby hostile is targeting the owner.
+  1085→  1085→            local in_combat = false
+  1086→  1086→            if owner.components.combat and owner.components.combat.target then
+  1087→  1087→                in_combat = true
+  1088→  1088→            elseif inst.components.combat and inst.components.combat.target then
+  1089→  1089→                in_combat = true
+  1090→  1090→            end
+  1091→  1091→
+  1092→  1092→            if not in_combat and near then
+  1093→  1093→                -- Only scan when the owner is actually near (perf guard).
+  1094→  1094→                local ox, oy, oz = owner.Transform:GetWorldPosition()
+  1095→  1095→                local ents = GLOBAL.TheSim:FindEntities(ox, oy, oz,
+  1096→  1096→                    COMBAT_SCAN_RADIUS, nil, { "INLIMBO", "playerghost" }, nil)
+  1097→  1097→                for _, v in ipairs(ents) do
+  1098→  1098→                    if v ~= owner and v ~= inst
+  1099→  1099→                       and v.components.combat
+  1100→  1100→                       and v.components.combat.target == owner then
+  1101→  1101→                        in_combat = true
+  1102→  1102→                        break
+  1103→  1103→                    end
+  1104→  1104→                end
+  1105→  1105→            end
+  1106→  1106→
+  1107→  1107→            inst._aff_active = near and in_combat
+  1108→  1108→        end
+  1109→  1109→
+  1110→  1110→        inst:DoPeriodicTask(0.5, RefreshGate)
+  1111→  1111→
+  1112→  1112→        inst:DoPeriodicTask(PULSE_PERIOD, function()
+  1113→  1113→            if not inst:IsValid() then return end
+  1114→  1114→            if inst:HasTag("shadow_buster_clone") then return end
+  1115→  1115→
+  1116→  1116→            -- Idle (owner not near OR not in combat): no glow.
+  1117→  1117→            if not inst._aff_active then
+  1118→  1118→                inst.AnimState:SetAddColour(0, 0, 0, 0)
+  1119→  1119→                inst.AnimState:SetMultColour(1, 1, 1, 1)
+  1120→  1120→                inst._aff_step = 1
+  1121→  1121→                inst._aff_dir  = 1
+  1122→  1122→                return
+  1123→  1123→            end
+  1124→  1124→
+  1125→  1125→            -- Active: pick the palette from the owner's affinity path (no longer
+  1126→  1126→            -- phase-locked). Dual-affinity owners default to celestial.
+  1127→  1127→            local owner     = GetOwnerFn and GetOwnerFn(inst)
+  1128→  1128→            local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
+  1129→  1129→            local shadow    = owner and owner:HasTag("wagstaff_shadow_possession")
+  1130→  1130→
+  1131→  1131→            if celestial then
+  1132→  1132→                local s = CELESTIAL_STEPS[inst._aff_step]
+  1133→  1133→                inst.AnimState:SetAddColour(s.add[1], s.add[2], s.add[3], s.add[4])
+  1134→  1134→                inst.AnimState:SetMultColour(s.mul[1], s.mul[2], s.mul[3], s.mul[4])
+  1135→  1135→            elseif shadow then
+  1136→  1136→                local s = SHADOW_STEPS[inst._aff_step]
+  1137→  1137→                inst.AnimState:SetAddColour(s.add[1], s.add[2], s.add[3], s.add[4])
+  1138→  1138→                inst.AnimState:SetMultColour(s.mul[1], s.mul[2], s.mul[3], s.mul[4])
+  1139→  1139→            else
+  1140→  1140→                inst.AnimState:SetAddColour(0, 0, 0, 0)
+  1141→  1141→                inst.AnimState:SetMultColour(1, 1, 1, 1)
+  1142→  1142→                inst._aff_step = 1
+  1143→  1143→                inst._aff_dir  = 1
+  1144→  1144→                return
+  1145→  1145→            end
+  1146→  1146→
+  1147→  1147→            inst._aff_step = inst._aff_step + inst._aff_dir
+  1148→  1148→            if inst._aff_step > #CELESTIAL_STEPS then
+  1149→  1149→                inst._aff_step = #CELESTIAL_STEPS - 1
+  1150→  1150→                inst._aff_dir  = -1
+  1151→  1151→            elseif inst._aff_step < 1 then
+  1152→  1152→                inst._aff_step = 2
+  1153→  1153→                inst._aff_dir  = 1
+  1154→  1154→            end
+  1155→  1155→        end)
+  1156→  1156→    end
+  1157→  1157→
+  1158→  1158→end
+  1159→  1159→
+  1160→  1160→GLOBAL.AffinityPulse = AffinityPulse
+  1161→  1161→
+  1162→  1162→
+  1163→  1163→-- modimport("imports/industrialization_electricity")  -- Temporarily disabled
+  1164→  1164→
+  1165→  1165→-- modimport("imports/bot_charge_fx")  -- Temporarily disabled
+  1166→  1166→
+  1167→  1167→
+  1168→  1168→--==================================================================================
+  1169→  1169→
+  1170→  1170→-- STANDALONE PREFABS (no external mod dependencies)
+  1171→  1171→
+  1172→  1172→--==================================================================================
+  1173→  1173→
+  1174→  1174→modimport("scripts/standalone_prefabs")
+  1175→  1175→
+  1176→  1176→-- v2.0.19: Decoupled affinity revive abilities (celestial buff / shadow clone).
+  1177→  1177→-- Triggers globally on the Wagstaff player's respawnfromghost event.
+  1178→  1178→modimport("scripts/wagstaff_affinity_revive")
+  1179→  1179→
+  1180→  1180→
+  1181→  1181→-- Compatibility / fallback for Miami Ricky portal tuning
+  1182→  1182→
+  1183→  1183→-- Some servers or setups may not have the Miami Ricky mod installed,
+  1184→  1184→
+  1185→  1185→-- but other mods (or saved worlds) may reference its TUNING values.
+  1186→  1186→
+  1187→  1187→-- Define safe defaults here so we can control portal enemy spawns
+  1188→  1188→
+  1189→  1189→-- without vendorizing the entire Miami Ricky mod.
+  1190→  1190→
+  1191→  1191→if TUNING.DES_MIAMIRICK_ENABLE_EVILPORTALS == nil then
+  1192→  1192→
+  1193→  1193→    -- Default for RANDOM mode: 10% chance to spawn an enemy portal
+  1194→  1194→
+  1195→  1195→    -- (user suggested ~10%). Change this value (0..1) as desired.
+  1196→  1196→
+  1197→  1197→    TUNING.DES_MIAMIRICK_ENABLE_EVILPORTALS = 0.10
+  1198→  1198→
+  1199→  1199→end
+  1200→  1200→
+  1201→  1201→
+  1202→  1202→if TUNING.DES_MIAMIRICK_PORTAL_ENEMY_GROUPS == nil then
+  1203→  1203→
+  1204→  1204→    -- Minimal safe fallback group: small spider packs (vanilla prefabs)
+  1205→  1205→
+  1206→  1206→    -- Format expected by original mod: { max_easy, max_hard, mob1, mob2, mob3, mob4 }
+  1207→  1207→
+  1208→  1208→    TUNING.DES_MIAMIRICK_PORTAL_ENEMY_GROUPS = {
+  1209→  1209→
+  1210→  1210→        {1, 1, "spider", "spider_warrior", "spider", "spider_warrior"},
+  1211→  1211→
+  1212→  1212→    }
+  1213→  1213→
+  1214→  1214→end
+  1215→  1215→
+  1216→  1216→
+  1217→  1217→if TUNING.DES_MIAMIRICK_SCIENCE_HAUNT_HARD_MOB_DAY == nil then
+  1218→  1218→
+  1219→  1219→    TUNING.DES_MIAMIRICK_SCIENCE_HAUNT_HARD_MOB_DAY = 15
+  1220→  1220→
+  1221→  1221→end
+  1222→  1222→
+  1223→  1223→if TUNING.DES_MIAMIRICK_SCIENCE_HAUNT_MOB_HERD_DAY == nil then
+  1224→  1224→
+  1225→  1225→    TUNING.DES_MIAMIRICK_SCIENCE_HAUNT_MOB_HERD_DAY = 30
+  1226→  1226→
+  1227→  1227→end
+  1228→  1228→
+  1229→  1229→
+  1230→  1230→-- Telepad-specific spawn chance fallback (user observed ~30% for telipad focus)
+  1231→  1231→
+  1232→  1232→if TUNING.DES_MIAMIRICK_ENABLE_EVILPORTALS_TELEPAD == nil then
+  1233→  1233→
+  1234→  1234→    TUNING.DES_MIAMIRICK_ENABLE_EVILPORTALS_TELEPAD = 0.30
+  1235→  1235→
+  1236→  1236→end
+  1237→  1237→
+  1238→  1238→
+  1239→  1239→--==================================================================================
+  1240→  1240→
+  1241→  1241→-- PORTAL GUN AFFINITY HOOKS (Celestial + Shadow)
+  1242→  1242→
+  1243→  1243→-- Hooked via AddPrefabPostInit so we only patch the spellcaster AFTER the
+  1244→  1244→
+  1245→  1245→-- original mod has already set it up. Normal / telepad modes are preserved.
+  1246→  1246→
+  1247→  1247→--==================================================================================
+  1248→  1248→
+  1249→  1249→AddPrefabPostInit("miamirick_portal_gun", function(inst)
+  1250→  1250→
+  1251→  1251→    if PortalAffinity and PortalAffinity.OnPortalGunPostInit then
+  1252→  1252→
+  1253→  1253→        PortalAffinity.OnPortalGunPostInit(inst)
+  1254→  1254→
+  1255→  1255→    end
+  1256→  1256→
+  1257→  1257→end)
+  1258→  1258→
+  1259→  1259→
+  1260→  1260→--==================================================================================
+  1261→  1261→
+  1262→  1262→-- WAGSTAFF: grant William bot crafter tags + petleash (so bots respond to him)
+  1263→  1263→
+  1264→  1264→--==================================================================================
+  1265→  1265→
+  1266→  1266→
+  1267→  1267→
+  1268→  1268→-- Tabela de Tradução: { [Nome_da_Tag_que_o_bot_pede] = "ID_real_da_skill_no_arquivo_defs" }
+  1269→  1269→local TAG_TO_SKILL_ID = {
+  1270→  1270→    ["wagstaff_butler_evolve"]    = "wagstaff_thermal_upgrade", -- Butler MK.II
+  1271→  1271→    ["wagstaff_buster_evolve"]    = "wagstaff_buster_evolve",
+  1272→  1272→    ["wagstaff_brute_evolve"]     = "wagstaff_robotic_1", -- Brute MK.II
+  1273→  1273→    ["wagstaff_ballistic_evolve"] = "wagstaff_ballistic_evolve",
+  1274→  1274→    ["wagstaff_butler_mk3"]       = "wagstaff_thermal_upgrade_parallel", -- Butler MK.III
+  1275→  1275→    ["wagstaff_buster_mk3"]       = "wagstaff_buster_parallel",
+  1276→  1276→    ["wagstaff_brute_mk3"]        = "wagstaff_robotic_1_parallel", -- Brute MK.III
+  1277→  1277→    ["wagstaff_ballistic_mk3"]    = "wagstaff_ballistic_parallel",
+  1278→  1278→    
+  1279→  1279→    -- Mapeamento das Sentinelas e Dispensers:
+  1280→  1280→    ["sentry_mk2"]                = "wagstaff_sentry_mk2",
+  1281→  1281→    ["sentry_mk3"]                = "wagstaff_sentry_mk3",
+  1282→  1282→    ["dispenser_mk2"]             = "wagstaff_dispenser_mk2",
+  1283→  1283→    ["dispenser_mk3"]             = "wagstaff_dispenser_mk3",
+  1284→  1284→    ["wagstaff_wrench_heal"]       = "wagstaff_wrench_heal",
+  1285→  1285→}
+  1286→  1286→
+  1287→  1287→G.WagstaffHasSkill = function(worker, skill_id)
+  1288→  1288→    if not worker or not skill_id or worker.prefab ~= "wagstaff" then
+  1289→  1289→        return false
+  1290→  1290→    end
+  1291→  1291→
+  1292→  1292→    -- 1. Quick check: physical tag (added by onactivate callbacks)
+  1293→  1293→    if worker:HasTag(skill_id) then
+  1294→  1294→        return true
+  1295→  1295→    end
+  1296→  1296→
+  1297→  1297→    -- Resolve the real skill ID from tag-to-skill mapping
+  1298→  1298→    local real_skill = TAG_TO_SKILL_ID[skill_id] or skill_id
+  1299→  1299→
+  1300→  1300→    -- 2. Server-Side check (activatedskills table populated by engine)
+  1301→  1301→    if worker.components and worker.components.skilltreeupdater then
+  1302→  1302→        local activated = worker.components.skilltreeupdater.activatedskills
+  1303→  1303→        if activated and (activated[skill_id] or activated[real_skill]) then
+  1304→  1304→            worker:AddTag(skill_id)
+  1305→  1305→            return true
+  1306→  1306→        end
+  1307→  1307→    end
+  1308→  1308→
+  1309→  1309→    -- 3. TheSkillTree profile fallback (engine's standard persistence)
+  1310→  1310→    if GLOBAL.TheSkillTree then
+  1311→  1311→        local profile_skills = nil
+  1312→  1312→        G.pcall(function()
+  1313→  1313→            profile_skills = GLOBAL.TheSkillTree:GetActivatedSkills("wagstaff")
+  1314→  1314→        end)
+  1315→  1315→        if profile_skills then
+  1316→  1316→            for _, s_name in GLOBAL.ipairs(profile_skills) do
+  1317→  1317→                if s_name == skill_id or s_name == real_skill then
+  1318→  1318→                    worker:AddTag(skill_id)
+  1319→  1319→                    return true
+  1320→  1320→                end
+  1321→  1321→            end
+  1322→  1322→        end
+  1323→  1323→    end
+  1324→  1324→
+  1325→  1325→    return false
+  1326→  1326→end
+  1327→  1327→
+  1328→  1328→
+  1329→  1329→
+  1330→  1330→local function WagstaffWilliamPostInit(inst)
+  1331→  1331→    inst:AddTag("william")
+  1332→  1332→    inst:AddTag("williamcrafter")
+  1333→  1333→    inst:AddTag("engie")  -- Required to equip engineer buildings on back
+  1334→  1334→
+  1335→  1335→    -- Stub WX78-only method so the base game wx78_shadowdrone_harvester recipe
+  1336→  1336→    -- doesn't crash when building the crafting menu for non-WX78 characters.
+  1337→  1337→    if inst.GetNumFreeShadowDrone_Harvesters == nil then
+  1338→  1338→        inst.GetNumFreeShadowDrone_Harvesters = function() return 0 end
+  1339→  1339→    end
+  1340→  1340→
+  1341→  1341→    -- [REMOVED] ActivateSkill/DeactivateSkill/DirtySkillTree/SetSkillActivatedState wrappers.
+  1342→  1342→    -- The engine's built-in skill tree RPC handles everything correctly now.
+  1343→  1343→    -- These wrappers were bypassing TheSkillTree updates, breaking connects chains.
+  1344→  1344→
+  1345→  1345→    if not GLOBAL.TheWorld.ismastersim then return end
+  1346→  1346→
+  1347→  1347→    if inst.components.petleash == nil then
+  1348→  1348→        inst:AddComponent("petleash")
+  1349→  1349→        inst.components.petleash:SetMaxPets(4)
+  1350→  1350→    else
+  1351→  1351→        inst.components.petleash:SetMaxPets(math.max(inst.components.petleash:GetMaxPets(), 4))
+  1352→  1352→    end
+  1353→  1353→
+  1354→  1354→
+  1355→  1355→    -- Give starting items (butler builder only; goggles come from wagstaff.lua starting_inventory)
+  1356→  1356→    inst:DoTaskInTime(0, function(inst)
+  1357→  1357→        if not inst:IsValid() then return end
+  1358→  1358→
+  1359→  1359→        local inv = inst.components.inventory
+  1360→  1360→        if not inv then return end
+  1361→  1361→
+  1362→  1362→        -- Check if player already received starting items (persistent flag)
+  1363→  1363→        if inst.wagstaff_received_starting_items then
+  1364→  1364→            return
+  1365→  1365→        end
+  1366→  1366→
+  1367→  1367→        -- Mark that starting items were given (this persists across save/load)
+  1368→  1368→        inst.wagstaff_received_starting_items = true
+  1369→  1369→
+  1370→  1370→        -- Only give butler builder (goggles already from starting_inventory)
+  1371→  1371→        local bot = G.SpawnPrefab("williambutler_builder")
+  1372→  1372→        if bot then
+  1373→  1373→            inv:GiveItem(bot)
+  1374→  1374→        end
+  1375→  1375→    end)
+  1376→  1376→
+  1377→  1377→    -- Modificação para salvar os dados do Wagstaff (apenas flags de início, não progresso)
+  1378→  1378→    local old_OnSave = inst.OnSave
+  1379→  1379→    inst.OnSave = function(inst, data)
+  1380→  1380→        if old_OnSave then
+  1381→  1381→            data = old_OnSave(inst, data) or data
+  1382→  1382→        end
+  1383→  1383→        data = data or {}
+  1384→  1384→        data.wagstaff_received_starting_items = inst.wagstaff_received_starting_items
+  1385→  1385→        return data
+  1386→  1386→    end
+  1387→  1387→    
+  1388→  1388→    local old_OnLoad = inst.OnLoad
+  1389→  1389→    inst.OnLoad = function(inst, data)
+  1390→  1390→        if old_OnLoad then
+  1391→  1391→            old_OnLoad(inst, data)
+  1392→  1392→        end
+  1393→  1393→        if data and data.wagstaff_received_starting_items then
+  1394→  1394→            inst.wagstaff_received_starting_items = true
+  1395→  1395→        end
+  1396→  1396→    end
+  1397→  1397→end
+  1398→  1398→
+  1399→  1399→
+  1400→  1400→AddPrefabPostInit("wagstaff", WagstaffWilliamPostInit)
+  1401→  1401→
+  1402→  1402→
+  1403→  1403→--==================================================================================
+  1404→  1404→-- +60% COMBUSTÍVEL PARA BOTS MK3 (butler, buster, brute, ballistic)
+  1405→  1405→-- Aumenta maxfuel e current fuel em 60% apenas para versões MK3
+  1406→  1406→--==================================================================================
+  1407→  1407→local function BoostMK3Fuel(inst)
+  1408→  1408→    if inst and inst.components and inst.components.fueled and inst.prefab and inst.prefab:find("3") then
+  1409→  1409→        inst.components.fueled.maxfuel = inst.components.fueled.maxfuel * 1.6
+  1410→  1410→        inst.components.fueled.currentfuel = inst.components.fueled.currentfuel * 1.6
+  1411→  1411→    end
+  1412→  1412→end
+  1413→  1413→AddPrefabPostInit("williambutler3", BoostMK3Fuel)
+  1414→  1414→AddPrefabPostInit("williambuster3", BoostMK3Fuel)
+  1415→  1415→AddPrefabPostInit("williambrute3", BoostMK3Fuel)
+  1416→  1416→AddPrefabPostInit("williamballistic3", BoostMK3Fuel)
+  1417→  1417→
+  1418→  1418→
+  1419→  1419→--==================================================================================
+  1420→  1420→-- MENOR DANO NA WRENCH: evita desmonte acidental de bots/estruturas amigáveis
+  1421→  1421→-- Dano reduzido de 5 para estruturas/bots quando usada como arma
+  1422→  1422→--==================================================================================
+  1423→  1423→AddPrefabPostInit("tf2wrench", function(inst)
+  1424→  1424→    if inst.components.weapon then
+  1425→  1425→        local old_GetDamage = inst.components.weapon.GetDamage
+  1426→  1426→        inst.components.weapon.GetDamage = function(self, attacker, target)
+  1427→  1427→            if target and target:IsValid() then
+  1428→  1428→                if target:HasTag("william") or target:HasTag("willminion") or target:HasTag("ebuild") then
+  1429→  1429→                    return 1 -- Dano MÍNIMO contra bots/estruturas amigáveis
+  1430→  1430→                end
+  1431→  1431→            end
+  1432→  1432→            return old_GetDamage(self, attacker, target)
+  1433→  1433→        end
+  1434→  1434→    end
+  1435→  1435→end)
+  1436→  1436→
+  1437→  1437→
+  1438→  1438→--==================================================================================
+  1439→  1439→-- BRUTE MK1 FOLLOWER FIX: recupera follower caso se perca após reload/derrota
+  1440→  1440→-- Varre entidades próximas e reconecta o Brute ao dono via petleash
+  1441→  1441→--==================================================================================
+  1442→  1442→AddPrefabPostInit("williambrute", function(inst)
+  1443→  1443→    if not GLOBAL.TheWorld.ismastersim then return end
+  1444→  1444→    inst:DoTaskInTime(1, function()
+  1445→  1445→        if not inst:IsValid() then return end
+  1446→  1446→        if inst.components.follower and inst.components.follower:GetLeader() == nil then
+  1447→  1447→            local x, y, z = inst.Transform:GetWorldPosition()
+  1448→  1448→            local candidates = GLOBAL.TheSim:FindEntities(x, y, z, 20, {"player"}, {"playerghost"})
+  1449→  1449→            for _, candidate in ipairs(candidates) do
+  1450→  1450→                if candidate.components.petleash then
+  1451→  1451→                    local pets = candidate.components.petleash:GetPets()
+  1452→  1452→                    for _, pet in pairs(pets) do
+  1453→  1453→                        if pet == inst and inst.components.follower then
+  1454→  1454→                            inst.components.follower:SetLeader(candidate)
+  1455→  1455→                            return
+  1456→  1456→                        end
+  1457→  1457→                    end
+  1458→  1458→                end
+  1459→  1459→            end
+  1460→  1460→        end
+  1461→  1461→    end)
+  1462→  1462→end)
+  1463→  1463→
+  1464→  1464→
+  1465→  1465→-- DISABLED: Miami Ricky actions (components deleted)
+  1466→  1466→-- Add refuel action for Miami Ricky items using Nightmare Fuel
+  1467→  1467→--[[local MIAMIRICKREFUEL = AddAction("MIAMIRICKREFUEL", "Refuel", function(act)
+  1468→  1468→    if act.doer ~= nil and act.target ~= nil and act.invobject ~= nil then
+  1469→  1469→        local target = act.target
+  1470→  1470→        local fuel = act.invobject
+  1471→  1471→        
+  1472→  1472→        if target:HasTag("miamirick_items_fueled") and fuel.prefab == "nightmarefuel" and target.components.finiteuses then
+  1473→  1473→            local add_uses
+  1474→  1474→            if target:HasTag("miamirick_portal_gun") then
+  1475→  1475→                add_uses = target.components.finiteuses.total * 0.2
+  1476→  1476→            else
+  1477→  1477→                add_uses = target.components.finiteuses.total * 0.25
+  1478→  1478→            end
+  1479→  1479→            
+  1480→  1480→            local new_val = target.components.finiteuses.current + add_uses
+  1481→  1481→            if new_val > target.components.finiteuses.total then
+  1482→  1482→                new_val = target.components.finiteuses.total
+  1483→  1483→            end
+  1484→  1484→            target.components.finiteuses:SetUses(new_val)
+  1485→  1485→            
+  1486→  1486→            if fuel.components.stackable then
+  1487→  1487→                fuel.components.stackable:Get(1):Remove()
+  1488→  1488→            else
+  1489→  1489→                fuel:Remove()
+  1490→  1490→            end
+  1491→  1491→            
+  1492→  1492→            if target.SoundEmitter then
+  1493→  1493→                target.SoundEmitter:PlaySound("dontstarve/common/nightmare_addfuel")
+  1494→  1494→            end
+  1495→  1495→            
+  1496→  1496→            return true
+  1497→  1497→        end
+  1498→  1498→    end
+  1499→  1499→    return false
+  1500→  1500→end)
+  1501→  1501→
+  1502→  1502→MIAMIRICKREFUEL.priority = 1
+  1503→  1503→
+  1504→  1504→AddComponentAction("USEITEM", "inventoryitem", function(inst, doer, target, actions, right)
+  1505→  1505→    if right and target:HasTag("miamirick_items_fueled") and inst.prefab == "nightmarefuel" then
+  1506→  1506→        table.insert(actions, G.ACTIONS.MIAMIRICKREFUEL)
+  1507→  1507→    end
+  1508→  1508→end)
+  1509→  1509→
+  1510→  1510→AddStategraphActionHandler("wilson", G.ActionHandler(G.ACTIONS.MIAMIRICKREFUEL, "doshortaction"))
+  1511→  1511→AddStategraphActionHandler("wilson_client", G.ActionHandler(G.ACTIONS.MIAMIRICKREFUEL, "doshortaction"))
+  1512→  1512→
+  1513→  1513→local FLICKER = AddAction("FLICKER", "Flicker", function(act)
+  1514→  1514→    if act.doer and act.invobject and act.invobject.components.miamirick_flicker then
+  1515→  1515→        act.invobject.components.miamirick_flicker:Activate(act.doer)
+  1516→  1516→        return true
+  1517→  1517→    end
+  1518→  1518→    return false
+  1519→  1519→end)
+  1520→  1520→
+  1521→  1521→AddComponentAction("INVENTORY", "miamirick_flicker", function(inst, doer, actions, right)
+  1522→  1522→    if right then
+  1523→  1523→        table.insert(actions, G.ACTIONS.FLICKER)
+  1524→  1524→    end
+  1525→  1525→end)
+  1526→  1526→
+  1527→  1527→AddStategraphActionHandler("wilson", G.ActionHandler(G.ACTIONS.FLICKER, "doshortaction"))
+  1528→  1528→AddStategraphActionHandler("wilson_client", G.ActionHandler(G.ACTIONS.FLICKER, "doshortaction"))
+  1529→  1529→
+  1530→  1530→local AUGMENT = AddAction("AUGMENT", "Toggle", function(act)
+  1531→  1531→    if act.doer and act.invobject and act.invobject.components.miamirick_augments then
+  1532→  1532→        act.invobject.components.miamirick_augments:Activate(act.doer)
+  1533→  1533→        return true
+  1534→  1534→    end
+  1535→  1535→    return false
+  1536→  1536→end)
+  1537→  1537→
+  1538→  1538→AddComponentAction("INVENTORY", "miamirick_augments", function(inst, doer, actions, right)
+  1539→  1539→    if right then
+  1540→  1540→        table.insert(actions, G.ACTIONS.AUGMENT)
+  1541→  1541→    end
+  1542→  1542→end)
+  1543→  1543→
+  1544→  1544→AddStategraphActionHandler("wilson", G.ActionHandler(G.ACTIONS.AUGMENT, "doshortaction"))
+  1545→  1545→AddStategraphActionHandler("wilson_client", G.ActionHandler(G.ACTIONS.AUGMENT, "doshortaction"))--]]
+  1546→  1546→
+  1547→  1547→
+  1548→  1548→--==================================================================================
+  1549→  1549→
+  1550→  1550→-- ENGINEER STRUCTURE INTERACTIONS
+  1551→  1551→
+  1552→  1552→--==================================================================================
+  1553→  1553→
+  1554→  1554→
+  1555→  1555→-- ENGIETELEPORT: right-click to teleport to paired exit
+  1556→  1556→
+  1557→  1557→local ENGIETELEPORT = AddAction("ENGIETELEPORT", "Enter", function(act)
+  1558→  1558→
+  1559→  1559→    if act.doer ~= nil and act.target ~= nil and act.doer:HasTag("player") and act.target.components.engieteleporter and act.target:HasTag("eteleporter_enter") then
+  1560→  1560→
+  1561→  1561→        act.target.components.engieteleporter.boundEntrance = act.target
+  1562→  1562→
+  1563→  1563→        act.target.components.engieteleporter:TeleportAction(act.doer)
+  1564→  1564→
+  1565→  1565→        if act.doer.components.sanity and not act.doer:HasTag("tinkerer") then
+  1566→  1566→
+  1567→  1567→            act.doer.components.sanity:DoDelta(-(TUNING.ETELEPORT_PENALTY or 0))
+  1568→  1568→
+  1569→  1569→        end
+  1570→  1570→
+  1571→  1571→        return true
+  1572→  1572→
+  1573→  1573→    end
+  1574→  1574→
+  1575→  1575→end)
+  1576→  1576→
+  1577→  1577→ENGIETELEPORT.encumbered_valid = true
+  1578→  1578→
+  1579→  1579→ENGIETELEPORT.mount_valid = true
+  1580→  1580→
+  1581→  1581→
+  1582→  1582→AddComponentAction("SCENE", "engieteleporter", function(inst, doer, actions, right)
+  1583→  1583→
+  1584→  1584→    if inst:HasTag("eteleporter_enter") then
+  1585→  1585→
+  1586→  1586→        table.insert(actions, GLOBAL.ACTIONS.ENGIETELEPORT)
+  1587→  1587→
+  1588→  1588→    end
+  1589→  1589→
+  1590→  1590→end)
+  1591→  1591→
+  1592→  1592→
+  1593→  1593→AddStategraphActionHandler("wilson", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETELEPORT, "doshortaction"))
+  1594→  1594→
+  1595→  1595→AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.ENGIETELEPORT, "doshortaction"))
+  1596→  1596→
+  1597→  1597→
+  1598→  1598→-- v2.0.64: Overcharge toggle on LEFT-CLICK, visually consistent with how
+  1599→  1599→-- Pack Up / Deploy is ONE button that toggles state. Two state-driven actions
+  1600→  1600→-- share one click slot:
+  1601→  1601→--   * ON  state -> "\226\151\143 overcharged" (● marker + lowercase state text)
+  1602→  1602→--   * OFF state -> "" (empty label — only the bot's name shows, no prompt text)
+  1603→  1603→-- The toggle is always available on left-click (like unpack/deploy is always
+  1604→  1604→-- available on right-click). When OFF the hover shows just the bot name; when
+  1605→  1605→-- ON the ● marker + "overcharged" shows. Click either state to toggle.
+  1606→  1606→-- NOTE: Lua 5.1 (DST) does NOT support \u escapes — "\u25CF" renders as literal
+  1607→  1607→-- "u25CF" text. Using \226\151\143 (decimal byte escapes = UTF-8 E2 97 8F = ●).
+  1608→  1608→-- Repair (wrench, ENGIEWORKABLE) stays PRIMARY left-click; Pack Up (WILLPACKUP,
+  1609→  1609→-- rmb=true) stays on RIGHT-CLICK — unaffected. Overcharge is secondary left.
+  1610→  1610→local function WilliamOverchargeToggleFn(act)
+  1611→  1611→    if act.target ~= nil and act.target:IsValid() and act.target:HasTag("william_overcharge_toggle") then
+  1612→  1612→        if act.target.ToggleOvercharge ~= nil then
+  1613→  1613→            act.target:ToggleOvercharge(act.doer)
+  1614→  1614→            return true
+  1615→  1615→        end
+  1616→  1616→    end
+  1617→  1617→    return false
+  1618→  1618→end
+  1619→  1619→
+  1620→  1620→local WILLIAM_OVERCHARGE_ON  = AddAction("WILLIAM_OVERCHARGE_ON",  "\226\151\143 overcharged", WilliamOverchargeToggleFn)
+  1621→  1621→local WILLIAM_OVERCHARGE_OFF = AddAction("WILLIAM_OVERCHARGE_OFF", "",                         WilliamOverchargeToggleFn)
+  1622→  1622→WILLIAM_OVERCHARGE_ON.priority  = -1
+  1623→  1623→WILLIAM_OVERCHARGE_OFF.priority = -1
+  1624→  1624→
+  1625→  1625→AddComponentAction("SCENE", "fueled", function(inst, doer, actions, right)
+  1626→  1626→    if right then return end  -- LEFT-CLICK only
+  1627→  1627→    if inst:HasTag("william_overcharge_toggle")
+  1628→  1628→       and not inst:HasTag("INLIMBO")
+  1629→  1629→       and inst.components.inventoryitem == nil
+  1630→  1630→       and doer:HasTag("williamcrafter") then
+  1631→  1631→        -- ON shows the ● marker + "overcharged"; OFF shows nothing (empty str).
+  1632→  1632→        -- Both are clickable to toggle — like unpack/deploy is one toggle button.
+  1633→  1633→        if inst:HasTag("overcharged") then
+  1634→  1634→            table.insert(actions, GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_ON)
+  1635→  1635→        else
+  1636→  1636→            table.insert(actions, GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_OFF)
+  1637→  1637→        end
+  1638→  1638→    end
+  1639→  1639→end)
+  1640→  1640→
+  1641→  1641→AddStategraphActionHandler("wilson",        GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_ON,  "doshortaction"))
+  1642→  1642→AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_ON,  "doshortaction"))
+  1643→  1643→AddStategraphActionHandler("wilson",        GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_OFF, "doshortaction"))
+  1644→  1644→AddStategraphActionHandler("wilson_client", GLOBAL.ActionHandler(GLOBAL.ACTIONS.WILLIAM_OVERCHARGE_OFF, "doshortaction"))
+  1645→  1645→
+  1646→  1646→
+  1647→  1647→-- ENGIEWORKABLE: right-click with tf2wrench on wrenchable engineer buildings
+  1648→  1648→
+  1649→  1649→local ENGIEWORKABLE = G.Action()
+  1650→  1650→
+  1651→  1651→ENGIEWORKABLE.id = "ENGIEWORKABLE"
+  1652→  1652→
+  1653→  1653→ENGIEWORKABLE.str = {
+  1654→  1654→
+  1655→  1655→    GENERIC = "Repair",
+  1656→  1656→
+  1657→  1657→    DISPENSER = "Refuel",
+  1658→  1658→
+  1659→  1659→    SENTRY = "Reload",
+  1660→  1660→
+  1661→  1661→    SENTRY_LVL = "Reload/Upgrade",
+  1662→  1662→
+  1663→  1663→    DISPENSER_LVL = "Refuel/Upgrade",
+  1664→  1664→
+  1665→  1665→    BUTLER = "Repair",
+  1666→  1666→
+  1667→  1667→    BUTLER_LVL = "Upgrade Butler Bot MK.II",
+  1668→  1668→
+  1669→  1669→}
+  1670→  1670→
+  1671→  1671→ENGIEWORKABLE.strfn = function(act)
+  1672→  1672→
+  1673→  1673→    if act.target ~= nil then
+  1674→  1674→
+  1675→  1675→        if act.target.prefab == "esentry" and act.target:HasTag("lvl3") then
+  1676→  1676→
+  1677→  1677→            return "SENTRY"
+  1678→  1678→
+  1679→  1679→        elseif act.target.prefab == "esentry" and not act.target:HasTag("lvl3") then
+  1680→  1680→
+  1681→  1681→            return "SENTRY_LVL"
+  1682→  1682→
+  1683→  1683→        elseif act.target.prefab == "dispenser" and act.target:HasTag("lvl3") then
+  1684→  1684→
+  1685→  1685→            return "DISPENSER"
+  1686→  1686→
+  1687→  1687→        elseif act.target.prefab == "dispenser" and not act.target:HasTag("lvl3") then
+  1688→  1688→
+  1689→  1689→            return "DISPENSER_LVL"
+  1690→  1690→
+  1691→  1691→        elseif act.target.prefab == "williambutler" and not act.target:HasTag("butler_thermal_upgraded") then
+  1692→  1692→
+  1693→  1693→            return "BUTLER_LVL"
+  1694→  1694→
+  1695→  1695→        elseif act.target.prefab == "williambutler" and act.target:HasTag("butler_thermal_upgraded") then
+  1696→  1696→
+  1697→  1697→            return "BUTLER"
+  1698→  1698→
+  1699→  1699→        end
+  1700→  1700→
+  1701→  1701→    end
+  1702→  1702→
+  1703→  1703→end
+  1704→  1704→
+  1705→  1705→ENGIEWORKABLE.fn = function(act)
+  1706→  1706→
+  1707→  1707→    if act.doer ~= nil and act.target ~= nil and act.doer:HasTag("player") then
+  1708→  1708→
+  1709→  1709→        -- Verify wrench is still valid and has durability
+  1710→  1710→        local wrench = act.doer.components.inventory and act.doer.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+  1711→  1711→        if wrench == nil or wrench.prefab ~= "tf2wrench" or (wrench.components.finiteuses and wrench.components.finiteuses:GetUses() <= 0) then
+  1712→  1712→            return false
+  1713→  1713→        end
+  1714→  1714→
+  1715→  1715→        if act.target.components.engieworkable then
+  1716→  1716→
+  1717→  1717→            act.target.components.engieworkable:WorkedBy(act.doer, 1)
+  1718→  1718→
+  1719→  1719→            return true
+  1720→  1720→
+  1721→  1721→        elseif act.target.components.workable and act.target.components.workable.onwork then
+  1722→  1722→
+  1723→  1723→            act.target.components.workable.onwork(act.target, act.doer)
+  1724→  1724→
+  1725→  1725→            return true
+  1726→  1726→
+  1727→  1727→        end
+  1728→  1728→
+  1729→  1729→    end
+  1730→  1730→
+  1731→  1731→end
+  1732→  1732→
+  1733→  1733→AddAction(ENGIEWORKABLE)
+  1734→  1734→
+  1735→  1735→
+  1736→  1736→AddComponentAction("SCENE", "engieworkable", function(inst, doer, actions, right)
+  1737→  1737→    local equipped = doer.replica.inventory:GetEquippedItem(G.EQUIPSLOTS.HANDS)
+  1738→  1738→    if inst:HasTag("ebuild_wrenchable") and equipped ~= nil and equipped.prefab == "tf2wrench" then
+  1739→  1739→        if equipped.replica.finiteuses == nil or equipped.replica.finiteuses:GetUses() > 0 then
+  1740→  1740→            table.insert(actions, G.ACTIONS.ENGIEWORKABLE)
+  1741→  1741→        end
+  1742→  1742→    end
+  1743→  1743→end)
+  1744→  1744→
+  1745→  1745→
+  1746→  1746→AddStategraphActionHandler("wilson", G.ActionHandler(G.ACTIONS.ENGIEWORKABLE,
+  1747→  1747→
+  1748→  1748→        function(inst)
+  1749→  1749→
+  1750→  1750→            if inst:HasTag("beaver") then
+  1751→  1751→
+  1752→  1752→                return not inst.sg:HasStateTag("gnawing") and "gnaw" or nil
+  1753→  1753→
+  1754→  1754→            end
+  1755→  1755→
+  1756→  1756→            return not inst.sg:HasStateTag("prehammer")
+  1757→  1757→
+  1758→  1758→                and (inst.sg:HasStateTag("hammering") and
+  1759→  1759→
+  1760→  1760→                    "hammer" or
+  1761→  1761→
+  1762→  1762→                    "hammer_start")
+  1763→  1763→
+  1764→  1764→                or nil
+  1765→  1765→
+  1766→  1766→end))
+  1767→  1767→
+  1768→  1768→
+  1769→  1769→AddStategraphActionHandler("wilson_client", G.ActionHandler(G.ACTIONS.ENGIEWORKABLE,
+  1770→  1770→
+  1771→  1771→        function(inst)
+  1772→  1772→
+  1773→  1773→            if inst:HasTag("beaver") then
+  1774→  1774→
+  1775→  1775→                return not inst.sg:HasStateTag("gnawing") and "gnaw" or nil
+  1776→  1776→
+  1777→  1777→            end
+  1778→  1778→
+  1779→  1779→            return not inst.sg:HasStateTag("prehammer") and "hammer_start" or nil
+  1780→  1780→
+  1781→  1781→end))
+  1782→  1782→
+  1783→  1783→
+  1784→  1784→--==================================================================================
+  1785→  1785→
+  1786→  1786→-- SKILL TREE STRINGS (removed - will be reimplemented from reference mod)
+  1787→  1787→
+  1788→  1788→--==================================================================================
+  1789→  1789→
+  1790→  1790→-- All skill tree strings removed for clean reimplementation
+  1791→  1791→
+  1792→  1792→
+  1793→  1793→--==================================================================================
+  1794→  1794→
+  1795→  1795→-- ITEM NAME STRINGS (required to prevent blueprint crashes)
+  1796→  1796→
+  1797→  1797→--==================================================================================
+  1798→  1798→
+  1799→  1799→local _NAMES_T = G.rawget(G, "STRINGS") and G.STRINGS.NAMES or {}
+  1800→  1800→
+  1801→  1801→local _RECIPE_DESC_T = G.rawget(G, "STRINGS") and G.STRINGS.RECIPE_DESC or {}
+  1802→  1802→
+  1803→  1803→-- DST looks up STRINGS.NAMES[string.upper(prefab)] -- write both cases for safety
+  1804→  1804→
+  1805→  1805→local function SetName(k, v)
+  1806→  1806→
+  1807→  1807→    _NAMES_T[k] = v
+  1808→  1808→
+  1809→  1809→    _NAMES_T[string.upper(k)] = v
+  1810→  1810→
+  1811→  1811→end
+  1812→  1812→
+  1813→  1813→local function SetDesc(k, v)
+  1814→  1814→
+  1815→  1815→    _RECIPE_DESC_T[k] = v
+  1816→  1816→
+  1817→  1817→    _RECIPE_DESC_T[string.upper(k)] = v
+  1818→  1818→
+  1819→  1819→end
+  1820→  1820→
+  1821→  1821→
+  1822→  1822→-- Miami Ricky
+  1823→  1823→
+  1824→  1824→SetName("miamirick_portal_gun", "Portal Gun")
+  1825→  1825→
+  1826→  1826→SetName("miamirick_portal", "Unstable Portal")
+  1827→  1827→
+  1828→  1828→SetName("miamirick_portal_durable", "Stable Portal")
+  1829→  1829→
+  1830→  1830→SetName("miamirick_hand", "Hand Augment")
+  1831→  1831→
+  1832→  1832→SetName("miamirick_leg", "Leg Augment")
+  1833→  1833→
+  1834→  1834→SetName("miamirick_flicker", "Flicker")
+  1835→  1835→
+  1836→  1836→SetDesc("miamirick_portal_gun", "For science!")
+  1837→  1837→
+  1838→  1838→SetDesc("miamirick_portal", "I wonder where it leads?")
+  1839→  1839→
+  1840→  1840→SetDesc("miamirick_portal_durable", "I wonder where it leads?")
+  1841→  1841→
+  1842→  1842→SetDesc("miamirick_hand", "For science!")
+  1843→  1843→
+  1844→  1844→SetDesc("miamirick_leg", "For science!")
+  1845→  1845→
+  1846→  1846→SetDesc("miamirick_flicker", "For science!")
+  1847→  1847→
+  1848→  1848→
+  1849→  1849→-- Engineer
+  1850→  1850→
+  1851→  1851→SetName("scrap", "Scrap Metal")
+  1852→  1852→
+  1853→  1853→SetName("ehardhat", "Hard Hat")
+  1854→  1854→
+  1855→  1855→SetName("tf2wrench", "TF2 Wrench")
+  1856→  1856→
+  1857→  1857→SetName("esentry", "Sentry Gun")
+  1858→  1858→
+  1859→  1859→SetName("dispenser", "Dispenser")
+  1860→  1860→
+  1861→  1861→SetName("eteleporter", "Teleporter")
+  1862→  1862→
+  1863→  1863→SetName("eteleporter_exit", "Teleporter Exit")
+  1864→  1864→
+  1865→  1865→SetName("gibus", "Gibus")
+  1866→  1866→
+  1867→  1867→SetName("destructionpda", "Destruction PDA")
+  1868→  1868→
+  1869→  1869→SetDesc("scrap", "Engineering material")
+  1870→  1870→
+  1871→  1871→SetDesc("ehardhat", "Protect your noggin")
+  1872→  1872→
+  1873→  1873→SetDesc("tf2wrench", "For buildings!")
+  1874→  1874→
+  1875→  1875→SetDesc("esentry", "Automatic defense")
+  1876→  1876→
+  1877→  1877→SetDesc("dispenser", "Restores health and ammo")
+  1878→  1878→
+  1879→  1879→SetDesc("eteleporter", "Point A to point B")
+  1880→  1880→
+  1881→  1881→SetDesc("eteleporter_exit", "Destination pad")
+  1882→  1882→
+  1883→  1883→SetDesc("gibus", "Free hat!")
+  1884→  1884→
+  1885→  1885→
+  1886→  1886→-- William
+  1887→  1887→
+  1888→  1888→SetName("williamgadget", "Machine Hearth")
+  1889→  1889→
+  1890→  1890→SetName("williambutler_builder", "Butler Bot")
+  1891→  1891→
+  1892→  1892→SetName("williambuster_builder", "Buster Bot")
+  1893→  1893→
+  1894→  1894→SetName("williambrute_builder", "Brute Bot")
+  1895→  1895→
+  1896→  1896→SetName("williamballistic_empty", "Ballistic Bot")
+  1897→  1897→
+  1898→  1898→-- v2.0.33: removed SetName("williambutler2", "Butler Bot Mk.II") — it used
+  1899→  1899→-- "Mk.II" (no space) which MISMATCHED the displaynamefn base "Butler Bot
+  1900→  1900→-- Mk. II" (with space), causing a "jumbled" hover. v2.0.41 re-adds
+  1901→  1901→-- STRINGS.NAMES.WILLIAMBUTLER2 with the CORRECT "Butler Bot Mk. II" (with
+  1902→  1902→-- space, matching displaynamefn) directly in the AddSimPostInit block
+  1903→  1903→-- below — see the v2.0.41 comment there for the full root-cause analysis
+  1904→  1904→-- of why STRINGS.NAMES are REQUIRED (not optional) for all bot tiers.
+  1905→  1905→
+  1906→  1906→SetName("williambuster2", "Buster Bot Mk.II")
+  1907→  1907→
+  1908→  1908→SetName("williamballistic2", "Ballistic Bot Mk.II")
+  1909→  1909→
+  1910→  1910→SetDesc("williamgadget", "The Robot Core")
+  1911→  1911→
+  1912→  1912→SetDesc("williambutler_builder", "Your mechanical servant")
+  1913→  1913→
+  1914→  1914→SetDesc("williambutler2", "Cooking Assistant")
+  1915→  1915→
+  1916→  1916→SetDesc("williambuster_builder", "Heavy hitter")
+  1917→  1917→
+  1918→  1918→SetDesc("williambrute_builder", "Shield unit")
+  1919→  1919→
+  1920→  1920→SetDesc("williamballistic_empty", "Long range support")
+  1921→  1921→
+  1922→  1922→SetDesc("williambuster2", "Explosive Punch + Follows")
+  1923→  1923→
+  1924→  1924→SetDesc("williamballistic2", "Lightning Overcharge - ChainLight - Huge Battery - Recharges Nearby Bots.")
+  1925→  1925→
+  1926→  1926→
+  1927→  1927→-- Robert
+  1928→  1928→
+  1929→  1929→SetName("teslaflail", "Tesla Flail")
+  1930→  1930→
+  1931→  1931→SetName("compassvest", "Compass Vest")
+  1932→  1932→
+  1933→  1933→SetName("refinery_boards", "Board Refinery")
+  1934→  1934→
+  1935→  1935→SetName("refinery_papyrus", "Papyrus Refinery")
+  1936→  1936→
+  1937→  1937→SetName("refinery_rope", "Rope Refinery")
+  1938→  1938→
+  1939→  1939→SetName("refinery_cutstone", "Cut Stone Refinery")
+  1940→  1940→
+  1941→  1941→SetDesc("teslaflail", "Shocking!")
+  1942→  1942→
+  1943→  1943→SetDesc("compassvest", "Never get lost")
+  1944→  1944→
+  1945→  1945→SetDesc("refinery_boards", "Automated crafting")
+  1946→  1946→
+  1947→  1947→SetDesc("refinery_papyrus", "Automated crafting")
+  1948→  1948→
+  1949→  1949→SetDesc("refinery_rope", "Automated crafting")
+  1950→  1950→
+  1951→  1951→SetDesc("refinery_cutstone", "Automated crafting")
+  1952→  1952→
+  1953→  1953→
+  1954→  1954→--==================================================================================
+  1955→  1955→
+  1956→  1956→-- SKILL TREE ICON REGISTRATION (removed - will be reimplemented from reference mod)
+  1957→  1957→
+  1958→  1958→--==================================================================================
+  1959→  1959→
+  1960→  1960→-- Removed for clean reimplementation
+  1961→  1961→
+  1962→  1962→
+  1963→  1963→--==================================================================================
+  1964→  1964→
+  1965→  1965→-- SKILL TREE REGISTRATION (copied from Medievil Reanimated structure)
+  1966→  1966→
+  1967→  1967→--==================================================================================
+  1968→  1968→
+  1969→  1969→local SkillTreeDefs = require("prefabs/skilltree_defs")
+  1970→  1970→
+  1971→  1971→
+  1972→  1972→-- Store the skill definitions for later use (for WagstaffHasSkill)
+  1973→  1973→G.WagstaffSkillDefs = nil
+  1974→  1974→
+  1975→  1975→-- Create skill tree — matches reference mod pattern (kodi, mevileyes, sdf)
+  1976→  1976→-- Just CreateSkillTreeFor + SKILLTREE_ORDERS. No custom RPC, no wrappers.
+  1977→  1977→local function CreateSkillTree()
+  1978→  1978→    local BuildSkillsData = require("prefabs/skilltree_wagstaff")
+  1979→  1979→    if not BuildSkillsData then return end
+  1980→  1980→
+  1981→  1981→    local data = BuildSkillsData(SkillTreeDefs.FN)
+  1982→  1982→    if not data then return end
+  1983→  1983→
+  1984→  1984→    -- Save skill definitions for WagstaffHasSkill
+  1985→  1985→    G.WagstaffSkillDefs = data.SKILLS
+  1986→  1986→
+  1987→  1987→    -- Register skill tree with the engine
+  1988→  1988→    if type(SkillTreeDefs.CreateSkillTreeFor) == "function" then
+  1989→  1989→        SkillTreeDefs.CreateSkillTreeFor("wagstaff", data.SKILLS)
+  1990→  1990→        WagstaffDebug("CreateSkillTreeFor succeeded")
+  1991→  1991→    elseif type(SkillTreeDefs.FN) == "function" then
+  1992→  1992→        SkillTreeDefs.FN("wagstaff", data.SKILLS)
+  1993→  1993→    end
+  1994→  1994→
+  1995→  1995→    -- Set ORDERS AFTER CreateSkillTreeFor (matches reference mod pattern)
+  1996→  1996→    SkillTreeDefs.SKILLTREE_ORDERS["wagstaff"] = data.ORDERS
+  1997→  1997→
+  1998→  1998→    -- Set background
+  1999→  1999→    if SkillTreeDefs.SKILLTREE_METAINFO == nil then
+  2000→  2000→        SkillTreeDefs.SKILLTREE_METAINFO = {}
+
+[showing lines 1-2000 of 2002; use offset=2001 with limit to continue reading]

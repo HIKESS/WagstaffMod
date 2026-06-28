@@ -1,0 +1,1575 @@
+     1→     1→local prefabs =
+     2→     2→{
+     3→     3→
+     4→     4→}
+     5→     5→
+     6→     6→    local assets =
+     7→     7→    {
+     8→     8→        Asset("ANIM", "anim/william_buster.zip"),
+     9→     9→        Asset("ANIM", "anim/william_buster_empty.zip"),
+    10→    10→        Asset("SOUND", "sound/maxwell.fsb"),
+    11→    11→    }
+    12→    12→
+    13→    13→-- v2.0.17: debug helpers gated by the "Debug mode" mod config button.
+    14→    14→local _dbg  = _G.WagstaffDbg  or function(...) end
+    15→    15→local _dbgF = _G.WagstaffDbgF or function(...) end
+    16→    16→
+    17→    17→-- v2.0.35: Design correto = williamgadget (100% via lootsetfn) + 50% de UM item
+    18→    18→-- so (o material principal do recipe). Antes v2.0.34 tinha 50% por material (2
+    19→    19→-- itens), mas o design original era 50% para 1 item so.
+    20→    20→-- Buster recipe: williamgadget + marble(3) + transistor(2) -> material principal = marble
+    21→    21→SetSharedLootTable("buster",
+    22→    22→{
+    23→    23→    {'marble',            0.50},
+    24→    24→})
+    25→    25→
+    26→    26→SetSharedLootTable("bustergadget",
+    27→    27→{
+    28→    28→    {'williamgadget',          1},
+    29→    29→})
+    30→    30→
+    31→    31→local function lootsetfn(lootdropper)
+    32→    32→    -- v2.0.34: williamgadget (core) sempre dropa. gears adicionais por level
+    33→    33→    -- (recompensa de level up, nao e bonus aleatorio).
+    34→    34→    local loot = {"williamgadget"}
+    35→    35→    local amount = lootdropper.inst.level*0.75
+    36→    36→        if amount < 1 then amount = 1 end
+    37→    37→
+    38→    38→                if lootdropper.inst.level > 0 then
+    39→    39→                for k = 1, amount do
+    40→    40→            table.insert(loot, "gears")
+    41→    41→                end
+    42→    42→                end
+    43→    43→
+    44→    44→
+    45→    45→    lootdropper:SetLoot(loot)
+    46→    46→end
+    47→    47→
+    48→    48→local brain = require "brains/williambusterbrain"
+    49→    49→local AffinityPulse = _G.AffinityPulse
+    50→    50→
+    51→    51→-- Helper function to check if bot's owner has affinity skills
+    52→    52→local function GetOwner(inst)
+    53→    53→    return inst.components.follower and inst.components.follower:GetLeader()
+    54→    54→end
+    55→    55→
+    56→    56→local function OwnerHasCelestial(inst)
+    57→    57→    local owner = GetOwner(inst)
+    58→    58→    return owner and owner:HasTag("wagstaff_celestial_possession")
+    59→    59→end
+    60→    60→
+    61→    61→local function OwnerHasShadow(inst)
+    62→    62→    local owner = GetOwner(inst)
+    63→    63→    return owner and owner:HasTag("wagstaff_shadow_possession")
+    64→    64→end
+    65→    65→
+    66→    66→-- SHADOW POSSESSION: Shadow Clone for Buster Bot Mk.III
+    67→    67→-- Cria um segundo Buster totalmente negro com 50% do dano
+    68→    68→-- Desaparece quando acaba o período de dusk (shadow)
+    69→    69→local function SpawnShadowClone(parent_buster)
+    70→    70→    if not parent_buster or not parent_buster:IsValid() then return nil end
+    71→    71→    
+    72→    72→    local x, y, z = parent_buster.Transform:GetWorldPosition()
+    73→    73→    
+    74→    74→    -- Spawn a shadow version using the SAME prefab type as parent (MK1, MK2 or MK3)
+    75→    75→    local parent_prefab = parent_buster.prefab
+    76→    76→    local clone_prefab = (parent_prefab == "williambuster3") and "williambuster3" or ((parent_prefab == "williambuster2") and "williambuster2" or "williambuster")
+    77→    77→    local clone = SpawnPrefab(clone_prefab)
+    78→    78→    if not clone then return nil end
+    79→    79→    
+    80→    80→    -- Position near the buster
+    81→    81→    local offset = 1.5
+    82→    82→    local angle = math.random() * 2 * math.pi
+    83→    83→    clone.Transform:SetPosition(x + math.cos(angle) * offset, 0, z + math.sin(angle) * offset)
+    84→    84→    
+    85→    85→    -- Make it look like a SHADOW version - TOTALLY BLACK (no color)
+    86→    86→    -- Apply immediately to prevent any visible color flash
+    87→    87→    local function ApplyCloneTint(c)
+    88→    88→        if c:IsValid() and c.AnimState then
+    89→    89→            c.AnimState:SetMultColour(0.01, 0.01, 0.01, 0.55)
+    90→    90→            c.AnimState:SetAddColour(0, 0, 0, 0)
+    91→    91→        end
+    92→    92→    end
+    93→    93→    ApplyCloneTint(clone)
+    94→    94→    
+    95→    95→    -- Keep enforcing black + semi-transparent color constantly to prevent any reset.
+    96→    96→    -- v2.0.57 FIX: clone was losing its dark tint when the player walked away.
+    97→    97→    -- Root cause: DoPeriodicTask is PAUSED while the entity is asleep (DST
+    98→    98→    -- dormancy — entities far from any player enter sleepstate and their
+    99→    99→    -- periodic tasks stop ticking). During dormancy the SG 'spawn'/'revived'
+   100→   100→    -- states (and some engine colour resets) could wipe the tint, and the
+   101→   101→    -- paused re-tint task couldn't correct it. Now we ALSO listen for
+   102→   102→    -- 'entitywake' (fires when the entity wakes back up as the player
+   103→   103→    -- approaches) and re-apply the tint immediately — closing the window
+   104→   104→    -- where the clone renders at full colour while far from the player.
+   105→   105→    clone:DoPeriodicTask(0.05, function() ApplyCloneTint(clone) end)
+   106→   106→    clone:ListenForEvent("entitywake", function(c) ApplyCloneTint(c) end)
+   107→   107→    -- Also re-apply on 'onremove'/'onpreload' is unnecessary — the clone is
+   108→   108→    -- transient (persists = false). But guard the SG 'spawn'/'revived' states
+   109→   109→    -- as well (already guarded in SGwilliambuster via shadow_buster_clone tag).
+   110→   110→    
+   111→   111→    -- Set up combat stats.
+   112→   112→    -- v2.0.39: clone damage 50% -> 35% of parent.
+   113→   113→    -- v2.0.57: clone damage 35% -> 40% of parent per user request (35% felt
+   114→   114→    -- too weak after the v2.0.50 revert stopped the clone hunting shadow
+   115→   115→    -- creatures — the clone now only mirrors the parent's target, so a bit
+   116→   116→    -- more damage keeps it a meaningful support fighter).
+   117→   117→    if clone.components.combat then
+   118→   118→        local parent_damage = parent_buster.components.combat and parent_buster.components.combat.defaultdamage or TUNING.WILLIAM_BUSTER_DAMAGE
+   119→   119→        clone.components.combat:SetDefaultDamage(parent_damage * 0.40)
+   120→   120→    end
+   121→   121→
+   122→   122→    -- v2.0.39: clone HP is now FINITE (50% of parent max HP) instead of
+   123→   123→    -- invincible. An immortal clone that also hunts shadows (v2.0.38) had no
+   124→   124→    -- trade-off. Now the clone can die if focused by enemies — the player must
+   125→   125→    -- position the parent well to keep the clone alive. Still absorbs damage
+   126→   126→    -- (50% absorption) so it's tanky but not unkillable.
+   127→   127→    if clone.components.health then
+   128→   128→        local parent_maxhp = parent_buster.components.health and parent_buster.components.health.maxhealth or TUNING.WILLIAM_BUSTER_HEALTH
+   129→   129→        clone.components.health:SetMaxHealth(parent_maxhp * 0.5)
+   130→   130→        clone.components.health:SetAbsorptionAmount(0.5)
+   131→   131→        -- Keep health regen so the clone recovers between fights (parent has regen too).
+   132→   132→        if clone.components.health.StartRegen then
+   133→   133→            clone.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN or 5, TUNING.WILLIAM_ROBOT_REGENPERIOD or 5)
+   134→   134→        end
+   135→   135→    end
+   136→   136→    
+   137→   137→    -- Don't consume fuel (it's a shadow manifestation)
+   138→   138→    if clone.components.fueled then
+   139→   139→        clone.components.fueled:StopConsuming()
+   140→   140→    end
+   141→   141→    
+   142→   142→    -- Tag as shadow clone.
+   143→   143→    -- v2.0.50: RE-ADDED "shadowcreature" tag. The clone IS a shadow, so
+   144→   144→    -- shadow creatures (Terrorbeak, Crawling Horror, Night Hands) are its
+   145→   145→    -- kin — they should NOT attack each other. This restores the
+   146→   146→    -- shadow-vs-shadow immunity: hostile shadow monsters treat the clone
+   147→   147→    -- as friendly and the clone does not hunt them. The clone now fights
+   148→   148→    -- ONLY the parent's target (normal combat), consistent with the
+   149→   149→    -- faction logic applied to the Brute taunt in v2.0.48 (each faction
+   150→   150→    -- doesn't fight its own kin). The v2.0.38 "hunts shadow creatures"
+   151→   151→    -- behavior is reverted as thematically wrong.
+   152→   152→    clone:AddTag("shadow_buster_clone")
+   153→   153→    clone:AddTag("shadowcreature")    -- v2.0.50: shadow-vs-shadow immunity
+   154→   154→    clone:AddTag("shadow_aligned")    -- v2.0.50: explicit rift faction tag
+   155→   155→    clone:AddTag("NOCLICK") -- Can't be clicked/interacted with
+   156→   156→    
+   157→   157→    -- CRITICAL: Do not save this clone - it should always be recreated on load
+   158→   158→    clone.persists = false
+   159→   159→    
+   160→   160→    -- Set up follower to follow parent Buster (needed for brain retarget)
+   161→   161→    if clone.components.follower and parent_buster:IsValid() then
+   162→   162→        clone.components.follower:SetLeader(parent_buster)
+   163→   163→    end
+   164→   164→    
+   165→   165→    -- Configure combat retarget: attack ONLY the parent's current target.
+   166→   166→    -- v2.0.50: REVERTED the v2.0.38 "hunts shadow creatures" behavior. The
+   167→   167→    -- clone is a shadow (shadowcreature + shadow_aligned tags), so it should
+   168→   168→    -- NOT hunt its own kin (Terrorbeak, Crawling Horror). It now mirrors the
+   169→   169→    -- parent's target only — a normal shadow-THEMED combat bot, not an
+   170→   170→    -- anti-shadow fighter. Consistent with the Brute taunt faction logic.
+   171→   171→    if clone.components.combat then
+   172→   172→        clone.components.combat:SetRetargetFunction(1, function(inst)
+   173→   173→            if not parent_buster:IsValid() then return nil end
+   174→   174→
+   175→   175→            -- Only target: parent's current target.
+   176→   176→            -- v2.0.41 FIX: guard with components.health check — IsDead() is a
+   177→   177→            -- health COMPONENT method, not an entity method.
+   178→   178→            if parent_buster.components.combat then
+   179→   179→                local parent_target = parent_buster.components.combat.target
+   180→   180→                if parent_target and parent_target:IsValid() and not parent_target:IsInLimbo()
+   181→   181→                    and parent_target.components.health ~= nil
+   182→   182→                    and not parent_target.components.health:IsDead() then
+   183→   183→                    -- v2.0.50: don't target shadow creatures (our kin).
+   184→   184→                    if not parent_target:HasTag("shadow") and not parent_target:HasTag("shadow_aligned") then
+   185→   185→                        return parent_target
+   186→   186→                    end
+   187→   187→                end
+   188→   188→            end
+   189→   189→
+   190→   190→            return nil
+   191→   191→        end)
+   192→   192→
+   193→   193→        clone.components.combat.canretarget = true
+   194→   194→        clone.components.combat:SetKeepTargetFunction(function(inst, target)
+   195→   195→            if not target or not target:IsValid() then return false end
+   196→   196→            if target:IsInLimbo() then return false end
+   197→   197→            if target.components.health == nil or target.components.health:IsDead() then return false end
+   198→   198→            -- v2.0.50: drop target if it's a shadow creature (our kin).
+   199→   199→            if target:HasTag("shadow") or target:HasTag("shadow_aligned") then return false end
+   200→   200→            -- Stay on target while parent is alive
+   201→   201→            if not parent_buster:IsValid() then return false end
+   202→   202→            return true
+   203→   203→        end)
+   204→   204→    end
+   205→   205→    
+   206→   206→    -- Remove name to avoid confusion
+   207→   207→    if clone.components.named then
+   208→   208→        clone.components.named:SetName("Shadow Buster")
+   209→   209→    end
+   210→   210→    
+   211→   211→    -- Monitor dusk state, parent health, and CLONE health.
+   212→   212→    -- v2.0.39: clone now has finite HP — also despawn when the clone itself dies
+   213→   213→    -- (instead of leaving a corpse that lingers until dusk ends).
+   214→   214→    clone:DoPeriodicTask(0.5, function()
+   215→   215→        if not parent_buster:IsValid() or not clone:IsValid() then
+   216→   216→            if clone:IsValid() then clone:Remove() end
+   217→   217→            return
+   218→   218→        end
+   219→   219→
+   220→   220→        -- v2.0.39: if the clone's HP ran out, despawn it with the shadow FX
+   221→   221→        -- (don't leave a dead clone body hanging around).
+   222→   222→        if clone.components.health and clone.components.health:IsDead() then
+   223→   223→            local remove_fx = SpawnPrefab("shadow_despawn")
+   224→   224→            if remove_fx then
+   225→   225→                local cx, cy, cz = clone.Transform:GetWorldPosition()
+   226→   226→                remove_fx.Transform:SetPosition(cx, cy, cz)
+   227→   227→                if remove_fx.SoundEmitter then
+   228→   228→                    remove_fx.SoundEmitter:KillAllSounds()
+   229→   229→                end
+   230→   230→            end
+   231→   231→            clone:Remove()
+   232→   232→            return
+   233→   233→        end
+   234→   234→
+   235→   235→        -- v2.0.58: Despawn when the parent's shadow pulse fades too — not only
+   236→   236→        -- when dusk ends. The pulse (parent_buster._aff_active) turns off when
+   237→   237→        -- the owner leaves combat or walks out of range, so the clone fades with
+   238→   238→        -- it, keeping pulse + clone in sync. (At dusk, _aff_active implies the
+   239→   239→        -- shadow path is active, so this check is safe.)
+   240→   240→        local parent_dead = not parent_buster.components.health or parent_buster.components.health:IsDead()
+   241→   241→        local pulse_faded = not TheWorld.state.isdusk or parent_buster._aff_active ~= true
+   242→   242→        if parent_dead or pulse_faded then
+   243→   243→            -- FX: shadow despawn (NO SOUND)
+   244→   244→            local remove_fx = SpawnPrefab("shadow_despawn")
+   245→   245→            if remove_fx then
+   246→   246→                local cx, cy, cz = clone.Transform:GetWorldPosition()
+   247→   247→                remove_fx.Transform:SetPosition(cx, cy, cz)
+   248→   248→                -- Kill all sounds on this FX
+   249→   249→                if remove_fx.SoundEmitter then
+   250→   250→                    remove_fx.SoundEmitter:KillAllSounds()
+   251→   251→                end
+   252→   252→            end
+   253→   253→            clone:Remove()
+   254→   254→            return
+   255→   255→        end
+   256→   256→        
+   257→   257→        -- Periodically suggest parent's target to the clone
+   258→   258→        if parent_buster.components.combat and parent_buster.components.combat.target then
+   259→   259→            local target = parent_buster.components.combat.target
+   260→   260→            if clone.components.combat and target:IsValid() and not target:IsInLimbo() then
+   261→   261→                clone.components.combat:SuggestTarget(target)
+   262→   262→            end
+   263→   263→        end
+   264→   264→    end)
+   265→   265→    
+   266→   266→    -- Visual effect on spawn (shadow materialization FX - shadows coming together)
+   267→   267→    local fx = SpawnPrefab("statue_transition_2")
+   268→   268→    if fx then
+   269→   269→        fx.Transform:SetPosition(clone.Transform:GetWorldPosition())
+   270→   270→    end
+   271→   271→    
+   272→   272→    -- Spawn sound
+   273→   273→    if clone.SoundEmitter then
+   274→   274→        clone.SoundEmitter:PlaySound("dontstarve/common/ghost_spawn")
+   275→   275→    end
+   276→   276→    
+   277→   277→    return clone
+   278→   278→end
+   279→   279→
+   280→   280→local function LevelUp(inst, amount)
+   281→   281→        if inst.level < 3 and amount ~= nil then
+   282→   282→        inst.level = inst.level + amount
+   283→   283→        if inst.sg ~= nil then
+   284→   284→        inst.sg:GoToState("upgraded")
+   285→   285→        end
+   286→   286→end
+   287→   287→        if inst.level > 3 then inst.level = 3 end
+   288→   288→
+   289→   289→        inst:DoTaskInTime(0, function()
+   290→   290→                inst:AddTag("level"..inst.level)
+   291→   291→
+   292→   292→        inst.components.health:SetAbsorptionAmount(0+inst.level*0.05)
+   293→   293→        if inst.components.combat ~= nil then
+   294→   294→            -- v2.0.15 FIX: preserve tier bonus (MK2 +5, MK3 +10) instead of overriding it
+   295→   295→            local tier_bonus = 0
+   296→   296→            if inst.prefab == "williambuster2" then tier_bonus = 5
+   297→   297→            elseif inst.prefab == "williambuster3" then tier_bonus = 10 end
+   298→   298→            inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BUSTER_DAMAGE + tier_bonus + (inst.level*3))
+   299→   299→        end
+   300→   300→        end)
+   301→   301→end
+   302→   302→
+   303→   303→local function OnAttacked(inst, data)
+   304→   304→    if data.attacker ~= nil then
+   305→   305→        if data.attacker.components.petleash ~= nil and
+   306→   306→            data.attacker.components.petleash:IsPet(inst) then
+   307→   307→        elseif data.attacker.components.combat ~= nil then
+   308→   308→            inst.components.combat:SuggestTarget(data.attacker)
+   309→   309→        end
+   310→   310→    end
+   311→   311→end
+   312→   312→
+   313→   313→local function OnFuelEmpty(inst)
+   314→   314→    if inst.sg ~= nil then
+   315→   315→        inst.sg:GoToState("powerdown")
+   316→   316→    end
+   317→   317→end
+   318→   318→
+   319→   319→local VALID_BUSTER_FUELS = {
+   320→   320→    -- v2.0.76: gears removed (scarce crafting resource, conflicts with
+   321→   321→    -- williamgadget/structure recipes). Transistor is the premium fuel.
+   322→   322→    -- NOTE: this table is legacy/dead code (DST passes fuelitem=nil to
+   323→   323→    -- ontakefuelfn), but kept for documentation + future-proofing.
+   324→   324→    trinket_6 = true, -- frazzled wires
+   325→   325→    transistor = true,
+   326→   326→    scrap = true,
+   327→   327→}
+   328→   328→
+   329→   329→local function OnAddFuel(inst, fuelvalue, fuelitem)
+   330→   330→    -- v2.0.70 FIX: DST's `fueled` component calls ontakefuelfn as
+   331→   331→    -- (inst, fuelvalue, ...) — NOT (inst, doer, fuelitem). Previous code
+   332→   332→    -- treated the fuelvalue number as `doer`, crashing with "attempt to
+   333→   333→    -- index local 'doer' (a number value)" when fuel was already full.
+   334→   334→    -- v2.0.63: reject fuel when already full (vanilla-style feedback).
+   335→   335→    if inst.components.fueled and inst.components.fueled:IsFull() then
+   336→   336→        local player = FindClosestPlayerToInst(inst, 10, true)
+   337→   337→        if player and player.components.talker then
+   338→   338→            player.components.talker:Say("It's already full!")
+   339→   339→        end
+   340→   340→        return false
+   341→   341→    end
+   342→   342→    -- Only accept generator fuel (gears, etc.), reject common fuel like wood.
+   343→   343→    -- NOTE: in this DST version, fuelitem is nil from ontakefuelfn (DST passes
+   344→   344→    -- only fuelvalue as the 2nd arg), so this validation is currently a no-op.
+   345→   345→    -- Fuel-type filtering should be done via the fueled component's
+   346→   346→    -- SetFuelAcceptingTest or similar, not here. Left in place for safety.
+   347→   347→    if fuelitem and fuelitem.prefab then
+   348→   348→        if not VALID_BUSTER_FUELS[fuelitem.prefab] then
+   349→   349→            -- Not a valid fuel for Buster Bot
+   350→   350→            local player = FindClosestPlayerToInst(inst, 10, true)
+   351→   351→            if player and player.components.talker then
+   352→   352→                player.components.talker:Say("This won't work as fuel.")
+   353→   353→            end
+   354→   354→            return false  -- Reject the fuel
+   355→   355→        end
+   356→   356→    end
+   357→   357→    
+   358→   358→        inst.SoundEmitter:PlaySound("dontstarve_DLC001/common/machine_fuel")
+   359→   359→        if inst.sg ~= nil then
+   360→   360→    inst.sg:GoToState("fed")
+   361→   361→        end
+   362→   362→    inst:AddTag("alive")
+   363→   363→    return true  -- Accept the fuel
+   364→   364→end
+   365→   365→
+   366→   366→local function fuelupdate(inst)
+   367→   367→        if inst.components.fueled ~= nil
+   368→   368→            and inst.components.fueled.currentfuel <= inst.components.fueled.maxfuel*0.1  then
+   369→   369→    inst.AnimState:AddOverrideBuild("william_buster_empty")
+   370→   370→                --inst.AnimState:SetBuild("william_buster_empty")
+   371→   371→                else
+   372→   372→    inst.AnimState:ClearOverrideBuild("william_buster_empty")
+   373→   373→        end
+   374→   374→    end
+   375→   375→
+   376→   376→local function retargetfn(inst)
+   377→   377→    --Find things attacking leader
+   378→   378→    local leader = inst.components.follower:GetLeader()
+   379→   379→    return leader ~= nil
+   380→   380→        and FindEntity(
+   381→   381→            leader,
+   382→   382→            TUNING.SHADOWWAXWELL_TARGET_DIST,
+   383→   383→            function(guy)
+   384→   384→                return guy ~= inst
+   385→   385→                    and (guy.components.combat:TargetIs(leader) or
+   386→   386→                        guy.components.combat:TargetIs(inst))
+   387→   387→                    and inst.components.combat:CanTarget(guy)
+   388→   388→            end,
+   389→   389→            { "_combat" }, -- see entityreplica.lua
+   390→   390→            { "playerghost", "INLIMBO" }
+   391→   391→        )
+   392→   392→        or nil
+   393→   393→end
+   394→   394→
+   395→   395→local function keeptargetfn(inst, target)
+   396→   396→    --Is your leader nearby and your target not dead? Stay on it.
+   397→   397→    --Match KEEP_WORKING_DIST in brain
+   398→   398→    return inst.components.follower:IsNearLeader(14)
+   399→   399→        and inst.components.combat:CanTarget(target)
+   400→   400→                and target.components.minigame_participator == nil
+   401→   401→end
+   402→   402→
+   403→   403→local function getstatus(inst, viewer)
+   404→   404→            return inst.components.fueled:IsEmpty() and "EMPTY"
+   405→   405→            or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .3 and "CRITICALFUEL"
+   406→   406→            or inst.components.fueled.currentfuel / inst.components.fueled.maxfuel <= .6 and "LOWFUEL"
+   407→   407→            or "FINE"
+   408→   408→end
+   409→   409→
+   410→   410→local function NoHoles(pt)
+   411→   411→    return not TheWorld.Map:IsPointNearHole(pt)
+   412→   412→end
+   413→   413→
+   414→   414→local function nodebrisdmg(inst, amount, overtime, cause, ignore_invincible, afflicter, ignore_absorb)
+   415→   415→    return (afflicter ~= nil and afflicter:HasTag("quakedebris")) or (afflicter ~= nil and afflicter:HasTag("epic") and afflicter.components.combat.target ~= inst)
+   416→   416→end
+   417→   417→
+   418→   418→
+   419→   419→local function MakeAlive(inst, doer)
+   420→   420→    -- BUG FIX: Check if doer has petleash (fixes bug after c_skip)
+   421→   421→    if not doer or not doer.components.petleash then
+   422→   422→        return
+   423→   423→    end
+   424→   424→
+   425→   425→    local pt = inst:GetPosition()
+   426→   426→    -- BUG FIX 3: Use inst.prefab to determine correct bot level
+   427→   427→    local prefab = inst.prefab or "williambuster_empty"
+   428→   428→    
+   429→   429→    -- Determine spawn prefab based on saved state
+   430→   430→    local spawn_prefab = "williambuster"
+   431→   431→    if prefab == "williambuster_empty" then
+   432→   432→        -- Check saved flags to spawn correct level
+   433→   433→        if inst.was_mk3 then
+   434→   434→            spawn_prefab = "williambuster3"
+   435→   435→        elseif inst.was_mk2 or (inst.saved_upgradelevel ~= nil and inst.saved_upgradelevel >= 70) then
+   436→   436→            spawn_prefab = "williambuster2"
+   437→   437→        end
+   438→   438→    end
+   439→   439→    
+   440→   440→    local respawned = doer.components.petleash:SpawnPetAt(pt.x, 0, pt.z, spawn_prefab)
+   441→   441→    if respawned ~= nil then
+   442→   442→        respawned.components.fueled.currentfuel = inst.components.fueled.currentfuel
+   443→   443→        respawned.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+   444→   444→        respawned.Transform:SetRotation(inst.Transform:GetRotation())
+   445→   445→        respawned.sg:GoToState("revived")
+   446→   446→        respawned.level = inst.level or 0
+   447→   447→        respawned.upgradelevel = inst.saved_upgradelevel or inst.upgradelevel or 0
+   448→   448→        if inst.saved_upgradelevel_mk3 then
+   449→   449→            respawned.upgradelevel_mk3 = inst.saved_upgradelevel_mk3
+   450→   450→        end
+   451→   451→        
+   452→   452→        -- BUG FIX 9: Save owner GUID for tracking
+   453→   453→        respawned.owner_guid = doer.GUID
+   454→   454→        respawned.owner_name = doer.name
+   455→   455→        
+   456→   456→        respawned:PushEvent("levelup")
+   457→   457→        inst:Remove()
+   458→   458→    end
+   459→   459→end
+   460→   460→
+   461→   461→local function onworked(inst)
+   462→   462→        if inst.sg ~= nil then
+   463→   463→        inst.sg:GoToState("hit")
+   464→   464→        end
+   465→   465→end
+   466→   466→
+   467→   467→local function OnHammered(inst, worker)
+   468→   468→    -- v2.0.34: lootsetfn garante williamgadget (100%) + gears por level.
+   469→   469→    -- Chance table "buster" da 50% marble + 50% transistor (bonus alinhado ao recipe).
+   470→   470→    inst.components.lootdropper:DropLoot()
+   471→   471→    local fx = SpawnPrefab("collapse_small")
+   472→   472→    fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+   473→   473→    fx:SetMaterial("metal")
+   474→   474→    inst:Remove()
+   475→   475→end
+   476→   476→
+   477→   477→local function onsave(inst, data)
+   478→   478→        if inst.level ~= nil then
+   479→   479→    data.level = inst.level
+   480→   480→        end
+   481→   481→    data.upgradelevel = inst.upgradelevel or 0
+   482→   482→    data.saved_upgradelevel = inst.saved_upgradelevel or 0
+   483→   483→    data.saved_upgradelevel_mk3 = inst.saved_upgradelevel_mk3 or 0
+   484→   484→    data.was_mk2 = inst.was_mk2
+   485→   485→    data.was_mk3 = inst.was_mk3
+   486→   486→    -- BUG FIX 3: Save exact prefab name
+   487→   487→    data.saved_prefab_name = inst.prefab
+   488→   488→    -- Save leader GUID for persistence
+   489→   489→    if inst.components.follower and inst.components.follower:GetLeader() then
+   490→   490→        data.leader_guid = inst.components.follower:GetLeader().GUID
+   491→   491→    end
+   492→   492→end
+   493→   493→
+   494→   494→local function onload(inst, data)
+   495→   495→    if data ~= nil and data.level ~= nil then
+   496→   496→        inst.level = data.level 
+   497→   497→        if inst.level > 0 then inst:DoTaskInTime(0,LevelUp) end
+   498→   498→    end
+   499→   499→    if data ~= nil and data.upgradelevel ~= nil then
+   500→   500→        inst.upgradelevel = data.upgradelevel
+   501→   501→    else
+   502→   502→        inst.upgradelevel = inst.upgradelevel or 0
+   503→   503→    end
+   504→   504→    if data ~= nil then
+   505→   505→        inst.saved_upgradelevel = data.saved_upgradelevel or 0
+   506→   506→        inst.saved_upgradelevel_mk3 = data.saved_upgradelevel_mk3 or 0
+   507→   507→        inst.was_mk2 = data.was_mk2
+   508→   508→        inst.was_mk3 = data.was_mk3
+   509→   509→        -- BUG FIX 3: Load saved prefab name
+   510→   510→        inst.saved_prefab_name = data.saved_prefab_name
+   511→   511→    end
+   512→   512→    -- Restore follower after save/load
+   513→   513→    if data ~= nil and data.leader_guid ~= nil then
+   514→   514→        inst:DoTaskInTime(0, function()
+   515→   515→            local leader = TheWorld.GUIDToPos and TheWorld.GUIDToPos(data.leader_guid)
+   516→   516→            if not leader then
+   517→   517→                for k, v in pairs(Ents) do
+   518→   518→                    if k == data.leader_guid then
+   519→   519→                        leader = v
+   520→   520→                        break
+   521→   521→                    end
+   522→   522→                end
+   523→   523→            end
+   524→   524→            if leader and leader:IsValid() and inst:IsValid() then
+   525→   525→                if inst.components.follower then
+   526→   526→                    inst.components.follower:SetLeader(leader)
+   527→   527→                end
+   528→   528→            end
+   529→   529→        end)
+   530→   530→    end
+   531→   531→    -- Wait for inst to have named component before updating name
+   532→   532→    inst:DoTaskInTime(0, function()
+   533→   533→        if inst.prefab == "williambuster2" and inst.components.named then
+   534→   534→            local function UpdateBuster2Name(inst)
+   535→   535→                local base = "Buster Bot Mk.II"
+   536→   536→                local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+   537→   537→                local hp = math.floor(inst.components.health.currenthealth)
+   538→   538→                local maxhp = math.floor(inst.components.health.maxhealth)
+   539→   539→                -- v2.0.40: show MK3 upgrade progress only while in progress (>0)
+   540→   540→                local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. "/90") or ""
+   541→   541→                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str)
+   542→   542→            end
+   543→   543→            UpdateBuster2Name(inst)
+   544→   544→        elseif inst.prefab == "williambuster3" and inst.components.named then
+   545→   545→            local function UpdateBuster3Name(inst)
+   546→   546→                local base = "Buster Bot Mk.III"
+   547→   547→                local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+   548→   548→                local hp = math.floor(inst.components.health.currenthealth)
+   549→   549→                local maxhp = math.floor(inst.components.health.maxhealth)
+   550→   550→                local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
+   551→   551→                inst.components.named:SetName(name_str)
+   552→   552→                inst.name = name_str
+   553→   553→            end
+   554→   554→            UpdateBuster3Name(inst)
+   555→   555→        elseif inst.components.named then
+   556→   556→            local function UpdateBusterName(inst)
+   557→   557→                local base = "Buster Bot"
+   558→   558→                local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+   559→   559→                local hp = math.floor(inst.components.health.currenthealth)
+   560→   560→                local maxhp = math.floor(inst.components.health.maxhealth)
+   561→   561→                -- v2.0.40: show MK2 upgrade progress only while in progress (>0)
+   562→   562→                local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. "/85") or ""
+   563→   563→                inst.components.named:SetName(base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str)
+   564→   564→            end
+   565→   565→            UpdateBusterName(inst)
+   566→   566→        end
+   567→   567→    end)
+   568→   568→end
+   569→   569→
+   570→   570→    local function fn(inst)
+   571→   571→        local inst = CreateEntity()
+   572→   572→        inst.entity:AddTransform()
+   573→   573→        inst.entity:AddAnimState()
+   574→   574→        inst.entity:AddSoundEmitter()
+   575→   575→        inst.entity:AddMiniMapEntity()
+   576→   576→        inst.entity:AddDynamicShadow()
+   577→   577→        inst.entity:AddNetwork()
+   578→   578→        inst.MiniMapEntity:SetIcon("williambuster.tex")
+   579→   579→
+   580→   580→        inst.DynamicShadow:SetSize(1.5, 1)
+   581→   581→
+   582→   582→        inst.Transform:SetFourFaced()
+   583→   583→
+   584→   584→    MakeCharacterPhysics(inst, 50, .5)
+   585→   585→
+   586→   586→        inst.level = 0
+   587→   587→
+   588→   588→        inst.Physics:SetCollides(false)
+   589→   589→        inst:DoTaskInTime(0, function() inst.Physics:SetCollides(true) end)
+   590→   590→
+   591→   591→    inst.AnimState:SetBank("knight")
+   592→   592→    inst.AnimState:SetBuild("william_buster")
+   593→   593→        inst.AnimState:PlayAnimation("idle_loop", true)
+   594→   594→    inst.Transform:SetScale(0.8, 0.8, 0.8)
+   595→   595→
+   596→   596→        inst:AddTag("willfollower")
+   597→   597→        inst:AddTag("tiddlevirusimmune")
+   598→   598→        inst:AddTag("willminion")
+   599→   599→        inst:AddTag("companion")
+   600→   600→        inst:AddTag("NOBLOCK")
+   601→   601→        inst:AddTag("mech")
+   602→   602→
+   603→   603→        -- v2.0.36 FIX: hover display on CLIENT. The client doesn't have
+   604→   604→        -- inst.GetDisplayName (set only on server) and inst.name resolves to
+   605→   605→        -- STRINGS.NAMES.WILLIAMBUSTER = "Buster Bot" (no fuel/HP info). The
+   606→   606→        -- engine's GetDisplayName checks inst.name BEFORE replica.named, so
+   607→   607→        -- MK1 showed "Buster Bot" on hover instead of the fuel/HP string.
+   608→   608→        -- displaynamefn has the HIGHEST priority (checked before inst.name),
+   609→   609→        -- so setting it here (runs on BOTH server and client, before the
+   610→   610→        -- ismastersim return) forces hover to use the named component/replica
+   611→   611→        -- which has the correct "Buster Bot\nFuel: X% | HP: X/X" string.
+   612→   612→        inst.displaynamefn = function(inst)
+   613→   613→            if inst.components.named ~= nil then
+   614→   614→                return inst.components.named.name
+   615→   615→            end
+   616→   616→            if inst.replica.named ~= nil then
+   617→   617→                return inst.replica.named.name
+   618→   618→            end
+   619→   619→            return inst.name
+   620→   620→        end
+   621→   621→
+   622→   622→        inst.entity:SetPristine()
+   623→   623→
+   624→   624→        if not TheWorld.ismastersim then
+   625→   625→            return inst
+   626→   626→        end
+   627→   627→
+   628→   628→
+   629→   629→        inst:AddComponent("willyraise")
+   630→   630→    inst.components.willyraise:SetOnRiseFn(MakeAlive)
+   631→   631→    inst.components.willyraise:SetOnLowerFn(OnFuelEmpty)
+   632→   632→
+   633→   633→        inst:AddComponent("health")
+   634→   634→        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BUSTER_HEALTH)
+   635→   635→    inst.components.health:StartRegen(TUNING.WILLIAM_ROBOT_REGEN, TUNING.WILLIAM_ROBOT_REGENPERIOD)
+   636→   636→        inst.components.health.redirect = nodebrisdmg
+   637→   637→                inst:AddComponent("lootdropper")
+   638→   638→    inst.components.lootdropper:SetChanceLootTable("buster")
+   639→   639→    inst.components.lootdropper:SetLootSetupFn(lootsetfn)
+   640→   640→
+   641→   641→    inst:AddComponent("inspectable")
+   642→   642→    inst.components.inspectable.getstatus = getstatus
+   643→   643→
+   644→   644→    inst:AddComponent("fueled")
+   645→   645→    inst.components.fueled:SetTakeFuelFn(OnAddFuel)
+   646→   646→    inst.components.fueled.accepting = true  -- Enable manual fueling (reverted to original)
+   647→   647→    inst.components.fueled:InitializeFuelLevel(TUNING.WILLIAM_BUSTER_MAXFUEL)
+   648→   648→    inst.components.fueled.bonusmult = 1
+   649→   649→
+   650→   650→    -- v2.0.75: per-material fuel balancing. Sets bonusmult=5 (matches original
+   651→   651→    -- mod design), restricts accepted fuels to WILLIAM_FUEL.BUSTER list
+   652→   652→    -- (mechanical ONLY: gears, transistor, trinket_6, scrap), and hooks
+   653→   653→    -- TakeFuelItem so these custom materials give explicit fuel values even
+   654→   654→    -- though they lack a DST `fuel` component. The old VALID_BUSTER_FUELS
+   655→   655→    -- table was dead code (never enforced); this replaces it with a working
+   656→   656→    -- implementation.
+   657→   657→    local WILLIAM_FUEL = _G.WILLIAM_FUEL
+   658→   658→    if WILLIAM_FUEL then
+   659→   659→        WILLIAM_FUEL.Setup(inst, WILLIAM_FUEL.BUSTER, 5)
+   660→   660→    end
+   661→   661→
+   662→   662→        inst.OnPreLoad = onload
+   663→   663→        inst.OnSave = onsave
+   664→   664→
+   665→   665→        inst:ListenForEvent("levelup", LevelUp)
+   666→   666→
+   667→   667→        return inst
+   668→   668→    end
+   669→   669→
+   670→   670→        --ACTIVE BUSTER-----------
+   671→   671→        
+   672→   672→    local function active(inst)
+   673→   673→        local inst = fn(inst)
+   674→   674→
+   675→   675→    MakeCharacterPhysics(inst, 50, .5)
+   676→   676→
+   677→   677→        if not TheWorld.ismastersim then
+   678→   678→            return inst
+   679→   679→        end
+   680→   680→
+   681→   681→        inst:AddTag("alive")
+   682→   682→        inst:AddTag("scarytoprey")
+   683→   683→        inst:AddTag("buster")
+   684→   684→        inst:AddTag("ebuild_wrenchable")
+   685→   685→
+   686→   686→    inst:AddComponent("named")
+   687→   687→
+   688→   688→    inst.components.fueled:SetUpdateFn(fuelupdate)
+   689→   689→    inst.components.fueled:SetDepletedFn(OnFuelEmpty)
+   690→   690→
+   691→   691→    -- Rain damage (like WX-78) when active
+   692→   692→    inst:DoPeriodicTask(1, function(inst)
+   693→   693→        if TheWorld.state.israining and inst.components.health then
+   694→   694→            inst.components.health:DoDelta(-1, false, "wetness")
+   695→   695→        end
+   696→   696→    end)
+   697→   697→
+   698→   698→    -- Lightning recharge (refuel, no overcharge)
+   699→   699→    inst:ListenForEvent("lightningstrike", function(inst)
+   700→   700→        if inst.components.fueled then
+   701→   701→            local refuel = inst.components.fueled.maxfuel * 0.25
+   702→   702→            inst.components.fueled:DoDelta(refuel)
+   703→   703→        end
+   704→   704→    end)
+   705→   705→
+   706→   706→    inst:AddComponent("locomotor")
+   707→   707→    inst.components.locomotor.walkspeed = TUNING.WILLIAM_BUSTER_WALK_SPEED
+   708→   708→        inst.components.locomotor:SetAllowPlatformHopping(true)
+   709→   709→        inst:AddComponent("embarker")
+   710→   710→
+   711→   711→    inst:SetStateGraph("SGwilliambuster")
+   712→   712→
+   713→   713→        inst:AddComponent("combat")
+   714→   714→    inst.components.combat:SetRetargetFunction(2, retargetfn) --Look for leader's target.
+   715→   715→    inst.components.combat:SetKeepTargetFunction(keeptargetfn) --Keep attacking while leader is near.
+   716→   716→    inst.components.combat.hiteffectsymbol = "spring"
+   717→   717→    inst.components.combat:SetAttackPeriod(TUNING.WILLIAM_BUSTER_ATTACK_PERIOD)
+   718→   718→        inst.components.combat:SetRange(TUNING.WILLIAM_BUSTER_ATTACK_RANGE)
+   719→   719→    inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BUSTER_DAMAGE)
+   720→   720→
+   721→   721→        inst:ListenForEvent("attacked", OnAttacked)
+   722→   722→
+   723→   723→        inst:AddComponent("follower")
+   724→   724→        inst.components.follower:KeepLeaderOnAttacked()
+   725→   725→        inst.components.follower.keepdeadleader = true
+   726→   726→        inst.components.follower.keepleaderduringminigame = true
+   727→   727→
+   728→   728→    inst.components.fueled:StartConsuming()
+   729→   729→
+   730→   730→    MakeHauntablePanic(inst)
+   731→   731→
+   732→   732→    -- v2.0.65: mark active buster as "on" so the brain's Deactivated gate
+   733→   733→    -- (WhileNode inst.on == false) does not block movement. The empty husk
+   734→   734→    -- prefab sets inst.on = false to stay inert.
+   735→   735→    inst.on = true
+   736→   736→
+   737→   737→        inst:SetBrain(brain)
+   738→   738→
+   739→   739→    MakeMediumBurnableCharacter(inst, "spring")
+   740→   740→    MakeMediumFreezableCharacter(inst, "spring")
+   741→   741→inst.components.burnable.ignorefuel = true
+   742→   742→
+   743→   743→        -- Upgrade progress tracking (must be before named update)
+   744→   744→        inst.upgradelevel = inst.upgradelevel or 0
+   745→   745→
+   746→   746→        -- Named status display (Fuel | HP)
+   747→   747→        inst._periodic_name_tasks = inst._periodic_name_tasks or {}
+   748→   748→        local function UpdateBusterName(inst)
+   749→   749→            local base = "Buster Bot"
+   750→   750→            local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+   751→   751→            local hp = math.floor(inst.components.health.currenthealth)
+   752→   752→            local maxhp = math.floor(inst.components.health.maxhealth)
+   753→   753→            -- v2.0.40: show MK2 upgrade progress only while in progress (>0).
+   754→   754→            local upgrade_str = (inst.upgradelevel and inst.upgradelevel > 0) and (" | Upgrade: " .. inst.upgradelevel .. "/85") or ""
+   755→   755→            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+   756→   756→            inst.components.named:SetName(name_str)
+   757→   757→            inst.name = name_str
+   758→   758→            inst.GetDisplayName = function() return name_str end
+   759→   759→        end
+   760→   760→        UpdateBusterName(inst)
+   761→   761→        local task = inst:DoPeriodicTask(2, UpdateBusterName)
+   762→   762→        table.insert(inst._periodic_name_tasks, task)
+   763→   763→
+   764→   764→        -- Upgrade + Repair system: wrench + scrap
+   765→   765→        inst:AddComponent("engieworkable")
+   766→   766→        inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
+   767→   767→        inst.components.engieworkable:SetMaxWork(1)
+   768→   768→        inst.components.engieworkable:SetWorkLeft(1)
+   769→   769→        inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+   770→   770→            if inst.sg ~= nil then
+   771→   771→                inst.sg:GoToState("hit")
+   772→   772→            end
+   773→   773→        end)
+   774→   774→        inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+   775→   775→            _dbg("[DEBUG] ==============================================")
+   776→   776→            _dbg("[DEBUG] OnFinishCallback chamado para Buster Bot")
+   777→   777→            _dbg("[DEBUG] inst.prefab:", inst.prefab)
+   778→   778→            _dbg("[DEBUG] worker.prefab:", worker.prefab)
+   779→   779→            _dbg("[DEBUG] worker.name:", worker.name)
+   780→   780→            _dbg("[DEBUG] inst.upgradelevel:", inst.upgradelevel)
+   781→   781→            
+   782→   782→            inst.components.engieworkable:SetWorkLeft(1)
+   783→   783→            -- Use wrench durability
+   784→   784→            local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+   785→   785→            _dbg("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
+   786→   786→            if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
+   787→   787→                wrench.components.finiteuses:Use(1)
+   788→   788→            end
+   789→   789→
+   790→   790→            -- PRIORITY 1: Repair if HP < 100% (NO skill required, works for MK1/MK2/MK3)
+   791→   791→            -- v2.0.67 FIX: previously MK1 with damaged HP went straight to the upgrade
+   792→   792→            -- path, which requires the Buster MK. II skill — so early-game players could
+   793→   793→            -- NOT repair a damaged MK1 buster. Now repair always runs first when damaged.
+   794→   794→            if inst.components.health and inst.components.health.currenthealth < inst.components.health.maxhealth then
+   795→   795→                _dbg("[DEBUG] Buster - modo repair (HP < max, qualquer tier)")
+   796→   796→                local function IsScrap(item)
+   797→   797→                    return item.prefab == "scrap"
+   798→   798→                end
+   799→   799→                local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   800→   800→                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   801→   801→                if repair_cost > 0 and scrapstack == nil then
+   802→   802→                    if worker.components.talker then
+   803→   803→                        worker.components.talker:Say("Need Scrap Metal to repair!")
+   804→   804→                    end
+   805→   805→                    return
+   806→   806→                end
+   807→   807→                if repair_cost > 0 then
+   808→   808→                    worker.components.inventory:ConsumeByName("scrap", repair_cost)
+   809→   809→                end
+   810→   810→                inst.components.health:DoDelta(50)
+   811→   811→                inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+   812→   812→                if worker.components.talker then
+   813→   813→                    worker.components.talker:Say("Repaired 50 HP!")
+   814→   814→                end
+   815→   815→                return
+   816→   816→            end
+   817→   817→
+   818→   818→            -- v2.0.68 FIX: the previous "HP is already full" block here did an early
+   819→   819→            -- return when HP >= max, which BLOCKED the upgrade path below. So a buster
+   820→   820→            -- with full HP + a player who HAD the MK2 skill would just hear "HP is
+   821→   821→            -- already full!" and never upgrade. Removed — when HP is full we fall
+   822→   822→            -- through to the upgrade path (skill check + scrap). The MK2+ repair
+   823→   823→            -- fallback below already has its own "HP is already full" message.
+   824→   824→
+   825→   825→            -- Check if trying to upgrade MK1 to MK2
+   826→   826→            if not inst:HasTag("buster_upgraded") and inst.prefab ~= "williambuster2" then
+   827→   827→                _dbg("[DEBUG] Buster é MK1 - verificando upgrade para MK2")
+   828→   828→                _dbg("[DEBUG] Chamando WagstaffHasSkill para wagstaff_buster_evolve")
+   829→   829→                _dbg("[DEBUG] worker tem skilltreeupdater?", worker.components.skilltreeupdater ~= nil)
+   830→   830→                local has_skill = _G.WagstaffHasSkill(worker, "wagstaff_buster_evolve")
+   831→   831→                _dbg("[DEBUG] Resultado de WagstaffHasSkill:", has_skill)
+   832→   832→                if not has_skill then
+   833→   833→                    _dbg("[DEBUG] Skill NÃO encontrada! Abortando upgrade.")
+   834→   834→                    if worker.components.talker then
+   835→   835→                        worker.components.talker:Say("Requires Buster Bot MK. II skill!\n(Activate it in the skill tree!)")
+   836→   836→                    end
+   837→   837→                    return
+   838→   838→                end
+   839→   839→                _dbg("[DEBUG] Skill encontrada! Prosseguindo com upgrade...")
+   840→   840→
+   841→   841→                -- Upgrade: scrap metal per wrench hit (5 per hit, 85 total for Mk.II)
+   842→   842→                local scrap_count = 0
+   843→   843→                if worker.components.inventory then
+   844→   844→                    for _, item in pairs(worker.components.inventory.itemslots) do
+   845→   845→                        if item ~= nil and item.prefab == "scrap" and item.components.stackable then
+   846→   846→                            scrap_count = scrap_count + item.components.stackable:StackSize()
+   847→   847→                        elseif item ~= nil and item.prefab == "scrap" then
+   848→   848→                            scrap_count = scrap_count + 1
+   849→   849→                        end
+   850→   850→                    end
+   851→   851→                end
+   852→   852→                local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+   853→   853→                if upgrade_cost > 0 and scrap_count < upgrade_cost then
+   854→   854→                    if worker.components.talker then
+   855→   855→                        worker.components.talker:Say("Need 5 Scrap Metal!")
+   856→   856→                    end
+   857→   857→                    return
+   858→   858→                end
+   859→   859→                if upgrade_cost > 0 then
+   860→   860→                    worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
+   861→   861→                end
+   862→   862→                inst.upgradelevel = inst.upgradelevel + 5
+   863→   863→                UpdateBusterName(inst)
+   864→   864→
+   865→   865→                if inst.upgradelevel >= 85 then
+   866→   866→                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+   867→   867→                    if worker.components.talker then
+   868→   868→                        worker.components.talker:Say("Heavy Impact upgrade complete!")
+   869→   869→                    end
+   870→   870→
+   871→   871→                    local pt = inst:GetPosition()
+   872→   872→                    local newbot = SpawnPrefab("williambuster2")
+   873→   873→                    if newbot ~= nil then
+   874→   874→                        newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
+   875→   875→                        newbot.Transform:SetRotation(inst.Transform:GetRotation())
+   876→   876→
+   877→   877→                        if inst.components.fueled and newbot.components.fueled then
+   878→   878→                            newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+   879→   879→                        end
+   880→   880→                        if inst.components.health and newbot.components.health then
+   881→   881→                            newbot.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+   882→   882→                        end
+   883→   883→                        newbot.level = inst.level
+   884→   884→                        newbot.upgradelevel = inst.upgradelevel or 0
+   885→   885→
+   886→   886→                        if inst.components.follower ~= nil and inst.components.follower:GetLeader() ~= nil then
+   887→   887→                            newbot.components.follower:SetLeader(inst.components.follower:GetLeader())
+   888→   888→                        end
+   889→   889→
+   890→   890→                        local fx = SpawnPrefab("small_puff")
+   891→   891→                        fx.Transform:SetPosition(pt.x, pt.y, pt.z)
+   892→   892→                        inst.SoundEmitter:PlaySound("dontstarve/common/craftable")
+   893→   893→                    end
+   894→   894→                    inst:Remove()
+   895→   895→                end
+   896→   896→                return
+   897→   897→            end
+   898→   898→
+   899→   899→            -- Repair for MK2+
+   900→   900→            if inst.components.health.currenthealth >= inst.components.health.maxhealth then
+   901→   901→                if worker.components.talker then
+   902→   902→                    worker.components.talker:Say("HP is already full!")
+   903→   903→                end
+   904→   904→                return
+   905→   905→            end
+   906→   906→            local function IsScrap(item)
+   907→   907→                return item.prefab == "scrap"
+   908→   908→            end
+   909→   909→            local scrapstack = worker.components.inventory:FindItem(IsScrap)
+   910→   910→            local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+   911→   911→            if repair_cost > 0 and scrapstack == nil then
+   912→   912→                if worker.components.talker then
+   913→   913→                    worker.components.talker:Say("Need Scrap Metal to repair!")
+   914→   914→                end
+   915→   915→                return
+   916→   916→            end
+   917→   917→            if repair_cost > 0 then
+   918→   918→                worker.components.inventory:ConsumeByName("scrap", repair_cost)
+   919→   919→            end
+   920→   920→            inst.components.health:DoDelta(50)
+   921→   921→            inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+   922→   922→            if worker.components.talker then
+   923→   923→                worker.components.talker:Say("Repaired 50 HP!")
+   924→   924→            end
+   925→   925→        end)
+   926→   926→
+   927→   927→        return inst
+   928→   928→    end
+   929→   929→
+   930→   930→-- BUSTER BOT Mk.II: Upgraded version with AoE damage, stun chance, +500HP, +5DMG
+   931→   931→    local function active2(inst)
+   932→   932→        local inst = active(inst)
+   933→   933→
+   934→   934→        -- _named tag removed (causes on-hover display issues)
+   935→   935→        inst:AddTag("buster_upgraded")
+   936→   936→
+   937→   937→        if not TheWorld.ismastersim then
+   938→   938→            return inst
+   939→   939→        end
+   940→   940→
+   941→   941→        -- Bigger size for Mk.II
+   942→   942→        inst.Transform:SetScale(1.0, 1.0, 1.0)
+   943→   943→
+   944→   944→        -- Slightly warmer tint to differentiate (menos acinzentado)
+   945→   945→        inst.AnimState:SetMultColour(0.95, 0.9, 0.8, 1)
+   946→   946→
+   947→   947→        -- Override health and damage
+   948→   948→        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BUSTER_HEALTH + 300)
+   949→   949→        inst.components.health:DoDelta(300)
+   950→   950→        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BUSTER_DAMAGE + 5)
+   951→   951→
+   952→   952→        -- Named status display (Fuel | HP | Upgrade for Mk.II) - FIXED: format como Brute
+   953→   953→        inst.upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
+   954→   954→        if inst.components.named == nil then
+   955→   955→            inst:AddComponent("named")
+   956→   956→        end
+   957→   957→        -- Cancel any existing periodic tasks from parent function (active)
+   958→   958→        if inst._periodic_name_tasks then
+   959→   959→            for _, task in ipairs(inst._periodic_name_tasks) do
+   960→   960→                if task then
+   961→   961→                    task:Cancel()
+   962→   962→                end
+   963→   963→            end
+   964→   964→        end
+   965→   965→        inst._periodic_name_tasks = inst._periodic_name_tasks or {}
+   966→   966→        local function UpdateBuster2Name(inst)
+   967→   967→            local base = "Buster Bot Mk.II"
+   968→   968→            local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+   969→   969→            local hp = math.floor(inst.components.health.currenthealth)
+   970→   970→            local maxhp = math.floor(inst.components.health.maxhealth)
+   971→   971→            -- v2.0.40: show MK3 upgrade progress only while in progress (>0).
+   972→   972→            local upgrade_str = (inst.upgradelevel_mk3 and inst.upgradelevel_mk3 > 0) and (" | Upgrade: " .. inst.upgradelevel_mk3 .. "/90") or ""
+   973→   973→            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp .. upgrade_str
+   974→   974→            inst.components.named:SetName(name_str)
+   975→   975→            inst.name = name_str
+   976→   976→            inst.GetDisplayName = function() return name_str end
+   977→   977→        end
+   978→   978→        UpdateBuster2Name(inst)
+   979→   979→        local task = inst:DoPeriodicTask(2, UpdateBuster2Name)
+   980→   980→        table.insert(inst._periodic_name_tasks, task)
+   981→   981→
+   982→   982→        -- Mk.II: Repair + Upgrade in one engieworkable callback
+   983→   983→        inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+   984→   984→            if inst.sg ~= nil then
+   985→   985→                inst.sg:GoToState("hit")
+   986→   986→            end
+   987→   987→        end)
+   988→   988→        inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+   989→   989→            _dbg("[DEBUG] ==============================================")
+   990→   990→            _dbg("[DEBUG] OnFinishCallback chamado para Buster Bot MK2")
+   991→   991→            _dbg("[DEBUG] inst.prefab:", inst.prefab)
+   992→   992→            _dbg("[DEBUG] worker.prefab:", worker.prefab)
+   993→   993→            _dbg("[DEBUG] inst.upgradelevel_mk3:", inst.upgradelevel_mk3)
+   994→   994→            
+   995→   995→            if inst.sg ~= nil and inst.sg:HasStateTag("shutdown") then
+   996→   996→                return
+   997→   997→            end
+   998→   998→            inst.components.engieworkable:SetWorkLeft(1)
+   999→   999→            -- Use wrench durability
+  1000→  1000→            local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+  1001→  1001→            _dbg("[DEBUG] wrench:", wrench and wrench.prefab or "nil")
+  1002→  1002→            if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
+  1003→  1003→                wrench.components.finiteuses:Use(1)
+  1004→  1004→            end
+  1005→  1005→
+  1006→  1006→            -- Check if can upgrade first
+  1007→  1007→            _dbg("[DEBUG] Verificando skill wagstaff_buster_mk3...")
+  1008→  1008→            local has_mk3_skill = _G.WagstaffHasSkill(worker, "wagstaff_buster_mk3")
+  1009→  1009→            _dbg("[DEBUG] Tem skill MK3?", has_mk3_skill)
+  1010→  1010→            _dbg("[DEBUG] upgradelevel_mk3 atual:", inst.upgradelevel_mk3)
+  1011→  1011→            if has_mk3_skill and inst.upgradelevel_mk3 < 90 then
+  1012→  1012→                _dbg("[DEBUG] Tentando upgrade para MK3...")
+  1013→  1013→                -- v2.0.16: 5 per hit, 90 total for Mk.III (was 120)
+  1014→  1014→                local scrap_count = 0
+  1015→  1015→                if worker.components.inventory then
+  1016→  1016→                    for _, item in pairs(worker.components.inventory.itemslots) do
+  1017→  1017→                        if item ~= nil and item.prefab == "scrap" and item.components.stackable then
+  1018→  1018→                            scrap_count = scrap_count + item.components.stackable:StackSize()
+  1019→  1019→                        elseif item ~= nil and item.prefab == "scrap" then
+  1020→  1020→                            scrap_count = scrap_count + 1
+  1021→  1021→                        end
+  1022→  1022→                    end
+  1023→  1023→                end
+  1024→  1024→                local upgrade_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 5)
+  1025→  1025→                if upgrade_cost > 0 and scrap_count < upgrade_cost then
+  1026→  1026→                    if worker.components.talker then
+  1027→  1027→                        worker.components.talker:Say("Need 5 Scrap Metal!")
+  1028→  1028→                    end
+  1029→  1029→                    return
+  1030→  1030→                end
+  1031→  1031→                if upgrade_cost > 0 then
+  1032→  1032→                    worker.components.inventory:ConsumeByName("scrap", upgrade_cost)
+  1033→  1033→                end
+  1034→  1034→                inst.upgradelevel_mk3 = inst.upgradelevel_mk3 + 5
+  1035→  1035→                UpdateBuster2Name(inst)
+  1036→  1036→                inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+  1037→  1037→
+  1038→  1038→                if inst.upgradelevel_mk3 >= 90 then
+  1039→  1039→                    inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
+  1040→  1040→                    if worker.components.talker then
+  1041→  1041→                        worker.components.talker:Say("Explosive Punch upgrade complete!")
+  1042→  1042→                    end
+  1043→  1043→
+  1044→  1044→                    -- Spawn upgraded bot
+  1045→  1045→                    local pt = inst:GetPosition()
+  1046→  1046→                    local newbot = SpawnPrefab("williambuster3")
+  1047→  1047→                    if newbot ~= nil then
+  1048→  1048→                        newbot.Transform:SetPosition(pt.x, pt.y, pt.z)
+  1049→  1049→                        newbot.Transform:SetRotation(inst.Transform:GetRotation())
+  1050→  1050→
+  1051→  1051→                        -- Transfer fuel
+  1052→  1052→                        if inst.components.fueled and newbot.components.fueled then
+  1053→  1053→                            newbot.components.fueled.currentfuel = inst.components.fueled.currentfuel
+  1054→  1054→                        end
+  1055→  1055→                        -- Transfer health
+  1056→  1056→                        if inst.components.health and newbot.components.health then
+  1057→  1057→                            newbot.components.health:SetCurrentHealth(inst.components.health.currenthealth)
+  1058→  1058→                        end
+  1059→  1059→                        newbot.level = inst.level
+  1060→  1060→                        newbot.upgradelevel = inst.upgradelevel or 70
+  1061→  1061→                        newbot.upgradelevel_mk3 = inst.upgradelevel_mk3 or 75
+  1062→  1062→
+  1063→  1063→                        -- Set leader
+  1064→  1064→                        if inst.components.follower ~= nil and inst.components.follower:GetLeader() ~= nil then
+  1065→  1065→                            newbot.components.follower:SetLeader(inst.components.follower:GetLeader())
+  1066→  1066→                        end
+  1067→  1067→
+  1068→  1068→                        -- Spawn FX
+  1069→  1069→                        local fx = SpawnPrefab("small_puff")
+  1070→  1070→                        fx.Transform:SetPosition(pt.x, pt.y, pt.z)
+  1071→  1071→                        inst.SoundEmitter:PlaySound("dontstarve/common/craftable")
+  1072→  1072→                    end
+  1073→  1073→
+  1074→  1074→                    inst:Remove()
+  1075→  1075→                end
+  1076→  1076→                return
+  1077→  1077→            end
+  1078→  1078→
+  1079→  1079→            -- If not upgrading, try repair
+  1080→  1080→            if inst.components.health.currenthealth >= inst.components.health.maxhealth then
+  1081→  1081→                if worker.components.talker then
+  1082→  1082→                    worker.components.talker:Say("HP is already full!")
+  1083→  1083→                end
+  1084→  1084→            else
+  1085→  1085→                local function IsScrap(item)
+  1086→  1086→                    return item.prefab == "scrap"
+  1087→  1087→                end
+  1088→  1088→                local scrapstack = worker.components.inventory:FindItem(IsScrap)
+  1089→  1089→                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+  1090→  1090→                if repair_cost > 0 and scrapstack == nil then
+  1091→  1091→                    if worker.components.talker then
+  1092→  1092→                        worker.components.talker:Say("Need Scrap Metal to repair!")
+  1093→  1093→                    end
+  1094→  1094→                    return
+  1095→  1095→                end
+  1096→  1096→                if repair_cost > 0 then
+  1097→  1097→                    worker.components.inventory:ConsumeByName("scrap", repair_cost)
+  1098→  1098→                end
+  1099→  1099→                inst.components.health:DoDelta(50)
+  1100→  1100→                inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+  1101→  1101→                if worker.components.talker then
+  1102→  1102→                    worker.components.talker:Say("Repaired 50 HP!")
+  1103→  1103→                end
+  1104→  1104→            end
+  1105→  1105→        end)
+  1106→  1106→
+  1107→  1107→        -- Save/load for buster2 upgrade progress
+  1108→  1108→        local old_OnSaveBuster2 = inst.OnSave
+  1109→  1109→        local function OnSaveBuster2WithUpgrade(inst, data)
+  1110→  1110→            if old_OnSaveBuster2 then
+  1111→  1111→                old_OnSaveBuster2(inst, data)
+  1112→  1112→            end
+  1113→  1113→            data.upgradelevel_mk3 = inst.upgradelevel_mk3 or 0
+  1114→  1114→        end
+  1115→  1115→        local old_OnLoadBuster2 = inst.OnLoad
+  1116→  1116→        local function OnLoadBuster2WithUpgrade(inst, data)
+  1117→  1117→            if old_OnLoadBuster2 then
+  1118→  1118→                old_OnLoadBuster2(inst, data)
+  1119→  1119→            end
+  1120→  1120→            if data then
+  1121→  1121→                inst.upgradelevel_mk3 = data.upgradelevel_mk3 or 0
+  1122→  1122→                UpdateBuster2Name(inst)
+  1123→  1123→            end
+  1124→  1124→        end
+  1125→  1125→        inst.OnSave = OnSaveBuster2WithUpgrade
+  1126→  1126→        inst.OnLoad = OnLoadBuster2WithUpgrade
+  1127→  1127→
+  1128→  1128→        -- CELESTIAL POSSESSION: "Gestalt Agressivo" - Aura simples + FX gelo + Cor pulsante
+  1129→  1129→        inst._celestial_light = nil
+  1130→  1130→        inst._aura_fx = nil
+  1131→  1131→        inst._shadow_clone = nil
+  1132→  1132→        
+  1133→  1133→        -- Affinity pulse (shared module, MK3 only)
+  1134→  1134→
+  1135→  1135→        inst:DoPeriodicTask(3, function()
+  1136→  1136→            if inst.prefab == "williambuster3" and TheWorld.state.isday and OwnerHasCelestial(inst) then
+  1137→  1137→                -- Light própria azul lunar
+  1138→  1138→                if inst._celestial_light == nil then
+  1139→  1139→                    inst.entity:AddLight()
+  1140→  1140→                    inst._celestial_light = true
+  1141→  1141→                end
+  1142→  1142→                if inst.Light then
+  1143→  1143→                    inst.Light:SetRadius(2)
+  1144→  1144→                    inst.Light:SetIntensity(0.5)
+  1145→  1145→                    inst.Light:SetFalloff(0.6)
+  1146→  1146→                    inst.Light:SetColour(0.3, 0.5, 1) -- Blue electric
+  1147→  1147→                    inst.Light:Enable(true)
+  1148→  1148→                end
+  1149→  1149→                
+  1150→  1150→                -- AURA BUSTER - só quando ativo (nil = inicialmente ativo)
+  1151→  1151→                if inst.on ~= false and (inst._aura_fx == nil or not inst._aura_fx:IsValid()) then
+  1152→  1152→                    inst._aura_fx = SpawnPrefab("bot_aura_buster")
+  1153→  1153→                    if inst._aura_fx then
+  1154→  1154→                        inst._aura_fx._parent = inst
+  1155→  1155→                    end
+  1156→  1156→                end
+  1157→  1157→                
+  1158→  1158→                -- v2.0.58: shadow clone lifecycle is now owned by the dedicated
+  1159→  1159→                -- 0.5s sync task below (no reference clearing here — the task
+  1160→  1160→                -- despawns the clone entity properly when the pulse fades).
+  1161→  1161→            else
+  1162→  1162→                -- Remove effects
+  1163→  1163→                if inst.Light then
+  1164→  1164→                    inst.Light:Enable(false)
+  1165→  1165→                end
+  1166→  1166→                inst._celestial_light = nil
+  1167→  1167→                if inst._aura_fx ~= nil and inst._aura_fx:IsValid() then
+  1168→  1168→                    inst._aura_fx:Remove()
+  1169→  1169→                    inst._aura_fx = nil
+  1170→  1170→                end
+  1171→  1171→            end
+  1172→  1172→            
+  1173→  1173→            -- v2.0.58: Shadow clone spawn/despawn moved out of this 3s task into
+  1174→  1174→            -- a dedicated 0.5s task (below) that is tightly synced to the
+  1175→  1175→            -- AffinityPulse's _aff_active flag, so the clone and the shadow pulse
+  1176→  1176→            -- always turn on/off together. This block only keeps the celestial-
+  1177→  1177→            -- light disable + colour reset for the parent buster.
+  1178→  1178→            if inst.prefab == "williambuster3" and TheWorld.state.isdusk and OwnerHasShadow(inst) then
+  1179→  1179→                if inst.Light then
+  1180→  1180→                    inst.Light:Enable(false)
+  1181→  1181→                end
+  1182→  1182→                inst._celestial_light = nil
+  1183→  1183→            else
+  1184→  1184→                if not (TheWorld.state.isday and OwnerHasCelestial(inst)) then
+  1185→  1185→                    if not inst:HasTag("shadow_buster_clone") then
+  1186→  1186→                        inst.AnimState:SetMultColour(1, 1, 1, 1)
+  1187→  1187→                        inst.AnimState:SetAddColour(0, 0, 0, 0)
+  1188→  1188→                    end
+  1189→  1189→                end
+  1190→  1190→            end
+  1191→  1191→        end)
+  1192→  1192→
+  1193→  1193→        -- v2.0.58: Shadow clone lifecycle — synced to the AffinityPulse.
+  1194→  1194→        -- The pulse (inst._aff_active) is true only during DUSK+shadow while the
+  1195→  1195→        -- owner is near AND in combat. The clone now mirrors this exactly: it
+  1196→  1196→        -- spawns the instant the shadow pulse lights up and despawns the instant
+  1197→  1197→        -- it fades (owner left combat, walked out of range, or dusk ended). This
+  1198→  1198→        -- guarantees the Buster never has a clone spawned without the shadow pulse
+  1199→  1199→        -- (or a shadow pulse without the clone) — they are always in sync.
+  1200→  1200→        inst:DoPeriodicTask(0.5, function()
+  1201→  1201→            if inst.prefab ~= "williambuster3" then return end
+  1202→  1202→            if not TheWorld.ismastersim then return end
+  1203→  1203→
+  1204→  1204→            -- At dusk the phase_check only passes via the shadow path, so
+  1205→  1205→            -- _aff_active being true at dusk implies: shadow owner + near + in
+  1206→  1206→            -- combat. That is exactly the condition the clone should live under.
+  1207→  1207→            local shadow_pulse_active = TheWorld.state.isdusk and inst._aff_active == true
+  1208→  1208→
+  1209→  1209→            if shadow_pulse_active then
+  1210→  1210→                if not inst._shadow_clone or not inst._shadow_clone:IsValid() then
+  1211→  1211→                    inst._shadow_clone = SpawnShadowClone(inst)
+  1212→  1212→                end
+  1213→  1213→            else
+  1214→  1214→                -- Pulse stopped (left battle / owner far / dusk ended / owner
+  1215→  1215→                -- lost shadow): despawn the clone with the shadow fade FX so it
+  1216→  1216→                -- never lingers without a pulse.
+  1217→  1217→                if inst._shadow_clone and inst._shadow_clone:IsValid() then
+  1218→  1218→                    local cx, cy, cz = inst._shadow_clone.Transform:GetWorldPosition()
+  1219→  1219→                    local remove_fx = SpawnPrefab("shadow_despawn")
+  1220→  1220→                    if remove_fx then
+  1221→  1221→                        remove_fx.Transform:SetPosition(cx, cy, cz)
+  1222→  1222→                        if remove_fx.SoundEmitter then
+  1223→  1223→                            remove_fx.SoundEmitter:KillAllSounds()
+  1224→  1224→                        end
+  1225→  1225→                    end
+  1226→  1226→                    inst._shadow_clone:Remove()
+  1227→  1227→                    inst._shadow_clone = nil
+  1228→  1228→                end
+  1229→  1229→            end
+  1230→  1230→        end)
+  1231→  1231→
+  1232→  1232→
+  1233→  1233→
+  1234→  1234→        return inst
+  1235→  1235→    end
+  1236→  1236→
+  1237→  1237→-- BUSTER BOT Mk.III: Upgraded version with Explosive Punch, +600HP, +10DMG
+  1238→  1238→    local function active3(inst)
+  1239→  1239→        local inst = active2(inst)
+  1240→  1240→
+  1241→  1241→        -- _named tag removed (causes on-hover display issues)
+  1242→  1242→        inst:AddTag("buster_upgraded_mk3")
+  1243→  1243→
+  1244→  1244→        if not TheWorld.ismastersim then
+  1245→  1245→            return inst
+  1246→  1246→        end
+  1247→  1247→
+  1248→  1248→        -- Bigger size for Mk.III
+  1249→  1249→        inst.Transform:SetScale(1.2, 1.2, 1.2)
+  1250→  1250→
+  1251→  1251→        -- Golden tint to differentiate
+  1252→  1252→        inst.AnimState:SetMultColour(1, 0.9, 0.6, 1)
+  1253→  1253→
+  1254→  1254→        -- Override health and damage
+  1255→  1255→        inst.components.health:SetMaxHealth(TUNING.WILLIAM_BUSTER_HEALTH + 600)
+  1256→  1256→        inst.components.health:DoDelta(600)
+  1257→  1257→        inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BUSTER_DAMAGE + 10)
+  1258→  1258→
+  1259→  1259→        -- Affinity pulse (MK3 only)
+  1260→  1260→        -- v2.0.55: Phase-gate the pulse to match the affinity effect's active
+  1261→  1261→        -- window. The buster's affinity combat bonus only fires during
+  1262→  1262→        -- DAY+celestial or DUSK+shadow (see onhitotherfn checks). Without this
+  1263→  1263→        -- gate the pulse lit up during battle even in the "weak" passive phase
+  1264→  1264→        -- (e.g. celestial buster fighting at dusk), which was visually misleading.
+  1265→  1265→        AffinityPulse.Setup(inst, GetOwner, {
+  1266→  1266→            phase_check = function(inst, owner)
+  1267→  1267→                if not (owner and owner:IsValid()) then return false end
+  1268→  1268→                local celestial = owner:HasTag("wagstaff_celestial_possession")
+  1269→  1269→                local shadow    = owner:HasTag("wagstaff_shadow_possession")
+  1270→  1270→                return (TheWorld.state.isday and celestial)
+  1271→  1271→                    or (TheWorld.state.isdusk and shadow)
+  1272→  1272→            end,
+  1273→  1273→        })
+  1274→  1274→
+  1275→  1275→        -- Explosive Punch: 30% chance for bonus damage with explosion FX + pushback
+  1276→  1276→        local old_onhit = inst.components.combat.onhitotherfn
+  1277→  1277→        inst.components.combat.onhitotherfn = function(inst, other, damage)
+  1278→  1278→            if old_onhit ~= nil then
+  1279→  1279→                old_onhit(inst, other, damage)
+  1280→  1280→            end
+  1281→  1281→            if math.random() < 0.30 then
+  1282→  1282→                local x, y, z = other.Transform:GetWorldPosition()
+  1283→  1283→                
+  1284→  1284→                -- CELESTIAL POSSESSION: AOE light explosion during day (MK3 only)
+  1285→  1285→                if inst.prefab == "williambuster3" and TheWorld.state.isday and OwnerHasCelestial(inst) then
+  1286→  1286→                    -- Find adjacent enemies and damage them
+  1287→  1287→                    local adjacents = TheSim:FindEntities(x, y, z, 3, {"_combat"}, {"player", "companion", "willminion", "INLIMBO"})
+  1288→  1288→                    for _, ent in ipairs(adjacents) do
+  1289→  1289→                        if ent ~= other and ent ~= inst and ent.components.health and not ent.components.health:IsDead() then
+  1290→  1290→                            -- v2.0.15: AOE 30% -> 50% of hit damage (was too weak)
+  1291→  1291→                            ent.components.health:DoDelta(-damage * 0.5, false, "light_explosion")
+  1292→  1292→                        end
+  1293→  1293→                    end
+  1294→  1294→                end
+  1295→  1295→                
+  1296→  1296→                -- Bonus explosive damage (50% extra)
+  1297→  1297→                if other.components.health ~= nil and not other.components.health:IsDead() then
+  1298→  1298→                    local bonus = damage * 0.5
+  1299→  1299→                    other.components.health:DoDelta(-bonus, false, "explosive_punch")
+  1300→  1300→                end
+  1301→  1301→                -- Explosion visual effect (COMMON EXPLOSION FX) - 100% chance
+  1302→  1302→                local fx = SpawnPrefab("explode_small")
+  1303→  1303→                if fx then
+  1304→  1304→                    fx.Transform:SetScale(1.0, 1.0, 1.0)  -- Normal scale for AOE
+  1305→  1305→                end
+  1306→  1306→                if fx then
+  1307→  1307→                    fx.Transform:SetPosition(x, y, z)
+  1308→  1308→                end
+  1309→  1309→                inst.SoundEmitter:PlaySound("dontstarve/common/blackpowder_explo")
+  1310→  1310→                -- Pushback: knock enemy away from buster
+  1311→  1311→                if other.Physics ~= nil then
+  1312→  1312→                    local angle = inst:GetAngleToPoint(other.Transform:GetWorldPosition())
+  1313→  1313→                    local speed = 10
+  1314→  1314→                    other.Physics:SetMotorVelOverride(speed * math.cos(angle * DEGREES), 0, -speed * math.sin(angle * DEGREES))
+  1315→  1315→                    other:DoTaskInTime(0.4, function()
+  1316→  1316→                        if other.Physics ~= nil then
+  1317→  1317→                            other.Physics:ClearMotorVelOverride()
+  1318→  1318→                        end
+  1319→  1319→                    end)
+  1320→  1320→                end
+  1321→  1321→            end
+  1322→  1322→        end
+  1323→  1323→
+  1324→  1324→        -- Named status display (Fuel | HP only for Mk.III) - FIXED: format como Brute
+  1325→  1325→        if inst.components.named == nil then
+  1326→  1326→            inst:AddComponent("named")
+  1327→  1327→        end
+  1328→  1328→        -- Cancel any existing periodic tasks from parent functions (active or active2)
+  1329→  1329→        if inst._periodic_name_tasks then
+  1330→  1330→            for _, task in ipairs(inst._periodic_name_tasks) do
+  1331→  1331→                if task then
+  1332→  1332→                    task:Cancel()
+  1333→  1333→                end
+  1334→  1334→            end
+  1335→  1335→        end
+  1336→  1336→        inst._periodic_name_tasks = inst._periodic_name_tasks or {}
+  1337→  1337→        local function UpdateBuster3Name(inst)
+  1338→  1338→            local base = "Buster Bot Mk.III"
+  1339→  1339→            local fuel = math.floor((inst.components.fueled.currentfuel / inst.components.fueled.maxfuel) * 100)
+  1340→  1340→            local hp = math.floor(inst.components.health.currenthealth)
+  1341→  1341→            local maxhp = math.floor(inst.components.health.maxhealth)
+  1342→  1342→            local name_str = base .. "\nFuel: " .. fuel .. "% | HP: " .. hp .. "/" .. maxhp
+  1343→  1343→            inst.components.named:SetName(name_str)
+  1344→  1344→            inst.name = name_str
+  1345→  1345→            inst.GetDisplayName = function() return name_str end
+  1346→  1346→        end
+  1347→  1347→        UpdateBuster3Name(inst)
+  1348→  1348→        local task = inst:DoPeriodicTask(2, UpdateBuster3Name)
+  1349→  1349→        table.insert(inst._periodic_name_tasks, task)
+  1350→  1350→
+  1351→  1351→        -- Mk.III Repair system
+  1352→  1352→        if inst.components.engieworkable == nil then
+  1353→  1353→            inst:AddComponent("engieworkable")
+  1354→  1354→        end
+  1355→  1355→        inst.components.engieworkable:SetWorkAction(ACTIONS.HAMMER)
+  1356→  1356→        inst.components.engieworkable:SetMaxWork(1)
+  1357→  1357→        inst.components.engieworkable:SetWorkLeft(1)
+  1358→  1358→        inst.components.engieworkable:SetOnWorkCallback(function(inst, worker)
+  1359→  1359→            if inst.sg ~= nil then
+  1360→  1360→                inst.sg:GoToState("hit")
+  1361→  1361→            end
+  1362→  1362→        end)
+  1363→  1363→        inst.components.engieworkable:SetOnFinishCallback(function(inst, worker)
+  1364→  1364→            if inst.sg ~= nil and inst.sg:HasStateTag("shutdown") then
+  1365→  1365→                return
+  1366→  1366→            end
+  1367→  1367→            inst.components.engieworkable:SetWorkLeft(1)
+  1368→  1368→            -- Use wrench durability
+  1369→  1369→            local wrench = worker.components.inventory and worker.components.inventory:GetEquippedItem(EQUIPSLOTS.HANDS)
+  1370→  1370→            if wrench ~= nil and wrench.prefab == "tf2wrench" and wrench.components.finiteuses ~= nil then
+  1371→  1371→                wrench.components.finiteuses:Use(1)
+  1372→  1372→            end
+  1373→  1373→            if inst.components.health.currenthealth >= inst.components.health.maxhealth then
+  1374→  1374→                if worker.components.talker then
+  1375→  1375→                    worker.components.talker:Say("HP is already full!")
+  1376→  1376→                end
+  1377→  1377→            else
+  1378→  1378→                local function IsScrap(item)
+  1379→  1379→                    return item.prefab == "scrap"
+  1380→  1380→                end
+  1381→  1381→                local scrapstack = worker.components.inventory:FindItem(IsScrap)
+  1382→  1382→                local repair_cost = _G.WagstaffMechanicalEfficiencyRoll(worker, 1)
+  1383→  1383→                if repair_cost > 0 and scrapstack == nil then
+  1384→  1384→                    if worker.components.talker then
+  1385→  1385→                        worker.components.talker:Say("Need Scrap Metal to repair!")
+  1386→  1386→                    end
+  1387→  1387→                    return
+  1388→  1388→                end
+  1389→  1389→                if repair_cost > 0 then
+  1390→  1390→                    worker.components.inventory:ConsumeByName("scrap", repair_cost)
+  1391→  1391→                end
+  1392→  1392→                inst.components.health:DoDelta(50)
+  1393→  1393→                inst.SoundEmitter:PlaySound("dontstarve/common/chesspile_ressurect")
+  1394→  1394→                if worker.components.talker then
+  1395→  1395→                    worker.components.talker:Say("Repaired 50 HP!")
+  1396→  1396→                end
+  1397→  1397→            end
+  1398→  1398→        end)
+  1399→  1399→
+  1400→  1400→        -- MK3 reload resync: re-aplica FX celestial/shadow imediatamente após save->reload
+  1401→  1401→        local old_OnLoad3 = inst.OnLoad
+  1402→  1402→        inst.OnLoad = function(inst2, data)
+  1403→  1403→            if old_OnLoad3 then old_OnLoad3(inst2, data) end
+  1404→  1404→            if not TheWorld.ismastersim then return end
+  1405→  1405→            inst2:DoTaskInTime(0, function()
+  1406→  1406→                if not inst2:IsValid() then return end
+  1407→  1407→                local owner = inst2.components.follower and inst2.components.follower:GetLeader()
+  1408→  1408→                local celestial = owner and owner:HasTag("wagstaff_celestial_possession")
+  1409→  1409→                local shadow = owner and owner:HasTag("wagstaff_shadow_possession")
+  1410→  1410→                if TheWorld.state.isday and celestial then
+  1411→  1411→                    if inst2._celestial_light == nil then inst2.entity:AddLight(); inst2._celestial_light = true end
+  1412→  1412→                    if inst2.Light then inst2.Light:Enable(true); inst2.Light:SetRadius(2); inst2.Light:SetIntensity(0.5); inst2.Light:SetColour(0.3,0.5,1) end
+  1413→  1413→                    if inst2.on ~= false and (inst2._aura_fx == nil or not inst2._aura_fx:IsValid()) then
+  1414→  1414→                        inst2._aura_fx = SpawnPrefab("bot_aura_buster")
+  1415→  1415→                        if inst2._aura_fx then inst2._aura_fx._parent = inst2 end
+  1416→  1416→                    end
+  1417→  1417→                end
+  1418→  1418→                -- v2.0.58: Don't spawn the clone on reload — the dedicated 0.5s
+  1419→  1419→                -- sync task will spawn it within ~0.5s once the AffinityPulse's
+  1420→  1420→                -- RefreshGate confirms dusk + shadow + owner near + in combat.
+  1421→  1421→                -- Spawning here unconditionally would flash a clone that despawns
+  1422→  1422→                -- right away if the buster isn't in combat on load.
+  1423→  1423→            end)
+  1424→  1424→        end
+  1425→  1425→
+  1426→  1426→        return inst
+  1427→  1427→    end
+  1428→  1428→
+  1429→  1429→-- EMPTY BUSTER -----------------
+  1430→  1430→
+  1431→  1431→local function onload_empty(inst, data)
+  1432→  1432→    if data ~= nil and data.william ~= nil then
+  1433→  1433→        inst.william = data.william
+  1434→  1434→    end
+  1435→  1435→end
+  1436→  1436→
+  1437→  1437→local function onsave_empty(inst, data)
+  1438→  1438→    data.william = inst.william ~= nil and inst.william or nil
+  1439→  1439→end
+  1440→  1440→
+  1441→  1441→
+  1442→  1442→
+  1443→  1443→local function revivetest(newsection, oldsection, inst, doer)
+  1444→  1444→        if newsection >= 0 then
+  1445→  1445→    local pt = inst:GetPosition()
+  1446→  1446→        if doer ~= nil and doer:HasTag("williamcrafter") then
+  1447→  1447→                MakeAlive(inst, doer)
+  1448→  1448→                end
+  1449→  1449→        end
+  1450→  1450→end
+  1451→  1451→
+  1452→  1452→    local function empty(inst)
+  1453→  1453→        local inst = fn(inst)
+  1454→  1454→
+  1455→  1455→    inst.AnimState:SetBank("knight")
+  1456→  1456→    inst.AnimState:AddOverrideBuild("william_buster_empty")
+  1457→  1457→    inst.AnimState:SetBuild("william_buster")
+  1458→  1458→        inst.AnimState:PlayAnimation("sleep_loop", false)
+  1459→  1459→        inst.AnimState:Pause()
+  1460→  1460→    inst.Transform:SetScale(0.8, 0.8, 0.8)
+  1461→  1461→
+  1462→  1462→    MakeCharacterPhysics(inst, 80, .25)
+  1463→  1463→        inst.Physics:SetFriction(1)
+  1464→  1464→
+  1465→  1465→        if not TheWorld.ismastersim then
+  1466→  1466→            return inst
+  1467→  1467→        end
+  1468→  1468→
+  1469→  1469→    inst:AddComponent("workable")
+  1470→  1470→    inst.components.workable:SetWorkAction(ACTIONS.HAMMER)
+  1471→  1471→            inst.components.workable:SetWorkLeft(3)
+  1472→  1472→    inst.components.workable:SetOnFinishCallback(OnHammered)
+  1473→  1473→    inst.components.workable:SetOnWorkCallback(onworked)
+  1474→  1474→
+  1475→  1475→        inst:AddTag("Notarget")
+  1476→  1476→
+  1477→  1477→    -- v2.0.65: mark empty husk as "off" so the brain's Deactivated gate
+  1478→  1478→    -- (WhileNode inst.on == false) keeps it from following/teleporting to
+  1479→  1479→    -- the leader. The husk inherits brain + follower from fn(), so without
+  1480→  1480→    -- this the Follow node's catch-up teleport would drag the inert husk
+  1481→  1481→    -- toward the player.
+  1482→  1482→    inst.on = false
+  1483→  1483→
+  1484→  1484→--    inst.components.fueled.currentfuel = 0
+  1485→  1485→
+  1486→  1486→    -- v2.0.72 FIX: reverted to original mod's husk design.
+  1487→  1487→    -- The husk needs only TWO things for reactivation to work:
+  1488→  1488→    --   1. `willyraise` component (inherited from fn()) — gives the right-click
+  1489→  1489→    --      WILLYRAISE action. When the player right-clicks the fueled husk,
+  1490→  1490→    --      WILLYRAISE.fn calls willyraise:Rise(doer) → MakeAlive(inst, doer)
+  1491→  1491→    --      → spawns a new active buster at the correct MK level.
+  1492→  1492→    --   2. `workable` HAMMER — for dismantling with a hammer.
+  1493→  1493→    --
+  1494→  1494→    -- The previous code (v2.0.71 and the old BUG FIX 6) added a
+  1495→  1495→    -- percentusedchange listener that swapped workable's action from HAMMER
+  1496→  1496→    -- to ACTIVATE when fuel was present. This BROKE reactivation because:
+  1497→  1497→    --   - When workable has ACTIVATE, DST shows ACTIVATE as the right-click
+  1498→  1498→    --     action instead of WILLYRAISE (workable takes priority).
+  1499→  1499→    --   - The ACTIVATE path calls workable's OnFinishCallback, which is a
+  1500→  1500→    --     different code path than willyraise:Rise → MakeAlive.
+  1501→  1501→    --   - The RemoveComponent+AddComponent dance (pre-v2.0.71) also left
+  1502→  1502→    --     workable in a broken state.
+  1503→  1503→    --
+  1504→  1504→    -- The original mod (2607507857 & 3665517849) never had this ACTIVATE
+  1505→  1505→    -- swap — it relied purely on willyraise for reactivation. This commit
+  1506→  1506→    -- matches that design. The husk has no follower component (follower is
+  1507→  1507→    -- added in active(), not fn()), so the WILLYRAISE action condition
+  1508→  1508→    -- (inst.replica.follower == nil) passes and the action appears.
+  1509→  1509→    inst.components.fueled.accepting = true
+  1510→  1510→
+  1511→  1511→    MakeHauntableWork(inst)
+  1512→  1512→
+  1513→  1513→        return inst
+  1514→  1514→    end
+  1515→  1515→
+  1516→  1516→
+  1517→  1517→local function onbuilt(inst, builder)
+  1518→  1518→    local theta = math.random() * 2 * PI
+  1519→  1519→    local pt = builder:GetPosition()
+  1520→  1520→    local radius = math.random(1, 2)
+  1521→  1521→    local offset = FindWalkableOffset(pt, theta, radius, 12, true, true, NoHoles)
+  1522→  1522→    if offset ~= nil then
+  1523→  1523→        pt.x = pt.x + offset.x
+  1524→  1524→        pt.z = pt.z + offset.z
+  1525→  1525→    end
+  1526→  1526→   local pet = builder:HasTag("williamcrafter") and builder.components.petleash:SpawnPetAt(pt.x, 0, pt.z, "williambuster") or SpawnPrefab("williambuster_empty")
+  1527→  1527→        if pet ~= nil then
+  1528→  1528→            if pet.sg ~= nil then
+  1529→  1529→                pet.sg:GoToState("spawn") 
+  1530→  1530→            else
+  1531→  1531→                pet.Transform:SetPosition(pt.x, 0, pt.z)
+  1532→  1532→        pet.SoundEmitter:PlaySound("dontstarve/common/chesspile_repair")
+  1533→  1533→        SpawnPrefab("small_puff").Transform:SetPosition(pt.x, 0, pt.z)
+  1534→  1534→            end
+  1535→  1535→        pet.components.fueled.currentfuel = pet.components.fueled.currentfuel*0.9
+  1536→  1536→    inst:Remove()
+  1537→  1537→        end
+  1538→  1538→end
+  1539→  1539→
+  1540→  1540→    local function builder()
+  1541→  1541→        local inst = CreateEntity()
+  1542→  1542→
+  1543→  1543→        inst.entity:AddTransform()
+  1544→  1544→
+  1545→  1545→        inst:AddTag("CLASSIFIED")
+  1546→  1546→
+  1547→  1547→        --[[Non-networked entity]]
+  1548→  1548→        inst.persists = false
+  1549→  1549→
+  1550→  1550→        --Auto-remove if not spawned by builder
+  1551→  1551→        inst:DoTaskInTime(0, inst.Remove)
+  1552→  1552→
+  1553→  1553→        if not TheWorld.ismastersim then
+  1554→  1554→            return inst
+  1555→  1555→        end
+  1556→  1556→
+  1557→  1557→
+  1558→  1558→    inst.OnSave = onsave_empty
+  1559→  1559→    inst.OnLoad = onload_empty
+  1560→  1560→        inst.OnBuiltFn = onbuilt
+  1561→  1561→
+  1562→  1562→        return inst
+  1563→  1563→    end
+  1564→  1564→
+  1565→  1565→
+  1566→  1566→    return Prefab("williambuster", active, assets, prefabs),
+  1567→  1567→    Prefab("williambuster2", active2, assets, prefabs),
+  1568→  1568→    Prefab("williambuster3", active3, assets, prefabs),
+  1569→  1569→    Prefab("williambuster_builder", builder, assets, prefabs),
+  1570→  1570→    Prefab("williambuster_empty", empty, assets, prefabs)
+  1571→  1571→
+  1572→  1572→
+  1573→  1573→
+  1574→  1574→--------------------------------------------------------------------------
+  1575→  1575→
