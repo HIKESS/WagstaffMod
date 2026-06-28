@@ -945,6 +945,33 @@ inst.components.burnable.ignorefuel = true
         inst.components.health:DoDelta(600)
         inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BRUTE_DAMAGE + 10)
 
+        -- v2.0.88: PASSIVE TAUNT — Brute MK2+ periodically forces nearby enemies
+        -- to target it instead of the player. The brute's role is "tank/juggernaut"
+        -- but with only 27 base damage it couldn't hold aggro through damage alone.
+        -- This taunt makes the brute actually protect the player by drawing attacks.
+        -- Mechanics: every 2 seconds, all enemies within radius 6 that are currently
+        -- targeting the brute's leader (or any nearby player) are forced to retarget
+        -- to the brute. Enemies already targeting the brute are left alone.
+        -- MK2: radius 6, MK3: radius 8 (set in fn3).
+        inst._taunt_radius = 6
+        inst:DoPeriodicTask(2, function()
+            if inst.on == false then return end
+            if inst.components.health:IsDead() then return end
+            local x, y, z = inst.Transform:GetWorldPosition()
+            local radius = inst._taunt_radius or 6
+            local enemies = TheSim:FindEntities(x, y, z, radius, {"_combat"}, {"INLIMBO", "notarget", "wall", "companion", "player"})
+            local leader = inst.components.follower and inst.components.follower:GetLeader()
+            for _, enemy in ipairs(enemies) do
+                if enemy.components.combat and enemy.components.combat.target then
+                    local target = enemy.components.combat.target
+                    -- Only taunt enemies targeting the leader or nearby players
+                    if target:HasTag("player") or (leader and target == leader) then
+                        enemy.components.combat:SuggestTarget(inst)
+                    end
+                end
+            end
+        end)
+
         -- CELESTIAL POSSESSION: "Lunar Guardian" - Aura fogo AZUL + Enlightenment + Cor pulsante
         inst._celestial_light = nil
         inst._aura_fx = nil
@@ -1499,6 +1526,9 @@ inst.components.burnable.ignorefuel = true
         inst.components.health:SetMaxHealth(TUNING.WILLIAM_BRUTE_HEALTH + 1100)
         inst.components.health:SetCurrentHealth(inst.components.health.maxhealth)
         inst.components.combat:SetDefaultDamage(TUNING.WILLIAM_BRUTE_DAMAGE + 15)
+
+        -- v2.0.88: MK3 taunt radius is larger (8 vs MK2's 6)
+        inst._taunt_radius = 8
 
         -- Affinity pulse (MK3 only)
         -- v2.0.55: Phase-gate the pulse to match the affinity effect's active

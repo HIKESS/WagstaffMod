@@ -3461,6 +3461,10 @@ AddSimPostInit(function()
     STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BRUTE_DOWN = "My brute! The tank has fallen."
     STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BALLISTIC_DOWN = "My ballistic! Short-circuited."
 
+    -- v2.0.88: Bot fuel-low warnings — owner is warned when fuel drops below 20%
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BOT_FUEL_LOW = "My bot is running low on fuel!"
+    STRINGS.CHARACTERS.WAGSTAFF.ANNOUNCE_BOT_FUEL_CRITICAL = "My bot is about to shut down!"
+
     -- Skill tree column titles
 
     if not STRINGS.SKILLTREE then STRINGS.SKILLTREE = {} end
@@ -3694,6 +3698,12 @@ end)
 
 --==================================================================================
 
+
+-- v2.0.88 NOTE: The following 5 gadget skills are ORPHANED — they are coded here
+-- but have NO corresponding skill nodes in skilltree_wagstaff.lua. The tags
+-- (wagstaff_calibrated_wrench, wagstaff_stabilized_portals, etc.) can never be
+-- set through normal gameplay. These are kept for future implementation of the
+-- "gadgets" skill branch. See BAL-A report Observation A for details.
 
 -- Calibrated Wrench (wagstaff_gadgets_1) -> tf2wrench consumes half durability
 
@@ -4377,7 +4387,43 @@ end)
 
 --==================================================================================
 
--- BUTLER UPGRADE: Butler Bot Level 2 gains 3 cook slots and auto-picking
+-- v2.0.88: FUEL-LOW WARNING for all engineer bots
+-- Monitors fuel percentage and warns the owner when fuel is low/critical.
+-- Fires once per threshold (won't spam — tracks whether each threshold was already triggered).
+
+--==================================================================================
+for _, bot_name in ipairs({"williambutler", "williambuster", "williambrute", "williamballistic",
+                           "williambutler2", "williambuster2", "williambrute2", "williamballistic2",
+                           "williambutler3", "williambuster3", "williambrute3", "williamballistic3"}) do
+    AddPrefabPostInit(bot_name, function(inst)
+        if not G.TheWorld.ismastersim then return end
+        inst._fuel_low_warned = false
+        inst._fuel_critical_warned = false
+        inst:DoPeriodicTask(5, function()
+            if inst.components.fueled == nil then return end
+            local pct = inst.components.fueled:GetPercent()
+            local owner = inst.components.follower and inst.components.follower:GetLeader()
+            if owner and owner.components.talker then
+                if pct <= 0.1 and not inst._fuel_critical_warned then
+                    owner.components.talker:Say(G.GetString(owner, "ANNOUNCE_BOT_FUEL_CRITICAL"))
+                    inst._fuel_critical_warned = true
+                    inst._fuel_low_warned = true  -- don't fire both
+                elseif pct <= 0.2 and not inst._fuel_low_warned then
+                    owner.components.talker:Say(G.GetString(owner, "ANNOUNCE_BOT_FUEL_LOW"))
+                    inst._fuel_low_warned = true
+                end
+            end
+            -- Reset warnings when refueled above thresholds
+            if pct > 0.25 then
+                inst._fuel_low_warned = false
+                inst._fuel_critical_warned = false
+            end
+        end)
+    end)
+end
+
+
+--==================================================================================
 
 --==================================================================================
 
