@@ -420,7 +420,7 @@ end),
                 if buffaction ~= nil then
                     local target = buffaction.target
                     if target ~= nil and target:IsValid() and target.components.pickable ~= nil then
-                        local leader = inst.components.follower:GetLeader()
+                        local leader = inst.components.follower and inst.components.follower:GetLeader()
                         if leader ~= nil and leader.components.inventory ~= nil then
                             target.components.pickable:Pick(leader)
                         else

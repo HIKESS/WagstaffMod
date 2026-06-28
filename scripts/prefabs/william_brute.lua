@@ -505,6 +505,12 @@ local function onsave(inst, data)
         data.leader_guid = inst.components.follower:GetLeader().GUID
     end
     data.upgradelevel = inst.upgradelevel or 0
+    -- v2.0.91 FIX: Save currentfuel so it persists across save/load.
+    -- Without this, the fueled component resets to maxfuel after reload,
+    -- giving the bot a free full tank every session.
+    if inst.components.fueled ~= nil then
+        data.currentfuel = inst.components.fueled.currentfuel
+    end
 end
 
 local function onload(inst, data)
@@ -519,6 +525,11 @@ local function onload(inst, data)
     -- Restore upgradelevel
     if data.upgradelevel ~= nil then
         inst.upgradelevel = data.upgradelevel
+    end
+
+    -- v2.0.91 FIX: Restore currentfuel from save data.
+    if data.currentfuel ~= nil and inst.components.fueled ~= nil then
+        inst.components.fueled.currentfuel = data.currentfuel
     end
 
     -- Restore leader (MK1 now has follower too)
@@ -1722,6 +1733,33 @@ local function empty(inst)
     end
 
     inst.components.fueled.accepting = true
+
+    -- v2.0.91 FIX: Save/load husk state so currentfuel and level persist
+    -- across save/load. Without this, the fueled component resets to maxfuel
+    -- after reload, and the brute's MK level is lost.
+    local function OnSaveEmptyBrute(inst, data)
+        if inst.components.fueled ~= nil then
+            data.currentfuel = inst.components.fueled.currentfuel
+        end
+        data.level = inst.level
+        data.upgradelevel = inst.upgradelevel or 0
+    end
+
+    local function OnLoadEmptyBrute(inst, data)
+        if data == nil then return end
+        if data.currentfuel ~= nil and inst.components.fueled ~= nil then
+            inst.components.fueled.currentfuel = data.currentfuel
+        end
+        if data.level ~= nil then
+            inst.level = data.level
+        end
+        if data.upgradelevel ~= nil then
+            inst.upgradelevel = data.upgradelevel
+        end
+    end
+
+    inst.OnSave = OnSaveEmptyBrute
+    inst.OnLoad = OnLoadEmptyBrute
 
     MakeHauntableWork(inst)
 

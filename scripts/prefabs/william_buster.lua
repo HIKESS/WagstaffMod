@@ -489,6 +489,12 @@ local function onsave(inst, data)
     if inst.components.follower and inst.components.follower:GetLeader() then
         data.leader_guid = inst.components.follower:GetLeader().GUID
     end
+    -- v2.0.91 FIX: Save currentfuel so it persists across save/load.
+    -- Without this, the fueled component resets to maxfuel after reload,
+    -- giving the bot a free full tank every session.
+    if inst.components.fueled ~= nil then
+        data.currentfuel = inst.components.fueled.currentfuel
+    end
 end
 
 local function onload(inst, data)
@@ -508,6 +514,10 @@ local function onload(inst, data)
         inst.was_mk3 = data.was_mk3
         -- BUG FIX 3: Load saved prefab name
         inst.saved_prefab_name = data.saved_prefab_name
+    end
+    -- v2.0.91 FIX: Restore currentfuel from save data.
+    if data ~= nil and data.currentfuel ~= nil and inst.components.fueled ~= nil then
+        inst.components.fueled.currentfuel = data.currentfuel
     end
     -- Restore follower after save/load
     if data ~= nil and data.leader_guid ~= nil then
@@ -1426,10 +1436,20 @@ local function onload_empty(inst, data)
     if data ~= nil and data.william ~= nil then
         inst.william = data.william
     end
+    -- v2.0.91 FIX: Restore currentfuel from save data.
+    if data ~= nil and data.currentfuel ~= nil and inst.components.fueled ~= nil then
+        inst.components.fueled.currentfuel = data.currentfuel
+    end
 end
 
 local function onsave_empty(inst, data)
     data.william = inst.william ~= nil and inst.william or nil
+    -- v2.0.91 FIX: Save currentfuel so the husk's fuel persists across
+    -- save/load. Without this, the fueled component resets to maxfuel
+    -- after reload, so the husk appears full when it should be empty.
+    if inst.components.fueled ~= nil then
+        data.currentfuel = inst.components.fueled.currentfuel
+    end
 end
 
 
@@ -1501,6 +1521,15 @@ end
     -- added in active(), not fn()), so the WILLYRAISE action condition
     -- (inst.replica.follower == nil) passes and the action appears.
     inst.components.fueled.accepting = true
+
+    -- v2.0.91 FIX: Stop fuel consumption on the empty husk. The fn() base
+    -- function calls fueled:StartConsuming(), which drains fuel while the
+    -- bot sits idle as a husk. This makes reactivation much harder because
+    -- fuel the player adds gets consumed immediately. Only active bots
+    -- should consume fuel. (Same fix as brute empty, v2.0.90.)
+    if inst.components.fueled then
+        inst.components.fueled:StopConsuming()
+    end
 
     MakeHauntableWork(inst)
 

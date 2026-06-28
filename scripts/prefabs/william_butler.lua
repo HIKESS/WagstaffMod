@@ -920,11 +920,21 @@ inst.components.burnable.ignorefuel = true
         if inst.components.follower and inst.components.follower:GetLeader() then
             data.leader_guid = inst.components.follower:GetLeader().GUID
         end
+        -- v2.0.91 FIX: Save currentfuel so it persists across save/load.
+        -- Without this, the fueled component resets to maxfuel after reload,
+        -- giving the bot a free full tank every session.
+        if inst.components.fueled ~= nil then
+            data.currentfuel = inst.components.fueled.currentfuel
+        end
     end
 
     local function OnLoadButler(inst, data)
         if data then
             inst.upgradelevel = data.upgradelevel or 0
+        end
+        -- v2.0.91 FIX: Restore currentfuel from save data.
+        if data ~= nil and data.currentfuel ~= nil and inst.components.fueled ~= nil then
+            inst.components.fueled.currentfuel = data.currentfuel
         end
         -- Restore follower after save/load
         if data ~= nil and data.leader_guid ~= nil then
@@ -1454,12 +1464,27 @@ inst.components.burnable.ignorefuel = true
     -- passes and the action appears on right-click.
     inst.components.fueled.accepting = true
 
+    -- v2.0.91 FIX: Stop fuel consumption on the empty husk. The fn() base
+    -- function calls fueled:StartConsuming(), which drains fuel while the
+    -- bot sits idle as a husk. This makes reactivation much harder because
+    -- fuel the player adds gets consumed immediately. Only active bots
+    -- should consume fuel. (Same fix as brute empty, v2.0.90.)
+    if inst.components.fueled then
+        inst.components.fueled:StopConsuming()
+    end
+
     -- Save/load husk state (for reactivating at correct level)
     local function OnSaveHusk(inst, data)
         data.was_level2 = inst.was_level2
         data.was_mk3 = inst.was_mk3
         data.saved_upgradelevel = inst.saved_upgradelevel
         data.saved_upgradelevel_mk3 = inst.saved_upgradelevel_mk3
+        -- v2.0.91 FIX: Save currentfuel so the husk's fuel persists across
+        -- save/load. Without this, the fueled component resets to maxfuel
+        -- after reload, so the husk appears full when it should be empty.
+        if inst.components.fueled ~= nil then
+            data.currentfuel = inst.components.fueled.currentfuel
+        end
     end
 
     local function OnLoadHusk(inst, data)
@@ -1468,6 +1493,10 @@ inst.components.burnable.ignorefuel = true
             inst.was_mk3 = data.was_mk3 or false
             inst.saved_upgradelevel = data.saved_upgradelevel or 0
             inst.saved_upgradelevel_mk3 = data.saved_upgradelevel_mk3 or 0
+        end
+        -- v2.0.91 FIX: Restore currentfuel from save data.
+        if data ~= nil and data.currentfuel ~= nil and inst.components.fueled ~= nil then
+            inst.components.fueled.currentfuel = data.currentfuel
         end
     end
 

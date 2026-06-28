@@ -192,7 +192,8 @@ end
 
 local function ShouldDanceParty(inst)
     local leader = GetLeader(inst)
-    return leader ~= nil and leader.sg:HasStateTag("dancing")
+    -- v2.0.91 FIX: Added nil check on leader.sg. Mirrors buster brain's version.
+    return leader ~= nil and leader.sg ~= nil and leader.sg:HasStateTag("dancing")
 end
 
 local function ShouldAvoidExplosive(target)
