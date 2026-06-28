@@ -790,3 +790,43 @@ Stage Summary:
   authentication token expired/removed from remote URL. User needs to
   push manually or restore credentials.
 - Branch state: local main = 66cdc90 (v2.0.83), origin/main = e0c7ff8 (v2.0.82).
+
+
+---
+Task ID: CONFIG-LIMITS-84
+Agent: Z.ai Code (main session)
+Task: Add configurable crafting limits for sentry/dispenser/teleporter in mod settings
+  "adiciona nas configuracoes do personagem, um controlador de limits,
+   limite de sentry, dispenser, teleporter /exite/entrance"
+
+Work Log:
+- Investigated the current crafting limit system in modmain.lua (lines 2707-2874).
+  Found hardcoded limits: esentry=2, dispenser=1, eteleporter=2, eteleporter_exit=2,
+  bot types=1 each. The limits are enforced in AddComponentPostInit("builder")
+  by counting matching prefabs in world + inventory + petleash for the player.
+- Read modinfo.lua configuration_options structure (lines 61-256) to understand
+  how mod configs are declared (name, label, hover, options table with
+  {description, data} pairs, and default).
+- Checked how configs are read in modmain.lua: GetModConfigData("name") returns
+  the data value from the selected option.
+- ADDED (modinfo.lua, 4 new config entries before the * prefixed options):
+  * limit_sentry: 1/2(default)/3/4/5/6/8/10/Unlimited(99)
+  * limit_dispenser: 1(default)/2/3/4/5/Unlimited(99)
+  * limit_teleporter_entrance: 1/2(default)/3/4/5/Unlimited(99)
+  * limit_teleporter_exit: 1/2(default)/3/4/5/Unlimited(99)
+- CHANGED (modmain.lua): Builder DoBuild hook now reads limits via
+  GetModConfigData() into local variables (_limit_sentry etc.) instead of
+  hardcoded numbers. Bot limits stay at max 1 (gated by skill tree already).
+  Defaults match old hardcoded values so existing worlds are unaffected.
+- Bumped version 2.0.83 -> 2.0.84.
+
+Stage Summary:
+- FEATURE ADDED: Server admins can now configure crafting limits for sentry
+  guns, dispensers, teleporter entrances, and teleporter exits in the mod
+  configuration screen (world creation / mod settings). No more editing Lua
+  files to change these limits.
+- Files changed (2): modinfo.lua (+64 lines, 4 config entries), modmain.lua
+  (+14 lines, config reads + dynamic limits table).
+- Local commit: 033c46d (v2.0.84). Push FAILED — GitHub auth token expired.
+  User needs to push manually.
+- Branch state: local main = 033c46d (v2.0.84), origin/main = e0c7ff8 (v2.0.82).
