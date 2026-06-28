@@ -79,19 +79,51 @@ local shadow_drops =
     { item = "dark_tatters",  weight = 20 },
 }
 
+-- v2.0.89 FIX: weighted_random_choice now handles BOTH table formats:
+--   Array format:  { { item = "gears", weight = 25 }, ... }  (lucky_rare, celestial_drops, shadow_drops)
+--   Dict format:   { goldnugget = 1, gunpowder = .5, ... }   (fuel, mineral, rare, night)
+-- Previously, the array-format local function was used for lucky_rare/celestial/shadow,
+-- but fuel/mineral/rare/night called _G.weighted_random_choice which DOES NOT EXIST
+-- in DST or this mod — causing a nil call crash every time the dispenser tried to drop.
+-- Now there's a single unified function that detects the format automatically.
 local function weighted_random_choice(items)
-    local total = 0
-    for _, v in ipairs(items) do
-        total = total + v.weight
-    end
-    local rand = math.random() * total
-    for _, v in ipairs(items) do
-        rand = rand - v.weight
-        if rand <= 0 then
-            return v.item
+    if items == nil or next(items) == nil then return nil end
+
+    -- Detect format: if first element is a table with .item/.weight, it's array format
+    local first = next(items)
+    if type(first) == "number" and type(items[first]) == "table" and items[first].item then
+        -- Array format: { { item = "x", weight = N }, ... }
+        local total = 0
+        for _, v in ipairs(items) do
+            total = total + v.weight
+        end
+        local rand = math.random() * total
+        for _, v in ipairs(items) do
+            rand = rand - v.weight
+            if rand <= 0 then
+                return v.item
+            end
+        end
+        return items[1].item
+    else
+        -- Dict format: { prefab_name = weight, ... }
+        local total = 0
+        for _, weight in pairs(items) do
+            total = total + weight
+        end
+        local rand = math.random() * total
+        for prefab, weight in pairs(items) do
+            rand = rand - weight
+            if rand <= 0 then
+                return prefab
+            end
+        end
+        -- Fallback: return first key
+        for prefab, _ in pairs(items) do
+            return prefab
         end
     end
-    return items[1].item
+    return nil
 end
 
 local function TryLuckyDrop(inst)
@@ -557,10 +589,10 @@ local function dispenseitem(inst, phase, cavephase)
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    item = _G.weighted_random_choice(fuel)
+                    item = weighted_random_choice(fuel)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    item = _G.weighted_random_choice(mineral)
+                    item = weighted_random_choice(mineral)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.SoundEmitter:PlaySound("dontstarve/characters/wx78/levelup")
@@ -577,11 +609,11 @@ local function dispenseitem(inst, phase, cavephase)
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    item = _G.weighted_random_choice(fuel)
+                    item = weighted_random_choice(fuel)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    item = _G.weighted_random_choice(mineral)
+                    item = weighted_random_choice(mineral)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
@@ -602,24 +634,24 @@ local function dispenseitem(inst, phase, cavephase)
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
                     inst.components.lootdropper:SpawnLootPrefab("scrap")
-                    item = _G.weighted_random_choice(fuel)
+                    item = weighted_random_choice(fuel)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    item = _G.weighted_random_choice(mineral)
+                    item = weighted_random_choice(mineral)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     inst.components.lootdropper:SpawnLootPrefab(item)
                     -- 2 rare drops flat (was 33% chance for 1)
-                    item = _G.weighted_random_choice(rare)
+                    item = weighted_random_choice(rare)
                     inst.components.lootdropper:SpawnLootPrefab(item)
-                    item = _G.weighted_random_choice(rare)
+                    item = weighted_random_choice(rare)
                     inst.components.lootdropper:SpawnLootPrefab(item)
 
                     -- Night cycle bonus: 33% chance for 2 night-themed items
                     if _G.TheWorld.state.isnight then
                         if math.random() < .33 then
-                            item = _G.weighted_random_choice(night)
+                            item = weighted_random_choice(night)
                             inst.components.lootdropper:SpawnLootPrefab(item)
                             inst.components.lootdropper:SpawnLootPrefab(item)
                         end
