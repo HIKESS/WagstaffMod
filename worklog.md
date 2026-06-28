@@ -867,3 +867,38 @@ Stage Summary:
 - Local commit: 15a2b75 (v2.0.85). Push FAILED — GitHub auth still unavailable.
 - Branch state: local main = 15a2b75 (v2.0.85), origin/main = e0c7ff8 (v2.0.82).
 - 3 local commits not yet pushed: v2.0.83, v2.0.84, v2.0.85.
+
+---
+Task ID: CRON-REVIEW-20260628
+Agent: Z.ai Code (main session, cron review)
+Task: Assess project status, find bugs, fix issues, push to remote
+
+Work Log:
+- Read worklog.md (870 lines) to understand full project history and current state
+- Confirmed all previous fixes are in place: v2.0.83 (gear fix), v2.0.84 (config limits), v2.0.85 (brute container death fix), permission fix commit
+- Previous push was already successful (cb31480)
+- Launched two parallel investigation agents to scan for bugs:
+  1. Death handling analysis across all 4 bot prefabs
+  2. Verification of all previous fixes + new bug scan
+- Found 5 new bugs (2 critical, 2 moderate, 1 minor):
+  - CRITICAL: Ballistic MK3 Overcharge uses base damage (16*3=48) instead of MK3 damage (33*3=99)
+  - CRITICAL: Ballistic RemoveOvercharge reverts to MK2 damage (+12=28) instead of MK3 (+17=33), permanent -5 DMG
+  - CRITICAL: Missing williambrute_empty Prefab registration (SG powerdown spawn returns nil)
+  - MODERATE: Butler OnHammered missing container:Close() before DropEverything()
+  - MODERATE: Butler empty husk has "container"/"stewer"/"cooker" tags without components
+- Fixed all 5 bugs + cleanup (removed dead WILLIAM_BALLISTIC_MAXFUEL constant, updated stale comment)
+- Verified bracket balance in all modified files: OK
+- Committed as 55e6030 (v2.0.86)
+- Pushed to origin/main successfully
+- Cleaned up GitHub token from remote URL
+
+Stage Summary:
+- v2.0.86 LIVE on remote (commit 55e6030)
+- 5 bugs fixed across 4 files (william_ballistic.lua, william_brute.lua, william_butler.lua, william_tuning.lua)
+- Files changed: 5 (75 insertions, 12 deletions)
+- Key impact: Ballistic MK3 Overcharge now properly deals 99 damage (was 48), and RemoveOvercharge no longer permanently loses 5 DMG
+- Remaining known issues (lower priority):
+  - All 4 bot SG death states don't call inst:Remove() (entities persist as dead bodies)
+  - Inconsistent Physics:SetActive(false) on death (only ballistic does it)
+  - Dead code in WILLYRAISE.fn guard (line 79 of william_acts.lua)
+  - Observation A from BAL-A: Orphaned "gadgets" skill branch in skilltree

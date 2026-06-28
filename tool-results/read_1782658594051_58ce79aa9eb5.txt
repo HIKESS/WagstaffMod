@@ -1,0 +1,371 @@
+     1→   500→   500→- Verified Lua syntax: parens/braces/brackets all balanced (768/768, 14/14, 49/49). Edited function structure manually checked (if/else/end + function/end all matched).
+     2→   501→   501→- Bumped modinfo.lua version 2.0.17 -> 2.0.18.
+     3→   502→   502→- Committed as 5056033. Pushed to origin/GLM-5.1-Fixes: SUCCESS (3f49136..5056033).
+     4→   503→   503→- Post-push: token NOT persisted to git config (used one-shot credential.helper via .env).
+     5→   504→   504→
+     6→   505→   505→Stage Summary:
+     7→   506→   506→- v2.0.18 celestial revive fix is LIVE on remote GLM-5.1-Fixes (commit 5056033).
+     8→   507→   507→- After celestial revive: butler now correctly becomes an INERT HUSK (williambutler_empty) at 0% fuel, sleeping on the ground. Player must refuel it (give fuel items) and then ACTIVATE it (click) to bring a fresh MK1 back online via MakeAlive. No more infinite active bot at 0% fuel.
+     9→   508→   508→- The husk retains current health (capped at husk max) but all tier-upgrade flags are cleared — reactivation always produces a fresh MK1, matching the 'downgrade' intent.
+    10→   509→   509→- Non-celestial path (shadow revive, normal downgrade) is UNCHANGED.
+    11→   510→   510→- All 8 Phase-2 balance fixes confirmed already applied (v2.0.15+).
+    12→   511→   511→- Pending: user to test in-game — die with celestial possession active, haunt Butler MK3, confirm bot becomes inert husk (not walking), refuel + ACTIVATE to confirm MK1 reactivation.
+    13→   512→   512→
+    14→   513→   513→---
+    15→   514→   514→Task ID: V2018-CELESTIAL-FX-REWORK
+    16→   515→   515→Agent: GLM (main)
+    17→   516→   516→Task: Rework butler celestial revive FX — remove elixir/sparkle, test celestial table, anti-stack
+    18→   517→   517→
+    19→   518→   518→Work Log:
+    20→   519→   519→- User requested: remove ghostlyelixir_shield_fx + sparklefx (called "spawn_fx") from the butler celestial revive. Test celestial/white FX from provided table. Don't repeat FX if already on someone.
+    21→   520→   520→- Located PlayCelestialDischargeFX (william_butler.lua:1175-1221). Old FX:
+    22→   521→   521→    * ghostlyelixir_shield_fx (shield, scale 1.3) — REMOVE (elixir FX)
+    23→   522→   522→    * sparklefx (ascending sparkles) — REMOVE (spawn_fx)
+    24→   523→   523→    * manual celestial light flash (white-blue, fades 1.2s) — KEEP (custom entity, not a prefab)
+    25→   524→   524→- Selected from celestial/white FX table:
+    26→   525→   525→    * archive_lockbox_dispawn_fx (white dissolve) — PRIMARY: thematically perfect (bot's energy dissolves as it discharges). Lunar-aligned (celestial).
+    27→   526→   526→    * moonstorm_spark (white sparks) — SECONDARY: energy escaping the chassis.
+    28→   527→   527→- Considered but rejected:
+    29→   528→   528→    * alterguardian_phase3_spawn — too big/dramatic (full Celestial Champion spawn)
+    30→   529→   529→    * alterguardian_laserempty/laserhit — beam/impact, not fitting a discharge
+    31→   530→   530→    * brilliance_projectile_blast_fx — explosion, too violent for a 'soul leaving'
+    32→   531→   531→    * lunarhaildebris — falling debris, wrong direction
+    33→   532→   532→    * winona_battery_high_fx — electric, not celestial enough
+    34→   533→   533→- Implemented SpawnUnique(prefab, offset_y, scale) helper:
+    35→   534→   534→    * Uses TheSim:FindEntities(x,y,z, 1.5) to find nearby entities
+    36→   535→   535→    * Iterates and checks ent.prefab == prefab_name
+    37→   536→   536→    * If found: returns nil (skip spawn) — prevents stacking
+    38→   537→   537→    * If not found: SpawnPrefab, set position/scale, return fx
+    39→   538→   538→    * Satisfies "não repetir fx se já estiver em alguém" (anti-stacking)
+    40→   539→   539→- Kept the custom celestial light flash (not a prefab, self-removes in 1.2s, no duplicate check needed).
+    41→   540→   540→- Verified bracket balance: () 777/777, {} 14/14, [] 49/49 — all balanced.
+    42→   541→   541→- Committed as 91e8f90. Pushed to origin/GLM-5.1-Fixes: SUCCESS (5056033..91e8f90).
+    43→   542→   542→
+    44→   543→   543→Stage Summary:
+    45→   544→   544→- v2.0.18 celestial FX rework is LIVE on remote GLM-5.1-Fixes (commit 91e8f90).
+    46→   545→   545→- Butler celestial revive now plays: archive_lockbox_dispawn_fx (white dissolve) + moonstorm_spark (white sparks) + custom white-blue light flash. All lunar/celestial themed, no more elixir shield or generic sparkle.
+    47→   546→   546→- Anti-stacking: if the same FX prefab is already present within 1.5 units of the butler, a new one won't spawn — prevents duplicate FX on haunt spam / repeated triggers.
+    48→   547→   547→- Pending: user to test in-game and confirm the new FX fits. If archive_lockbox_dispawn_fx or moonstorm_spark don't exist in the user's DST build (both are vanilla RoT prefabs, should exist), the SpawnPrefab returns nil and the helper skips gracefully (no crash).
+    49→   548→   548→
+    50→   549→   549→---
+    51→   550→   550→Task ID: fix-mk1-bot-repair
+    52→   551→   551→Agent: Z.ai Code (main)
+    53→   552→   552→Task: Corrigir bug reportado: "Não consigo reparar o brute MK1, pede Skill de Upgrade (Requires Brute Bot MK. II)".
+    54→   553→   553→
+    55→   554→   554→Work Log:
+    56→   555→   555→- Lido william_brute.lua (linhas 655-725): o engieworkable OnFinish callback tinha a lógica:
+    57→   556→   556→    if inst.prefab == "williambrute2" or inst:HasTag("brute_upgraded") then
+    58→   557→   557→        ...repair...
+    59→   558→   558→        return
+    60→   559→   559→    end
+    61→   560→   560→    -- (cai pra upgrade, que exige skill)
+    62→   561→   561→- CONFIRMADO o bug: MK1 com dano ia direto pro caminho de upgrade, que exige a skill wagstaff_brute_evolve.
+    63→   562→   562→- Comparado com william_butler.lua (linhas 746-789): o butler usa o padrão CORRETO:
+    64→   563→   563→    PRIORITY 1: if HP < max -> repair (no skill required)
+    65→   564→   564→    PRIORITY 2: if HP full -> upgrade (skill-gated)
+    66→   565→   565→- Confirmado o MESMO bug em william_buster.lua (linhas 759-772) e william_ballistic.lua (linhas 764-777): ambos pulam repair no MK1.
+    67→   566→   566→- Aplicado o fix nos 3 bots (brute, buster, ballistic): inserido bloco PRIORITY 1 (repair se HP < max, sem skill, qualquer tier) e PRIORITY 2 (msg "HP is already full!" se HP cheio) ANTES do caminho de upgrade.
+    68→   567→   567→- Validado balanceamento de long strings [[ / ]] nos 3 arquivos + modinfo.lua: todos OK.
+    69→   568→   568→- Bumpado modinfo.lua para v2.0.67.
+    70→   569→   569→- Commit a30a34f "v2.0.67: fix MK1 bot repair (brute/buster/ballistic) — repair first, upgrade only at full HP".
+    71→   570→   570→- Push via 'set -a; source .env; set +a' + token na URL: BEM-SUCEDIDO (76e8bc2..a30a34f HEAD -> main).
+    72→   571→   571→- Confirmado via git ls-remote: origin/main = a30a34f.
+    73→   572→   572→
+    74→   573→   573→Stage Summary:
+    75→   574→   574→- Bug corrigido nos 3 bots (brute, buster, ballistic). Butler já estava correto e não precisou de mudança.
+    76→   575→   575→- Nova lógica: qualquer tier (MK1/MK2/MK3) com HP < 100% agora pode ser reparado com wrench + 1 scrap, SEM exigir skill. Upgrade continua exigindo skill (mas só é tentado quando HP está cheio).
+    77→   576→   576→- Commit a30a34f está no branch main do repo HIKESS/WagstaffMod (produção).
+    78→   577→   577→- Próxima vez que o usuário subir o servidor DST com git pull no mod, o brute/buster/ballistic MK1 danificado poderá ser reparado sem exigir a skill MK.II.
+    79→   578→   578→
+    80→   579→   579→---
+    81→   580→   580→Task ID: fix-mk2-brute-repair
+    82→   581→   581→Agent: Z.ai Code (main)
+    83→   582→   582→Task: Verificar e corrigir o mesmo bug no MK2 (sem skill MK3): "no mk2 se eu tiver sem skill do mk3 tambem vai acontecer isso?"
+    84→   583→   583→
+    85→   584→   584→Work Log:
+    86→   585→   585→- Investigado o engieworkable OnFinish do MK2 nos 3 bots (brute, buster, ballistic).
+    87→   586→   586→- BRUTE MK2 (linhas 1184-1194): CONFIRMADO o bug. Lógica era:
+    88→   587→   587→    if not has_mk3_skill then Say("Requires MK.III skill!") return end
+    89→   588→   588→    if inst.upgradelevel_mk3 < 90 then ... upgrade ... return end
+    90→   589→   589→    -- If not upgrading, try repair  ← NUNCA chegava aqui sem a skill MK3
+    91→   590→   590→  Resultado: Brute MK2 danificado sem skill MK3 = não podia ser reparado.
+    92→   591→   591→- BUSTER MK2 (linha 981): CORRETO. Já usava 'if has_mk3_skill and upgradelevel < 90 then ... return end' — sem skill, pula upgrade e cai no reparo.
+    93→   592→   592→- BALLISTIC MK2 (linha 980): CORRETO. Mesmo padrão do buster.
+    94→   593→   593→- Aplicado fix no BRUTE MK2: trocado 'if not has_mk3_skill then return end' + 'if upgradelevel < 90' por 'if has_mk3_skill and upgradelevel < 90'. Agora sem skill MK3, o upgrade é pulado (não bloqueado) e cai no reparo.
+    95→   594→   594→- Validado balanceamento [[ / ]] no william_brute.lua: OK (2/2).
+    96→   595→   595→- Commit 21c4942 "v2.0.67: fix MK2 brute repair — don't require MK3 skill to repair a damaged MK2".
+    97→   596→   596→- Push: BEM-SUCEDIDO (a30a34f..21c4942 HEAD -> main).
+    98→   597→   597→- Confirmado via git ls-remote: origin/main = 21c4942.
+    99→   598→   598→
+   100→   599→   599→Stage Summary:
+   101→   600→   600→- Bug do MK2→MK3 confirmado e corrigido APENAS no brute (buster e ballistic já estavam corretos).
+   102→   601→   601→- Agora: Brute MK2 danificado sem skill MK3 → repara normalmente com wrench + 1 scrap.
+   103→   602→   602→- Resumo final do v2.0.67 (3 commits de fix):
+   104→   603→   603→  * 76e8bc2: modinfo.lua unfinished long string (crash do mod)
+   105→   604→   604→  * a30a34f: MK1 repair (brute/buster/ballistic) — repair antes de upgrade
+   106→   605→   605→  * 21c4942: MK2 brute repair — sem exigir skill MK3 pra reparar
+   107→   606→   606→
+   108→   607→   607→---
+   109→   608→   608→Task ID: BUG-DEACTIVATED-FOLLOW
+   110→   609→   609→Agent: main (Z.ai Code)
+   111→   610→   610→Task: Fixar bug do bot desativado "teleportando" para seguir o player (reportado pelo usuário: "eu desativo o bot... e ele ta se teleportando me seguindo desativado... ta acontecendo com o brute")
+   112→   611→   611→
+   113→   612→   612→Work Log:
+   114→   613→   613→- Investiguei a causa raiz lendo william_brute.lua (TurnOff/TurnOn, linhas 237-392) e williambrutebrain.lua.
+   115→   614→   614→- Confirmei que TurnOff seta inst.on = false e limpa combat, mas NÃO para o brain nem remove o leader do follower.
+   116→   615→   615→- Li williambrutebrain.lua (brain completo): o nó Follow(self.inst, GetLeader, ...) roda sem checar inst.on → quando o bot é desativado, o brain continua ativo e o behaviour Follow do DST tem uma mecânica de "catch-up teleport" (quando o leader fica muito distante, o follower é teleportado perto dele). Isso causa o "teleport" que o usuário viu.
+   117→   616→   616→- Verifiquei os outros 3 brains (williambusterbrain, williambutlerbrain, williamballisticbrain): TODOS têm o mesmo bug — o nó Follow/ChaseAndAttack não é gated por inst.on.
+   118→   617→   617→- Verifiquei o ciclo de desativação de cada bot:
+   119→   618→   618→  * Brute: TurnOff seta inst.on = false (correto). TurnOn seta inst.on = true. Save/load persiste data.on. ✓
+   120→   619→   619→  * Buster: OnFuelEmpty (OnLowerFn) só faz sg:GoToState("powerdown") → spawna williambuster_empty e remove o ativo. O fn() NUNCA seta inst.on (fica nil). O empty() herda fn() e também não seta. → inst.on sempre nil, gate não funcionaria.
+   121→   620→   620→  * Butler: Mesmo padrão do buster. OnFuelEmpty → powerdown → spawna empty. fn() não seta inst.on.
+   122→   621→   621→  * Ballistic: OnDismantle spawna williamballistic_empty (item de inventário, sem brain). Empty não tem brain → não tem o bug. Mas adicionei o gate como proteção defensiva.
+   123→   622→   622→
+   124→   623→   623→Fix aplicado (2 camadas):
+   125→   624→   624→
+   126→   625→   625→CAMADA 1 — Brain gate (todos os 4 brains):
+   127→   626→   626→Adicionei um WhileNode de prioridade MÁXIMA no topo do PriorityNode de cada brain:
+   128→   627→   627→  WhileNode(function() return self.inst.on == false end, "Deactivated", StandStill(self.inst))
+   129→   628→   628→Quando inst.on == false, StandStill bloqueia todos os nós de movimento abaixo (Follow, ChaseAndAttack, Wander, RunAway, etc.), mantendo o bot parado.
+   130→   629→   629→- williambrutebrain.lua (linha ~101): gate adicionado antes de OnFire/Panic/Chase/Follow/Wander.
+   131→   630→   630→- williambusterbrain.lua (linha ~121): gate adicionado antes de watch_game/Dance/LeaderInRange/Follow.
+   132→   631→   631→- williambutlerbrain.lua (linha ~238): gate adicionado antes de watch_game/Dance/CombatAvoidance/LeaderInRange/Follow.
+   133→   632→   632→- williamballisticbrain.lua (linha ~128 mobile, ~145 turret): gate em ambos os modos.
+   134→   633→   633→
+   135→   634→   634→CAMADA 2 — inst.on consistência (butler + buster):
+   136→   635→   635→Para o gate do brain funcionar, inst.on precisa ser explicitamente true/false:
+   137→   636→   636→- william_buster.lua fn() (linha ~706): adicionado inst.on = true (ativo).
+   138→   637→   637→- william_buster.lua empty() (linha ~1452): adicionado inst.on = false (husk inert).
+   139→   638→   638→- william_butler.lua fn() (linha ~577): adicionado inst.on = true (ativo).
+   140→   639→   639→- william_butler.lua empty() (linha ~1379): adicionado inst.on = false (husk inert).
+   141→   640→   640→- Brute já estava correto (TurnOn/TurnOff setam inst.on).
+   142→   641→   641→- Ballistic não precisa (empty é item sem brain), mas brain tem gate defensivo.
+   143→   642→   642→
+   144→   643→   643→Verificação:
+   145→   644→   644→- Balance check de parênteses/chaves/colchetes em todos os 4 brains: balanced.
+   146→   645→   645→- standstill já estava no require de todos os 4 brains (não precisei adicionar import).
+   147→   646→   646→- Save/load do brute já persiste/restaura inst.on (data.on), então o estado desativado sobrevive a reload.
+   148→   647→   647→- Butler/buster não precisam persistir inst.on: o prefab determina o estado (fn=active=true, empty=false).
+   149→   648→   648→
+   150→   649→   649→Stage Summary:
+   151→   650→   650→- Bug "bot desativado teletransporta pra seguir player" CORRIGIDO em todos os 4 bots (brute/buster/butler/ballistic).
+   152→   651→   651→- Causa raiz: brain's Follow node não checava inst.on; DST's Follow behaviour tem catch-up teleport quando leader fica distante.
+   153→   652→   652→- Fix: gate WhileNode(inst.on == false → StandStill) no topo de cada brain + inst.on explicitamente setado em butler/buster (fn=true, empty=false).
+   154→   653→   653→- Arquivos modificados (6): williambrutebrain.lua, williambusterbrain.lua, williambutlerbrain.lua, williamballisticbrain.lua, william_buster.lua, william_butler.lua.
+   155→   654→   654→
+   156→   655→   655→---
+   157→   656→   656→Task ID: RECIPE-TELEPORTER-EQUAL
+   158→   657→   657→Agent: main (Z.ai Code)
+   159→   658→   658→Task: Ajustar recipe do teleporter entrance/exit para terem os mesmos requerimentos, com 2 gears, e ajustar o restante.
+   160→   659→   659→
+   161→   660→   660→Work Log:
+   162→   661→   661→- Encontrei as receitas em modmain.lua linhas 3625-3643:
+   163→   662→   662→  * eteleporter (Entrance): 30 scrap, 5 gears, 5 transistor
+   164→   663→   663→  * eteleporter_exit (Exit): 25 scrap, 3 gears, 3 transistor
+   165→   664→   664→- Padronizei ambas usando os valores do exit (mais leves) com 2 gears:
+   166→   665→   665→  * Ambas agora: 25 scrap, 2 gears, 3 transistor
+   167→   666→   666→- Verifiquei se há outras referências aos custos antigos (ApplyMasterEngineer em modmain.lua:3861 lida com sanity cost ao USAR o teleporter, não com o recipe — não precisa mexer).
+   168→   667→   667→- STRINGS.RECIPE_DESC para ambos continua válido (descrição genérica, não menciona quantidades).
+   169→   668→   668→
+   170→   669→   669→Stage Summary:
+   171→   670→   670→- Recipes do eteleporter e eteleporter_exit agora são IDÊNTICOS: 25 scrap + 2 gears + 3 transistor, TECH.MAGIC_TWO, builder_tag "tinkerer".
+   172→   671→   671→- Redução de custo: Entrance ficou mais barato (30→25 scrap, 5→2 gears, 5→3 transistor). Exit ficou levemente mais barato (3→2 gears).
+   173→   672→   672→
+   174→   673→   673→---
+   175→   674→   674→Task ID: BUG-UPGRADE-HP-FULL-BLOCK
+   176→   675→   675→Agent: main (Z.ai Code)
+   177→   676→   676→Task: Fixar bug "HP is already full" que bloqueava o upgrade MK1→MK2 de todos os bots (reportado pelo usuário: "quando eu tento dar upgrade no brute agora aparece 'hp is already full', agora já tenho a skill").
+   178→   677→   677→
+   179→   678→   678→Work Log:
+   180→   679→   679→- Investiguei o fluxo de upgrade do brute MK1→MK2 em william_brute.lua (OnFinishCallback do engieworkable, linhas 682-794).
+   181→   680→   680→- Encontrei o bug: na v2.0.67 foi adicionado um bloco "HP is already full" (linhas 710-716) com `return` ANTES do upgrade path. Fluxo bugado:
+   182→   681→   681→    1. if HP < max → repair + return (PRIORITY 1)
+   183→   682→   682→    2. if HP >= max → "HP is already full!" + return  ← BUG: bloqueia upgrade
+   184→   683→   683→    3. upgrade path (skill check, scrap, spawn MK2) ← NUNCA alcançado com HP cheio
+   185→   684→   684→- Verifiquei TODOS os bots com grep por "HP is already full": encontrei o MESMO bug em:
+   186→   685→   685→    * william_brute.lua MK1→MK2 (linhas 710-716) — BUG
+   187→   686→   686→    * william_buster.lua MK1→MK2 (linhas 792-798) — BUG (mesmo padrão, mesmo comentário v2.0.67)
+   188→   687→   687→    * william_ballistic.lua MK1→MK2 (linhas 792-798) — BUG (mesmo padrão, mesmo comentário v2.0.67)
+   189→   688→   688→- Confirmei que os OUTROS casos de "HP is already full" NÃO são bugs:
+   190→   689→   689→    * brute MK2→MK3 (linha 1264): if/else fallback DEPOIS do upgrade path — OK
+   191→   690→   690→    * brute MK3 (linha 1458): if/else, MK3 só tem repair — OK
+   192→   691→   691→    * butler MK3 (linha 1332): MK3 só tem repair — OK
+   193→   692→   692→    * buster MK2+ (linha 875): fallback depois do upgrade path — OK
+   194→   693→   693→    * buster MK2→MK3 (linha 1055): if/else fallback — OK
+   195→   694→   694→    * buster MK3 (linha 1348): if/else, MK3 só repair — OK
+   196→   695→   695→    * ballistic MK2+ (linha 870): fallback depois do upgrade path — OK
+   197→   696→   696→    * ballistic MK2→MK3 (linha 1046): if/else fallback — OK
+   198→   697→   697→    * ballistic MK3 (linha 1748): MK3 só tem repair — OK
+   199→   698→   698→
+   200→   699→   699→Fix aplicado (3 arquivos):
+   201→   700→   700→Removi o bloco bugado "HP is already full" + return nos 3 MK1→MK2 (brute, buster, ballistic), substituindo por um comentário explicativo v2.0.68. Fluxo corrigido:
+   202→   701→   701→    1. if HP < max → repair + return (PRIORITY 1, inalterado)
+   203→   702→   702→    2. (HP cheio aqui) → cai no upgrade path (skill check + scrap + spawn MK2)
+   204→   703→   703→    3. fallback "Repair for MK2+" (if/else, HP cheio → "HP is already full")
+   205→   704→   704→- william_brute.lua: removidas linhas 710-716 (bloco if HP>=max + return).
+   206→   705→   705→- william_buster.lua: removidas linhas 792-798 (mesmo bloco).
+   207→   706→   706→- william_ballistic.lua: removidas linhas 792-798 (mesmo bloco).
+   208→   707→   707→
+   209→   708→   708→Verificação:
+   210→   709→   709→- Balance check de parênteses/chaves/colchetes nos 3 arquivos: balanced.
+   211→   710→   710→- O fluxo agora: HP danificado → repair primeiro (qualquer tier, sem skill); HP cheio → tenta upgrade (se MK1 + tem skill + tem scrap); HP cheio + MK2+ → "HP is already full" (fallback informativo).
+   212→   711→   711→
+   213→   712→   712→Stage Summary:
+   214→   713→   713→- Bug "HP is already full bloqueava upgrade MK1→MK2" CORRIGIDO em todos os 3 bots de combate (brute, buster, ballistic).
+   215→   714→   714→- Causa: bloco "HP is already full" com early return adicionado na v2.0.67 ANTES do upgrade path, impedindo que o upgrade fosse processado quando HP estava cheio.
+   216→   715→   715→- Fix: removido o bloco bugado nos 3 arquivos. Agora quando HP está cheio, o fluxo cai direto no upgrade path (skill check → scrap consumption → spawn MK2).
+   217→   716→   716→- Arquivos modificados (3): william_brute.lua, william_buster.lua, william_ballistic.lua.
+   218→   717→   717→
+   219→   718→   718→---
+   220→   719→   719→Task ID: BRUTE-FOLLOW-FIX-V2
+   221→   720→   720→Agent: main (brute deactivated-follow root-cause fix)
+   222→   721→   721→Task: Fix brute bot still following/teleporting when deactivated. Butler works, brute doesn't. User pointed to original mod repo (https://github.com/HIKESS/Mods.git, mod IDs 2607507857 & 3665517849) for reference.
+   223→   722→   722→
+   224→   723→   723→Work Log:
+   225→   724→   724→- Cloned https://github.com/HIKESS/Mods.git to /tmp/Mods-orig.
+   226→   725→   725→- Compared original mod (2607507857 & 3665517849 — both identical) brute files vs our fork:
+   227→   726→   726→  * ORIGINAL brute brain (97 lines): NO Follow node. Uses only Panic + ChaseAndAttack + ShouldGoHome + Wander. The brute never follows the player — it wanders around its "home" location.
+   228→   727→   727→  * ORIGINAL brute prefab: NO follower component at all (grep returns zero matches).
+   229→   728→   728→  * OUR FORK brute brain (136 lines): ADDED a Follow node (gated by IsActive/inst.on).
+   230→   729→   729→  * OUR FORK brute prefab (1664 lines): ADDED follower component at line 624 (MK1) so brute follows player after craft — this is a fork-specific feature.
+   231→   730→   730→  * Stategraph SGwilliambrute.lua: identical across original & fork (520 lines). The `idle_off` state has NO locomotion (just plays sit_idle animation). So the SG is NOT moving the bot.
+   232→   731→   731→- Root cause identified: The DST `follower` component has a built-in CATCH-UP TELEPORT that fires at the COMPONENT level (in OnUpdate), completely bypassing the brain. Even though our brain's `Active` WhileNode gates the Follow behaviour when `inst.on == false`, the follower component STILL has a leader reference and keeps teleporting the deactivated bot to the leader.
+   233→   732→   732→- WHY BUTLER/BUSTER WORK: Their `empty()` husk is a FRESH entity spawned via `fn()` — it has a follower component but NO leader is ever set on it. So the catch-up teleport never fires. The brute reuses the SAME entity on deactivation (TurnOff), leaving the follower leader attached → teleport fires.
+   234→   733→   733→- FIX APPLIED (2 files):
+   235→   734→   734→  1. scripts/prefabs/william_brute.lua TurnOff(): Added `inst.components.follower:StopFollowing()` right after `inst.on = false`. This clears the leader (matching butler/buster's no-leader state) so the follower component's catch-up teleport stops. TurnOn already re-acquires the leader from the activating player (doer) or nearest player within 20 units (lines 329-338), so reactivation re-bonds the brute correctly.
+   236→   735→   735→  2. imports/william_acts.lua WILLYRAISE action condition: Updated to allow reactivation when the leader is nil. Original: `(replica.follower == nil or GetLeader() == doer)`. New: `(replica.follower == nil or GetLeader() == nil or GetLeader() == doer)`. Without this, after StopFollowing clears the leader, the WILLYRAISE action wouldn't appear (because `nil == doer` is false) and the player couldn't reactivate the brute.
+   237→   736→   736→- Verified: No other action conditions in william_acts.lua break (cooking action at line 18-19 correctly skips deactivated brutes; butler-specific checks at 149/163 unaffected).
+   238→   737→   737→- Reload behavior: On save/load with on=false, onload restores leader then calls TurnOff(instant=true) which now clears the leader. When reactivated, TurnOn re-bonds to reactivating player. Acceptable — matches butler/buster "unbound husk is claimable" semantics.
+   239→   738→   738→
+   240→   739→   739→Stage Summary:
+   241→   740→   740→- ROOT CAUSE: follower component's component-level catch-up teleport, NOT the brain. The brain gate was correct but insufficient because the follower component operates independently of the brain.
+   242→   741→   741→- FIX: StopFollowing() in TurnOff (clears leader) + WILLYRAISE condition allows nil leader (so bot is reactivatable).
+   243→   742→   742→- This is a fork-specific bug: the original mod never had a follower component on the brute, so the teleport never existed. Our fork added follow-behavior but forgot to disconnect the follower on deactivation.
+   244→   743→   743→- Files changed: scripts/prefabs/william_brute.lua (TurnOff), imports/william_acts.lua (WILLYRAISE condition).
+   245→   744→   744→- Next: user should test in-game: craft brute, walk away, deactivate → brute should stay put (no teleport). Reactivate → brute re-bonds to reactivator and follows again.
+   246→   745→   745→
+   247→   746→   746→
+   248→   747→   747→---
+   249→   748→   748→Task ID: GEAR-FIX-83
+   250→   749→   749→Agent: Z.ai Code (main session)
+   251→   750→   750→Task: Fix brute bot can't eat gears for upgrade — chest intercepts the gear
+   252→   751→   751→  "o ballistic e o buster aceita gear como upgrade, o buster original aceita
+   253→   752→   752→   mas, acho que devido ao bau, não ta dando de fazer ele comer a gear"
+   254→   753→   753→
+   255→   754→   754→Work Log:
+   256→   755→   755→- Investigated the WILLUPGRADE action system in imports/william_acts.lua.
+   257→   756→   756→- Found the upgrade flow: gears get `willupgrader` component (line 132-136),
+   258→   757→   757→  AddComponentAction("USEITEM", "willupgrader", ...) adds WILLUPGRADE action
+   259→   758→   758→  when player holds gears and clicks a bot with `willminion` tag (not butler,
+   260→   759→   759→  not level3). The action calls DoUpgrade which pushes "levelup" event (+1 level,
+   261→   760→   760→  +regen, +absorption, max level 3).
+   262→   761→   761→- ROOT CAUSE: The brute bot has BOTH `container` (chest) AND `willminion` tags.
+   263→   762→   762→  When the player holds gears and clicks the brute, DST sees two USEITEM actions:
+   264→   763→   763→  STORE (put gear into chest, from container component) and WILLUPGRADE (consume
+   265→   764→   764→  gear for levelup, from willupgrader component). DST's native STORE action has
+   266→   765→   765→  higher system priority (1) than the default WILLUPGRADE priority (0), so STORE
+   267→   766→   766→  always won — the gear went into the chest instead of being consumed for upgrade.
+   268→   767→   767→  The buster and ballistic bots DON'T have a container component, so they never
+   269→   768→   768→  had this conflict.
+   270→   769→   769→- FIX (3 layers of protection, commit 66cdc90 = v2.0.83):
+   271→   770→   770→  1. WILLUPGRADE action now has priority=2 (STORE has priority=1), so
+   272→   771→   771→     WILLUPGRADE is selected when both actions are available.
+   273→   772→   772→  2. AddComponentAction for willupgrader removes STORE from the action list
+   274→   773→   773→     when the target is a brute bot (checks target:HasTag("brute")), so
+   275→   774→   774→     STORE never appears as an option.
+   276→   775→   775→  3. STORE.fn override blocks storing gears into brute bots (checks
+   277→   776→   776→     target:HasTag("brute") + act.invobject.prefab == "gears" +
+   278→   777→   777→     willupgrader component + CrafterCheck), redirecting to WILLUPGRADE
+   279→   778→   778→     as a safety fallback.
+   280→   779→   779→- Other items (scrap, food, etc.) still STORE normally into the brute's chest.
+   281→   780→   780→  The fix only affects gears on brute bots.
+   282→   781→   781→- Bumped version 2.0.82 -> 2.0.83 (modinfo.lua).
+   283→   782→   782→
+   284→   783→   783→Stage Summary:
+   285→   784→   784→- BUG FIXED: Brute bot now correctly eats gears for levelup (WILLUPGRADE)
+   286→   785→   785→  instead of storing them in the chest (STORE). The root cause was the
+   287→   786→   786→  container component intercepting gears before the willupgrader could
+   288→   787→   787→  process them.
+   289→   788→   788→- Files changed (2): imports/william_acts.lua, modinfo.lua.
+   290→   789→   789→- Local commit: 66cdc90 (v2.0.83). Push to origin/main FAILED — GitHub
+   291→   790→   790→  authentication token expired/removed from remote URL. User needs to
+   292→   791→   791→  push manually or restore credentials.
+   293→   792→   792→- Branch state: local main = 66cdc90 (v2.0.83), origin/main = e0c7ff8 (v2.0.82).
+   294→   793→   793→
+   295→   794→   794→
+   296→   795→   795→---
+   297→   796→   796→Task ID: CONFIG-LIMITS-84
+   298→   797→   797→Agent: Z.ai Code (main session)
+   299→   798→   798→Task: Add configurable crafting limits for sentry/dispenser/teleporter in mod settings
+   300→   799→   799→  "adiciona nas configuracoes do personagem, um controlador de limits,
+   301→   800→   800→   limite de sentry, dispenser, teleporter /exite/entrance"
+   302→   801→   801→
+   303→   802→   802→Work Log:
+   304→   803→   803→- Investigated the current crafting limit system in modmain.lua (lines 2707-2874).
+   305→   804→   804→  Found hardcoded limits: esentry=2, dispenser=1, eteleporter=2, eteleporter_exit=2,
+   306→   805→   805→  bot types=1 each. The limits are enforced in AddComponentPostInit("builder")
+   307→   806→   806→  by counting matching prefabs in world + inventory + petleash for the player.
+   308→   807→   807→- Read modinfo.lua configuration_options structure (lines 61-256) to understand
+   309→   808→   808→  how mod configs are declared (name, label, hover, options table with
+   310→   809→   809→  {description, data} pairs, and default).
+   311→   810→   810→- Checked how configs are read in modmain.lua: GetModConfigData("name") returns
+   312→   811→   811→  the data value from the selected option.
+   313→   812→   812→- ADDED (modinfo.lua, 4 new config entries before the * prefixed options):
+   314→   813→   813→  * limit_sentry: 1/2(default)/3/4/5/6/8/10/Unlimited(99)
+   315→   814→   814→  * limit_dispenser: 1(default)/2/3/4/5/Unlimited(99)
+   316→   815→   815→  * limit_teleporter_entrance: 1/2(default)/3/4/5/Unlimited(99)
+   317→   816→   816→  * limit_teleporter_exit: 1/2(default)/3/4/5/Unlimited(99)
+   318→   817→   817→- CHANGED (modmain.lua): Builder DoBuild hook now reads limits via
+   319→   818→   818→  GetModConfigData() into local variables (_limit_sentry etc.) instead of
+   320→   819→   819→  hardcoded numbers. Bot limits stay at max 1 (gated by skill tree already).
+   321→   820→   820→  Defaults match old hardcoded values so existing worlds are unaffected.
+   322→   821→   821→- Bumped version 2.0.83 -> 2.0.84.
+   323→   822→   822→
+   324→   823→   823→Stage Summary:
+   325→   824→   824→- FEATURE ADDED: Server admins can now configure crafting limits for sentry
+   326→   825→   825→  guns, dispensers, teleporter entrances, and teleporter exits in the mod
+   327→   826→   826→  configuration screen (world creation / mod settings). No more editing Lua
+   328→   827→   827→  files to change these limits.
+   329→   828→   828→- Files changed (2): modinfo.lua (+64 lines, 4 config entries), modmain.lua
+   330→   829→   829→  (+14 lines, config reads + dynamic limits table).
+   331→   830→   830→- Local commit: 033c46d (v2.0.84). Push FAILED — GitHub auth token expired.
+   332→   831→   831→  User needs to push manually.
+   333→   832→   832→- Branch state: local main = 033c46d (v2.0.84), origin/main = e0c7ff8 (v2.0.82).
+   334→   833→   833→
+   335→   834→   834→
+   336→   835→   835→---
+   337→   836→   836→Task ID: CONTAINER-DEATH-85
+   338→   837→   837→Agent: Z.ai Code (main session)
+   339→   838→   838→Task: Fix brute chest items destroyed when bot dies/hammered
+   340→   839→   839→  "acho que quando o buster morre, ele não dropa os itens do bau dele,
+   341→   840→   840→   acho que meu cane do chester sumiu que estava la"
+   342→   841→   841→
+   343→   842→   842→Work Log:
+   344→   843→   843→- Investigated all 4 bot prefabs for container components. CONFIRMED: only the
+   345→   844→   844→  brute MK3 has a container (chest). The buster, ballistic, and butler do NOT
+   346→   845→   845→  have containers at any tier. The user likely meant "brute" (the chest bot)
+   347→   846→   846→  not "buster" (the combat bot with no chest).
+   348→   847→   847→- Found the root cause: OnHammered (line 139-155) calls inst:Remove() after
+   349→   848→   848→  DropLoot() but NEVER calls container:DropEverything(). When the entity is
+   350→   849→   849→  removed, the DST engine destroys all items inside the container silently.
+   351→   850→   850→- Also found: there is NO "death" event listener on the brute. When the brute
+   352→   851→   851→  dies in combat (HP reaches 0), the entity is removed by the engine, again
+   353→   852→   852→  without dropping container contents.
+   354→   853→   853→- Verified that MK1→MK2 and MK2→MK3 upgrades don't need this fix because MK1
+   355→   854→   854→  and MK2 don't have containers (only MK3 gets one at line 1520).
+   356→   855→   855→- FIX (2 locations, commit 15a2b75 = v2.0.85):
+   357→   856→   856→  1. OnHammered: added container:Close() + DropEverything() before DropLoot()
+   358→   857→   857→     and inst:Remove(). Items now drop on the ground next to the destroyed bot.
+   359→   858→   858→  2. ListenForEvent("death"): added a death handler that drops all container
+   360→   859→   859→     items when the brute dies from any cause (combat, starvation, etc.).
+   361→   860→   860→- Bumped version 2.0.84 -> 2.0.85.
+   362→   861→   861→
+   363→   862→   862→Stage Summary:
+   364→   863→   863→- BUG FIXED: Brute MK3 chest items are no longer destroyed when the bot dies
+   365→   864→   864→  or is hammered. All stored items (Chester Cane, tools, resources, etc.) now
+   366→   865→   865→  drop on the ground at the bot's location for the player to recover.
+   367→   866→   866→- Files changed (2): scripts/prefabs/william_brute.lua (+21 lines), modinfo.lua.
+   368→   867→   867→- Local commit: 15a2b75 (v2.0.85). Push FAILED — GitHub auth still unavailable.
+   369→   868→   868→- Branch state: local main = 15a2b75 (v2.0.85), origin/main = e0c7ff8 (v2.0.82).
+   370→   869→   869→- 3 local commits not yet pushed: v2.0.83, v2.0.84, v2.0.85.
+   371→   870→   870→
