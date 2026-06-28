@@ -99,10 +99,14 @@ WILLIAM_FUEL.CUSTOM_VALUES = {
     lightbulb  = 90,   -- 3 seg — electrical light cell (ballistic)
 
     -- Organic / Compost (butler)
-    rotton      = 25,  -- ~0.8 seg — decomposed organic
+    -- v2.0.90 FIX: "rotton" is not a valid DST prefab. The correct name is "rot".
+    -- Before this fix, the butler could never consume rot as fuel.
+    rot         = 25,  -- ~0.8 seg — decomposed organic (DST prefab: "rot")
     spoiled_food= 20,  -- ~0.67 seg
     foliage     = 20,  -- ~0.67 seg — plant matter
-    petalfin   = 15,  -- 0.5 seg
+    -- v2.0.90 FIX: "petalfin" is not a valid DST prefab. The correct name is "petals".
+    -- Before this fix, petals could never be used as butler fuel.
+    petals      = 15,  -- 0.5 seg — flower petals (DST prefab: "petals")
 
     -- Raw plant with NO DST fuel component (v2.0.82 FIX)
     -- twigs was listed in BRUTE/BUTLER diets but has no `fuel` component in DST,
@@ -167,8 +171,8 @@ WILLIAM_FUEL.BUTLER = {
     charcoal = true,
     -- Plant
     cutgrass = true, twigs = true, pinecone = true, foliage = true,
-    -- Organic compost
-    rotton = true, spoiled_food = true,
+    -- Organic compost (v2.0.90: "rotton" → "rot" — correct DST prefab name)
+    rot = true, spoiled_food = true,
     -- Mechanical (premium electronic fuel)
     transistor = true,
 }

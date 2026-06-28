@@ -159,7 +159,10 @@ function WilliamBusterBrain:OnStart()
                         end,
                         "AttackMomentarily",
                         ChaseAndAttack(self.inst, MAX_CHASE_TIME, MAX_CHASE_DIST)),
-            WhileNode(function() return self.inst.components.combat.target ~= nil and (self.inst.components.combat:InCooldown() or self.inst.components.combat.target.components.combat:CanAttack()) end, "Dodge",
+            -- v2.0.90 FIX: Added nil check on target.components.combat before
+            -- calling CanAttack(). Targeting a structure (no combat component)
+            -- would crash with "attempt to index field 'combat' (a nil value)".
+            WhileNode(function() return self.inst.components.combat.target ~= nil and (self.inst.components.combat:InCooldown() or (self.inst.components.combat.target.components.combat ~= nil and self.inst.components.combat.target.components.combat:CanAttack())) end, "Dodge",
                 RunAway(self.inst, function() return self.inst.components.combat.target end, RUN_AWAY_DIST, STOP_RUN_AWAY_DIST)),
                     }, .25)),
 

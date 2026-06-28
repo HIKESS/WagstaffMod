@@ -1347,7 +1347,10 @@ inst.components.burnable.ignorefuel = true
 
                         -- Set leader and reinit brain
                         if newbot.components.follower ~= nil then
-                            newbot.components.follower.leader = worker
+                            -- v2.0.90 FIX: Use SetLeader() instead of direct assignment.
+                            -- Direct .leader = bypasses the petleash registration,
+                            -- causing pet count mismatch and teleport-on-rollback failures.
+                            newbot.components.follower:SetLeader(worker)
                             newbot:SetBrain(brain)
                         end
 
@@ -1708,6 +1711,15 @@ local function empty(inst)
     -- Mark husk as "off" so the brain's Deactivated gate keeps it from
     -- following/teleporting to the leader.
     inst.on = false
+
+    -- v2.0.90 FIX: Stop fuel consumption on the empty husk. The fn() base
+    -- function calls fueled:StartConsuming(), which drains fuel while the
+    -- bot sits idle as a husk. This makes reactivation much harder because
+    -- fuel the player adds gets consumed immediately. Only active bots
+    -- should consume fuel.
+    if inst.components.fueled then
+        inst.components.fueled:StopConsuming()
+    end
 
     inst.components.fueled.accepting = true
 

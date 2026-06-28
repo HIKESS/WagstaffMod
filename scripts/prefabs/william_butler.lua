@@ -929,15 +929,9 @@ inst.components.burnable.ignorefuel = true
         -- Restore follower after save/load
         if data ~= nil and data.leader_guid ~= nil then
             inst:DoTaskInTime(0, function()
-                local leader = TheWorld.GUIDToPos and TheWorld.GUIDToPos(data.leader_guid)
-                if not leader then
-                    for k, v in pairs(Ents) do
-                        if k == data.leader_guid then
-                            leader = v
-                            break
-                        end
-                    end
-                end
+                -- v2.0.90 FIX: TheWorld.GUIDToPos returns a POSITION (Vector3),
+                -- not an entity. Use Ents[] instead — the standard DST entity lookup.
+                local leader = Ents[data.leader_guid]
                 if leader and leader:IsValid() and inst:IsValid() then
                     if inst.components.follower then
                         inst.components.follower:SetLeader(leader)

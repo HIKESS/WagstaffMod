@@ -149,12 +149,13 @@ local function OnUpdateProjectile(inst)
                 end
 
                                 OnHit(inst)-- We don't want rockets to pass through, destroy on impact
+                                return  -- v2.0.90 FIX: Stop iterating after OnHit (inst is removed)
             end
 
             -- Remove and do splash damage if it hits a wall
             if target:HasTag("wall") and target.components.health then
                 if not target.components.health:IsDead() then
-                                        if not _G.SENTRY_FF_WALL == "noff" then
+                    if _G.SENTRY_FF_WALL ~= "noff" then
                                                 inst.components.combat:DoAreaAttack(inst, SENTRYROCKET_SPLASH_RADIUS, nil, nil, nil, { "INLIMBO", "notarget", "noattack", "flight", "invisible", "playerghost", "player", "companion", "largecreature" })
                                                 SpawnPrefab("explode_small").Transform:SetPosition(inst.Transform:GetWorldPosition())
                                         end
