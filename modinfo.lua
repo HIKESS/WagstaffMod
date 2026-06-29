@@ -1,130 +1,157 @@
 name = "Wagstaff Aurora"
-description = [[[h1]🛠️ Wagstaff Aurora — The Cryptic Founder[/h1]
+description = [[[h1]Wagstaff Aurora -- The Cryptic Founder[/h1]
 
-[i]Robert Wagstaff — inventor, founder of the Voxola Radio Company, and a man who entered the Constant [b]on purpose[/b].[/i]
+[i]Robert Wagstaff -- inventor, founder of the Voxola Radio Company, and a man who entered the Constant [b]on purpose[/b].[/i]
 
-[hr][/hr]
+[hr]
 
-[h1]📋 Overview[/h1]
-Wagstaff is a reworked character with an integrated [b]skill tree progression system[/b], [b]engineer bots[/b], [b]sentry guns[/b], [b]dispensers[/b], [b]teleporters[/b], and a [b]dual-path affinity system[/b]. He brings TF2-Engineer-style gameplay to Don't Starve Together — build, upgrade, and automate your way to survival.
+[h1]OVERVIEW[/h1]
+Wagstaff is a reworked character with an integrated [b]skill tree progression system[/b], [b]engineer bots[/b], [b]sentry guns[/b], [b]dispensers[/b], [b]teleporters[/b], and a [b]dual-path affinity system[/b]. He brings TF2-Engineer-style gameplay to Don't Starve Together -- build, upgrade, and automate your way to survival.
 
-[hr][/hr]
+[hr]
 
-[h1]👓 Character Traits[/h1]
-• [b]Nearsighted[/b] — The world is a blur without goggles. Equip your Spectoggles to see clearly!
-• [b]Delicate Stomach[/b] — Raw and unprepared food deals damage. Cook your meals!
-• [b]Projection Flicker[/b] — At low health, Wagstaff's holographic projection begins to distort and glitch.
-• [b]Peculiar Objects[/b] — Investigate strange trees and rocks with your goggles for bonus loot.
+[h1]CHARACTER TRAITS[/h1]
+[list]
+[*] [b]Nearsighted[/b] -- The world is a blur without goggles. Equip your Spectoggles to see clearly!
+[*] [b]Delicate Stomach[/b] -- Raw and unprepared food deals damage. Cook your meals!
+[*] [b]Projection Flicker[/b] -- At low health, Wagstaff's holographic projection begins to distort and glitch.
+[*] [b]Peculiar Objects[/b] -- Investigate strange trees and rocks with your goggles for bonus loot.
+[/list]
 
-[hr][/hr]
+[hr]
 
-[h1]🔬 4 Goggle Types[/h1]
-• [b]Spectoggles[/b] — Corrects nearsightedness. Investigate peculiar objects.
-• [b]Infroggles[/b] — Heat vision! See in the dark and detect thermal signatures.
-• [b]Visor[/b] — Combat goggles with built-in armor. Fight and see clearly.
-• [b]Fryfocals[/b] — Shoot charged electromagnetic projectiles! Pew pew!
+[h1]4 GOGGLE TYPES[/h1]
+[list]
+[*] [b]Spectoggles[/b] -- Corrects nearsightedness. Investigate peculiar objects.
+[*] [b]Infroggles[/b] -- Heat vision! See in the dark and detect thermal signatures.
+[*] [b]Visor[/b] -- Combat goggles with built-in armor. Fight and see clearly.
+[*] [b]Fryfocals[/b] -- Shoot charged electromagnetic projectiles!
+[/list]
 
-[hr][/hr]
+[hr]
 
-[h1]🤖 Engineer Bots (William Series)[/h1]
-Each bot is crafted with a [b]William Gadget[/b] + tier-specific materials. Upgrade from MK.I → MK.II → MK.III using the [b]TF2 Wrench + Scrap[/b]!
+[h1]ENGINEER BOTS (William Series)[/h1]
+Each bot is crafted with a [b]William Gadget[/b] + tier-specific materials. Upgrade from MK.I to MK.II to MK.III using the [b]TF2 Wrench + Scrap[/b]!
 
 [table]
     [tr][th]Bot[/th][th]Role[/th][th]MK.I[/th][th]MK.II[/th][th]MK.III[/th][/tr]
-    [tr][td][b]Butler[/b][/td][td]Support / Cooking[/td][td]1 cook slot, follows you[/td][td]3 cook slots, chops & mines[/td][td]Affinity revive, +100 HP[/td][/tr]
-    [tr][td][b]Brute[/b][/td][td]Tank / Taunt[/td][td]1500 HP, 7-tile taunt[/td][td]2500 HP, storage chest[/td][td]3000 HP, affinity counter-attacks[/td][/tr]
-    [tr][td][b]Buster[/b][/td][td]Melee DPS[/td][td]300 HP, 36 DMG[/td][td]600 HP, AoE + stun[/td][td]900 HP, Explosive Punch (30%)[/td][/tr]
-    [tr][td][b]Ballistic[/b][/td][td]Turret / Ranged[/td][td]150 HP, electric shots[/td][td]400 HP, +12 DMG[/td][td]500 HP, splash + Tempest Call[/td][/tr]
+    [tr][td][b]Butler[/b][/td][td]Support[/td][td]200 HP, 1 cook slot[/td][td]3 cook slots, chops trees and mines rocks[/td][td]300 HP, Master Chef, affinity revive[/td][/tr]
+    [tr][td][b]Brute[/b][/td][td]Tank[/td][td]1500 HP, 17 DMG, taunt[/td][td]2100 HP, 27 DMG, storage chest[/td][td]2600 HP, 32 DMG, 8-tile taunt, affinity counter-attacks[/td][/tr]
+    [tr][td][b]Buster[/b][/td][td]Melee DPS[/td][td]500 HP, 36 DMG[/td][td]800 HP, 41 DMG, AoE + stun[/td][td]1100 HP, 46 DMG, Explosive Punch[/td][/tr]
+    [tr][td][b]Ballistic[/b][/td][td]Ranged Turret[/td][td]300 HP, 24 electric DMG (stationary)[/td][td]550 HP, 42 electric DMG[/td][td]650 HP, 50 electric DMG, Overcharge, splash chain[/td][/tr]
 [/table]
 
-[hr][/hr]
+All bots: 5 HP/5s regen, lightning recharge (+25% fuel), rain damage (-1 HP/s). Feed Gears to level up (+3 DMG and +5% absorption per level, max level 3).
 
-[h1]🏗️ Mechanical Structures[/h1]
-• [b]Sentry Gun[/b] — Autonomous defense turret. Upgrades to MK.II (dual guns) and MK.III (rockets + affinity).
-• [b]Dispenser[/b] — Resource generator. Produces scrap, fuel, minerals, and rare items. MK.III works 24/7 with affinity auras!
-• [b]E-Teleporter[/b] — Point-to-point teleportation system. Entrance + Exit pad pair for instant travel.
+[hr]
 
-[hr][/hr]
+[h1]MECHANICAL STRUCTURES[/h1]
+[list]
+[*] [b]Sentry Gun[/b] -- Autonomous defense turret. LVL1: 300 HP, 25 DMG, 100 ammo. LVL2: 600 HP, 30 DMG, 200 ammo. LVL3: 900 HP, 35 DMG, 300 ammo + rockets (50 DMG + splash) + affinity ramp system.
+[*] [b]Dispenser[/b] -- Resource generator. Produces scrap, fuel, minerals, and rare items. LVL3 works 24/7 with affinity auras!
+[*] [b]E-Teleporter[/b] -- Point-to-point teleportation system. Entrance + Exit pad pair for instant travel. Costs 5 sanity per use.
+[/list]
 
-[h1]🌳 Skill Tree (17 Skills)[/h1]
+[hr]
 
-[h2]⚙️ Mechanical Branch[/h2]
-Mechanical Efficiency (root) → forks into:
-  • Sentry path: MK.II → MK.III → x2-Damage
-  • Dispenser path: MK.II → MK.III → Lucky Engineer
+[h1]SKILL TREE (16 Insights)[/h1]
 
-[h2]🤖 Robotic Branch[/h2]
-Linear chain: Butler MK.II → Butler MK.III → Brute MK.II → Brute MK.III → Buster MK.II → Buster MK.III → Ballistic MK.II → Ballistic MK.III
+[h2]Mechanical Branch[/h2]
+Mechanical Efficiency (root) -- 20% chance repairs/upgrades cost no Scrap. Forks into:
+[list]
+[*] Sentry path: MK.II -> MK.III -> x2-Damage (4%+ chance to deal double damage, scales with clustered MK3s)
+[*] Dispenser path: MK.II -> MK.III -> Lucky Engineer (20% chance for rare bonus drops including gems and opal)
+[/list]
 
-[h2]🌕 Allegiance Branch[/h2]
-Boss-locked mutual exclusion — choose ONE:
-  • [b]Celestial Possession[/b] — Unlocked after killing the Celestial Champion. Daytime bonuses.
-  • [b]Shadow Possession[/b] — Unlocked after killing the Ancient Fuelweaver. Dusk bonuses.
+[h2]Robotic Branch[/h2]
+Linear chain: Butler MK.II -> Butler MK.III -> Brute MK.II -> Brute MK.III -> Buster MK.II -> Buster MK.III -> Ballistic MK.II -> Ballistic MK.III
 
-[hr][/hr]
+[h2]Allegiance Branch[/h2]
+Boss-locked mutual exclusion -- choose ONE:
+[list]
+[*] [b]Moon's Blessing[/b] -- Unlocked after killing the Celestial Champion. Daytime bonuses for all bots and structures.
+[*] [b]Shadow's Embrace[/b] -- Unlocked after killing the Ancient Fuelweaver. Dusk bonuses for all bots and structures.
+[/list]
 
-[h1]🔮 Affinity System[/h1]
+[hr]
+
+[h1]AFFINITY SYSTEM[/h1]
 After defeating an alignment boss, your bots and structures gain powerful affinity bonuses:
 
-[b]Celestial (Day):[/b]
-• Butler: Food heals 40% HP based on hunger value
-• Brute: 50 fire damage counter-attack
-• Buster: AoE light explosion (50% splash damage)
-• Ballistic: Brightshade projectiles (snare + AoE)
-• Sentry MK.III: +10% damage vs shadow-aligned
-• Dispenser MK.III: Sanity aura +100/min, Moonglass/Moon Moth drops
+[b]Celestial (Daytime):[/b]
+[list]
+[*] Butler: Food heals 40% HP based on hunger value
+[*] Brute: 50 fire damage counter-attack on hit
+[*] Buster: AoE light explosion (50% splash damage)
+[*] Ballistic: Brightshade projectiles (snare + AoE, 10s cooldown)
+[*] Sentry MK.III: Affinity ramp (+10% base DMG per stack, max 4 stacks) vs shadow-aligned
+[*] Dispenser MK.III: Sanity aura +100/min, Moonglass and Moon Moth drops
+[/list]
 
 [b]Shadow (Dusk):[/b]
-• Butler: Food restores 40% Sanity based on hunger value; Shadow Revive destroys nearest Meat Effigy instead of dying
-• Brute: 25 shadow damage counter-attack + Void Weaken AoE (-50% enemy damage for 3s)
-• Buster: Shadow Clone (50% damage, invincible)
-• Ballistic: Fuelweaver Snare (snares up to 3 enemies)
-• Sentry MK.III: +10% damage vs lunar-aligned
-• Dispenser MK.III: Heal 4 HP/s, Nightmare Fuel/Pure Horror/Dark Tatters drops
+[list]
+[*] Butler: Food restores 40% Sanity based on hunger value; Shadow Revive destroys nearest Meat Effigy instead of bot dying
+[*] Brute: 25 shadow damage counter-attack + Void Weaken AoE (-50% enemy damage for 3s)
+[*] Buster: Shadow Clone (40% damage, invincible, vanishes at day or if Buster dies)
+[*] Ballistic: Fuelweaver Snare (snares up to 3 enemies, 10s cooldown)
+[*] Sentry MK.III: Affinity ramp (+10% base DMG per stack, max 4 stacks) vs lunar-aligned
+[*] Dispenser MK.III: Heal 4 HP/s (builder-only), Nightmare Fuel / Pure Horror / Dark Tatters drops
+[/list]
 
-[hr][/hr]
+[hr]
 
-[h1]🔧 Wrench & Upgrade System[/h1]
-• Craft [b]Scrap[/b] from Flint + Twigs
-• Craft [b]TF2 Wrench[/b] from Scrap + Twigs
-• Hit any bot/structure with Wrench to repair, refuel, or upgrade
-• [b]Mechanical Efficiency[/b] skill: 20% chance upgrades cost no Scrap!
+[h1]WRENCH AND UPGRADE SYSTEM[/h1]
+[list]
+[*] Craft [b]Scrap[/b] from Flint + Twigs (yields 5)
+[*] Craft [b]TF2 Wrench[/b] from Scrap + Twigs
+[*] Craft [b]William Gadget[/b] from 2 Gears + 1 Gold Nugget
+[*] Hit any bot/structure with Wrench to repair, refuel, or upgrade
+[*] [b]Mechanical Efficiency[/b] skill: 20% chance upgrades cost no Scrap!
+[/list]
 
-[hr][/hr]
+[b]Upgrade Costs (Scrap):[/b]
+[table]
+    [tr][th]Unit[/th][th]MK.I to MK.II[/th][th]MK.II to MK.III[/th][/tr]
+    [tr][td]Butler[/td][td]50[/td][td]70[/td][/tr]
+    [tr][td]Brute[/td][td]70[/td][td]90[/td][/tr]
+    [tr][td]Buster[/td][td]70[/td][td]90[/td][/tr]
+    [tr][td]Ballistic[/td][td]100[/td][td]150[/td][/tr]
+    [tr][td]Sentry[/td][td]30[/td][td]40[/td][/tr]
+    [tr][td]Dispenser[/td][td]30[/td][td]40[/td][/tr]
+[/table]
 
-[h1]🌀 Telebrella & Telipad[/h1]
-• [b]Telebrella[/b] — Activate to teleport to the nearest Telipad. Weather-powered fast travel!
-• [b]Telipad[/b] — Landing pad for the Telebrella. Place multiple for a travel network!
-• Configurable: activation mode, misfire chance, uses, and cooldown.
+[hr]
 
-[hr][/hr]
+[h1]TELEBRELLA AND TELIPAD[/h1]
+[list]
+[*] [b]Telebrella[/b] -- Activate to teleport to the nearest Telipad. Weather-powered fast travel!
+[*] [b]Telipad[/b] -- Landing pad for the Telebrella. Place multiple for a travel network!
+[*] Configurable: activation mode, misfire chance, uses, and cooldown.
+[/list]
 
-[h1]🔨 Thumper[/h1]
+[hr]
+
+[h1]THUMPER[/h1]
 A ground-pounding harvester that smashes the earth to gather resources. Elegance hidden beneath brute force!
 
-[hr][/hr]
+[hr]
 
-[h1]⚙️ Configuration Options[/h1]
-• Language (Auto/English/中文)
-• Presets (Default / Old Wagstaff / Hamlet)
-• Peculiar object chances
-• Weak stomach damage
-• Telebrella settings (activation, misfire, uses, cooldown)
-• Structure limits (sentries, dispensers, teleporters)
-• Distortion threshold & blur effects
-• Goggle restrictions
-• Debug mode
+[h1]CONFIGURATION OPTIONS[/h1]
+[list]
+[*] Language (Auto / English / Chinese)
+[*] Presets (Default / Old Wagstaff / Hamlet)
+[*] Peculiar object chances
+[*] Weak stomach damage
+[*] Telebrella settings (activation, misfire, uses, cooldown)
+[*] Structure limits (sentries, dispensers, teleporters)
+[*] Distortion threshold and blur effects
+[*] Goggle restrictions
+[*] Debug mode
+[/list]
 
-[hr][/hr]
+[hr]
 
-[h1]📝 Recent Changes[/h1]
-[b]v2.0.97:[/b] 273+ new dialogue variations — expanded battle cries, combat quits, bot descriptions, announce events, and nearsighted quotes.
-[b]v2.0.96:[/b] Bug fixes for bots and sentries.
-[b]v2.0.94:[/b] 30+ bug fixes across all bots, sentries, and skills.
-
-[hr][/hr]
-
-[h1]👥 Credits[/h1]
+[h1]CREDITS[/h1]
 Author: [b]Auror4Gam3[/b]
 Original character: Klei Entertainment (Hamlet DLC)
 TF2 Engineer inspiration: Valve Corporation
