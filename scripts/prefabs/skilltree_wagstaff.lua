@@ -123,7 +123,6 @@ local function BuildSkillsData(SkillTreeFns)
             group = "mechanical",
             tags = {"mechanical"},
             cost = 1,
-            connects = {"wagstaff_calibrated_wrench"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_x2_damage")
             end,
@@ -181,7 +180,6 @@ local function BuildSkillsData(SkillTreeFns)
             group = "mechanical",
             tags = {"mechanical"},
             cost = 1,
-            connects = {"wagstaff_calibrated_wrench"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_lucky_engineer")
             end,
@@ -371,7 +369,6 @@ local function BuildSkillsData(SkillTreeFns)
             group = "robotic",
             tags = {"robotic"},
             cost = 1,
-            connects = {"wagstaff_optimized_fuel"},
             onactivate = function(inst, fromload)
                 _dbg("[SKILL DEBUG] wagstaff_ballistic_parallel onactivate called, fromload:", fromload)
                 _dbg("[SKILL DEBUG] inst.prefab:", inst and inst.prefab or "NIL")
@@ -556,7 +553,6 @@ local function BuildSkillsData(SkillTreeFns)
             tags = {"allegiance", "shadow", "shadow_favor"},
             cost = 1,
             locks = {"wagstaff_allegiance_lock_shadow_boss", "wagstaff_allegiance_lock_shadow_path"},
-            connects = {"wagstaff_shadow_engineer"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_shadow_possession")
             end,
@@ -575,7 +571,6 @@ local function BuildSkillsData(SkillTreeFns)
             tags = {"allegiance", "lunar", "lunar_favor"},
             cost = 1,
             locks = {"wagstaff_allegiance_lock_lunar_boss", "wagstaff_allegiance_lock_lunar_path"},
-            connects = {"wagstaff_celestial_engineer"},
             onactivate = function(inst, fromload)
                 inst:AddTag("wagstaff_celestial_possession")
             end,
@@ -583,250 +578,17 @@ local function BuildSkillsData(SkillTreeFns)
                 inst:RemoveTag("wagstaff_celestial_possession")
             end,
         },
-
-        -- ================================================================
-        -- GROUP A: GADGETS (Branch from mechanical terminal nodes)
-        -- ================================================================
-        -- These skill effects were coded in wagstaff_skilltree_impl.lua but had
-        -- no skill tree nodes to grant their tags. Now reachable via both the
-        -- sentry and dispenser terminal nodes (x2_damage / lucky_engineer).
-
-        wagstaff_calibrated_wrench = {
-            name = "wagstaff_calibrated_wrench",
-            title = "Calibrated Wrench",
-            desc = "Precision tools for precision work.\nThe Wrench consumes only half durability.",
-            icon = "Wrench",
-            icon_atlas = "images/skilltree/Wrench.xml",
-            pos = { -168.9, -11.5 },
-            group = "mechanical",
-            tags = {"mechanical"},
-            cost = 1,
-            connects = {"wagstaff_stabilized_portals"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_calibrated_wrench")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_calibrated_wrench")
-            end,
-        },
-
-        wagstaff_stabilized_portals = {
-            name = "wagstaff_stabilized_portals",
-            title = "Stabilized Portals",
-            desc = "Portal technology, refined.\nThe Portal Gun costs less fuel to operate.",
-            icon = "MK2",
-            icon_atlas = "images/skilltree/MK2.xml",
-            pos = { -168.9, -55.5 },
-            group = "mechanical",
-            tags = {"mechanical"},
-            cost = 1,
-            connects = {"wagstaff_efficient_refineries"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_stabilized_portals")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_stabilized_portals")
-            end,
-        },
-
-        wagstaff_efficient_refineries = {
-            name = "wagstaff_efficient_refineries",
-            title = "Efficient Refineries",
-            desc = "Waste not, want not.\nRefineries have a chance to refund an input ingredient.",
-            icon = "disp2",
-            icon_atlas = "images/skilltree/disp2.xml",
-            pos = { -168.9, -99.5 },
-            group = "mechanical",
-            tags = {"mechanical"},
-            cost = 1,
-            connects = {"wagstaff_resupply_protocol"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_efficient_refineries")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_efficient_refineries")
-            end,
-        },
-
-        wagstaff_resupply_protocol = {
-            name = "wagstaff_resupply_protocol",
-            title = "Resupply Protocol",
-            desc = "Always be prepared.\nThe Dispenser has a chance to produce a bonus resource.",
-            icon = "disp3",
-            icon_atlas = "images/skilltree/disp3.xml",
-            pos = { -168.9, -143.5 },
-            group = "mechanical",
-            tags = {"mechanical"},
-            cost = 1,
-            connects = {"wagstaff_master_engineer"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_resupply_protocol")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_resupply_protocol")
-            end,
-        },
-
-        wagstaff_master_engineer = {
-            name = "wagstaff_master_engineer",
-            title = "Master Engineer",
-            desc = "Mastery of the craft.\nTeleporters cost less sanity to use.",
-            icon = "luckyenginer",
-            icon_atlas = "images/skilltree/luckyenginer.xml",
-            pos = { -168.9, -187.5 },
-            group = "mechanical",
-            tags = {"mechanical"},
-            cost = 1,
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_master_engineer")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_master_engineer")
-            end,
-        },
-
-        -- ================================================================
-        -- GROUP B: AUTOMATON (Branch from robotic terminal node)
-        -- ================================================================
-        -- These skill effects were coded in wagstaff_skilltree_impl.lua but had
-        -- no skill tree nodes to grant their tags. Now reachable via the
-        -- Ballistic Bot MK.III terminal node.
-
-        wagstaff_optimized_fuel = {
-            name = "wagstaff_optimized_fuel",
-            title = "Optimized Fuel",
-            desc = "Every drop counts.\nAutomatons have a chance to not consume fuel.",
-            icon = "flicker",
-            icon_atlas = "images/skilltree/flicker.xml",
-            pos = { 0.85, -11.5 },
-            group = "robotic",
-            tags = {"robotic"},
-            cost = 1,
-            connects = {"wagstaff_butler_protocols"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_optimized_fuel")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_optimized_fuel")
-            end,
-        },
-
-        wagstaff_butler_protocols = {
-            name = "wagstaff_butler_protocols",
-            title = "Butler Protocols",
-            desc = "Safety first.\nThe Butler Bot retreats from hostile creatures.",
-            icon = "buttlermk2",
-            icon_atlas = "images/skilltree/buttlermk2.xml",
-            pos = { 0.85, -55.5 },
-            group = "robotic",
-            tags = {"robotic"},
-            cost = 1,
-            connects = {"wagstaff_combat_coordination"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_butler_protocols")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_butler_protocols")
-            end,
-        },
-
-        wagstaff_combat_coordination = {
-            name = "wagstaff_combat_coordination",
-            title = "Combat Coordination",
-            desc = "Fight smarter.\nBuster Bots attack faster when near their leader.",
-            icon = "bustermk2",
-            icon_atlas = "images/skilltree/bustermk2.xml",
-            pos = { 0.85, -99.5 },
-            group = "robotic",
-            tags = {"robotic"},
-            cost = 1,
-            connects = {"wagstaff_predictive_maintenance"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_combat_coordination")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_combat_coordination")
-            end,
-        },
-
-        wagstaff_predictive_maintenance = {
-            name = "wagstaff_predictive_maintenance",
-            title = "Predictive Maintenance",
-            desc = "A stitch in time.\nAutomatons warn when fuel is running low.",
-            icon = "reinforcedchassis",
-            icon_atlas = "images/skilltree/reinforcedchassis.xml",
-            pos = { 0.85, -143.5 },
-            group = "robotic",
-            tags = {"robotic"},
-            cost = 1,
-            connects = {"wagstaff_overclock_protocol"},
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_predictive_maintenance")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_predictive_maintenance")
-            end,
-        },
-
-        wagstaff_overclock_protocol = {
-            name = "wagstaff_overclock_protocol",
-            title = "Overclock Protocol",
-            desc = "Push beyond the limits.\nAutomatons can temporarily overclock for increased speed.",
-            icon = "shockwave",
-            icon_atlas = "images/skilltree/shockwave.xml",
-            pos = { 0.85, -187.5 },
-            group = "robotic",
-            tags = {"robotic"},
-            cost = 1,
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_overclock_protocol")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_overclock_protocol")
-            end,
-        },
-
-        -- ================================================================
-        -- GROUP C: ALLEGIANCE EXTENSIONS (Branch from affinity nodes)
-        -- ================================================================
-        -- These skill effects were coded in wagstaff_skilltree_impl.lua but had
-        -- no skill tree nodes to grant their tags. Now reachable via the
-        -- Shadow's Embrace / Moon's Blessing nodes.
-
-        wagstaff_shadow_engineer = {
-            name = "wagstaff_shadow_engineer",
-            title = "Shadow Engineer",
-            desc = "The shadows empower your creations.\nWeapons deal +25% damage.",
-            icon = "wolfgang_allegiance_shadow_3",
-            pos = { 205.8, 47.9 },
-            group = "allegiance",
-            tags = {"allegiance", "shadow", "shadow_favor"},
-            cost = 1,
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_shadow_engineer")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_shadow_engineer")
-            end,
-        },
-
-        wagstaff_celestial_engineer = {
-            name = "wagstaff_celestial_engineer",
-            title = "Celestial Engineer",
-            desc = "Lunar energy makes your tools last longer.\nItems lose durability 20% slower.",
-            icon = "wolfgang_allegiance_lunar_3",
-            pos = { 150.2, 47.3 },
-            group = "allegiance",
-            tags = {"allegiance", "lunar", "lunar_favor"},
-            cost = 1,
-            onactivate = function(inst, fromload)
-                inst:AddTag("wagstaff_celestial_engineer")
-            end,
-            ondeactivate = function(inst, fromload)
-                inst:RemoveTag("wagstaff_celestial_engineer")
-            end,
-        },
     }
+
+    -- NOTE: The following skill effects exist in wagstaff_skilltree_impl.lua but have
+    -- NO skill tree nodes (orphaned). They were briefly added in v2.0.95 but removed
+    -- because the positions were outside the skill tree background. To properly add
+    -- them, the background image must be expanded or the layout restructured.
+    -- Orphaned tags: wagstaff_calibrated_wrench, wagstaff_stabilized_portals,
+    -- wagstaff_efficient_refineries, wagstaff_resupply_protocol, wagstaff_master_engineer,
+    -- wagstaff_optimized_fuel, wagstaff_butler_protocols, wagstaff_combat_coordination,
+    -- wagstaff_predictive_maintenance, wagstaff_overclock_protocol,
+    -- wagstaff_shadow_engineer, wagstaff_celestial_engineer
 
     local BACKGROUND_SETTINGS = {
         background = "images/skilltree/wagstaff_background.xml",
