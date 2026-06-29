@@ -1,19 +1,135 @@
 name = "Wagstaff Aurora"
-description = [[Wagstaff Aurora — The Cryptic Founder.
+description = [[[h1]🛠️ Wagstaff Aurora — The Cryptic Founder[/h1]
 
-A great inventor, nearsighted, with a delicate stomach. 
-A reworked character mod with integrated skill tree progression, engineer bots, sentry guns, dispensers, teleporters, and a dual-path affinity system.
+[i]Robert Wagstaff — inventor, founder of the Voxola Radio Company, and a man who entered the Constant [b]on purpose[/b].[/i]
 
-Features:
-- Nearsighted & weak stomach mechanics
-- 4 goggle types (Normal, Heat Vision, Armor, Fryfocals/Shoot)
-- Telebrella & Telipad teleport 
-- Thumper ground-pounding harvester
-- Skill Tree (17 Skills & tree branch Mechanical/Robotic/Allegiance)
-- Robotics: Butler, Buster, Brute, Ballistic (MK2/MK3+Gear)
-- Mechanical: Sentry Gun, Dispenser, Teleporter(MK2/MK3+Gear)
-- Wrench Repair & Upgrade System
-- Affinity system: Shadow vs Celestial
+[hr][/hr]
+
+[h1]📋 Overview[/h1]
+Wagstaff is a reworked character with an integrated [b]skill tree progression system[/b], [b]engineer bots[/b], [b]sentry guns[/b], [b]dispensers[/b], [b]teleporters[/b], and a [b]dual-path affinity system[/b]. He brings TF2-Engineer-style gameplay to Don't Starve Together — build, upgrade, and automate your way to survival.
+
+[hr][/hr]
+
+[h1]👓 Character Traits[/h1]
+• [b]Nearsighted[/b] — The world is a blur without goggles. Equip your Spectoggles to see clearly!
+• [b]Delicate Stomach[/b] — Raw and unprepared food deals damage. Cook your meals!
+• [b]Projection Flicker[/b] — At low health, Wagstaff's holographic projection begins to distort and glitch.
+• [b]Peculiar Objects[/b] — Investigate strange trees and rocks with your goggles for bonus loot.
+
+[hr][/hr]
+
+[h1]🔬 4 Goggle Types[/h1]
+• [b]Spectoggles[/b] — Corrects nearsightedness. Investigate peculiar objects.
+• [b]Infroggles[/b] — Heat vision! See in the dark and detect thermal signatures.
+• [b]Visor[/b] — Combat goggles with built-in armor. Fight and see clearly.
+• [b]Fryfocals[/b] — Shoot charged electromagnetic projectiles! Pew pew!
+
+[hr][/hr]
+
+[h1]🤖 Engineer Bots (William Series)[/h1]
+Each bot is crafted with a [b]William Gadget[/b] + tier-specific materials. Upgrade from MK.I → MK.II → MK.III using the [b]TF2 Wrench + Scrap[/b]!
+
+[table]
+    [tr][th]Bot[/th][th]Role[/th][th]MK.I[/th][th]MK.II[/th][th]MK.III[/th][/tr]
+    [tr][td][b]Butler[/b][/td][td]Support / Cooking[/td][td]1 cook slot, follows you[/td][td]3 cook slots, chops & mines[/td][td]Affinity revive, +100 HP[/td][/tr]
+    [tr][td][b]Brute[/b][/td][td]Tank / Taunt[/td][td]1500 HP, 7-tile taunt[/td][td]2500 HP, storage chest[/td][td]3000 HP, affinity counter-attacks[/td][/tr]
+    [tr][td][b]Buster[/b][/td][td]Melee DPS[/td][td]300 HP, 36 DMG[/td][td]600 HP, AoE + stun[/td][td]900 HP, Explosive Punch (30%)[/td][/tr]
+    [tr][td][b]Ballistic[/b][/td][td]Turret / Ranged[/td][td]150 HP, electric shots[/td][td]400 HP, +12 DMG[/td][td]500 HP, splash + Tempest Call[/td][/tr]
+[/table]
+
+[hr][/hr]
+
+[h1]🏗️ Mechanical Structures[/h1]
+• [b]Sentry Gun[/b] — Autonomous defense turret. Upgrades to MK.II (dual guns) and MK.III (rockets + affinity).
+• [b]Dispenser[/b] — Resource generator. Produces scrap, fuel, minerals, and rare items. MK.III works 24/7 with affinity auras!
+• [b]E-Teleporter[/b] — Point-to-point teleportation system. Entrance + Exit pad pair for instant travel.
+
+[hr][/hr]
+
+[h1]🌳 Skill Tree (17 Skills)[/h1]
+
+[h2]⚙️ Mechanical Branch[/h2]
+Mechanical Efficiency (root) → forks into:
+  • Sentry path: MK.II → MK.III → x2-Damage
+  • Dispenser path: MK.II → MK.III → Lucky Engineer
+
+[h2]🤖 Robotic Branch[/h2]
+Linear chain: Butler MK.II → Butler MK.III → Brute MK.II → Brute MK.III → Buster MK.II → Buster MK.III → Ballistic MK.II → Ballistic MK.III
+
+[h2]🌕 Allegiance Branch[/h2]
+Boss-locked mutual exclusion — choose ONE:
+  • [b]Celestial Possession[/b] — Unlocked after killing the Celestial Champion. Daytime bonuses.
+  • [b]Shadow Possession[/b] — Unlocked after killing the Ancient Fuelweaver. Dusk bonuses.
+
+[hr][/hr]
+
+[h1]🔮 Affinity System[/h1]
+After defeating an alignment boss, your bots and structures gain powerful affinity bonuses:
+
+[b]Celestial (Day):[/b]
+• Butler: Food heals 40% HP based on hunger value
+• Brute: 50 fire damage counter-attack
+• Buster: AoE light explosion (50% splash damage)
+• Ballistic: Brightshade projectiles (snare + AoE)
+• Sentry MK.III: +10% damage vs shadow-aligned
+• Dispenser MK.III: Sanity aura +100/min, Moonglass/Moon Moth drops
+
+[b]Shadow (Dusk):[/b]
+• Butler: Food restores 40% Sanity based on hunger value; Shadow Revive destroys nearest Meat Effigy instead of dying
+• Brute: 25 shadow damage counter-attack + Void Weaken AoE (-50% enemy damage for 3s)
+• Buster: Shadow Clone (50% damage, invincible)
+• Ballistic: Fuelweaver Snare (snares up to 3 enemies)
+• Sentry MK.III: +10% damage vs lunar-aligned
+• Dispenser MK.III: Heal 4 HP/s, Nightmare Fuel/Pure Horror/Dark Tatters drops
+
+[hr][/hr]
+
+[h1]🔧 Wrench & Upgrade System[/h1]
+• Craft [b]Scrap[/b] from Flint + Twigs
+• Craft [b]TF2 Wrench[/b] from Scrap + Twigs
+• Hit any bot/structure with Wrench to repair, refuel, or upgrade
+• [b]Mechanical Efficiency[/b] skill: 20% chance upgrades cost no Scrap!
+
+[hr][/hr]
+
+[h1]🌀 Telebrella & Telipad[/h1]
+• [b]Telebrella[/b] — Activate to teleport to the nearest Telipad. Weather-powered fast travel!
+• [b]Telipad[/b] — Landing pad for the Telebrella. Place multiple for a travel network!
+• Configurable: activation mode, misfire chance, uses, and cooldown.
+
+[hr][/hr]
+
+[h1]🔨 Thumper[/h1]
+A ground-pounding harvester that smashes the earth to gather resources. Elegance hidden beneath brute force!
+
+[hr][/hr]
+
+[h1]⚙️ Configuration Options[/h1]
+• Language (Auto/English/中文)
+• Presets (Default / Old Wagstaff / Hamlet)
+• Peculiar object chances
+• Weak stomach damage
+• Telebrella settings (activation, misfire, uses, cooldown)
+• Structure limits (sentries, dispensers, teleporters)
+• Distortion threshold & blur effects
+• Goggle restrictions
+• Debug mode
+
+[hr][/hr]
+
+[h1]📝 Recent Changes[/h1]
+[b]v2.0.97:[/b] 273+ new dialogue variations — expanded battle cries, combat quits, bot descriptions, announce events, and nearsighted quotes.
+[b]v2.0.96:[/b] Bug fixes for bots and sentries.
+[b]v2.0.94:[/b] 30+ bug fixes across all bots, sentries, and skills.
+
+[hr][/hr]
+
+[h1]👥 Credits[/h1]
+Author: [b]Auror4Gam3[/b]
+Original character: Klei Entertainment (Hamlet DLC)
+TF2 Engineer inspiration: Valve Corporation
+
+[i]Report bugs on the GitHub repo or Steam Workshop page![/i]
 ]]
 
 id = "wagstaff_standalone"
