@@ -275,6 +275,18 @@ local states=
             EventHandler("animover", function(inst)
         --local health = inst.components.health.currenthealth
     local x, y, z = inst.Transform:GetWorldPosition()
+    -- v2.0.98 FIX: if on a boat, nudge position toward boat center to
+    -- prevent the husk from falling off the edge into the water.
+    local platform = TheWorld.Map:GetPlatformAtPoint(x, 0, z)
+    if platform ~= nil then
+        local cx, _, cz = platform.Transform:GetWorldPosition()
+        local dx, dz = cx - x, cz - z
+        local dist = math.sqrt(dx*dx + dz*dz)
+        if dist > 0.5 then
+            x = x + dx/dist * 0.5
+            z = z + dz/dist * 0.5
+        end
+    end
     local husk = SpawnPrefab("williambuster_empty")
         if husk ~= nil then
         husk.Transform:SetPosition(x, y, z)
