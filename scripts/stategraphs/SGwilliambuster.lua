@@ -277,19 +277,26 @@ local states=
     local x, y, z = inst.Transform:GetWorldPosition()
     -- v2.0.98 FIX: if on a boat, nudge position toward boat center to
     -- prevent the husk from falling off the edge into the water.
+    -- Check platform at position first, then fallback to active bot's
+    -- current platform (bot still knows its platform via locomotor tracking
+    -- even when standing at the very edge where GetPlatformAtPoint returns nil).
     local platform = TheWorld.Map:GetPlatformAtPoint(x, 0, z)
+    if platform == nil and inst.components.locomotor then
+        platform = inst.components.locomotor:GetPlatform()
+    end
     if platform ~= nil then
         local cx, _, cz = platform.Transform:GetWorldPosition()
         local dx, dz = cx - x, cz - z
         local dist = math.sqrt(dx*dx + dz*dz)
-        if dist > 0.5 then
-            x = x + dx/dist * 0.5
-            z = z + dz/dist * 0.5
+        if dist > 0.1 then
+            local nudge = math.max(1.5, dist * 0.3)
+            x = x + dx/dist * nudge
+            z = z + dz/dist * nudge
         end
     end
     local husk = SpawnPrefab("williambuster_empty")
         if husk ~= nil then
-        husk.Transform:SetPosition(x, y, z)
+        husk.Physics:Teleport(x, y, z)
 --      if not inst.components.fueled:IsEmpty() then
         husk.components.fueled.currentfuel = inst.components.fueled.currentfuel
 --      end

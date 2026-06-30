@@ -1446,6 +1446,13 @@ inst.components.burnable.ignorefuel = true
     -- does not associate the husk with the boat and it falls into the water
     -- when deactivated near the edge.
     inst:AddComponent("embarker")
+    -- v2.0.98 FIX: locomotor required for embarker to function and for platform
+    -- tracking. Without it, embarker never activates and the husk falls off boats.
+    -- Speed is 0 so the husk stays inert — no brain means no movement commands.
+    inst:AddComponent("locomotor")
+    inst.components.locomotor.runspeed = 0
+    inst.components.locomotor.walkspeed = 0
+    inst.components.locomotor:SetAllowPlatformHopping(true)
 
         if not TheWorld.ismastersim then
             return inst
