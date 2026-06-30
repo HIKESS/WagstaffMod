@@ -1441,6 +1441,12 @@ inst.components.burnable.ignorefuel = true
     -- toward the player.
     inst.on = false
 
+    -- v2.0.98 FIX: add embarker so the husk stays on the boat platform
+    -- after being teleported during powerdown. Without embarker, the game
+    -- does not associate the husk with the boat and it falls into the water
+    -- when deactivated near the edge.
+    inst:AddComponent("embarker")
+
         if not TheWorld.ismastersim then
             return inst
         end
