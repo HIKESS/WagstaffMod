@@ -1436,28 +1436,33 @@ end)
 
 
 --==================================================================================
--- BRUTE MK1 FOLLOWER FIX: recupera follower caso se perca após reload/derrota
--- Varre entidades próximas e reconecta o Brute ao dono via petleash
+-- v2.0.98 FIX: ALL BOT FOLLOWER RECOVERY after player transformation / respawn
+-- When the player transforms (were-monkey) or dies and respawns, DST replaces
+-- the player entity. The leader component calls StopFollowing() on all followers
+-- when the old entity is removed, leaving bots with follower.leader = nil.
+-- This listener re-attaches orphaned bots to the new player entity.
 --==================================================================================
-AddPrefabPostInit("williambrute", function(inst)
+AddPrefabPostInit("world", function(inst)
     if not GLOBAL.TheWorld.ismastersim then return end
-    inst:DoTaskInTime(1, function()
-        if not inst:IsValid() then return end
-        if inst.components.follower and inst.components.follower:GetLeader() == nil then
-            local x, y, z = inst.Transform:GetWorldPosition()
-            local candidates = GLOBAL.TheSim:FindEntities(x, y, z, 20, {"player"}, {"playerghost"})
-            for _, candidate in ipairs(candidates) do
-                if candidate.components.petleash then
-                    local pets = candidate.components.petleash:GetPets()
-                    for _, pet in pairs(pets) do
-                        if pet == inst and inst.components.follower then
-                            inst.components.follower:SetLeader(candidate)
-                            return
-                        end
+    inst:ListenForEvent("playeractivated", function(world, player)
+        -- Only re-attach for players with the Wagstaff tinkerer tag
+        if not player:HasTag("tinkerer") then return end
+        -- Delay one frame so the player entity is fully initialized
+        player:DoTaskInTime(0, function()
+            if not player:IsValid() then return end
+            local x, y, z = player.Transform:GetWorldPosition()
+            -- Find all willminion bots (brute, butler, buster, ballistic, sentry)
+            -- within 30 units that lost their leader
+            local bots = GLOBAL.TheSim:FindEntities(x, y, z, 30, {"willminion"}, {"INLIMBO"})
+            for _, bot in ipairs(bots) do
+                if bot.components.follower and bot.components.follower:GetLeader() == nil then
+                    -- Only re-attach active bots (not powered-down husks)
+                    if bot.on ~= false then
+                        bot.components.follower:SetLeader(player)
                     end
                 end
             end
-        end
+        end)
     end)
 end)
 
