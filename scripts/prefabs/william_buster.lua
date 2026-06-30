@@ -357,7 +357,11 @@ local function OnAddFuel(inst, fuelvalue, fuelitem)
         if inst.sg ~= nil then
     inst.sg:GoToState("fed")
         end
-    inst:AddTag("alive")
+    -- v2.0.98 FIX: REMOVED inst:AddTag("alive") here. This was adding the
+    -- "alive" tag to empty husks when refueled, causing WILLYRAISE to show
+    -- "Deactivate" instead of "Activate". But husks have no stategraph, so
+    -- "Deactivate" is a no-op — the player gets permanently stuck. Active
+    -- bots already get the "alive" tag in active() at line ~666.
     return true  -- Accept the fuel
 end
 
@@ -1517,6 +1521,15 @@ end
     -- should consume fuel. (Same fix as brute empty, v2.0.90.)
     if inst.components.fueled then
         inst.components.fueled:StopConsuming()
+        -- v2.0.98 FIX: add fueldepleted tag when fuel is 0. The powerdown
+        -- state sets currentfuel = 0 directly (bypassing DoDelta), so the
+        -- fueldepleted tag is never added by DST's MakeDepleted(). Without
+        -- this tag, the WILLYRAISE SCENE check passes but the action fn
+        -- fails (fuel is empty), creating a "shows Activate but does nothing"
+        -- dead end.
+        if inst.components.fueled.currentfuel <= 0 then
+            inst:AddTag("fueldepleted")
+        end
     end
 
     MakeHauntableWork(inst)
