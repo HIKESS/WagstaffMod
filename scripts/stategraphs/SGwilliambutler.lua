@@ -556,13 +556,12 @@ end),
             -- the death state. Without this, the butler keeps colliding with
             -- entities during the powerdown animation.
             inst.Physics:SetActive(false)
-            -- Bug 2 FIX: "dozy" doesn't exist in the wilson bank (it's a chess
-            -- creature animation). Use "sleep_pre" + "sleep_loop" instead, which
-            -- are available in the wilson bank and convey the same "shutting down"
-            -- visual. Both are non-looping so animqueueover fires after the full
-            -- sequence completes.
-            inst.AnimState:PlayAnimation("sleep_pre")
-            inst.AnimState:PushAnimation("sleep_loop", false)
+            -- v2.1.2 FIX: "sleep_pre" and "sleep_loop" do NOT exist in the
+            -- wilson bank (they caused "Could not find anim" warnings and
+            -- animqueueover never fired, so the husk was never spawned and the
+            -- butler just disappeared). Use "death" animation instead, which
+            -- exists in wilson bank and provides a similar visual.
+            inst.AnimState:PlayAnimation("death", false)
 
         inst.Transform:SetRotation(0)
         end,
@@ -579,10 +578,10 @@ end),
 
         events =
         {
-            -- Bug 2 FIX (cont.): changed from animover to animqueueover so the
-            -- husk spawn only happens after the full sleep_pre + sleep_loop
-            -- sequence, not after sleep_pre alone.
-            EventHandler("animqueueover", function(inst)
+            -- v2.1.2: Changed back to animover since we now use a single "death"
+            -- animation (non-looping) instead of the broken sleep_pre + sleep_loop
+            -- queue that never played.
+            EventHandler("animover", function(inst)
     local x, y, z = inst.Transform:GetWorldPosition()
     -- v2.0.98 FIX: if on a boat, nudge position toward boat center to
     -- prevent the husk from falling off the edge into the water.

@@ -265,7 +265,10 @@ local states=
         onenter = function(inst)
             inst.Physics:Stop()
             inst.Physics:SetActive(false)
-            inst.AnimState:PlayAnimation("sleep_pre")
+            -- v2.1.2 FIX: "sleep_pre" does NOT exist in the wilson bank, causing
+            -- "Could not find anim" warning and animover never firing properly.
+            -- Use "death" animation instead, which exists in wilson bank.
+            inst.AnimState:PlayAnimation("death", false)
         inst.SoundEmitter:PlaySound("dontstarve/creatures/knight/death")
         inst.Transform:SetRotation(0)
         end,
