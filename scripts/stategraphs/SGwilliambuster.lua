@@ -281,7 +281,7 @@ local states=
     -- current platform (bot still knows its platform via locomotor tracking
     -- even when standing at the very edge where GetPlatformAtPoint returns nil).
     local platform = TheWorld.Map:GetPlatformAtPoint(x, 0, z)
-    if platform == nil and inst.components.locomotor then
+    if platform == nil and inst.components.locomotor and inst.components.locomotor.GetPlatform then
         platform = inst.components.locomotor:GetPlatform()
     end
     if platform ~= nil then

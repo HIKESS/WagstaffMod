@@ -161,7 +161,7 @@ TF2 Engineer inspiration: Valve Corporation
 
 id = "wagstaff_standalone"
 author = "Auror4Gam3"
-version = "2.1.1"
+version = "2.1.2"
 
 api_version = 10
 
