@@ -43,6 +43,43 @@ function EngieTeleporter:TeleportAction(doer)
         -- Y != 0 from a boat can cause the destination area to not render
         -- because the camera position is wrong. Force Y = 0 (ground level).
         local tx, _, tz = self.boundEntrance.paired.Transform:GetWorldPosition()
+
+        -- v2.1.7 FIX: When teleporting from a boat to land, the player's
+        -- platform state must be cleared. Physics:Teleport does NOT trigger
+        -- the disembark flow, so the client still thinks the player is on a
+        -- boat. This causes a black screen / rendering failure because the
+        -- camera stays in "boat mode" while the player is on land. We must
+        -- explicitly remove the player from the boat platform before
+        -- teleporting. This also clears the "onplatform"/"riding" tags so
+        -- the locomotor resumes normal land movement after teleport.
+        if doer.components.locomotor then
+            local platform = nil
+            -- Server-side: locomotor has GetPlatform method
+            if doer.components.locomotor.GetPlatform then
+                platform = doer.components.locomotor:GetPlatform()
+            end
+            -- Fallback: check the entity's current platform
+            if platform == nil and doer.GetCurrentPlatform then
+                platform = doer:GetCurrentPlatform()
+            end
+            if platform ~= nil then
+                -- Force the player off the boat platform.
+                -- Disembark is the clean way: it fires all the right
+                -- events ("ondisembark"), clears tags ("onplatform"),
+                -- and updates the camera on the client.
+                if doer.components.disembarker then
+                    doer.components.disembarker:Disembark(platform)
+                else
+                    -- No disembarker component — manually clear platform state
+                    if platform.components.walkableplatform then
+                        platform.components.walkableplatform:RemovePlayer(doer)
+                    end
+                    doer:RemoveTag("onplatform")
+                    doer:PushEvent("ondisembark", { platform = platform })
+                end
+            end
+        end
+
         doer.Physics:Teleport(tx, 0, tz)
 
     if doer.components.leader ~= nil then
