@@ -1428,6 +1428,22 @@ local function onload_empty(inst, data)
     if data ~= nil and data.currentfuel ~= nil and inst.components.fueled ~= nil then
         inst.components.fueled.currentfuel = data.currentfuel
     end
+    -- v2.1.5 FIX: Restore upgrade data so the buster keeps its MK level
+    -- when reactivated after save/load. Without this, all upgrade data
+    -- was lost because onsave_empty didn't persist it.
+    if data ~= nil then
+        if data.level ~= nil then
+            inst.level = 0
+        else
+            inst.level = data.level
+        end
+        inst.upgradelevel = data.upgradelevel or 0
+        inst.saved_upgradelevel = data.saved_upgradelevel or 0
+        inst.saved_upgradelevel_mk3 = data.saved_upgradelevel_mk3 or 0
+        inst.was_mk2 = data.was_mk2 or false
+        inst.was_mk3 = data.was_mk3 or false
+        inst.saved_prefab_name = data.saved_prefab_name
+    end
 end
 
 local function onsave_empty(inst, data)
@@ -1438,6 +1454,17 @@ local function onsave_empty(inst, data)
     if inst.components.fueled ~= nil then
         data.currentfuel = inst.components.fueled.currentfuel
     end
+    -- v2.1.5 FIX: Save upgrade data so the buster keeps its MK level
+    -- when reactivated after save/load. Without this, MakeAlive could
+    -- not determine the correct prefab to spawn (MK1/MK2/MK3) and all
+    -- upgrade progress was lost.
+    data.level = inst.level or 0
+    data.upgradelevel = inst.upgradelevel or 0
+    data.saved_upgradelevel = inst.saved_upgradelevel or 0
+    data.saved_upgradelevel_mk3 = inst.saved_upgradelevel_mk3 or 0
+    data.was_mk2 = inst.was_mk2 or false
+    data.was_mk3 = inst.was_mk3 or false
+    data.saved_prefab_name = inst.saved_prefab_name
 end
 
 -- v2.0.94: Removed dead revivetest function — never called (willyraise handles revival)
