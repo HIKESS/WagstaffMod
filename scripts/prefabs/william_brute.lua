@@ -502,7 +502,11 @@ local function onsave(inst, data)
     data.level = inst.level
     -- Save leader for all versions (MK1 now has follower too)
     if inst.components.follower and inst.components.follower:GetLeader() then
-        data.leader_guid = inst.components.follower:GetLeader().GUID
+        local leader = inst.components.follower:GetLeader()
+        data.leader_guid = leader.GUID
+        -- v2.1.6 FIX: Save leader's userid so we can find them after reload
+        -- even when GUIDs change between sessions.
+        data.leader_userid = leader.userid
     end
     data.upgradelevel = inst.upgradelevel or 0
     -- v2.0.91 FIX: Save currentfuel so it persists across save/load.
@@ -532,10 +536,26 @@ local function onload(inst, data)
         inst.components.fueled.currentfuel = data.currentfuel
     end
 
-    -- Restore leader (MK1 now has follower too)
-    if data.leader_guid ~= nil and inst.components.follower ~= nil then
+    -- v2.1.6 FIX: Restore leader using multiple strategies.
+    -- 1. Try leader_userid (survives GUID changes between sessions)
+    -- 2. Try leader_guid (fallback for same-session saves)
+    -- 3. FindClosestPlayerToInst fallback with retries
+    if inst.components.follower ~= nil then
         inst:DoTaskInTime(0, function()
-            local leader = Ents[data.leader_guid]
+            local leader = nil
+            -- Strategy 1: Find by userid (GUIDs change between sessions)
+            if data.leader_userid ~= nil then
+                for _, p in ipairs(_G.AllPlayers) do
+                    if p.userid == data.leader_userid then
+                        leader = p
+                        break
+                    end
+                end
+            end
+            -- Strategy 2: Try GUID (works for same-session)
+            if leader == nil and data.leader_guid ~= nil then
+                leader = Ents[data.leader_guid]
+            end
             if leader ~= nil and leader:IsValid() then
                 inst.components.follower:SetLeader(leader)
             end
@@ -550,19 +570,37 @@ local function onload(inst, data)
         end
     end)
 
-    -- v2.1.3 FIX: After reload, the leader GUID may no longer match any entity
-    -- (player GUIDs change between sessions). If the bot is on but has no leader,
-    -- find the closest player and assign them as leader. This runs slightly later
-    -- than the initial DoTaskInTime(0) calls so the player entity has time to load.
+    -- v2.1.6 FIX: Multiple retry fallback for leader restoration.
+    -- After reload, the player entity may take a few frames to fully load.
+    -- Retry finding the leader at increasing intervals if still missing.
     if data.on == true and inst.components.follower ~= nil then
-        inst:DoTaskInTime(1, function()
-            if inst:IsValid() and inst.components.follower and inst.components.follower:GetLeader() == nil then
-                local player = FindClosestPlayerToInst(inst, 30, true)
-                if player ~= nil then
-                    inst.components.follower:SetLeader(player)
+        local function TryRestoreLeader()
+            if not inst:IsValid() then return end
+            if inst.components.follower and inst.components.follower:GetLeader() ~= nil then return end
+
+            -- Try by userid first
+            if data.leader_userid ~= nil then
+                for _, p in ipairs(_G.AllPlayers) do
+                    if p.userid == data.leader_userid then
+                        inst.components.follower:SetLeader(p)
+                        return
+                    end
                 end
             end
-        end)
+
+            -- Fallback: closest player
+            local player = FindClosestPlayerToInst(inst, 30, true)
+            if player ~= nil then
+                inst.components.follower:SetLeader(player)
+                return
+            end
+        end
+
+        -- Retry at 0.5s, 1s, 2s, and 3s after load
+        inst:DoTaskInTime(0.5, TryRestoreLeader)
+        inst:DoTaskInTime(1, TryRestoreLeader)
+        inst:DoTaskInTime(2, TryRestoreLeader)
+        inst:DoTaskInTime(3, TryRestoreLeader)
     end
 end
 
