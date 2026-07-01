@@ -36,7 +36,15 @@ local Vision = Class(function(self, inst)
     inst:ListenForEvent("unequip", function() self:CheckForGlasses() end)
 	-- inst:ListenForEvent("playerdeactivate", OnDeactivate)
 
-    self.inst:StartUpdatingComponent(self)
+    -- v2.0.98 FIX: Delay StartUpdating by 1 second so the entity is fully
+    -- initialized before OnUpdate tries to access AnimState. Without this,
+    -- GetSymbolPosition("head") can fail during shard migration when the
+    -- AnimState hasn't received its build/bank from the server yet.
+    self.inst:DoTaskInTime(1, function()
+        if self.inst:IsValid() then
+            self.inst:StartUpdatingComponent(self)
+        end
+    end)
 end)
 
 function Vision:OnUpdate(dt)
@@ -54,7 +62,11 @@ function Vision:OnUpdate(dt)
 
 	if self.inst ~= ThePlayer then return end
 
-	local hx, hy, hz = self.inst.AnimState:GetSymbolPosition("head", 0, 0, 0)
+	-- v2.0.98 FIX: pcall guard against invalid AnimState during shard migration
+	local hx, hy, hz = 0, 0, 0
+	pcall(function()
+		hx, hy, hz = self.inst.AnimState:GetSymbolPosition("head", 0, 0, 0)
+	end)
 
 	local px, py = TheSim:GetScreenPos(hx,hy,hz)
 	local w,h = TheSim:GetScreenSize()

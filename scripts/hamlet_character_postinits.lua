@@ -239,7 +239,18 @@ end)
 -- (vision runs client-side for the blur shader).
 -----------------------------------------------------------------------
 AddPlayerPostInit(function(inst)
-	inst.AnimState:AddOverrideBuild("player_wagstaff")
+	-- v2.0.98 FIX: Only apply to Wagstaff players. Previously this ran on ALL
+	-- players, causing FROMNUM errors during shard migration (cave entry/exit).
+	-- AddOverrideBuild modifies AnimState before net variables are synchronized,
+	-- resulting in "Could not find anim build FROMNUM" and invisible players.
+	if inst.prefab ~= "wagstaff" then return end
+
+	-- Delay override build by one frame so net variables are initialized first
+	inst:DoTaskInTime(0, function()
+		if inst:IsValid() and inst.AnimState then
+			inst.AnimState:AddOverrideBuild("player_wagstaff")
+		end
+	end)
 
 	-- if GLOBAL.TheWorld.ismastersim then
 		inst:AddComponent("vision")
@@ -247,8 +258,12 @@ AddPlayerPostInit(function(inst)
 			inst.components.vision.nearsighted = true
 		end
 		inst:DoTaskInTime(1, function()
-			inst.components.vision:CheckForGlasses()
+			if inst:IsValid() and inst.components.vision then
+				inst.components.vision:CheckForGlasses()
+			end
 		end)
+	-- end
+end)
 	-- end
 end)
 

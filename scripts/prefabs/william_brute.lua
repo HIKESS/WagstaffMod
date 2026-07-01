@@ -589,7 +589,7 @@ local PLACER_SCALE = 1.5
         inst:AddTag("ebuild_wrenchable")
 
     inst._taunttask = nil
-    inst.on = nil
+    inst.on = false  -- v2.0.98 FIX: was 'nil', but SG checks 'inst.on == false'. nil ~= false in Lua so the guard failed.
 
         -- v2.0.36 FIX: hover display on CLIENT (same fix as butler/buster).
         -- displaynamefn has the HIGHEST priority, runs on both server+client
