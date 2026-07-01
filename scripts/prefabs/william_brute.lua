@@ -549,6 +549,21 @@ local function onload(inst, data)
             TurnOff(inst, nil, true)
         end
     end)
+
+    -- v2.1.3 FIX: After reload, the leader GUID may no longer match any entity
+    -- (player GUIDs change between sessions). If the bot is on but has no leader,
+    -- find the closest player and assign them as leader. This runs slightly later
+    -- than the initial DoTaskInTime(0) calls so the player entity has time to load.
+    if data.on == true and inst.components.follower ~= nil then
+        inst:DoTaskInTime(1, function()
+            if inst:IsValid() and inst.components.follower and inst.components.follower:GetLeader() == nil then
+                local player = FindClosestPlayerToInst(inst, 30, true)
+                if player ~= nil then
+                    inst.components.follower:SetLeader(player)
+                end
+            end
+        end)
+    end
 end
 
 -- v2.0.94: Removed dead first onbuilt definition (shadowed by the second at line ~1766)

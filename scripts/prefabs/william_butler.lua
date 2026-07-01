@@ -949,6 +949,19 @@ inst.components.burnable.ignorefuel = true
                 end
             end)
         end
+        -- v2.1.3 FIX: Fallback leader assignment if GUID lookup failed after reload.
+        -- Player GUIDs change between sessions, so the original leader_guid may
+        -- not match any entity. Find closest player as fallback.
+        if data ~= nil then
+            inst:DoTaskInTime(1, function()
+                if inst:IsValid() and inst.components.follower and inst.components.follower:GetLeader() == nil then
+                    local player = FindClosestPlayerToInst(inst, 30, true)
+                    if player ~= nil then
+                        inst.components.follower:SetLeader(player)
+                    end
+                end
+            end)
+        end
     end
 
     inst.OnSave = OnSaveButler
